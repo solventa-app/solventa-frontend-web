@@ -1,25 +1,43 @@
 <!--
-  Barra de navegación (migas de pan) · librería de componentes (Figma 2006:22). Franja "Inicio ›
-  Sección" para las pantallas que no son login ni home: resuelve "dónde estoy" y "cómo regreso" sin
-  depender del botón atrás del navegador (nota del componente en Figma). "Inicio" siempre es enlace
-  de vuelta; el último elemento es la pantalla actual (sin enlace, en negrita).
+  Barra de navegación ("Barra de navegación", Figma nodo 80:344 en el prototipo de alta fidelidad
+  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web"). Reconstruida para ser fiel a ese archivo: reemplaza el
+  diseño anterior (franja fina de varios niveles, con lista de `items`, basada en el archivo
+  "Solventa-web-Final") por el real, una sola franja clicable "⌂ Inicio › <sección>" que siempre
+  vuelve al home del rol correspondiente (Cliente/Asesor comercial → G-02/G-02a, Operador → G-02b).
+  El prototipo no tiene navegación anidada de más de un nivel, así que toda la franja es un único
+  enlace (no una lista de ítems).
+
+  Envuelto en <nav aria-label> (landmark que el componente anterior sí tenía) y con aria-label
+  explícito en el enlace: el nombre accesible por defecto sería "Inicio › <sección>" completo
+  (confuso, como si "sección" también fuera parte de la acción), así que se fija un nombre claro
+  ("Volver a Inicio") y se oculta a lectores de pantalla el contenido visual redundante (texto,
+  separador y sección), que sigue siendo visible para usuarios con vista.
+
   SG-01 es explícita: una u otra barra de navegación, nunca las dos en la misma pantalla — este
   componente no se combina con una barra de cerrar sesión en la misma vista.
 -->
 <script setup lang="ts">
-defineProps<{ items: { etiqueta: string; to?: string }[] }>()
+import IconoMaterial from './IconoMaterial.vue'
+
+defineProps<{
+  /** Texto de la sección actual, p. ej. "Nueva cotización". */
+  seccion: string
+  /** Ruta de "Inicio" (home del rol correspondiente a esta pantalla). */
+  aInicio: string
+}>()
 </script>
 
 <template>
-  <nav aria-label="Ruta de navegación" class="w-full border-b border-borde bg-fondo">
-    <ol class="mx-auto flex max-w-[880px] items-center gap-2 px-4 py-[9px] text-[13px] leading-[19.5px]">
-      <li v-for="(item, indice) in items" :key="item.etiqueta" class="flex items-center gap-2">
-        <RouterLink v-if="item.to && indice < items.length - 1" :to="item.to" class="text-enlace hover:underline">
-          {{ item.etiqueta }}
-        </RouterLink>
-        <span v-else class="font-semibold text-tinta">{{ item.etiqueta }}</span>
-        <span v-if="indice < items.length - 1" class="text-tinta-suave" aria-hidden="true">›</span>
-      </li>
-    </ol>
+  <nav aria-label="Ruta de navegación">
+    <RouterLink
+      :to="aInicio"
+      aria-label="Volver a Inicio"
+      class="flex w-full items-center gap-2 rounded-md bg-fondo px-[14px] py-[10px] text-[13px] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+    >
+      <IconoMaterial nombre="home" aria-hidden="true" class="h-[16px] w-[16px] shrink-0 text-enlace" />
+      <span aria-hidden="true" class="font-bold text-enlace">Inicio</span>
+      <span aria-hidden="true" class="text-tinta-suave">›</span>
+      <span aria-hidden="true" class="text-tinta-suave">{{ seccion }}</span>
+    </RouterLink>
   </nav>
 </template>

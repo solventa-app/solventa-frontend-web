@@ -58,13 +58,24 @@ describe('CampoFormulario', () => {
 })
 
 describe('MigasDePan', () => {
-  it('enlaza "Inicio" y deja la pantalla actual sin enlace', () => {
+  it('toda la franja es un enlace a "Inicio" y muestra la sección actual', () => {
     const migas = mount(MigasDePan, {
-      props: { items: [{ etiqueta: 'Inicio', to: '/inicio' }, { etiqueta: 'Nueva cotización' }] },
+      props: { seccion: 'Nueva cotización', aInicio: '/inicio' },
       global: { stubs: stubsRouter },
     })
-    expect(migas.find('a').text()).toBe('Inicio')
+    const enlace = migas.get('a')
+    expect(enlace.attributes('href') ?? enlace.attributes('to')).toBeTruthy()
+    expect(migas.text()).toContain('Inicio')
     expect(migas.text()).toContain('Nueva cotización')
+  })
+
+  it('tiene el landmark <nav> y un nombre accesible claro para el enlace', () => {
+    const migas = mount(MigasDePan, {
+      props: { seccion: 'Nueva cotización', aInicio: '/inicio' },
+      global: { stubs: stubsRouter },
+    })
+    expect(migas.find('nav[aria-label]').exists()).toBe(true)
+    expect(migas.get('a').attributes('aria-label')).toBe('Volver a Inicio')
   })
 })
 
