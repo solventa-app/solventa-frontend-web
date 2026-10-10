@@ -16,18 +16,21 @@
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Boton, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
+import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 import { formatearMonto, formatearPorcentaje } from '../utils/formato'
 
 const { estado, captura } = useCotizacion()
+const { estado: sesion } = useSesion()
 const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : null))
 </script>
 
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-03a">
-    <HeaderPantalla titulo="Oferta lista" />
-    <MigasDePan :items="[{ etiqueta: 'Inicio', to: '/inicio' }, { etiqueta: 'Nueva cotización' }]" />
+    <HeaderPantalla titulo="Oferta — éxito completo" />
+    <TituloPantalla class="sr-only">Oferta — éxito completo</TituloPantalla>
+    <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="oferta && oferta.prima" class="flex flex-1 flex-col items-center bg-fondo px-10 py-12">
       <div class="flex w-full max-w-[560px] flex-col items-center gap-5 rounded-lg border border-borde bg-white p-6">
         <div class="flex h-14 w-14 items-center justify-center rounded-full border-2 border-exito text-exito">
@@ -37,7 +40,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         </div>
         <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">Tu oferta está lista</h2>
         <div class="flex w-full flex-col items-center gap-1.5 rounded-md border border-borde p-4">
-          <p class="text-[22px] font-bold leading-normal text-primario">{{ formatearMonto(oferta.prima!) }} / mes</p>
+          <p class="text-[22px] font-bold leading-normal text-primario">Prima: {{ formatearMonto(oferta.prima!) }} / mes</p>
           <p class="text-[13px] leading-[18px] text-tinta">Cobertura: {{ formatearMonto(oferta.cobertura) }}</p>
         </div>
         <div class="flex w-full flex-col gap-2 border-y border-borde py-4">

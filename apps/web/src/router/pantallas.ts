@@ -15,9 +15,9 @@ export interface Pantalla {
 }
 
 export const pantallas: Pantalla[] = [
-  { id: 'G-01', ruta: '/login', nombre: 'Ingreso con selector de rol', historia: 'Global', sprint: 1, criterios: [] },
-  { id: 'G-02', ruta: '/inicio', nombre: 'Inicio del cliente', historia: 'Global', sprint: 1, criterios: [] },
-  { id: 'G-02a', ruta: '/asesor', nombre: 'Inicio del asesor comercial', historia: 'Global', sprint: 1, criterios: ['CA-W01-11'] },
+  { id: 'G-01', ruta: '/login', nombre: 'Ingreso con selector de rol', historia: 'Global', sprint: 1, criterios: [], componente: () => import('../views/IngresoConRol.vue') },
+  { id: 'G-02', ruta: '/inicio', nombre: 'Inicio del cliente', historia: 'Global', sprint: 1, criterios: [], componente: () => import('../views/HomeCliente.vue') },
+  { id: 'G-02a', ruta: '/asesor', nombre: 'Inicio del asesor comercial', historia: 'Global', sprint: 1, criterios: ['CA-W01-11'], componente: () => import('../views/HomeAsesor.vue') },
   { id: 'G-02b', ruta: '/operador', nombre: 'Inicio del operador (back-office)', historia: 'Global', sprint: 1, criterios: ['CA-W05-01'] },
   { id: 'W01-01', ruta: '/cotizacion', nombre: 'Captura de datos y consentimiento', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-01', 'CA-W01-02', 'CA-W01-08'], componente: () => import('../views/SolicitudYConsentimiento.vue') },
   { id: 'W01-02', ruta: '/cotizacion/consulta', nombre: 'Consulta de fuentes en curso', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-02'], componente: () => import('../views/ConsultandoFuentes.vue') },

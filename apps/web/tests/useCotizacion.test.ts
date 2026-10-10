@@ -1,3 +1,4 @@
+import { http, HttpResponse } from 'msw'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { esErrorOferta, esOferta, useCotizacion } from '../src/composables/useCotizacion'
 import { servidor } from '../src/mocks/node'
@@ -88,5 +89,34 @@ describe('useCotizacion', () => {
     expect(cotizacion.captura.documentoIdentidad).toBe('')
     expect(cotizacion.estado.resultado).toBeNull()
     expect(cotizacion.estado.consentimientoId).toBeNull()
+  })
+
+  // Antes de esta prueba, una falla técnica/de red en `solicitarOferta` dejaba `estado.resultado`
+  // sin cambios (ni Oferta ni ErrorOferta): W01-02 (ConsultandoFuentes.vue) no tenía a dónde navegar
+  // y se quedaba mostrando el spinner para siempre, sin que el usuario viera ningún mensaje.
+  it('una falla técnica/de red en solicitarOferta se guarda como ErrorOferta reintentable, nunca como texto crudo (CLAUDE.md regla 5)', async () => {
+    servidor.use(http.post('http://localhost/graphql/web', () => new HttpResponse(null, { status: 500 })))
+
+    const cotizacion = useCotizacion(fetchPrueba)
+    llenarCaptura(cotizacion, '123')
+    await cotizacion.solicitarOferta()
+
+    expect(esErrorOferta(cotizacion.estado.resultado)).toBe(true)
+    if (esErrorOferta(cotizacion.estado.resultado)) {
+      expect(cotizacion.estado.resultado.puedeReintentar).toBe(true)
+      expect(cotizacion.estado.resultado.mensaje).not.toMatch(/500|BFF respondio|BFF respondió|Error:/)
+    }
+    expect(cotizacion.estado.cargando).toBe(false)
+  })
+
+  // Antes de esta prueba, `contactarAsesor` (W01-05) no tenía ningún manejo de error: una falla
+  // del BFF se propagaba sin que la pantalla mostrara ningún mensaje al usuario.
+  it('contactarAsesor propaga la falla para que la pantalla pueda mostrar un mensaje seguro', async () => {
+    servidor.use(http.post('http://localhost/graphql/web', () => new HttpResponse(null, { status: 500 })))
+
+    const cotizacion = useCotizacion(fetchPrueba)
+
+    await expect(cotizacion.contactarAsesor('LLAMAR')).rejects.toBeTruthy()
+    expect(cotizacion.estado.contacto).toBeNull()
   })
 })

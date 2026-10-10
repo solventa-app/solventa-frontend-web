@@ -1,19 +1,30 @@
 <!--
-  W01-03c · Oferta, fallo (Figma 2001:1335, CA-W01-05). Nunca se muestra un 5xx crudo: el texto que
-  ve el usuario es siempre `ErrorOferta.mensaje`, el campo que sí existe en el contrato
-  (contrato/schema.graphql), no un texto inventado. El mockup también incluye un "Código de evento:
-  ERR-SOL-304" que `ErrorOferta` no tiene (no hay campo `evento`); se omite en vez de inventarlo,
-  igual que la nota de G-05 en AvatarPerfil.vue. "Reintentar" solo se ofrece cuando
-  `ErrorOferta.puedeReintentar` es verdadero.
+  W01-03c · Oferta, fallo (Figma 2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", nodo 10:30, CA-W01-05).
+  Título "Oferta — fallo" (el archivo anterior tenía "Nueva cotización" aquí, que no es el título de
+  esta pantalla en el prototipo correcto). Nunca se muestra un 5xx crudo: el texto que ve el usuario
+  es siempre `ErrorOferta.mensaje`, el campo que sí existe en el contrato (contrato/schema.graphql),
+  no un texto inventado — ahora también cubre las fallas técnicas/de red (ver la nota en
+  useCotizacion.solicitarOferta), que antes dejaban esta pantalla inalcanzable. El mockup también
+  incluye un "Código de evento: ERR-SOL-304" que `ErrorOferta` no tiene (no hay campo `evento`); se
+  omite en vez de inventarlo, igual que la nota de G-05 en AvatarPerfil.vue. El pie "Validación
+  segura B2B2C" del archivo anterior tampoco está en este prototipo: se quita. "Reintentar" solo se
+  ofrece cuando `ErrorOferta.puedeReintentar` es verdadero.
+
+  "Hablar con un asesor" se corrige a gris subrayado siempre (en vez de azul con subrayado solo al
+  pasar el mouse): es un enlace secundario junto al botón primario "Reintentar", mismo tratamiento
+  que ya usan los enlaces secundarios de esta misma HU (p. ej. los disparadores de demo en
+  SolicitudYConsentimiento.vue).
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
 import { esErrorOferta, useCotizacion } from '../composables/useCotizacion'
+import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 
 const router = useRouter()
 const { estado } = useCotizacion()
+const { estado: sesion } = useSesion()
 const error = computed(() => (esErrorOferta(estado.resultado) ? estado.resultado : null))
 
 function reintentar() {
@@ -23,8 +34,8 @@ function reintentar() {
 
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-03c">
-    <HeaderPantalla titulo="Nueva cotización" />
-    <MigasDePan :items="[{ etiqueta: 'Inicio', to: '/inicio' }, { etiqueta: 'Nueva cotización' }]" />
+    <HeaderPantalla titulo="Oferta — fallo" />
+    <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main class="flex flex-1 flex-col items-center justify-center bg-fondo px-10 py-16">
       <div class="flex w-full max-w-[560px] flex-col items-center gap-4 rounded-lg border border-borde bg-white p-6">
         <div class="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-error bg-error-fondo text-error">
@@ -38,12 +49,9 @@ function reintentar() {
         </p>
         <div class="flex flex-col items-center gap-4">
           <Boton v-if="error?.puedeReintentar ?? true" class="w-[340px]" @click="reintentar">Reintentar</Boton>
-          <RouterLink to="/cotizacion/asesor" class="flex items-center gap-1 text-[13px] font-semibold leading-[18px] text-enlace hover:underline">
+          <RouterLink to="/cotizacion/asesor" class="flex items-center gap-1 text-[13px] font-semibold leading-[18px] text-tinta-suave underline">
             Hablar con un asesor
           </RouterLink>
-        </div>
-        <div class="flex w-full items-center justify-between border-t border-borde pt-4">
-          <p class="text-[11px] leading-[14px] text-tinta-suave">Validación segura B2B2C</p>
         </div>
       </div>
     </main>

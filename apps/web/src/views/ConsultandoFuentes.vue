@@ -4,15 +4,21 @@
   manual" (nota del prototipo), así que toda la lógica vive en `onMounted` y navega sola según el
   resultado (Oferta COMPLETA/PRELIMINAR o ErrorOferta). Si se llega aquí sin haber pasado por W01-01
   (sin documento capturado) se vuelve a la solicitud en vez de llamar al BFF con datos vacíos.
+
+  H1 oculto (sr-only, "Consultando fuentes", igual al header) y nota de pie corregida para calzar
+  con el texto literal del Figma (nodo 11:22): "Auto-navega según respuesta del ACL — no tiene botón
+  manual (timeout duro 700ms)" (antes decía "avanza automáticamente..." sin mencionar el timeout).
 -->
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import { esErrorOferta, esOferta, useCotizacion } from '../composables/useCotizacion'
+import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 
 const router = useRouter()
 const { estado, captura, solicitarOferta } = useCotizacion()
+const { estado: sesion } = useSesion()
 
 onMounted(async () => {
   // Si se llega aquí sin pasar por W01-01 (sin documento capturado o sin consentimiento) no hay nada
@@ -33,7 +39,8 @@ onMounted(async () => {
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-02">
     <HeaderPantalla titulo="Consultando fuentes" />
-    <MigasDePan :items="[{ etiqueta: 'Inicio', to: '/inicio' }, { etiqueta: 'Nueva cotización' }]" />
+    <TituloPantalla class="sr-only">Consultando fuentes</TituloPantalla>
+    <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main class="flex flex-1 flex-col items-center justify-center gap-5 bg-fondo px-10 py-16" role="status" aria-live="polite">
       <svg class="h-6 w-6 animate-spin text-primario" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
@@ -46,7 +53,7 @@ onMounted(async () => {
         <div class="h-full w-2/3 animate-pulse rounded-full bg-enlace" />
       </div>
       <p class="text-center text-[11px] leading-[14px] text-tinta-suave">
-        (avanza automáticamente según la respuesta del ACL — no tiene botón manual)
+        Auto-navega según respuesta del ACL — no tiene botón manual (timeout duro 700ms)
       </p>
     </main>
     <FooterPantalla />

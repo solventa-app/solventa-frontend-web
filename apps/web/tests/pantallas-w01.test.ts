@@ -6,17 +6,22 @@
 // `estado` de useCotizacion es un singleton a nivel de módulo (ver useCotizacion.ts), así que cada
 // wrapper montado se desmonta al terminar su prueba (`afterEach`): de lo contrario un wrapper viejo
 // sigue reactivo y se vuelve a renderizar cuando una prueba posterior cambia el estado compartido.
+import { http, HttpResponse } from 'msw'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import ConsultandoFuentes from '../src/views/ConsultandoFuentes.vue'
 import ContactarAsesor from '../src/views/ContactarAsesor.vue'
 import DetalleDeFuentes from '../src/views/DetalleDeFuentes.vue'
+import HomeAsesor from '../src/views/HomeAsesor.vue'
+import HomeCliente from '../src/views/HomeCliente.vue'
+import IngresoConRol from '../src/views/IngresoConRol.vue'
 import OfertaCompleta from '../src/views/OfertaCompleta.vue'
 import OfertaError from '../src/views/OfertaError.vue'
 import OfertaPreliminar from '../src/views/OfertaPreliminar.vue'
 import SolicitudYConsentimiento from '../src/views/SolicitudYConsentimiento.vue'
 import { useCotizacion } from '../src/composables/useCotizacion'
+import { useSesion } from '../src/composables/useSesion'
 import { crearRutas } from '../src/router'
 import { servidor } from '../src/mocks/node'
 
@@ -31,6 +36,17 @@ function montar(componente: Parameters<typeof mount>[0], router: Router) {
   const wrapper = mount(componente, { global: { plugins: [router] } })
   wrappersMontados.push(wrapper)
   return wrapper
+}
+
+/** Espera hasta que la ruta activa cambie (o se agoten los intentos): cubre el import() dinámico de
+ * las rutas sin `componente` propio (PantallaPendiente.vue), que no siempre resuelve con un solo
+ * flushPromises() ni con un setTimeout de duración fija. */
+async function esperarRuta(router: Router, ruta: string, intentos = 20) {
+  for (let i = 0; i < intentos; i++) {
+    await flushPromises()
+    if (router.currentRoute.value.path === ruta) return
+    await new Promise((r) => setTimeout(r, 10))
+  }
 }
 
 function crearRouterDePrueba() {
@@ -62,6 +78,82 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
     expect(cotizacion.captura.documentoIdentidad.endsWith('000')).toBe(true)
     expect(cotizacion.captura.consentimiento).toBe(true)
+  })
+
+  // Antes de esta prueba no había ninguna validación funcional más allá del consentimiento: el
+  // botón "Consultar oferta" es `type="button"` (Boton.vue), así que nunca disparaba el `required`
+  // nativo de los campos. Se podía enviar con el consentimiento marcado y todo lo demás vacío.
+  it('no navega y muestra errores si se envía con el consentimiento marcado pero los campos vacíos', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    const router = crearRouterDePrueba()
+    router.push('/cotizacion')
+    await router.isReady()
+    const wrapper = montar(SolicitudYConsentimiento, router)
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/cotizacion')
+    expect(wrapper.findAll('[role="alert"]').length).toBeGreaterThan(0)
+    expect(wrapper.text()).toContain('Ingresa tu documento de identidad.')
+  })
+
+  it('valida que el monto del crédito sea numérico y mayor a cero', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.findAll('input')[1].setValue('no-es-un-numero') // input[1] = Monto del crédito
+    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Ingresa un monto válido, mayor a cero.')
+  })
+
+  // Antes esta aserción vivía (con un nombre que prometía cubrirla) dentro de la prueba de
+  // valorCredito, pero el body nunca tocaba el campo de plazo: quedaba sin probar de verdad.
+  it('valida que el plazo sea un entero mayor a cero', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.findAll('input')[2].setValue('3.5') // input[2] = Plazo (meses)
+    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Ingresa un plazo válido en meses, mayor a cero.')
+  })
+
+  it('valida que la dirección del inmueble no esté vacía', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    cotizacion.captura.documentoIdentidad = 'CC102030'
+    cotizacion.captura.valorCredito = '185000000'
+    cotizacion.captura.plazoMeses = '180'
+    const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Ingresa la dirección del inmueble a asegurar.')
+  })
+
+  it('valida el formato del documento de identidad (no solo que no esté vacío)', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.findAll('input')[0].setValue('12') // claramente incompleto, no solo "vacío"
+    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Ingresa un número de documento válido.')
   })
 })
 
@@ -126,7 +218,10 @@ describe('Pantallas de resultado de oferta', () => {
     expect(wrapper.text()).not.toContain('782/850')
   })
 
-  it('OfertaPreliminar (W01-03b) muestra el rango de prima', async () => {
+  // Reestructurada para calzar con el Figma real (nodo 10:23, confirmado con captura de pantalla):
+  // ya no muestra un encabezado "Oferta preliminar" ni el desglose del score, solo el banner de
+  // alerta y la línea "Prima estimada (rango): ...".
+  it('OfertaPreliminar (W01-03b) muestra el banner de alerta y el rango de prima estimada', async () => {
     Object.assign(useCotizacion(fetchPrueba).estado, {
       resultado: {
         id: 'oferta-preliminar',
@@ -140,8 +235,9 @@ describe('Pantallas de resultado de oferta', () => {
     })
     const wrapper = montar(OfertaPreliminar, crearRouterDePrueba())
 
-    expect(wrapper.text()).toContain('Oferta preliminar')
-    expect(wrapper.text()).toContain('Zona del inmueble')
+    expect(wrapper.text()).toContain('No pudimos verificar todo a tiempo, esta es una oferta preliminar')
+    expect(wrapper.text()).toContain('Prima estimada (rango):')
+    expect(wrapper.text()).not.toContain('Zona del inmueble')
   })
 
   it('OfertaError (W01-03c) muestra el mensaje real del contrato y oculta "Reintentar" si no se puede', async () => {
@@ -193,5 +289,104 @@ describe('ContactarAsesor (W01-05)', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Un asesor te contactará')
+  })
+
+  // Antes de esta prueba, `elegirCanal` no tenía ningún `catch`: una falla del BFF dejaba al
+  // usuario sin ningún mensaje (solo se reactivaban los botones, sin ninguna pista de qué pasó).
+  it('muestra un mensaje seguro (nunca texto técnico crudo) si contactarAsesor falla', async () => {
+    // Ruta comodín (no http://localhost/graphql/web): la vista monta useCotizacion() sin
+    // fetchPrueba, así que usa el fetch global del entorno de pruebas (jsdom), cuyo origen por
+    // defecto no es http://localhost a secas.
+    servidor.use(http.post('*/graphql/web', () => new HttpResponse(null, { status: 500 })))
+    useCotizacion().reiniciar()
+    const wrapper = montar(ContactarAsesor, crearRouterDePrueba())
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Llamar')!.trigger('click')
+    await flushPromises()
+
+    const alerta = wrapper.get('[role="alert"]')
+    expect(alerta.text()).toBeTruthy()
+    expect(alerta.text()).not.toMatch(/500|BFF respondio|BFF respondió|Error:/)
+  })
+})
+
+describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home asesor)', () => {
+  beforeEach(() => useSesion().cerrarSesion())
+  afterEach(() => useSesion().cerrarSesion())
+
+  it('G-01 deshabilita "Ingresar" hasta completar correo y contraseña, y navega según el rol elegido', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    expect(wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.attributes('disabled')).toBeDefined()
+
+    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('persona@correo.com')
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await wrapper.findAll('button').find((b) => b.text() === 'Asesor comercial')!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/asesor')
+    expect(useSesion().estado.rol).toBe('ASESOR')
+  })
+
+  it('G-02 (home cliente): "Cerrar sesión" vuelve a /login y la tarjeta navega a /cotizacion', async () => {
+    useSesion().iniciarSesion('CLIENTE')
+    const router = crearRouterDePrueba()
+    router.push('/inicio')
+    await router.isReady()
+    const wrapper = montar(HomeCliente, router)
+
+    expect(wrapper.text()).toContain('Nueva cotización')
+    // Saludo personalizado real (estado.nombre), no un placeholder fijo.
+    expect(wrapper.text()).toContain(`Hola, ${useSesion().estado.nombre}`)
+
+    await wrapper.findAll('button').find((b) => b.text().includes('Cerrar sesión'))!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('G-02a (home asesor): copy distinto al del cliente, mismo destino /cotizacion', async () => {
+    useSesion().iniciarSesion('ASESOR')
+    const router = crearRouterDePrueba()
+    router.push('/asesor')
+    await router.isReady()
+    const wrapper = montar(HomeAsesor, router)
+
+    expect(wrapper.text()).toContain('Nueva cotización para un cliente')
+    expect(wrapper.text()).toContain(`Hola, ${useSesion().estado.nombre} (Asesor comercial)`)
+    expect(wrapper.find('a[href="/cotizacion"]').exists()).toBe(true)
+  })
+
+  // El rol "Operador" no tiene su propia pantalla G-02b en esta rama (vive en
+  // feature/HU-W05-conciliacion): ingresar con ese chip debe navegar a /operador y caer con
+  // honestidad en PantallaPendiente, nunca en una pantalla rota, en blanco, o quedarse sin navegar.
+  it('G-01: el chip "Operador" navega a /operador (PantallaPendiente en esta rama, no un error)', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('persona@correo.com')
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await wrapper.findAll('button').find((b) => b.text() === 'Operador')!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
+    await esperarRuta(router, '/operador')
+
+    expect(router.currentRoute.value.path).toBe('/operador')
+    expect(useSesion().estado.rol).toBe('OPERADOR')
+  })
+
+  // El "Inicio" de la Barra de navegación debe volver al home del rol activo: Cliente/Asesor
+  // comparten las mismas 7 pantallas de /cotizacion/*, pero cada uno tiene su propio home.
+  it('la Barra de navegación de W01-01 vuelve a /asesor cuando la sesión activa es Asesor comercial', async () => {
+    useSesion().iniciarSesion('ASESOR')
+    useCotizacion(fetchPrueba).reiniciar()
+    const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
+
+    expect(wrapper.get('a').attributes('href') ?? wrapper.get('a').attributes('to')).toContain('/asesor')
   })
 })

@@ -6,15 +6,26 @@
   del mockup tampoco tiene campo equivalente en el contrato (ni Oferta ni ResultadoOferta exponen
   cuándo se consultó): se omite en vez de inventarlo. La fecha de consentimiento sí es real
   (`Consentimiento.otorgadoEn`, guardado por `useCotizacion` al registrar el consentimiento).
+
+  "Volver a la oferta" se corrige a texto oscuro (`text-tinta`) en vez de azul (`text-primario`):
+  mismo tratamiento neutro que "Volver al inicio" en ContactarAsesor.vue, para que un enlace de
+  "volver" no compita visualmente con los enlaces de acción (azules) de la pantalla.
+
+  Gap conocido, no corregido en esta ronda: el Figma (nodos 87:439 y cercanos) muestra íconos de
+  "Ayuda contextual" (tooltip) junto a los encabezados OPEN FINANCE/OPEN DATA y junto a la insignia
+  de caché; se documenta aquí en vez de construir un componente de tooltip nuevo bajo la limitación
+  de tiempo de esta ronda de arreglos — queda pendiente para una siguiente iteración.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FooterPantalla, HeaderPantalla } from '../components/ui'
+import { FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
+import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 import { formatearFecha } from '../utils/formato'
 
 const { estado } = useCotizacion()
+const { estado: sesion } = useSesion()
 const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : null))
 const openFinance = computed(() => oferta.value?.fuentes.filter((f) => f.origen === 'OPEN_FINANCE') ?? [])
 const openData = computed(() => oferta.value?.fuentes.filter((f) => f.origen === 'OPEN_DATA') ?? [])
@@ -27,18 +38,8 @@ function rutaVolver() {
 
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-04">
-    <HeaderPantalla titulo="Detalle de fuentes" />
-    <nav aria-label="Ruta de navegación" class="flex w-full items-center justify-between border-b border-borde bg-white px-10 py-2">
-      <div class="flex items-center gap-1 text-[11px] leading-[14px]">
-        <RouterLink to="/inicio" class="text-tinta-suave hover:underline">Inicio</RouterLink>
-        <span class="text-tinta-suave" aria-hidden="true">›</span>
-        <span class="text-tinta">Detalle de fuentes</span>
-      </div>
-      <div class="flex items-center gap-1.5 text-[11px] leading-[14px] text-tinta-suave">
-        <IconoMaterial nombre="shield" class="h-[18px] w-[18px]" />
-        Consulta auditada
-      </div>
-    </nav>
+    <HeaderPantalla titulo="Detalle de fuentes consultadas" />
+    <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="oferta" class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5 rounded-lg border border-borde bg-white p-5">
         <h1 class="border-b border-borde pb-4 text-[22px] font-bold leading-[28px] text-tinta">
@@ -118,7 +119,7 @@ function rutaVolver() {
               Consentimiento vigente desde {{ formatearFecha(estado.consentimiento.otorgadoEn) }} · Ley 1581 Habeas Data
             </template>
           </p>
-          <RouterLink :to="rutaVolver()" class="rounded-sm border border-borde bg-white px-5 py-2.5 text-[13px] font-semibold text-primario hover:bg-fondo">
+          <RouterLink :to="rutaVolver()" class="rounded-sm border border-borde bg-white px-5 py-2.5 text-[13px] font-semibold text-tinta hover:bg-fondo">
             Volver a la oferta
           </RouterLink>
         </div>

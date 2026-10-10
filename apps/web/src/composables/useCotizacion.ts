@@ -32,7 +32,6 @@ interface EstadoCotizacion {
   resultado: ResultadoOferta | null
   contacto: ConfirmacionContacto | null
   cargando: boolean
-  error: string | null
 }
 
 function capturaVacia(): CapturaCotizacion {
@@ -46,7 +45,6 @@ const estado = reactive<EstadoCotizacion>({
   resultado: null,
   contacto: null,
   cargando: false,
-  error: null,
 })
 
 /** Son los dos tipos del contrato (ver contrato/schema.graphql): ErrorOferta tiene `mensaje`, Oferta tiene `tipo`. */
@@ -119,7 +117,6 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
    */
   async function solicitarOferta(): Promise<void> {
     estado.cargando = true
-    estado.error = null
     try {
       if (!estado.consentimientoId) await registrarConsentimiento()
       const datos = await ejecutar<{ solicitarOferta: ResultadoOferta }>(
@@ -136,11 +133,19 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         fetchFn,
       )
       estado.resultado = datos.solicitarOferta
-    } catch (e) {
-      // Nunca se muestra el error técnico crudo (CLAUDE.md regla 5): queda en `estado.error` solo
-      // para que W01-03c pueda mostrar un texto de reintento; el mensaje de ErrorOferta (del
-      // contrato) es el que se le muestra al usuario cuando el fallo viene del BFF.
-      estado.error = e instanceof Error ? e.message : 'No pudimos completar la solicitud.'
+    } catch {
+      // Falla técnica/de red (nunca un ErrorOferta de negocio: eso ya viene manejado arriba por el
+      // BFF como un resultado válido). Antes, esto no dejaba ningún rastro legible por ninguna
+      // pantalla: W01-02 (ConsultandoFuentes.vue) se quedaba mostrando el spinner para siempre,
+      // porque `estado.resultado` seguía sin ser ni Oferta ni ErrorOferta.
+      // Se corrige construyendo un ErrorOferta "sintético" con un mensaje seguro (CLAUDE.md regla 5:
+      // nunca el texto técnico crudo del BFF, p. ej. "El BFF respondió 500") y asignándolo a
+      // `estado.resultado`: así se reusa el camino que W01-02/W01-03c ya tienen para `ErrorOferta`
+      // en vez de inventar un estado nuevo.
+      estado.resultado = {
+        mensaje: 'No pudimos completar tu consulta. Intenta nuevamente o habla con un asesor.',
+        puedeReintentar: true,
+      }
     } finally {
       estado.cargando = false
     }
@@ -171,7 +176,6 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
     estado.consentimiento = null
     estado.resultado = null
     estado.contacto = null
-    estado.error = null
   }
 
   return {
