@@ -115,6 +115,12 @@ enum EstadoCobro {
 type Cobro {
   id: ID!
   polizaId: ID!
+  # Campos agregados para HU-W05 (ver contrato/CHANGELOG.md): PENDIENTE de la mitad del backend
+  # (ADR-06, regla 2 - cambio de contrato = dos PRs). No se puede correr contrato:sincronizar
+  # todavia porque solventa-backend aun no los expone; esta copia se adelanta para no bloquear
+  # el frontend, pero el codegen de esta copia y el de la rama del backend deben terminar iguales.
+  cliente: String! # nombre del titular de la poliza, para la tabla de conciliacion del operador
+  idTransaccion: String # null mientras el cobro esta en COBRANDO (aun no hay id de la pasarela)
   estado: EstadoCobro!
   monto: Monto!
   actualizadoEn: DateTime!

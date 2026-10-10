@@ -16,9 +16,11 @@ import type { Cobro, EstadoCobro } from '../graphql/tipos'
 const COBROS = `query cobros($estado: EstadoCobro) {
   cobros(estado: $estado) {
     id
+    cliente
     polizaId
     estado
     monto { valor moneda }
+    idTransaccion
     actualizadoEn
   }
 }`
@@ -26,9 +28,11 @@ const COBROS = `query cobros($estado: EstadoCobro) {
 const REINTENTAR_COBRO = `mutation reintentarCobro($cobroId: ID!) {
   reintentarCobro(cobroId: $cobroId) {
     id
+    cliente
     polizaId
     estado
     monto { valor moneda }
+    idTransaccion
     actualizadoEn
   }
 }`

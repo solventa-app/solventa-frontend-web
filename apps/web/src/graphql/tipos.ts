@@ -24,8 +24,10 @@ export type CanalContacto =
 
 export type Cobro = {
   actualizadoEn: Scalars['DateTime']['output'];
+  cliente: Scalars['String']['output'];
   estado: EstadoCobro;
   id: Scalars['ID']['output'];
+  idTransaccion?: Maybe<Scalars['String']['output']>;
   monto: Monto;
   polizaId: Scalars['ID']['output'];
 };

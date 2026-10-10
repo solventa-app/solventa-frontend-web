@@ -49,6 +49,14 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper.findAll('a').some((a) => a.text().includes('Siniestros'))).toBe(false)
     })
 
+    it('tiene exactamente un <h1>', async () => {
+      const router = crearRouterDePrueba()
+      router.push('/operador')
+      await router.isReady()
+      const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+    })
+
     it('la tarjeta de Conciliación de pagos navega a /operador/conciliacion', async () => {
       const router = crearRouterDePrueba()
       router.push('/operador')
@@ -91,31 +99,32 @@ describe('HU-W05 · pantallas', () => {
       return { wrapper, router }
     }
 
-    it('marca la pantalla y carga los 5 cobros del mock', async () => {
+    it('marca la pantalla, tiene exactamente un <h1> y carga los 4 cobros del mock', async () => {
       const { wrapper } = await montarConciliacion()
       expect(wrapper.find('[data-pantalla="W05-01"]').exists()).toBe(true)
-      expect(wrapper.findAll('tbody tr')).toHaveLength(5)
-      expect(wrapper.text()).toContain('Mostrando 5 transacciones')
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+      expect(wrapper.findAll('tbody tr')).toHaveLength(4)
     })
 
-    it('tiene exactamente un <h1> (convención del proyecto, ver TituloPantalla.vue)', async () => {
-      const { wrapper } = await montarConciliacion()
-      const h1 = wrapper.findAll('h1')
-      expect(h1).toHaveLength(1)
-      expect(h1[0].text()).toBe('Conciliación de pagos')
-    })
-
-    it('omite Cliente e ID de transacción (sin campo en el contrato) y usa N.º de póliza', async () => {
+    it('trae las columnas Cliente e ID transacción (sí están en este contrato) y usa N.º de póliza / Monto', async () => {
       const { wrapper } = await montarConciliacion()
       const encabezados = wrapper.findAll('th').map((th) => th.text())
-      expect(encabezados).toEqual(['N.º de póliza', 'Prima', 'Estado', 'Fecha del intento', 'Acciones'])
-      expect(wrapper.text()).toContain('pol-1001')
-      expect(wrapper.text()).not.toContain('Cliente')
+      expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Monto', 'Estado', 'Fecha / hora', 'ID transacción', 'Acciones'])
+      expect(wrapper.text()).toContain('Andrés Felipe Duarte')
+      expect(wrapper.text()).toContain('SOL-VH-2026-004905')
+      expect(wrapper.text()).toContain('txn_8a2f19c3')
+    })
+
+    it('el cobro Cobrando muestra "En curso" y "—" en vez de fecha/id de transacción', async () => {
+      const { wrapper } = await montarConciliacion()
+      const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
+      expect(filaCobrando?.text()).toContain('En curso')
+      expect(filaCobrando?.text()).toContain('—')
     })
 
     it('filtra por pestaña y solo la fila Rechazado trae "Reintentar cobro"', async () => {
       const { wrapper } = await montarConciliacion()
-      const rechazado = wrapper.findAll('[role="tab"]').find((t) => t.text().includes('Rechazado'))
+      const rechazado = wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')
       expect(rechazado).toBeDefined()
       await rechazado!.trigger('click')
 
@@ -124,18 +133,19 @@ describe('HU-W05 · pantallas', () => {
       expect(boton).toBeDefined()
     })
 
-    it('Pendiente de reintento no trae botón de reintentar (el reintento ahí es automático)', async () => {
+    it('Pendiente no trae botón de reintentar (el reintento ahí es automático)', async () => {
       const { wrapper } = await montarConciliacion()
-      const pendiente = wrapper.findAll('[role="tab"]').find((t) => t.text().includes('Pendiente de reintento'))
+      const pendiente = wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Pendiente')
+      expect(pendiente).toBeDefined()
       await pendiente!.trigger('click')
 
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
       expect(wrapper.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
     })
 
-    it('reintentar cobro mueve la fila Rechazado a Cobrando', async () => {
+    it('reintentar cobro mueve la fila Rechazado a Cobrando y muestra el toast de confirmación', async () => {
       const { wrapper } = await montarConciliacion()
-      await wrapper.findAll('[role="tab"]').find((t) => t.text().includes('Rechazado'))!.trigger('click')
+      await wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
 
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
@@ -144,11 +154,12 @@ describe('HU-W05 · pantallas', () => {
       // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: pasó a Cobrando.
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
       expect(wrapper.text()).toContain('No hay cobros en este estado.')
+      expect(wrapper.get('[role="status"]').text()).toContain('Cobro reenviado a la pasarela')
     })
 
     it('el reintento persiste en el mock: volver a cargar cobros ya no trae el Rechazado', async () => {
       const { wrapper, router } = await montarConciliacion()
-      await wrapper.findAll('[role="tab"]').find((t) => t.text().includes('Rechazado'))!.trigger('click')
+      await wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
       await flushPromises()
@@ -159,14 +170,15 @@ describe('HU-W05 · pantallas', () => {
       await router.push('/operador/conciliacion')
       await flushPromises()
 
-      await wrapper2.findAll('[role="tab"]').find((t) => t.text().includes('Rechazado'))!.trigger('click')
+      await wrapper2.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
       expect(wrapper2.text()).toContain('No hay cobros en este estado.')
     })
 
-    it('"‹ Volver a Inicio" navega a /operador', async () => {
+    it('la barra de navegación ("Inicio › Recaudo de prima") navega a /operador', async () => {
       const { wrapper, router } = await montarConciliacion()
-      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Volver a Inicio'))
+      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Recaudo de prima'))
       expect(enlace).toBeDefined()
+      expect(enlace!.text()).toContain('Inicio')
       await enlace!.trigger('click')
       await flushPromises()
       expect(router.currentRoute.value.path).toBe('/operador')

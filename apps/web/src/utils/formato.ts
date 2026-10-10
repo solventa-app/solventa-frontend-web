@@ -1,10 +1,8 @@
 // Formato de valores monetarios y de fecha para la UI (HU-W05). Siempre vía Intl.*, nunca
 // concatenando separadores de miles a mano (CLAUDE.md, regla de datos monetarios y PII).
-// Esta rama (feature/HU-W05-conciliacion) no reutiliza utils/ de otra rama: cada rama de historia
-// es independiente (ver docs/convenciones.md, "un PR cuenta una sola historia"), así que solo se
-// crea aquí lo que esta pantalla necesita (nada de formatearRangoMonto/formatearPorcentaje, que son
-// de HU-W01 y no se usan en conciliación de pagos).
 import type { Monto } from '../graphql/tipos'
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
 export function formatearMonto(monto: Monto): string {
   return new Intl.NumberFormat('es-CO', {
@@ -14,12 +12,22 @@ export function formatearMonto(monto: Monto): string {
   }).format(Number(monto.valor))
 }
 
+// Formato "05 sep, 09:14" (día, mes abreviado de 3 letras, hora 24h) fiel al prototipo de alta
+// fidelidad (W05-01). El Intl.DateTimeFormat de Node con locale es-CO no deja el día en 2 dígitos
+// ni el mes en 3 letras directamente (da "sept" y sin cero a la izquierda), así que se arma a mano
+// a partir de formatToParts en vez de confiar en el string por defecto del locale. Siempre en hora
+// de Bogotá (America/Bogota), sin importar en qué huso corra el servidor/navegador.
 export function formatearFecha(iso: string): string {
-  return new Intl.DateTimeFormat('es-CO', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
+  const partes = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    day: 'numeric',
+    month: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(iso))
+    hour12: false,
+  }).formatToParts(new Date(iso))
+  const obtener = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? ''
+  const dia = obtener('day').padStart(2, '0')
+  const mes = MESES[Number(obtener('month')) - 1]
+  return `${dia} ${mes}, ${obtener('hour')}:${obtener('minute')}`
 }

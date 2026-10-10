@@ -35,7 +35,7 @@ const moneda = ref('COP')
 
     <section style="margin-top: 1.5rem">
       <h2>Migas de pan</h2>
-      <MigasDePan :items="[{ etiqueta: 'Inicio', to: '/_pantallas' }, { etiqueta: 'Nueva cotización' }]" />
+      <MigasDePan seccion="Nueva cotización" a-inicio="/_pantallas" />
     </section>
 
     <section style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center">

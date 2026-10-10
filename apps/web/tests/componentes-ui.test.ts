@@ -58,13 +58,15 @@ describe('CampoFormulario', () => {
 })
 
 describe('MigasDePan', () => {
-  it('enlaza "Inicio" y deja la pantalla actual sin enlace', () => {
+  it('toda la franja es un enlace a "Inicio" y muestra la sección actual', () => {
     const migas = mount(MigasDePan, {
-      props: { items: [{ etiqueta: 'Inicio', to: '/inicio' }, { etiqueta: 'Nueva cotización' }] },
+      props: { seccion: 'Recaudo de prima', aInicio: '/operador' },
       global: { stubs: stubsRouter },
     })
-    expect(migas.find('a').text()).toBe('Inicio')
-    expect(migas.text()).toContain('Nueva cotización')
+    const enlace = migas.get('a')
+    expect(enlace.attributes('href') ?? enlace.attributes('to')).toBeTruthy()
+    expect(migas.text()).toContain('Inicio')
+    expect(migas.text()).toContain('Recaudo de prima')
   })
 })
 
