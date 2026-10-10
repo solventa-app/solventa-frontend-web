@@ -52,11 +52,28 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   vigente: !revocado,
 })
 
-const cobros: Cobro[] = [
-  { id: 'cobro-1', polizaId: 'pol-1001', estado: 'COBRADO', monto: { valor: '48500.00', moneda: 'COP' }, actualizadoEn: ahora() },
-  { id: 'cobro-2', polizaId: 'pol-1002', estado: 'RECHAZADO', monto: { valor: '51200.00', moneda: 'COP' }, actualizadoEn: ahora() },
-  { id: 'cobro-3', polizaId: 'pol-1003', estado: 'PENDIENTE', monto: { valor: '47800.00', moneda: 'COP' }, actualizadoEn: ahora() },
+// 5 cobros (HU-W05): cubre los 4 estados de EstadoCobro para que las 5 pestañas de filtro y el
+// flujo de reintentar-cobro (solo disponible en RECHAZADO, ver ConciliacionDePagos.vue) sean
+// demostrables. El tipo Cobro no tiene nombre de cliente ni id de transacción (ver nota de
+// fidelidad en la vista), así que polizaId es el único identificador legible disponible.
+// cobros es mutable (reintentarCobro lo actualiza en el sitio, ver más abajo) para que el estado
+// persista entre pantallas durante una sesión de demo. Por eso es `let` + fábrica en vez de
+// const: las pruebas necesitan poder reiniciarlo con restablecerCobrosDePrueba para no arrastrar
+// mutaciones de una prueba a la siguiente.
+const cobrosIniciales = (): Cobro[] => [
+  { id: 'cobro-1', polizaId: 'pol-1001', estado: 'COBRADO', monto: { valor: '185000.00', moneda: 'COP' }, actualizadoEn: ahora() },
+  { id: 'cobro-2', polizaId: 'pol-1002', estado: 'COBRANDO', monto: { valor: '212400.00', moneda: 'COP' }, actualizadoEn: ahora() },
+  { id: 'cobro-3', polizaId: 'pol-1003', estado: 'RECHAZADO', monto: { valor: '164800.00', moneda: 'COP' }, actualizadoEn: ahora() },
+  { id: 'cobro-4', polizaId: 'pol-1004', estado: 'PENDIENTE', monto: { valor: '240000.00', moneda: 'COP' }, actualizadoEn: ahora() },
+  { id: 'cobro-5', polizaId: 'pol-1005', estado: 'COBRADO', monto: { valor: '198500.00', moneda: 'COP' }, actualizadoEn: ahora() },
 ]
+
+let cobros: Cobro[] = cobrosIniciales()
+
+/** Solo para pruebas: reinicia el estado mutable de `cobros` entre casos de prueba. */
+export function restablecerCobrosDePrueba(): void {
+  cobros = cobrosIniciales()
+}
 
 export const handlers = [
   graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
@@ -97,8 +114,12 @@ export const handlers = [
   graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>(
     'reintentarCobro',
     ({ variables }) => {
+      // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
+      // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
       const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]
-      return HttpResponse.json({ data: { reintentarCobro: { ...cobro, estado: 'COBRANDO', actualizadoEn: ahora() } } })
+      cobro.estado = 'COBRANDO'
+      cobro.actualizadoEn = ahora()
+      return HttpResponse.json({ data: { reintentarCobro: cobro } })
     },
   ),
 ]
