@@ -34,6 +34,14 @@
     sin alterar la fidelidad visual. El ícono de 24px que sí lleva el nodo (2001:482) se omite a
     propósito: ningún ícono del set de esta rama encaja semánticamente con "socios"/API sin
     fabricar uno nuevo (mismo criterio de no inventar glifos usado en el resto de esta ronda).
+  - [MEDIA, gap conocido, no corregido en esta ronda] El grupo de chips "Ingresas como"
+    (`role="radiogroup"`) marca `aria-checked` por chip, pero no implementa el patrón completo de
+    WAI-ARIA APG para radiogroup (roving tabindex: solo el chip seleccionado debería estar en el
+    orden de tabulación, con flechas moviendo la selección entre chips) — hoy los 3 chips son
+    alcanzables con Tab de a uno. Mismo gap aplica al `role="tablist"` de ConciliacionDePagos.vue
+    (feature/HU-W05-conciliacion). Implementar el patrón completo es un cambio de comportamiento de
+    teclado no trivial para las ~5 pantallas que ya usan grupos similares; se documenta aquí en vez
+    de implementarlo a medias bajo el alcance de esta ronda de arreglos.
 -->
 <script setup lang="ts">
 import { ref } from 'vue'
