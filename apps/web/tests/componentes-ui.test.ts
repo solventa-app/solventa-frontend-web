@@ -68,6 +68,16 @@ describe('MigasDePan', () => {
     expect(migas.text()).toContain('Inicio')
     expect(migas.text()).toContain('Recaudo de prima')
   })
+
+  it('tiene el landmark <nav>, y solo "Inicio" es enlace (la sección actual no lo es)', () => {
+    const migas = mount(MigasDePan, {
+      props: { seccion: 'Recaudo de prima', aInicio: '/operador' },
+      global: { stubs: stubsRouter },
+    })
+    expect(migas.find('nav[aria-label]').exists()).toBe(true)
+    expect(migas.get('a').text()).toBe('Inicio')
+    expect(migas.findAll('a').length).toBe(1)
+  })
 })
 
 describe('SelectorIdioma', () => {

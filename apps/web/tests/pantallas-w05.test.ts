@@ -176,9 +176,9 @@ describe('HU-W05 · pantallas', () => {
 
     it('la barra de navegación ("Inicio › Recaudo de prima") navega a /operador', async () => {
       const { wrapper, router } = await montarConciliacion()
-      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Recaudo de prima'))
+      expect(wrapper.text()).toContain('Recaudo de prima')
+      const enlace = wrapper.findAll('a').find((a) => a.text() === 'Inicio')
       expect(enlace).toBeDefined()
-      expect(enlace!.text()).toContain('Inicio')
       await enlace!.trigger('click')
       await flushPromises()
       expect(router.currentRoute.value.path).toBe('/operador')
