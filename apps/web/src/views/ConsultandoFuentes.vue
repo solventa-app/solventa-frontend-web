@@ -5,9 +5,12 @@
   resultado (Oferta COMPLETA/PRELIMINAR o ErrorOferta). Si se llega aquí sin haber pasado por W01-01
   (sin documento capturado) se vuelve a la solicitud en vez de llamar al BFF con datos vacíos.
 
-  H1 oculto (sr-only, "Consultando fuentes", igual al header) y nota de pie corregida para calzar
-  con el texto literal del Figma (nodo 11:22): "Auto-navega según respuesta del ACL — no tiene botón
-  manual (timeout duro 700ms)" (antes decía "avanza automáticamente..." sin mencionar el timeout).
+  H1 oculto (sr-only, "Consultando fuentes", igual al header, nodo 2001:1162). Nota de pie
+  re-verificada contra el archivo correcto (yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
+  2001:1188): el texto literal es "(avanza automáticamente según la respuesta del ACL — no tiene
+  botón manual)" — una ronda anterior la había "corregido" citando un nodo del archivo equivocado
+  (2vfK0e8t62OvvDk4c7QnK5, nodo 11:22) y había fabricado un detalle de timeout ("timeout duro
+  700ms") que no está documentado en ningún nodo de Figma ni en el contrato.
 -->
 <script setup lang="ts">
 import { onMounted } from 'vue'
@@ -53,7 +56,7 @@ onMounted(async () => {
         <div class="h-full w-2/3 animate-pulse rounded-full bg-enlace" />
       </div>
       <p class="text-center text-[11px] leading-[14px] text-tinta-suave">
-        Auto-navega según respuesta del ACL — no tiene botón manual (timeout duro 700ms)
+        (avanza automáticamente según la respuesta del ACL — no tiene botón manual)
       </p>
     </main>
     <FooterPantalla />

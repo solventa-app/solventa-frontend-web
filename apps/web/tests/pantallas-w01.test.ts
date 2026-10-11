@@ -218,10 +218,12 @@ describe('Pantallas de resultado de oferta', () => {
     expect(wrapper.text()).not.toContain('782/850')
   })
 
-  // Reestructurada para calzar con el Figma real (nodo 10:23, confirmado con captura de pantalla):
-  // ya no muestra un encabezado "Oferta preliminar" ni el desglose del score, solo el banner de
-  // alerta y la línea "Prima estimada (rango): ...".
-  it('OfertaPreliminar (W01-03b) muestra el banner de alerta y el rango de prima estimada', async () => {
+  // Re-verificada contra el archivo correcto de Figma (yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final",
+  // nodo 2001:1262, confirmado con captura de pantalla): sí muestra un encabezado "Oferta
+  // preliminar", la cobertura, la nota de caché y el desglose real del score (`desgloseScore`, el
+  // mismo criterio contract-first que ya usa OfertaCompleta) — una ronda anterior había quitado todo
+  // eso citando el archivo de Figma equivocado.
+  it('OfertaPreliminar (W01-03b) muestra el banner de alerta, el rango de prima estimada y el desglose real del score', async () => {
     Object.assign(useCotizacion(fetchPrueba).estado, {
       resultado: {
         id: 'oferta-preliminar',
@@ -236,8 +238,11 @@ describe('Pantallas de resultado de oferta', () => {
     const wrapper = montar(OfertaPreliminar, crearRouterDePrueba())
 
     expect(wrapper.text()).toContain('No pudimos verificar todo a tiempo, esta es una oferta preliminar')
-    expect(wrapper.text()).toContain('Prima estimada (rango):')
-    expect(wrapper.text()).not.toContain('Zona del inmueble')
+    expect(wrapper.text()).toContain('Oferta preliminar')
+    expect(wrapper.text()).toContain('Cobertura:')
+    expect(wrapper.text()).toContain('Zona del inmueble')
+    expect(wrapper.text()).toContain('180 meses')
+    expect(wrapper.text()).not.toContain('782/850')
   })
 
   it('OfertaError (W01-03c) muestra el mensaje real del contrato y oculta "Reintentar" si no se puede', async () => {
@@ -357,7 +362,11 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     const wrapper = montar(HomeAsesor, router)
 
     expect(wrapper.text()).toContain('Nueva cotización para un cliente')
-    expect(wrapper.text()).toContain(`Hola, ${useSesion().estado.nombre} (Asesor comercial)`)
+    // Re-verificado contra el archivo correcto de Figma (nodo 2001:732): el saludo real es "Hola,
+    // {{ nombre }}" sin el sufijo "(Asesor comercial)" (que no está en ningún nodo) — el rol ya se
+    // comunica con el label "Portal Asesor Comercial" de la franja superior.
+    expect(wrapper.text()).toContain(`Hola, ${useSesion().estado.nombre}`)
+    expect(wrapper.text()).toContain('Portal Asesor Comercial')
     expect(wrapper.find('a[href="/cotizacion"]').exists()).toBe(true)
   })
 

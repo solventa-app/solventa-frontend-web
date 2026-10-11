@@ -1,12 +1,18 @@
 <!--
-  W01-03a · Oferta, éxito completo (Figma 2001:1189). El prototipo muestra "Score de riesgo:
-  782/850", pero el contrato (contrato/schema.graphql) no expone un score numérico único, solo
-  `desgloseScore: [FactorScore!]!` (nombre + peso por factor): se muestra ese desglose real en vez de
-  inventar un número (mismo criterio ya aplicado en otras pantallas: el contrato manda sobre el
-  mockup literal). El plazo tampoco está en `Oferta`, así que se toma de la captura del usuario
+  W01-03a · Oferta, éxito completo (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
+  2001:1189). El prototipo muestra "Score de riesgo: 782/850", pero el contrato
+  (contrato/schema.graphql) no expone un score numérico único, solo `desgloseScore:
+  [FactorScore!]!` (nombre + peso por factor): se muestra ese desglose real en vez de inventar un
+  número (mismo criterio ya aplicado en otras pantallas: el contrato manda sobre el mockup
+  literal). El plazo tampoco está en `Oferta`, así que se toma de la captura del usuario
   (`SolicitudOfertaInput.plazoMeses`), que sí viaja en el flujo. "Continuar a suscripción" lleva a
   HU-W03, fuera de este sprint (ver docs/plan-frontend.md): se deja como acción deshabilitada y
   anotada, no como un enlace roto.
+
+  Re-verificada contra el archivo correcto: título del header "Oferta lista" (nodo 2001:1245), no
+  "Oferta — éxito completo" (texto que no existe en ningún nodo). La prima destacada (nodo
+  2001:1207) se muestra sola, sin el prefijo "Prima: " que había agregado una ronda anterior — en
+  Figma es solo el monto grande en azul ("$ 185.000 / mes").
   `Oferta.prima` es nullable en el contrato (solo viene en la oferta COMPLETA, ver schema.graphql);
   el guard de abajo exige `oferta.prima` además de `oferta` para que, si el estado compartido de
   `useCotizacion` llega a tener una oferta PRELIMINAR (prima null) cuando se renderiza esta pantalla
@@ -28,8 +34,8 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
 
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-03a">
-    <HeaderPantalla titulo="Oferta — éxito completo" />
-    <TituloPantalla class="sr-only">Oferta — éxito completo</TituloPantalla>
+    <HeaderPantalla titulo="Oferta lista" />
+    <TituloPantalla class="sr-only">Oferta lista</TituloPantalla>
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="oferta && oferta.prima" class="flex flex-1 flex-col items-center bg-fondo px-10 py-12">
       <div class="flex w-full max-w-[560px] flex-col items-center gap-5 rounded-lg border border-borde bg-white p-6">
@@ -40,7 +46,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         </div>
         <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">Tu oferta está lista</h2>
         <div class="flex w-full flex-col items-center gap-1.5 rounded-md border border-borde p-4">
-          <p class="text-[22px] font-bold leading-normal text-primario">Prima: {{ formatearMonto(oferta.prima!) }} / mes</p>
+          <p class="text-[22px] font-bold leading-normal text-primario">{{ formatearMonto(oferta.prima!) }} / mes</p>
           <p class="text-[13px] leading-[18px] text-tinta">Cobertura: {{ formatearMonto(oferta.cobertura) }}</p>
         </div>
         <div class="flex w-full flex-col gap-2 border-y border-borde py-4">

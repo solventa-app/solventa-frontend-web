@@ -19,8 +19,10 @@ const props = withDefaults(
     error?: string
     hint?: string
     required?: boolean
+    /** Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home). */
+    icono?: 'badge' | 'payments' | 'home' | 'lock'
   }>(),
-  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false },
+  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false, icono: undefined },
 )
 
 defineEmits<{ 'update:modelValue': [valor: string] }>()
@@ -36,8 +38,8 @@ const idHint = useId()
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <div
-      class="flex h-[40px] items-center rounded-[4px] border bg-white px-3 focus-within:border-2 focus-within:px-[11px]"
-      :class="error ? 'border-error' : 'border-borde focus-within:border-enlace'"
+      class="relative flex h-[40px] items-center rounded-[4px] border bg-white px-3 focus-within:border-2 focus-within:px-[11px]"
+      :class="[error ? 'border-error' : 'border-borde focus-within:border-enlace', icono ? 'pr-9' : '']"
     >
       <input
         :id="idCampo"
@@ -50,6 +52,7 @@ const idHint = useId()
         class="w-full bg-transparent text-[13px] leading-[18px] text-tinta outline-none placeholder:text-tinta-suave"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
+      <IconoMaterial v-if="icono" :nombre="icono" class="pointer-events-none absolute right-3 h-5 w-5 text-tinta-suave" />
     </div>
     <p v-if="error" :id="idError" role="alert" class="flex items-center gap-1 text-[11px] leading-[14px] text-error">
       <IconoMaterial nombre="cancel" class="h-[14px] w-[14px] shrink-0" />{{ error }}

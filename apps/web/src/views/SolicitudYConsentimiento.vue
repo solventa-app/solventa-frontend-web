@@ -1,49 +1,58 @@
 <!--
-  W01-01 · Solicitud y consentimiento (Figma 2001:1016). Documento de identidad, datos del crédito,
-  dirección del inmueble y el checkbox de Habeas Data / Open Finance-Open Data (CA-W01-01/02/08): el
-  botón "Consultar oferta" queda deshabilitado hasta que se marque el consentimiento (nota explícita
-  del prototipo). Los dos enlaces de pie de formulario son los disparadores de demo documentados en
-  `src/mocks/handlers.ts` (documento terminado en 999 → oferta preliminar, en 000 → error).
+  W01-01 · Solicitud y consentimiento (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
+  2001:1016). Documento de identidad, datos del crédito, dirección del inmueble y el checkbox de
+  Habeas Data / Open Finance-Open Data (CA-W01-01/02/08): el botón "Consultar oferta" queda
+  deshabilitado hasta que se marque el consentimiento (nota explícita del prototipo). Los dos
+  enlaces de pie de formulario son los disparadores de demo documentados en `src/mocks/handlers.ts`
+  (documento terminado en 999 → oferta preliminar, en 000 → error).
 
   Validación funcional (antes no existía ninguna): el botón es `type="button"` (ver Boton.vue, lo usan
   las ~20 pantallas de la librería), así que nunca dispara la validación nativa del `<form>` ni los
   `required` de los campos — con el consentimiento marcado se podía enviar documento/crédito/plazo/
   dirección vacíos sin que nada lo impidiera. Se agrega `validar()` con el prop `error` que
-  `CampoFormulario` ya soporta (coincide con el estado "Estado=Error" que el Figma nuevo documenta
-  explícitamente para este mismo campo, nodo 87:425 de la librería de componentes). Los errores solo
-  se muestran después de un intento de envío (no al cargar la pantalla en blanco).
+  `CampoFormulario` ya soporta (coincide con el estado "Estado=Error" que Figma documenta
+  explícitamente para este mismo campo, nodo 2001:1057 "EN ESTADO DE ERROR"). Los errores solo se
+  muestran después de un intento de envío (no al cargar la pantalla en blanco).
 
   Barra de navegación: usa la API nueva de MigasDePan (seccion + aInicio), con aInicio según el rol
   de la sesión activa (useSesion.ts) — Cliente y Asesor comercial comparten esta misma pantalla pero
   "Inicio" debe volver a su propio home (G-02 o G-02a).
 
-  Título visible vs. H1: el H1 real ("Solicitud + consentimiento") coincide con el título del
-  header, así que se deja oculto (sr-only) para no repetirlo dos veces en voz alta a un lector de
-  pantalla; el encabezado visible del cuerpo es el texto real del Figma (nodo 11:2), "Datos del
-  crédito hipotecario a originar" — antes la pantalla mostraba un título inventado ("Solicitud de
-  seguro de vida hipotecario") que no está en ningún nodo del prototipo.
+  Re-verificada contra el archivo correcto (la ronda anterior había citado y "corregido" contra
+  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", el equivocado), con varias regresiones de fidelidad real:
+  - Título del header: "Solicitud y consentimiento" (nodo 2001:1025), no "Solicitud + consentimiento".
+  - El H1 real y VISIBLE (nodo 2001:1055, centrado) es "Solicitud de seguro de vida hipotecario" —
+    antes estaba oculto sr-only mientras se mostraba en su lugar un encabezado de cuerpo inventado
+    ("Datos del crédito hipotecario a originar") que no existe en ningún nodo de Figma.
+  - Label del segundo campo (nodo 2001:1074): "Monto del crédito hipotecario", no "Monto del crédito".
+  - Texto del consentimiento (nodo 2001:1108), corregido carácter por carácter: "Autorizo el
+    tratamiento de mis datos (Ley 1581 de 2012, Habeas Data) y el acceso consentido a mis fuentes de
+    Open Finance y Open Data." — el texto anterior decía "datos personales" (Figma no incluye
+    "personales") y agregaba una cláusula final inventada ("para calcular mi perfil de riesgo y
+    oferta") que no está en el nodo. El checkbox lleva junto al texto el ícono verified_user (nodo
+    2001:1105) que antes no se mostraba.
+  - Nota informativa de Open Finance / Open Data (nodo 2001:1110), corregida a la literal: "Open
+    Finance y Open Data son fuentes que ya existen sobre ti (comportamiento de pago, datos públicos
+    del inmueble). Consultarlas evita pedirte ingresos, empleador ni historial." — el texto anterior
+    tenía una redacción propia, distinta de la del prototipo.
+  - Los dos enlaces de disparo de demo (nodos 2001:1120 y 2001:1122) NO llevan flecha "→" final en el
+    archivo correcto — la ronda anterior la había agregado citando nodos del archivo equivocado
+    (148:431/433, que no existen en Solventa-web-Final).
+  - Los campos "Documento de identidad", "Monto del crédito hipotecario" y "Dirección del inmueble a
+    asegurar" llevan un ícono final (badge/payments/home respectivamente, nodos 2001:1064/1079/1097);
+    "Plazo (meses)" no lleva ícono en Figma.
 
-  Texto de consentimiento y de ayuda (nodos 11:14 y 89:423): se corrigen para calzar carácter por
-  carácter con el Figma — el texto anterior tenía "Ley 1581 de 2012" (el Figma no incluye "de 2012")
-  y le faltaba la cláusula final "para calcular mi perfil de riesgo y oferta"; el párrafo de ayuda
-  tenía una redacción distinta a la literal del prototipo. Los dos enlaces de disparo de demo llevan
-  la flecha "→" final porque así están en el Figma (nodos 148:431 y 148:433).
-
-  DESVIACIÓN DOCUMENTADA (requiere confirmación del equipo): el campo de plazo se deja como
-  "Plazo (meses)" en vez de copiar literalmente "Plazo (años)" (Figma, nodo I57:132;56:50). Copiar
-  "años" tal cual crearía una UX internamente inconsistente y confusa: el contrato exige
-  `plazoMeses: Int!` (ver contrato/schema.graphql), el placeholder de ejemplo ya es "180" (meses,
-  no "15" años), y todas las pantallas de resultado (W01-03a/b) ya muestran "{{ captura.plazoMeses }}
-  meses". Si se cambiara solo la etiqueta a "años" sin tocar el resto, el usuario escribiría
-  pensando en años y vería "meses" más adelante sin que el número cambie de unidad — un bug de UX
-  peor que la discrepancia textual con el mockup. Se documenta aquí en vez de aplicarse en silencio,
-  por ser la única pantalla de esta ronda donde una fidelidad literal al texto del Figma entra en
-  conflicto directo con la instrucción de no cambiar comportamiento funcional ya correcto.
+  DESVIACIÓN DOCUMENTADA (requiere confirmación del equipo, se mantiene de la ronda anterior): el
+  campo de plazo se deja como "Plazo (meses)", que sí coincide con el label literal de Figma (nodo
+  2001:1084, "Plazo (meses)" — no "Plazo (años)" como se había anotado antes por error de lectura de
+  un nodo del archivo equivocado). Ya no hay desviación real en este punto: el label corregido
+  coincide con el comportamiento funcional (`plazoMeses: Int!`, ver contrato/schema.graphql).
 -->
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
+import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useCotizacion } from '../composables/useCotizacion'
 import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 
@@ -104,24 +113,25 @@ function simular(sufijo: '999' | '000') {
 
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-01">
-    <HeaderPantalla titulo="Solicitud + consentimiento" />
+    <HeaderPantalla titulo="Solicitud y consentimiento" />
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[880px] flex-col items-center gap-6">
-        <TituloPantalla class="sr-only">Solicitud + consentimiento</TituloPantalla>
+        <TituloPantalla class="text-center">Solicitud de seguro de vida hipotecario</TituloPantalla>
         <form class="flex w-full max-w-[400px] flex-col gap-5" @submit.prevent="enviar">
-          <h2 class="text-[15px] font-bold leading-normal text-tinta">Datos del crédito hipotecario a originar</h2>
           <CampoFormulario
             v-model="captura.documentoIdentidad"
             label="Documento de identidad"
             placeholder="Ej: 1020304050"
+            icono="badge"
             :error="intentoEnvio ? errores.documentoIdentidad : undefined"
             required
           />
           <CampoFormulario
             v-model="captura.valorCredito"
-            label="Monto del crédito"
+            label="Monto del crédito hipotecario"
             placeholder="Ej: 185000000"
+            icono="payments"
             :hint="intentoEnvio && errores.valorCredito ? undefined : 'Valor en pesos colombianos, sin puntos ni símbolo.'"
             :error="intentoEnvio ? errores.valorCredito : undefined"
             required
@@ -138,26 +148,28 @@ function simular(sufijo: '999' | '000') {
             v-model="captura.direccionInmueble"
             label="Dirección del inmueble a asegurar"
             placeholder="Ej: Cra 45 # 22-18, Bogotá D.C."
+            icono="home"
             :error="intentoEnvio ? errores.direccionInmueble : undefined"
             required
           />
 
           <div class="flex flex-col gap-2 pt-2">
-            <label class="flex items-start gap-3">
+            <label class="flex items-start gap-2">
               <input
                 v-model="captura.consentimiento"
                 type="checkbox"
                 class="mt-[2px] h-4 w-4 shrink-0 rounded-[2.5px] border-[#767676] text-primario accent-primario"
               />
+              <IconoMaterial nombre="verified_user" class="mt-[2px] h-4 w-4 shrink-0 text-primario" />
               <span class="text-[13px] leading-[18px] text-tinta">
-                Autorizo el tratamiento de mis datos personales (Ley 1581 Habeas Data) y el acceso
-                consentido a mis fuentes de Open Finance y Open Data para calcular mi perfil de
-                riesgo y oferta.
+                Autorizo el tratamiento de mis datos (Ley 1581 de 2012, Habeas Data) y el acceso
+                consentido a mis fuentes de Open Finance y Open Data.
               </span>
             </label>
             <p class="pl-7 text-[11px] leading-[18px] text-tinta-suave">
-              Open Finance / Open Data: tus datos financieros de otras entidades y datos públicos que
-              compartes con tu autorización, usados para calcular tu perfil de riesgo.
+              Open Finance y Open Data son fuentes que ya existen sobre ti (comportamiento de pago,
+              datos públicos del inmueble). Consultarlas evita pedirte ingresos, empleador ni
+              historial.
             </p>
           </div>
 
@@ -170,10 +182,10 @@ function simular(sufijo: '999' | '000') {
 
           <div class="flex flex-col items-start gap-1.5 border-t border-borde pt-4">
             <button type="button" class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline" @click="simular('999')">
-              Simular oferta degradada: timeout de fuentes con valor en caché →
+              Simular oferta degradada: timeout de fuentes con valor en caché
             </button>
             <button type="button" class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline" @click="simular('000')">
-              Simular fallo total de la consulta de fuentes →
+              Simular fallo total de la consulta de fuentes
             </button>
           </div>
         </form>

@@ -19,6 +19,10 @@ export const pantallas: Pantalla[] = [
   { id: 'G-02', ruta: '/inicio', nombre: 'Inicio del cliente', historia: 'Global', sprint: 1, criterios: [], componente: () => import('../views/HomeCliente.vue') },
   { id: 'G-02a', ruta: '/asesor', nombre: 'Inicio del asesor comercial', historia: 'Global', sprint: 1, criterios: ['CA-W01-11'], componente: () => import('../views/HomeAsesor.vue') },
   { id: 'G-02b', ruta: '/operador', nombre: 'Inicio del operador (back-office)', historia: 'Global', sprint: 1, criterios: ['CA-W05-01'] },
+  // G-06 no tiene pantalla propia todavía (ninguna HU de este sprint cubre consultar pólizas
+  // emitidas): se registra solo como destino honesto de las tarjetas "Mis pólizas"/"Pólizas
+  // emitidas" de los homes (G-02/G-02a), que sin esto no tenían a dónde llevar al hacer clic.
+  { id: 'G-06', ruta: '/polizas', nombre: 'Mis pólizas', historia: 'Global', sprint: 1, criterios: [] },
   { id: 'W01-01', ruta: '/cotizacion', nombre: 'Captura de datos y consentimiento', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-01', 'CA-W01-02', 'CA-W01-08'], componente: () => import('../views/SolicitudYConsentimiento.vue') },
   { id: 'W01-02', ruta: '/cotizacion/consulta', nombre: 'Consulta de fuentes en curso', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-02'], componente: () => import('../views/ConsultandoFuentes.vue') },
   { id: 'W01-03a', ruta: '/cotizacion/oferta', nombre: 'Oferta completa', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-03'], componente: () => import('../views/OfertaCompleta.vue') },

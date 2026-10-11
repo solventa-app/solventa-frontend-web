@@ -1,20 +1,24 @@
 <!--
-  W01-04 · Detalle de fuentes consultadas (Figma 2001:1412, CA-W01-06). 5 filas (2 Open Finance + 3
-  Open Data) con el nombre y estado reales de `Oferta.fuentes` — no los nombres de ejemplo del
-  mockup de Figma, sino los que de verdad vienen del contrato/mocks (`src/mocks/handlers.ts`), para
-  no mostrarle al usuario una fuente que el backend nunca reportó. El timestamp "12 sep 2026, 10:41"
-  del mockup tampoco tiene campo equivalente en el contrato (ni Oferta ni ResultadoOferta exponen
-  cuándo se consultó): se omite en vez de inventarlo. La fecha de consentimiento sí es real
-  (`Consentimiento.otorgadoEn`, guardado por `useCotizacion` al registrar el consentimiento).
+  W01-04 · Detalle de fuentes consultadas (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
+  2001:1412, CA-W01-06). 5 filas (2 Open Finance + 3 Open Data) con el nombre y estado reales de
+  `Oferta.fuentes` — no los nombres de ejemplo del mockup de Figma, sino los que de verdad vienen
+  del contrato/mocks (`src/mocks/handlers.ts`), para no mostrarle al usuario una fuente que el
+  backend nunca reportó. El timestamp "12 sep 2026, 10:41" del mockup tampoco tiene campo
+  equivalente en el contrato (ni Oferta ni ResultadoOferta exponen cuándo se consultó): se omite en
+  vez de inventarlo. La fecha de consentimiento sí es real (`Consentimiento.otorgadoEn`, guardado
+  por `useCotizacion` al registrar el consentimiento).
 
-  "Volver a la oferta" se corrige a texto oscuro (`text-tinta`) en vez de azul (`text-primario`):
-  mismo tratamiento neutro que "Volver al inicio" en ContactarAsesor.vue, para que un enlace de
-  "volver" no compita visualmente con los enlaces de acción (azules) de la pantalla.
+  Re-verificada contra el archivo correcto: título del header y de la sección de MigasDePan
+  (nodos 2001:1551 y 2001:1423) son literalmente "Detalle de fuentes", no "Detalle de fuentes
+  consultadas" (que no está en ningún nodo). "Volver a la oferta" (nodo 2001:1530) es azul
+  (`text-primario`), no gris oscuro — una ronda anterior lo había puesto en `text-tinta` citando un
+  criterio de "enlace neutro de volver" que no corresponde a cómo se ve en el archivo correcto (ahí
+  es un botón secundario con ícono arrow_back a la izquierda, en azul).
 
-  Gap conocido, no corregido en esta ronda: el Figma (nodos 87:439 y cercanos) muestra íconos de
-  "Ayuda contextual" (tooltip) junto a los encabezados OPEN FINANCE/OPEN DATA y junto a la insignia
-  de caché; se documenta aquí en vez de construir un componente de tooltip nuevo bajo la limitación
-  de tiempo de esta ronda de arreglos — queda pendiente para una siguiente iteración.
+  Gap conocido, no corregido en esta ronda: el Figma muestra íconos de "Ayuda contextual" (tooltip)
+  junto a los encabezados OPEN FINANCE/OPEN DATA (nodos 2001:1447 y 2001:1483); se documenta aquí en
+  vez de construir un componente de tooltip nuevo bajo la limitación de tiempo de esta ronda de
+  arreglos — queda pendiente para una siguiente iteración.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -38,8 +42,8 @@ function rutaVolver() {
 
 <template>
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-04">
-    <HeaderPantalla titulo="Detalle de fuentes consultadas" />
-    <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
+    <HeaderPantalla titulo="Detalle de fuentes" />
+    <MigasDePan seccion="Detalle de fuentes" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="oferta" class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5 rounded-lg border border-borde bg-white p-5">
         <h1 class="border-b border-borde pb-4 text-[22px] font-bold leading-[28px] text-tinta">
@@ -119,7 +123,8 @@ function rutaVolver() {
               Consentimiento vigente desde {{ formatearFecha(estado.consentimiento.otorgadoEn) }} · Ley 1581 Habeas Data
             </template>
           </p>
-          <RouterLink :to="rutaVolver()" class="rounded-sm border border-borde bg-white px-5 py-2.5 text-[13px] font-semibold text-tinta hover:bg-fondo">
+          <RouterLink :to="rutaVolver()" class="flex items-center gap-2 rounded-sm border border-borde bg-white px-5 py-2.5 text-[13px] font-semibold text-primario hover:bg-fondo">
+            <IconoMaterial nombre="arrow_back" class="h-5 w-5" />
             Volver a la oferta
           </RouterLink>
         </div>

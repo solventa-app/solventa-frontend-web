@@ -1,7 +1,13 @@
 <!--
-  G-01 · Ingreso con selector de rol (Figma 2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", nodo 46:2).
-  Punto de entrada que antes no existía en esta rama (quedaba como PantallaPendiente): sin esta
-  pantalla no había ningún camino de clic real hacia /cotizacion, /inicio, /asesor ni /operador.
+  G-01 · Ingreso con selector de rol (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
+  2001:431). Punto de entrada que antes no existía en esta rama (quedaba como PantallaPendiente): sin
+  esta pantalla no había ningún camino de clic real hacia /cotizacion, /inicio, /asesor ni /operador.
+
+  Re-verificada contra el archivo correcto (la ronda anterior la había citado y "corregido" contra
+  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", que resultó ser el archivo equivocado): el chip de rol
+  seleccionado usa el token de marca `primario` (no un gris genérico), el formulario va envuelto en
+  la tarjeta blanca con borde que muestra el mockup, y el encabezado "Iniciar sesión" es un H1
+  visible dentro de esa tarjeta, no un texto oculto para lectores de pantalla.
 
   El contrato (contrato/schema.graphql) no modela login ni roles: no hay mutación de autenticación
   que llamar. "Ingresar" es, por eso, navegación pura del lado del cliente (useSesion.ts) — correo y
@@ -45,49 +51,53 @@ function ingresar() {
 <template>
   <div data-pantalla="G-01" class="flex min-h-screen flex-col">
     <HeaderPantalla titulo="Iniciar sesión" />
-    <TituloPantalla class="sr-only">Iniciar sesión</TituloPantalla>
-    <Divisor />
-    <main class="flex flex-1 flex-col bg-fondo px-10 py-8">
-      <form class="flex w-full max-w-[400px] flex-col gap-5" @submit.prevent="ingresar">
-        <CampoFormulario v-model="correo" label="Correo electrónico" placeholder="nombre@correo.com" required />
-        <CampoFormulario
-          v-model="contrasena"
-          type="password"
-          label="Contraseña"
-          placeholder="••••••••"
-          required
-        />
+    <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-8">
+      <div class="flex w-full max-w-[464px] flex-col gap-5">
+        <Divisor />
+        <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
+          <TituloPantalla class="mb-6">Iniciar sesión</TituloPantalla>
+          <form class="flex w-full flex-col gap-5" @submit.prevent="ingresar">
+            <CampoFormulario v-model="correo" label="Correo electrónico" placeholder="nombre@correo.com" required />
+            <CampoFormulario
+              v-model="contrasena"
+              type="password"
+              label="Contraseña"
+              placeholder="••••••••"
+              icono="lock"
+              required
+            />
 
-        <div class="flex flex-col gap-2">
-          <span class="text-[13px] text-tinta">Ingresas como</span>
-          <div role="radiogroup" aria-label="Ingresas como" class="flex flex-wrap items-center gap-2">
-            <button
-              v-for="chip in CHIPS"
-              :key="chip.rol"
-              type="button"
-              role="radio"
-              :aria-checked="rol === chip.rol"
-              class="rounded-xl px-[12px] py-[6px] text-[12px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
-              :class="rol === chip.rol ? 'bg-tinta text-white' : 'bg-fondo text-tinta-suave hover:bg-borde/40'"
-              @click="rol = chip.rol"
-            >
-              {{ chip.etiqueta }}
-            </button>
-          </div>
+            <div class="flex flex-col gap-2">
+              <span class="text-[13px] text-tinta">Ingresas como</span>
+              <div role="radiogroup" aria-label="Ingresas como" class="flex flex-wrap items-center gap-2">
+                <button
+                  v-for="chip in CHIPS"
+                  :key="chip.rol"
+                  type="button"
+                  role="radio"
+                  :aria-checked="rol === chip.rol"
+                  class="flex h-[44px] items-center justify-center rounded-xl px-4 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+                  :class="rol === chip.rol ? 'bg-primario text-white' : 'border border-borde bg-white text-tinta-suave hover:bg-fondo'"
+                  @click="rol = chip.rol"
+                >
+                  {{ chip.etiqueta }}
+                </button>
+              </div>
+            </div>
+
+            <Boton :disabled="!correo.trim() || !contrasena.trim()" class="w-full" @click="ingresar">Ingresar</Boton>
+
+            <p class="text-[11px] leading-[14px] text-tinta-suave">
+              Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de
+              cotización, con distinto encabezado según quién entra.
+            </p>
+
+            <p class="text-[13px] text-enlace">
+              ¿Eres un socio de distribución? Ingresa al portal de socios API
+            </p>
+          </form>
         </div>
-
-        <Boton :disabled="!correo.trim() || !contrasena.trim()" @click="ingresar">Ingresar</Boton>
-
-        <p class="text-[11px] leading-[14px] text-tinta-suave">
-          Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de
-          cotización (W01-01), con distinto encabezado según quién entra.
-        </p>
-
-        <p class="text-[13px] font-bold text-tinta-suave">
-          ¿Eres un socio de distribución? Ingresa al portal de socios API →
-          <span class="block text-[11px] font-normal italic text-tinta-suave">(HU-W07, fuera de este sprint)</span>
-        </p>
-      </form>
+      </div>
     </main>
     <FooterPantalla />
   </div>
