@@ -55,6 +55,12 @@
     mockup (nodo 2001:3290) — `formatearMonto` (Intl.NumberFormat) no agrega sufijo de moneda, así
     que se agrega aquí de forma puntual, sin tocar `formatearMonto` (ningún otro monto de la app
     lleva ese sufijo en el Figma).
+  - [MEDIA, gap conocido, no corregido en esta ronda] El `role="tablist"` de arriba marca
+    `aria-selected` por pestaña, pero no implementa el patrón completo de WAI-ARIA APG para tablist
+    (roving tabindex + flechas moviendo la selección, `aria-controls`/`role="tabpanel"` ligando cada
+    pestaña con la tabla). Mismo gap aplica al `role="radiogroup"` de IngresoConRol.vue
+    (feature/HU-W01-pantallas, ver su propio comentario de cabecera). Se documenta aquí en vez de
+    implementarlo a medias bajo el alcance de esta ronda de arreglos.
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
