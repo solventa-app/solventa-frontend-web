@@ -41,6 +41,20 @@
   - `formatearFecha` (utils/formato.ts) se corrige para producir "12 sep 2026, 10:45 a. m." (con
     año y hora de 12h con meridiano en español) en vez de "05 sep, 09:14" (sin año, hora 24h): el
     formato anterior también estaba construido contra el archivo de Figma equivocado.
+
+  Triage de la revisión de los 2 agentes (UX senior + QA senior) sobre el estado anterior:
+  - [ALTA] Un reintento fallido (reintentarCobro) escribía en el mismo `estado.error` que usa
+    `cargarCobros()`, así que el `v-else-if="estado.error"` de abajo reemplazaba toda la tabla
+    (pestañas, pie, bloque legal incluidos) por el mensaje de error, aunque la lista de cobros ya
+    cargada seguía siendo válida. Ahora `useConciliacion` tiene un campo separado
+    `estado.errorReintento`, y aquí se muestra como una alerta no bloqueante (banner `role="alert"`)
+    sin ocultar el resto de la pantalla — mismo patrón que `errorContacto` en ContactarAsesor.vue.
+  - [BAJA] "en curso" (fechaDelIntento) estaba en mayúscula inicial ("En curso"); el texto literal
+    del archivo correcto es minúscula.
+  - [BAJA] El pie "Total procesado" no mostraba el sufijo " COP" que sí trae el texto literal del
+    mockup (nodo 2001:3290) — `formatearMonto` (Intl.NumberFormat) no agrega sufijo de moneda, así
+    que se agrega aquí de forma puntual, sin tocar `formatearMonto` (ningún otro monto de la app
+    lleva ese sufijo en el Figma).
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -84,7 +98,7 @@ const INSIGNIA: Record<EstadoCobro, { etiqueta: string; texto: string; fondo: st
 }
 
 function fechaDelIntento(cobro: Cobro): string {
-  return cobro.estado === 'COBRANDO' ? 'En curso' : formatearFecha(cobro.actualizadoEn)
+  return cobro.estado === 'COBRANDO' ? 'en curso' : formatearFecha(cobro.actualizadoEn)
 }
 
 // Toast "Cobro reenviado a la pasarela": temporal, se oculta solo a los 3-4s (anotación del
@@ -95,7 +109,7 @@ let temporizadorToast: ReturnType<typeof setTimeout> | undefined
 
 async function alReintentar(cobroId: string) {
   await reintentarCobro(cobroId)
-  if (estado.error) return // no se confirma un reenvío que en realidad falló
+  if (estado.errorReintento) return // no se confirma un reenvío que en realidad falló
   mostrarToast.value = true
   clearTimeout(temporizadorToast)
   temporizadorToast = setTimeout(() => {
@@ -138,6 +152,10 @@ onMounted(() => cargarCobros())
       <p v-else-if="estado.error" role="alert" class="text-[13px] text-error">{{ estado.error }}</p>
 
       <template v-else>
+        <div v-if="estado.errorReintento" role="alert" class="w-full rounded-md border border-error bg-error-fondo px-4 py-3 text-[13px] text-error">
+          {{ estado.errorReintento }}
+        </div>
+
         <div role="tablist" aria-label="Filtros de estado de conciliación" class="flex w-full flex-wrap items-center gap-2">
           <button
             v-for="pestana in PESTANAS"
@@ -211,7 +229,7 @@ onMounted(() => cargarCobros())
               Mostrando {{ cobrosFiltrados.length }} transacciones sincronizadas con Core Asegurador
             </span>
             <span class="text-[11px] text-tinta-suave">
-              Total procesado: <strong class="font-semibold text-tinta">{{ totalProcesado }}</strong>
+              Total procesado: <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
             </span>
           </div>
         </div>

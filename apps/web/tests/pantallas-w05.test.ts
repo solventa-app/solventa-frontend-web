@@ -1,8 +1,10 @@
+import { http, HttpResponse } from 'msw'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import HomeOperador from '../src/views/HomeOperador.vue'
 import ConciliacionDePagos from '../src/views/ConciliacionDePagos.vue'
+import { useSesion } from '../src/composables/useSesion'
 import { restablecerCobrosDePrueba } from '../src/mocks/handlers'
 import { servidor } from '../src/mocks/node'
 
@@ -70,17 +72,22 @@ describe('HU-W05 · pantallas', () => {
       expect(router.currentRoute.value.path).toBe('/operador/conciliacion')
     })
 
-    it('"Cerrar sesión" navega a /login', async () => {
+    it('"Cerrar sesión" limpia el rol de la sesión y navega a /login', async () => {
+      // Antes era un RouterLink directo a /login que nunca llamaba a cerrarSesion(): navegaba
+      // bien, pero dejaba el rol de sesión sin limpiar (a diferencia de HomeCliente/HomeAsesor).
       const router = crearRouterDePrueba()
+      const { iniciarSesion, estado } = useSesion()
+      iniciarSesion('OPERADOR')
       router.push('/operador')
       await router.isReady()
       const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
 
-      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Cerrar sesión'))
-      expect(enlace).toBeDefined()
-      await enlace!.trigger('click')
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Cerrar sesión'))
+      expect(boton).toBeDefined()
+      await boton!.trigger('click')
       await flushPromises()
       expect(router.currentRoute.value.path).toBe('/login')
+      expect(estado.rol).toBe('CLIENTE')
     })
   })
 
@@ -119,10 +126,10 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper.text()).toContain('txn_8a2f19c3')
     })
 
-    it('el cobro Cobrando muestra "En curso" y "—" en vez de fecha/id de transacción', async () => {
+    it('el cobro Cobrando muestra "en curso" (minúscula, texto literal de Figma) y "—" en vez de fecha/id de transacción', async () => {
       const { wrapper } = await montarConciliacion()
       const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
-      expect(filaCobrando?.text()).toContain('En curso')
+      expect(filaCobrando?.text()).toContain('en curso')
       expect(filaCobrando?.text()).toContain('—')
     })
 
@@ -161,6 +168,30 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
       expect(wrapper.text()).toContain('No hay cobros en este estado.')
       expect(wrapper.get('[role="status"]').text()).toContain('Cobro reenviado a la pasarela')
+    })
+
+    // Hallazgo ALTA de la revisión de QA: antes un reintento fallido escribía en el mismo
+    // estado.error que usa la carga inicial, así que esta pantalla reemplazaba toda la tabla
+    // (pestañas, pie, bloque legal) por el mensaje de error. Ahora debe quedar como una alerta no
+    // bloqueante y el resto de la pantalla sigue visible.
+    it('un reintento fallido muestra una alerta sin ocultar la tabla, las pestañas ni el pie', async () => {
+      const { wrapper } = await montarConciliacion()
+      await wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
+
+      servidor.use(http.post('/graphql/web', () => new HttpResponse(null, { status: 500 })))
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
+      await boton!.trigger('click')
+      await flushPromises()
+
+      const alertas = wrapper.findAll('[role="alert"]')
+      expect(alertas.some((a) => a.text().includes('No pudimos reintentar el cobro'))).toBe(true)
+      // La tabla, las pestañas y el bloque legal siguen ahí: no se reemplazó todo por el error.
+      expect(wrapper.findAll('[role="tab"]').length).toBeGreaterThan(0)
+      expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0)
+      expect(wrapper.text()).toContain('Control de dispersión y reintentos automáticos')
+      // No se confirma un reenvío que en realidad falló: el toast de éxito existe en el DOM
+      // siempre (se anima con opacidad), así que se verifica que siga oculto, no su texto.
+      expect(wrapper.get('[role="status"]').classes()).toContain('opacity-0')
     })
 
     it('el reintento persiste en el mock: volver a cargar cobros ya no trae el Rechazado', async () => {

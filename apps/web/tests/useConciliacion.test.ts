@@ -92,4 +92,39 @@ describe('useConciliacion', () => {
     expect(estado.error).not.toMatch(/500|BFF respondio|Error:/)
     expect(estado.cargando).toBe(false)
   })
+
+  // Hallazgo ALTA de la revisión de QA: un reintento fallido escribía en `estado.error` (el mismo
+  // campo que usa cargarCobros()), así que la vista reemplazaba toda la tabla por el mensaje de
+  // error aunque la lista de cobros ya cargada seguía siendo válida. `errorReintento` es un campo
+  // separado para que eso no vuelva a pasar.
+  it('un reintento fallido escribe en errorReintento, no en error, y no toca la lista de cobros', async () => {
+    const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+    const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')
+    expect(rechazado).toBeDefined()
+
+    servidor.use(http.post('http://localhost/graphql/web', () => new HttpResponse(null, { status: 500 })))
+    await reintentarCobro(rechazado!.id)
+
+    expect(estado.errorReintento).toBeTruthy()
+    expect(estado.errorReintento).not.toMatch(/500|BFF respondio|Error:/)
+    expect(estado.error).toBeNull()
+    expect(estado.reintentando).toBeNull()
+    // El cobro sigue como estaba: el reintento no se confirmó.
+    const siguenIguales = estado.cobros.find((c) => c.id === rechazado!.id)
+    expect(siguenIguales?.estado).toBe('RECHAZADO')
+  })
+
+  it('un reintento exitoso posterior limpia un errorReintento anterior', async () => {
+    const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+    const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')
+    expect(rechazado).toBeDefined()
+
+    servidor.use(http.post('http://localhost/graphql/web', () => new HttpResponse(null, { status: 500 })))
+    await reintentarCobro(rechazado!.id)
+    expect(estado.errorReintento).toBeTruthy()
+
+    servidor.resetHandlers()
+    await reintentarCobro(rechazado!.id)
+    expect(estado.errorReintento).toBeNull()
+  })
 })

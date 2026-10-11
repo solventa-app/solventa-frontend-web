@@ -41,6 +41,13 @@ interface EstadoConciliacion {
   cobros: Cobro[]
   cargando: boolean
   error: string | null
+  /**
+   * Error de un reintento puntual, separado de `error` (que es solo para fallas de cargarCobros):
+   * antes ambos compartían el mismo campo, así que un reintento fallido reemplazaba la tabla entera
+   * por el mensaje de error de carga (v-else-if="estado.error" en la vista), ocultando también las
+   * pestañas, el pie y el bloque legal — aunque los demás cobros sí se habían cargado bien.
+   */
+  errorReintento: string | null
   /** id del cobro que se está reintentando, para deshabilitar solo su botón (no toda la tabla). */
   reintentando: string | null
 }
@@ -49,6 +56,7 @@ const estado = reactive<EstadoConciliacion>({
   cobros: [],
   cargando: false,
   error: null,
+  errorReintento: null,
   reintentando: null,
 })
 
@@ -69,12 +77,13 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
 
   async function reintentarCobro(cobroId: string) {
     estado.reintentando = cobroId
+    estado.errorReintento = null
     try {
       const r = await ejecutar<{ reintentarCobro: Cobro }>(REINTENTAR_COBRO, { cobroId }, fetchFn)
       const indice = estado.cobros.findIndex((c) => c.id === cobroId)
       if (indice !== -1) estado.cobros.splice(indice, 1, r.reintentarCobro)
     } catch {
-      estado.error = 'No pudimos reintentar el cobro en este momento.'
+      estado.errorReintento = 'No pudimos reintentar el cobro en este momento.'
     } finally {
       estado.reintentando = null
     }

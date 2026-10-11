@@ -13,14 +13,32 @@
     H1 es el texto visible del cuerpo).
   - "Cerrar sesión" (nodo 2001:801) es peso normal, no negrita (`font-bold` era incorrecto).
   - Las dos tarjetas de acceso llevan un ícono (nodos 2001:809/818) que antes no se mostraba; se usa
-    el mismo tratamiento de insignia circular (`bg-info-fondo` + ícono `badge`) que ya usan las
+    el mismo tratamiento de insignia circular (`bg-info-fondo` + ícono `assignment`) que ya usan las
     tarjetas de G-02/G-02a, para mantener consistencia visual entre los 3 homes del proyecto (el nodo
     de este frame específico muestra el ícono suelto de 24px sin círculo, pero se prioriza la
     consistencia entre pantallas hermanas sobre una fidelidad pixel-perfect de un detalle menor).
+  - "Cerrar sesión" NO se movió a una franja de ancho completo fuera de `<main>` como en G-02/G-02a:
+    se verificó con get_metadata sobre el nodo 2001:794 que en el archivo correcto el Link "Cerrar
+    sesión" (2001:799) SÍ está anidado dentro de Main > Container (2001:797/798), a diferencia de
+    G-02/G-02a donde el mockup lo pone en una franja hermana del Header. Es una diferencia real y
+    deliberada del propio diseño para esta pantalla, no una inconsistencia a corregir. Lo que SÍ
+    era un bug real (ahora corregido) es que el control no llamaba a `cerrarSesion()`: era un
+    `RouterLink` directo a /login que dejaba el rol de sesión sin limpiar, a diferencia de
+    HomeCliente.vue/HomeAsesor.vue.
 -->
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { useSesion } from '../composables/useSesion'
+
+const router = useRouter()
+const { cerrarSesion } = useSesion()
+
+function alCerrarSesion() {
+  cerrarSesion()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -28,20 +46,21 @@ import IconoMaterial from '../components/ui/IconoMaterial.vue'
     <HeaderPantalla titulo="Home del Operador" />
 
     <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-10 py-10">
-      <RouterLink
-        to="/login"
+      <button
+        type="button"
         class="flex w-full items-center justify-end gap-2 rounded-md bg-fondo px-[14px] py-[10px] text-[13px] font-normal text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+        @click="alCerrarSesion"
       >
         Cerrar sesión
         <IconoMaterial nombre="logout" class="h-[18px] w-[18px]" />
-      </RouterLink>
+      </button>
 
       <Divisor />
 
       <section class="flex w-full flex-col gap-5">
         <TituloPantalla>Home / Dashboard — Operador</TituloPantalla>
 
-        <div class="flex flex-wrap items-stretch gap-4">
+        <div class="flex flex-wrap items-stretch gap-5">
           <!--
             "Siniestros": HU-W04 (Siniestros asistidos y peritaje) existe en el prototipo completo
             pero no está en el alcance de este sprint (sin pantalla ni campo de contrato propio),
