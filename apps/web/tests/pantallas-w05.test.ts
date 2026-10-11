@@ -106,10 +106,14 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper.findAll('tbody tr')).toHaveLength(4)
     })
 
-    it('trae las columnas Cliente e ID transacción (sí están en este contrato) y usa N.º de póliza / Monto', async () => {
+    // Re-verificado contra el archivo correcto de Figma (nodo 2001:3156, confirmado con captura de
+    // pantalla): las columnas son "Prima" (no "Monto"), "Fecha del intento" (no "Fecha / hora") e
+    // "ID de transacción" (no "ID transacción") — una ronda anterior las había dejado con el texto
+    // del archivo de Figma equivocado.
+    it('trae las columnas Cliente e ID de transacción (sí están en este contrato) y usa N.º de póliza / Prima', async () => {
       const { wrapper } = await montarConciliacion()
       const encabezados = wrapper.findAll('th').map((th) => th.text())
-      expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Monto', 'Estado', 'Fecha / hora', 'ID transacción', 'Acciones'])
+      expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Prima', 'Estado', 'Fecha del intento', 'ID de transacción', 'Acciones'])
       expect(wrapper.text()).toContain('Andrés Felipe Duarte')
       expect(wrapper.text()).toContain('SOL-VH-2026-004905')
       expect(wrapper.text()).toContain('txn_8a2f19c3')
@@ -135,7 +139,9 @@ describe('HU-W05 · pantallas', () => {
 
     it('Pendiente no trae botón de reintentar (el reintento ahí es automático)', async () => {
       const { wrapper } = await montarConciliacion()
-      const pendiente = wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Pendiente')
+      // "Pendiente de reintento" es el texto literal del archivo correcto de Figma (nodo 2001:3177);
+      // una ronda anterior lo había dejado como "Pendiente" a secas, citando el archivo equivocado.
+      const pendiente = wrapper.findAll('[role="tab"]').find((t) => t.text().startsWith('Pendiente de reintento'))
       expect(pendiente).toBeDefined()
       await pendiente!.trigger('click')
 
@@ -174,10 +180,13 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper2.text()).toContain('No hay cobros en este estado.')
     })
 
-    it('la barra de navegación ("Inicio › Recaudo de prima") navega a /operador', async () => {
+    // Re-verificado contra el archivo correcto de Figma (nodo 2008:32, confirmado con captura de
+    // pantalla): esta pantalla usa un enlace de texto suelto "‹ Volver a Inicio", no la Barra de
+    // navegación compartida (MigasDePan, "Inicio › Sección") que sí usan las demás pantallas del
+    // flujo — una ronda anterior la había cambiado a MigasDePan citando el archivo equivocado.
+    it('el enlace "‹ Volver a Inicio" navega a /operador', async () => {
       const { wrapper, router } = await montarConciliacion()
-      expect(wrapper.text()).toContain('Recaudo de prima')
-      const enlace = wrapper.findAll('a').find((a) => a.text() === 'Inicio')
+      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Volver a Inicio'))
       expect(enlace).toBeDefined()
       await enlace!.trigger('click')
       await flushPromises()
