@@ -26,6 +26,12 @@
     no expone un campo `evento` en el contrato, y mostrar ese código fijo sería inventar un dato que
     no viene del backend — mismo criterio que ya se documentaba en la ronda anterior para este mismo
     punto, se mantiene sin cambios.
+
+  [ALTA, hallazgo de QA] Esta pantalla no tenía ningún guard: si se entra a /cotizacion/error
+  directamente (sin haber pasado por una consulta que terminó en ErrorOferta), `error` da null y el
+  texto cae al fallback genérico "Intenta nuevamente o habla con un asesor." mostrando un botón
+  "Reintentar" que no reintenta nada real. Se agrega el mismo patrón `v-if`/`v-else` que ya usan las
+  pantallas hermanas OfertaCompleta.vue y OfertaPreliminar.vue.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -49,7 +55,7 @@ function reintentar() {
   <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-03c">
     <HeaderPantalla titulo="Nueva cotización" />
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main class="flex flex-1 flex-col items-center justify-center bg-fondo px-10 py-16">
+    <main v-if="error" class="flex flex-1 flex-col items-center justify-center bg-fondo px-10 py-16">
       <div class="flex w-full max-w-[560px] flex-col items-center gap-4 rounded-lg border border-borde bg-white p-6">
         <div class="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-error bg-error-fondo text-error">
           <svg viewBox="0 -960 960 960" fill="currentColor" class="h-8 w-8" aria-hidden="true">
@@ -58,10 +64,10 @@ function reintentar() {
         </div>
         <TituloPantalla class="text-center">No pudimos completar tu consulta</TituloPantalla>
         <p class="max-w-[448px] text-center text-[13px] leading-[18px] text-tinta-suave">
-          {{ error?.mensaje ?? 'Intenta nuevamente o habla con un asesor.' }}
+          {{ error.mensaje }}
         </p>
         <div class="flex flex-col items-center gap-4">
-          <Boton v-if="error?.puedeReintentar ?? true" class="w-[340px]" @click="reintentar">
+          <Boton v-if="error.puedeReintentar" class="w-[340px]" @click="reintentar">
             <template #icono><IconoMaterial nombre="refresh" class="h-4 w-4" /></template>
             Reintentar
           </Boton>
@@ -77,6 +83,10 @@ function reintentar() {
           </div>
         </div>
       </div>
+    </main>
+    <main v-else class="flex flex-1 flex-col items-center justify-center gap-3 bg-fondo px-10 py-12 text-center">
+      <p class="text-[13px] text-tinta-suave">No hay un error activo en memoria todavía.</p>
+      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">Ir a la solicitud</RouterLink>
     </main>
     <FooterPantalla />
   </div>

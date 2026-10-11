@@ -12,6 +12,7 @@ import {
   SelectorMoneda,
   TituloPantalla,
 } from '../src/components/ui'
+import IconoMaterial from '../src/components/ui/IconoMaterial.vue'
 
 // Stub mínimo: estos componentes no necesitan un router real, solo que RouterLink exista.
 const stubsRouter = { RouterLink: { template: '<a><slot /></a>' } }
@@ -32,6 +33,27 @@ describe('Boton', () => {
   it('aplica la variante destructiva', () => {
     const boton = mount(Boton, { props: { variante: 'destructivo' }, slots: { default: 'Regenerar API key' } })
     expect(boton.classes()).toContain('bg-error')
+  })
+
+  // Hallazgo de QA: el slot opcional #icono (lo usa p. ej. OfertaError.vue en "Reintentar") no
+  // tenía ninguna prueba dedicada.
+  it('renderiza el slot #icono antes del texto cuando se provee', () => {
+    const boton = mount(Boton, {
+      slots: {
+        icono: '<svg data-testid="icono-boton" />',
+        default: 'Reintentar',
+      },
+    })
+    expect(boton.find('[data-testid="icono-boton"]').exists()).toBe(true)
+    expect(boton.text()).toBe('Reintentar')
+    // El ícono va antes del texto en el DOM (slot #icono antes que el slot por defecto en Boton.vue):
+    // el primer elemento hijo del botón es el ícono, no texto.
+    expect(boton.element.firstElementChild?.getAttribute('data-testid')).toBe('icono-boton')
+  })
+
+  it('no renderiza ningún ícono cuando el slot #icono no se usa', () => {
+    const boton = mount(Boton, { slots: { default: 'Continuar' } })
+    expect(boton.find('svg').exists()).toBe(false)
   })
 })
 
@@ -54,6 +76,20 @@ describe('CampoFormulario', () => {
   it('no bloquea el envío por sí mismo: el consentimiento lo decide quien use el campo', () => {
     const campo = mount(CampoFormulario, { props: { modelValue: '', label: 'Correo electrónico', required: true } })
     expect(campo.get('input').attributes('required')).toBeDefined()
+  })
+
+  // Hallazgo de QA: el prop opcional `icono` (lo usan varios campos de SolicitudYConsentimiento.vue
+  // e IngresoConRol.vue) no tenía ninguna prueba dedicada.
+  it('renderiza el ícono cuando se pasa el prop `icono`', () => {
+    const campo = mount(CampoFormulario, { props: { modelValue: '', label: 'Documento de identidad', icono: 'badge' } })
+    const icono = campo.findComponent(IconoMaterial)
+    expect(icono.exists()).toBe(true)
+    expect(icono.props('nombre')).toBe('badge')
+  })
+
+  it('no renderiza ningún ícono cuando `icono` no se pasa', () => {
+    const campo = mount(CampoFormulario, { props: { modelValue: '', label: 'Plazo (meses)' } })
+    expect(campo.findComponent(IconoMaterial).exists()).toBe(false)
   })
 })
 

@@ -19,10 +19,30 @@
   junto a los encabezados OPEN FINANCE/OPEN DATA (nodos 2001:1447 y 2001:1483); se documenta aquí en
   vez de construir un componente de tooltip nuevo bajo la limitación de tiempo de esta ronda de
   arreglos — queda pendiente para una siguiente iteración.
+
+  Triage de la revisión de los 2 agentes (UX senior + QA senior):
+  - [Descartado] El agente de UX reportó una insignia "Consulta auditada" faltante cerca de las
+    migas de pan. Se verificó de nuevo con get_design_context sobre el nodo 2001:1432: lo que hay
+    ahí NO es una insignia "Consulta auditada" — es el ícono + timestamp "12 sep 2026, 10:41 a. m."
+    del mockup, el mismo dato que este archivo ya documenta arriba como omitido a propósito (ningún
+    campo del contrato expone cuándo se consultó una fuente). No hay ninguna insignia real que
+    agregar aquí: el hallazgo era una lectura incorrecta del nodo.
+  - [MEDIA-ALTA, gap conocido, no corregido en esta ronda] Cada una de las 5 filas de fuentes
+    (nodos 2001:1453/1464/1489/1500/1511) lleva en Figma un ícono líder de 24px distinto por fila
+    (edificio/documento/mapa/escudo/pin, semánticamente), que esta pantalla no muestra. Se intentó
+    identificar el glifo exacto de cada ícono vía Figma (get_design_context/get_screenshot), pero a
+    24px y como silueta no se pudo distinguir con certeza contra el set de íconos de esta rama
+    (IconoMaterial.vue) sin fabricar una correspondencia 1 a 1 inventada — mismo criterio de no
+    inventar glifos usado en el resto de esta ronda. Queda pendiente para una iteración donde se
+    pueda confirmar cada ícono contra el archivo fuente de Figma directamente (p. ej. inspeccionando
+    el plugin de Figma, no solo capturas a resolución de ícono).
+  - [BAJA] El `<h1>` suelto se reemplaza por el componente compartido `TituloPantalla` (mismo texto,
+    con las clases de borde/padding propias de esta pantalla pasadas por fallthrough), para
+    consistencia con las demás ~10 pantallas del flujo que ya usan ese componente.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { RUTA_INICIO, useSesion } from '../composables/useSesion'
@@ -46,9 +66,7 @@ function rutaVolver() {
     <MigasDePan seccion="Detalle de fuentes" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="oferta" class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5 rounded-lg border border-borde bg-white p-5">
-        <h1 class="border-b border-borde pb-4 text-[22px] font-bold leading-[28px] text-tinta">
-          Fuentes consultadas para tu oferta
-        </h1>
+        <TituloPantalla class="border-b border-borde pb-4">Fuentes consultadas para tu oferta</TituloPantalla>
 
         <section v-if="openFinance.length" class="flex flex-col gap-2">
           <h2 class="flex items-center gap-2 text-[16px] font-semibold uppercase tracking-[0.8px] text-primario">

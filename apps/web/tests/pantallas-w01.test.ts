@@ -153,21 +153,27 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Ingresa un número de documento válido.')
+    expect(wrapper.text()).toContain('Ingresa un número de documento válido')
   })
 })
 
 describe('ConsultandoFuentes (W01-02)', () => {
-  it('no llama al BFF ni navega si no hay captura todavía', async () => {
+  // Hallazgo MEDIA de QA: antes el `return` temprano de onMounted era silencioso y dejaba el
+  // spinner girando para siempre, sin ningún mensaje ni salida para el usuario.
+  it('no llama al BFF ni navega si no hay captura todavía, y muestra un mensaje en vez de dejar el spinner girando', async () => {
     useCotizacion(fetchPrueba).reiniciar()
     const router = crearRouterDePrueba()
     router.push('/cotizacion/consulta')
     await router.isReady()
 
-    montar(ConsultandoFuentes, router)
+    const wrapper = montar(ConsultandoFuentes, router)
     await new Promise((r) => setTimeout(r, 0))
 
     expect(router.currentRoute.value.path).toBe('/cotizacion/consulta')
+    expect(wrapper.text()).toContain('No hay una solicitud en curso para consultar.')
+    expect(wrapper.find('svg.animate-spin').exists()).toBe(false)
+    const enlace = wrapper.findAll('a').find((a) => a.text().includes('Ir a la solicitud'))
+    expect(enlace).toBeDefined()
   })
 
   it('navega a la oferta completa cuando la captura ya está lista', async () => {
@@ -254,6 +260,20 @@ describe('Pantallas de resultado de oferta', () => {
     expect(wrapper.text()).toContain('No pudimos calcular tu oferta en este momento.')
     expect(wrapper.text()).not.toContain('Código de evento')
     expect(wrapper.findAll('button').some((b) => b.text() === 'Reintentar')).toBe(false)
+  })
+
+  // Hallazgo ALTA de QA: sin ningún ErrorOferta en memoria (p. ej. se entra directo a
+  // /cotizacion/error escribiendo la URL), la pantalla no tenía ningún guard y caía al mensaje
+  // genérico con un botón "Reintentar" que no reintentaba nada real.
+  it('OfertaError (W01-03c) sin ErrorOferta en memoria muestra el fallback, no el mensaje genérico', async () => {
+    useCotizacion(fetchPrueba).estado.resultado = null
+    const wrapper = montar(OfertaError, crearRouterDePrueba())
+
+    expect(wrapper.text()).toContain('No hay un error activo en memoria todavía.')
+    expect(wrapper.text()).not.toContain('Intenta nuevamente o habla con un asesor')
+    expect(wrapper.findAll('button').some((b) => b.text() === 'Reintentar')).toBe(false)
+    const enlace = wrapper.findAll('a').find((a) => a.text().includes('Ir a la solicitud'))
+    expect(enlace).toBeDefined()
   })
 })
 

@@ -13,6 +13,10 @@
   sprint, así que enlaza a /polizas (PantallaPendiente, ver router/pantallas.ts) en vez de a un
   enlace roto o a ningún lado. El "Hola, {{ nombre }}" es el H1 real y visible de la pantalla (antes
   estaba oculto sr-only y llevaba un sufijo "(Asesor comercial)" que no existe en Figma).
+
+  [MEDIA, hallazgo de UX] "Portal Asesor Comercial" llevaba un ícono de 24px a la izquierda que esta
+  pantalla no mostraba (solo texto) — mismo caso que "Portal Cliente" en HomeCliente.vue (ver su
+  comentario de cabecera para el detalle del criterio usado al elegir `badge`).
 -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
@@ -34,7 +38,10 @@ function alCerrarSesion() {
     <HeaderPantalla titulo="Home del Asesor comercial" />
 
     <div class="flex w-full items-center justify-between border-b border-borde bg-fondo px-4 py-2 text-[11px]">
-      <span class="text-tinta-suave">Portal Asesor Comercial</span>
+      <span class="flex items-center gap-1 text-tinta-suave">
+        <IconoMaterial nombre="badge" class="h-5 w-5" />
+        Portal Asesor Comercial
+      </span>
       <button
         type="button"
         class="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[13px] font-medium text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"

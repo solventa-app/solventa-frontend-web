@@ -47,6 +47,14 @@
   2001:1084, "Plazo (meses)" — no "Plazo (años)" como se había anotado antes por error de lectura de
   un nodo del archivo equivocado). Ya no hay desviación real en este punto: el label corregido
   coincide con el comportamiento funcional (`plazoMeses: Int!`, ver contrato/schema.graphql).
+
+  Triage de la revisión de los 2 agentes (UX senior + QA senior):
+  - [BAJA] El mensaje de error "Ingresa un número de documento válido." llevaba un punto final que
+    el nodo 2001:1070 no tiene.
+  - [MEDIA] El `<form>` no tenía `novalidate`: el botón "Consultar oferta" es `type="button"` (así
+    que un clic siempre corre `validar()`), pero sin `novalidate` presionar Enter dentro de un campo
+    sí disparaba la validación nativa del navegador antes que la lógica de Vue, dando dos
+    comportamientos distintos para mouse y teclado.
 -->
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
@@ -71,7 +79,7 @@ function validar(): boolean {
     // Chequeo de formato liviano (antes solo se exigía no-vacío): un documento de identidad
     // colombiano (CC/CE) tiene varios dígitos; esto no es una validación de dígito de verificación
     // completa (el contrato no la exige), solo descarta valores claramente incompletos como "12".
-    nuevosErrores.documentoIdentidad = 'Ingresa un número de documento válido.'
+    nuevosErrores.documentoIdentidad = 'Ingresa un número de documento válido'
   }
   const credito = Number(captura.valorCredito)
   if (!captura.valorCredito.trim() || Number.isNaN(credito) || credito <= 0) {
@@ -118,7 +126,7 @@ function simular(sufijo: '999' | '000') {
     <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[880px] flex-col items-center gap-6">
         <TituloPantalla class="text-center">Solicitud de seguro de vida hipotecario</TituloPantalla>
-        <form class="flex w-full max-w-[400px] flex-col gap-5" @submit.prevent="enviar">
+        <form class="flex w-full max-w-[400px] flex-col gap-5" novalidate @submit.prevent="enviar">
           <CampoFormulario
             v-model="captura.documentoIdentidad"
             label="Documento de identidad"

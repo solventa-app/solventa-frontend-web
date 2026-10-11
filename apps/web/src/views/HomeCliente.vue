@@ -13,6 +13,13 @@
   (PantallaPendiente, ver router/pantallas.ts) en vez de a un enlace roto o a ningún lado. El "Hola,
   {{ nombre }}" es el H1 real y visible de la pantalla (antes estaba como texto gris pequeño,
   duplicando "Home del Cliente" como H1 oculto en su lugar).
+
+  [MEDIA, hallazgo de UX] "Portal Cliente" (nodo 2053:58-62) llevaba un ícono de 24px a la
+  izquierda que esta pantalla no mostraba (solo texto). Se usa `badge` del set de íconos de esta
+  rama (mismo que ya usan las tarjetas "Nueva cotización"/etc.): a esa resolución el ícono real del
+  Figma no se distingue con certeza entre los íconos disponibles, así que se prioriza una opción
+  temáticamente razonable (identidad/portal) usando un ícono ya existente en vez de fabricar uno
+  nuevo — mismo criterio usado en el resto de esta ronda para no inventar glifos.
 -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
@@ -34,7 +41,10 @@ function alCerrarSesion() {
     <HeaderPantalla titulo="Home del Cliente" />
 
     <div class="flex w-full items-center justify-between border-b border-borde bg-fondo px-4 py-2 text-[11px]">
-      <span class="text-tinta-suave">Portal Cliente</span>
+      <span class="flex items-center gap-1 text-tinta-suave">
+        <IconoMaterial nombre="badge" class="h-5 w-5" />
+        Portal Cliente
+      </span>
       <button
         type="button"
         class="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[13px] font-medium text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"

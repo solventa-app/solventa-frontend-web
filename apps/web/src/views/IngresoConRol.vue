@@ -21,6 +21,19 @@
   PantallaPendiente (ver views/PantallaPendiente.vue), que muestra honestamente "pendiente de
   construir" en vez de una pantalla rota o en blanco — es un hueco de aislamiento entre ramas, no un
   bug de producto: al integrar ambas ramas, G-02b queda resuelto sin tocar este archivo.
+
+  Triage de la revisión de los 2 agentes (UX senior + QA senior):
+  - [MEDIA] El `<form>` no tenía `novalidate` (mismo caso que SolicitudYConsentimiento.vue: el botón
+    es `type="button"`, pero sin `novalidate` Enter en un campo sí dispara la validación nativa).
+  - [BAJA] El campo de correo no pasaba `type="email"` a `CampoFormulario` (quedaba en el `text` por
+    defecto): ya se agrega, sin cambiar ningún otro comportamiento del campo.
+  - [BAJA] "¿Eres un socio de distribución?..." (nodo 2001:481, literalmente un "Link" en Figma, en
+    azul `text-enlace`) se ve idéntico a un enlace real pero no navega a ningún lado (ver más
+    arriba: HU-W07 está fuera de este sprint). Se deja el color fiel al nodo (no se simula un estilo
+    "deshabilitado" que el mockup no tiene) y se agrega `aria-disabled` + `title` como señal pasiva,
+    sin alterar la fidelidad visual. El ícono de 24px que sí lleva el nodo (2001:482) se omite a
+    propósito: ningún ícono del set de esta rama encaja semánticamente con "socios"/API sin
+    fabricar uno nuevo (mismo criterio de no inventar glifos usado en el resto de esta ronda).
 -->
 <script setup lang="ts">
 import { ref } from 'vue'
@@ -56,8 +69,8 @@ function ingresar() {
         <Divisor />
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
           <TituloPantalla class="mb-6">Iniciar sesión</TituloPantalla>
-          <form class="flex w-full flex-col gap-5" @submit.prevent="ingresar">
-            <CampoFormulario v-model="correo" label="Correo electrónico" placeholder="nombre@correo.com" required />
+          <form class="flex w-full flex-col gap-5" novalidate @submit.prevent="ingresar">
+            <CampoFormulario v-model="correo" type="email" label="Correo electrónico" placeholder="nombre@correo.com" required />
             <CampoFormulario
               v-model="contrasena"
               type="password"
@@ -92,7 +105,7 @@ function ingresar() {
               cotización, con distinto encabezado según quién entra.
             </p>
 
-            <p class="text-[13px] text-enlace">
+            <p class="text-[13px] text-enlace" aria-disabled="true" title="Disponible próximamente (HU-W07, fuera de este sprint)">
               ¿Eres un socio de distribución? Ingresa al portal de socios API
             </p>
           </form>
