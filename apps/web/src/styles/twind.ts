@@ -34,6 +34,18 @@ const tw = twind(
         fontFamily: {
           sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         },
+        // Escala tipográfica de "SG-01 · Guía de estilos": 6 pasos documentados en Figma, aquí
+        // reducidos a 5 clases (cuerpo y cuerpo-destacado comparten tamaño/interlineado, el peso
+        // -regular vs. semibold- sigue siendo una clase font-* aparte). Forma [tamaño, interlineado]
+        // únicamente: la forma extendida con fontWeight no está confirmada como soportada por
+        // @twind/preset-tailwind, así que el peso se mantiene como utilidad separada en cada uso.
+        fontSize: {
+          titulo: ['22px', '28px'],
+          subtitulo: ['16px', '22px'],
+          cuerpo: ['13px', '18px'],
+          etiqueta: ['12px', '16px'],
+          nota: ['11px', '14px'],
+        },
       },
     },
   },

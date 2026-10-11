@@ -2,8 +2,11 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import {
   AvatarPerfil,
+  Badge,
+  BarraDeCerrarSesion,
   Boton,
   CampoFormulario,
+  Chip,
   Divisor,
   FooterPantalla,
   HeaderPantalla,
@@ -33,6 +36,11 @@ describe('Boton', () => {
     const boton = mount(Boton, { props: { variante: 'destructivo' }, slots: { default: 'Regenerar API key' } })
     expect(boton.classes()).toContain('bg-error')
   })
+
+  it('propaga disabled al <button> real (hallazgo QA: antes se perdía por fallthrough)', () => {
+    const boton = mount(Boton, { props: { disabled: true }, slots: { default: 'Continuar' } })
+    expect(boton.get('button').attributes('disabled')).toBeDefined()
+  })
 })
 
 describe('CampoFormulario', () => {
@@ -55,6 +63,11 @@ describe('CampoFormulario', () => {
     const campo = mount(CampoFormulario, { props: { modelValue: '', label: 'Correo electrónico', required: true } })
     expect(campo.get('input').attributes('required')).toBeDefined()
   })
+
+  it('propaga disabled al <input> real (hallazgo QA: antes quedaba en el <div> envolvente)', () => {
+    const campo = mount(CampoFormulario, { props: { modelValue: '1024578113', label: 'Número de documento', disabled: true } })
+    expect(campo.get('input').attributes('disabled')).toBeDefined()
+  })
 })
 
 describe('MigasDePan', () => {
@@ -69,13 +82,14 @@ describe('MigasDePan', () => {
     expect(migas.text()).toContain('Nueva cotización')
   })
 
-  it('tiene el landmark <nav> y un nombre accesible claro para el enlace', () => {
+  it('tiene el landmark <nav>, y solo "Inicio" es enlace (la sección actual no lo es)', () => {
     const migas = mount(MigasDePan, {
       props: { seccion: 'Nueva cotización', aInicio: '/inicio' },
       global: { stubs: stubsRouter },
     })
     expect(migas.find('nav[aria-label]').exists()).toBe(true)
-    expect(migas.get('a').attributes('aria-label')).toBe('Volver a Inicio')
+    expect(migas.get('a').text()).toBe('Inicio')
+    expect(migas.findAll('a').length).toBe(1)
   })
 })
 
@@ -87,6 +101,59 @@ describe('SelectorIdioma', () => {
     await botones[1].trigger('click')
     expect(selector.emitted('update:modelValue')?.[0]).toEqual(['EN'])
   })
+
+  it('sus botones tienen anillo de foco visible (hallazgo QA: consistencia con el resto de la librería)', () => {
+    const selector = mount(SelectorIdioma)
+    for (const boton of selector.findAll('button')) {
+      expect(boton.classes()).toContain('focus-visible:ring-2')
+    }
+  })
+})
+
+describe('Badge', () => {
+  it('cada tipo lleva glifo de texto además de color (el estado nunca se comunica solo con color)', () => {
+    const exito = mount(Badge, { props: { tipo: 'exito' }, slots: { default: 'Cobrado' } })
+    expect(exito.text()).toBe('✓Cobrado')
+    expect(exito.classes()).toContain('text-exito')
+
+    const alerta = mount(Badge, { props: { tipo: 'alerta' }, slots: { default: 'Pendiente' } })
+    expect(alerta.text()).toBe('!Pendiente')
+
+    const error = mount(Badge, { props: { tipo: 'error' }, slots: { default: 'Rechazado' } })
+    expect(error.text()).toBe('✕Rechazado')
+
+    const enCurso = mount(Badge, { props: { tipo: 'enCurso' }, slots: { default: 'En revisión' } })
+    expect(enCurso.text()).toBe('→En revisión')
+  })
+})
+
+describe('Chip', () => {
+  it('es un botón con aria-pressed que refleja el prop activo', async () => {
+    const chip = mount(Chip, { props: { activo: false }, slots: { default: 'Pendiente' } })
+    expect(chip.get('button').attributes('aria-pressed')).toBe('false')
+    expect(chip.classes()).toContain('border')
+
+    await chip.setProps({ activo: true })
+    expect(chip.get('button').attributes('aria-pressed')).toBe('true')
+    expect(chip.classes()).toContain('bg-primario')
+  })
+
+  it('emite click al presionarlo', async () => {
+    const chip = mount(Chip, { slots: { default: 'Todos' } })
+    await chip.get('button').trigger('click')
+    expect(chip.emitted('click')).toHaveLength(1)
+  })
+})
+
+describe('BarraDeCerrarSesion', () => {
+  it('muestra nombre · rol y un botón "Cerrar sesión" que emite el evento', async () => {
+    const barra = mount(BarraDeCerrarSesion, { props: { nombre: 'María Gutiérrez', rol: 'Cliente' } })
+    expect(barra.text()).toContain('María Gutiérrez · Cliente')
+    const boton = barra.get('button')
+    expect(boton.text()).toBe('Cerrar sesión')
+    await boton.trigger('click')
+    expect(barra.emitted('cerrar-sesion')).toHaveLength(1)
+  })
 })
 
 describe('SelectorMoneda', () => {
@@ -94,6 +161,16 @@ describe('SelectorMoneda', () => {
     const selector = mount(SelectorMoneda)
     expect(selector.get('select').element.value).toBe('COP')
     expect(selector.get('select').attributes('aria-label')).toContain('COP')
+  })
+
+  it('propaga disabled al <select> real (hallazgo QA: antes quedaba en el <div> envolvente)', () => {
+    const selector = mount(SelectorMoneda, { props: { disabled: true } })
+    expect(selector.get('select').attributes('disabled')).toBeDefined()
+  })
+
+  it('el contenedor tiene anillo de foco (hallazgo QA: WCAG 2.4.7, antes invisible con outline-none)', () => {
+    const selector = mount(SelectorMoneda)
+    expect(selector.get('div').classes()).toContain('focus-within:ring-2')
   })
 })
 

@@ -1,43 +1,44 @@
 <!--
-  Barra de navegación ("Barra de navegación", Figma nodo 80:344 en el prototipo de alta fidelidad
-  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web"). Reconstruida para ser fiel a ese archivo: reemplaza el
-  diseño anterior (franja fina de varios niveles, con lista de `items`, basada en el archivo
-  "Solventa-web-Final") por el real, una sola franja clicable "⌂ Inicio › <sección>" que siempre
-  vuelve al home del rol correspondiente (Cliente/Asesor comercial → G-02/G-02a, Operador → G-02b).
-  El prototipo no tiene navegación anidada de más de un nivel, así que toda la franja es un único
-  enlace (no una lista de ítems).
+  Barra de navegación (migas de pan) · librería de componentes (Figma 2006:22, instancia real dentro
+  de "Librería de componentes · alta fidelidad"). Franja "Inicio › Sección" para las pantallas que no
+  son login ni home: resuelve "dónde estoy" y "cómo regreso" sin depender del botón atrás del
+  navegador (nota del componente en Figma). "Inicio" siempre es enlace de vuelta; la sección actual
+  no es enlace (va en negrita).
 
-  Envuelto en <nav aria-label> (landmark que el componente anterior sí tenía) y con aria-label
-  explícito en el enlace: el nombre accesible por defecto sería "Inicio › <sección>" completo
-  (confuso, como si "sección" también fuera parte de la acción), así que se fija un nombre claro
-  ("Volver a Inicio") y se oculta a lectores de pantalla el contenido visual redundante (texto,
-  separador y sección), que sigue siendo visible para usuarios con vista.
+  Fuente de verdad elegida entre dos que no coinciden del todo: la ficha "Componentes base" de
+  SG-01 (nodo 2032:110) dibuja "Inicio" en azul `enlace` y la sección actual en gris, a 11 px — pero
+  esa página se genera automáticamente desde DESIGN.md (lo dice su propio encabezado, nodo 2028:47),
+  así que es documentación de referencia, no el pixel final. Se sigue en cambio la instancia real
+  2006:22 (sección "alta fidelidad", pensada para ser el render definitivo): "Inicio" en gris
+  `tinta-suave` (con subrayado al pasar el mouse como única señal de que es clicable, patrón
+  estándar de breadcrumb), separador gris, sección actual en negrita `tinta`, 13 px, fondo blanco
+  con borde inferior (no la pastilla gris de la ficha).
 
-  SG-01 es explícita: una u otra barra de navegación, nunca las dos en la misma pantalla — este
-  componente no se combina con una barra de cerrar sesión en la misma vista.
+  API `seccion` + `aInicio` (en vez de una lista genérica de `items`): la propia descripción del
+  componente en Figma dice que el patrón es siempre "Inicio › Sección", nunca más de un nivel —
+  una lista de ítems genérica sería sobre-construir para un caso que nunca varía de profundidad.
+
+  SG-01 es explícito: una u otra barra de navegación, nunca las dos en la misma pantalla — este
+  componente no se combina con una barra de cerrar sesión en la misma vista (ver
+  BarraDeCerrarSesion.vue).
 -->
 <script setup lang="ts">
-import IconoMaterial from './IconoMaterial.vue'
-
 defineProps<{
   /** Texto de la sección actual, p. ej. "Nueva cotización". */
   seccion: string
-  /** Ruta de "Inicio" (home del rol correspondiente a esta pantalla). */
+  /** Ruta de "Inicio" (home del rol/flujo correspondiente a esta pantalla). */
   aInicio: string
 }>()
 </script>
 
 <template>
-  <nav aria-label="Ruta de navegación">
-    <RouterLink
-      :to="aInicio"
-      aria-label="Volver a Inicio"
-      class="flex w-full items-center gap-2 rounded-md bg-fondo px-[14px] py-[10px] text-[13px] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
-    >
-      <IconoMaterial nombre="home" aria-hidden="true" class="h-[16px] w-[16px] shrink-0 text-enlace" />
-      <span aria-hidden="true" class="font-bold text-enlace">Inicio</span>
-      <span aria-hidden="true" class="text-tinta-suave">›</span>
-      <span aria-hidden="true" class="text-tinta-suave">{{ seccion }}</span>
-    </RouterLink>
+  <nav aria-label="Ruta de navegación" class="w-full border-b border-borde bg-white">
+    <div class="mx-auto flex max-w-[880px] items-center gap-2 px-4 py-2 text-[13px] leading-[19.5px]">
+      <RouterLink :to="aInicio" class="text-tinta-suave hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2">
+        Inicio
+      </RouterLink>
+      <span class="text-tinta-suave" aria-hidden="true">›</span>
+      <span class="font-semibold text-tinta">{{ seccion }}</span>
+    </div>
   </nav>
 </template>
