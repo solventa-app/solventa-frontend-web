@@ -1,12 +1,12 @@
 name: CI web
 
-# En PR corre siempre: el check `web` es obligatorio en `main` y un check filtrado por ruta nunca reportaría
-# en los PRs que no tocan esas rutas. En push a main corre solo si cambia la web, el contrato o este workflow
-# (el móvil tiene su propio pipeline).
+# En PR corre siempre: el check `web` es obligatorio en `main` y `develop`, y un check filtrado por ruta nunca
+# reportaría en los PRs que no tocan esas rutas. En push a main/develop corre solo si cambia la web, el
+# contrato o este workflow (el móvil tiene su propio pipeline).
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths: ['apps/web/**', 'contrato/**', 'scripts/**', '.github/workflows/ci-web.yml']
 
 concurrency:
