@@ -69,16 +69,14 @@ describe('MigasDePan', () => {
     expect(migas.text()).toContain('Nueva cotización')
   })
 
-  // Regresión de accesibilidad encontrada en revisión: el componente había perdido el landmark
-  // <nav> que tenía la versión anterior, y el nombre accesible del enlace quedaba como "Inicio ›
-  // Nueva cotización" completo (confuso, como si la sección también fuera parte de la acción).
-  it('tiene el landmark <nav> y un nombre accesible claro para el enlace', () => {
+  it('tiene el landmark <nav>, y solo "Inicio" es enlace (la sección actual no lo es)', () => {
     const migas = mount(MigasDePan, {
       props: { seccion: 'Nueva cotización', aInicio: '/inicio' },
       global: { stubs: stubsRouter },
     })
     expect(migas.find('nav[aria-label]').exists()).toBe(true)
-    expect(migas.get('a').attributes('aria-label')).toBe('Volver a Inicio')
+    expect(migas.get('a').text()).toBe('Inicio')
+    expect(migas.findAll('a').length).toBe(1)
   })
 })
 
