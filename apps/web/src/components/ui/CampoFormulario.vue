@@ -28,8 +28,10 @@ const props = withDefaults(
     hint?: string
     required?: boolean
     disabled?: boolean
+    /** Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home). */
+    icono?: 'badge' | 'payments' | 'home' | 'lock'
   }>(),
-  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false, disabled: false },
+  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false, disabled: false, icono: undefined },
 )
 
 defineEmits<{ 'update:modelValue': [valor: string] }>()
@@ -45,8 +47,11 @@ const idHint = useId()
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <div
-      class="flex h-[40px] items-center rounded-[4px] border px-3 focus-within:border-2 focus-within:px-[11px]"
-      :class="disabled ? 'cursor-not-allowed border-borde bg-fondo' : error ? 'border-error bg-white' : 'border-borde bg-white focus-within:border-enlace'"
+      class="relative flex h-[40px] items-center rounded-[4px] border px-3 focus-within:border-2 focus-within:px-[11px]"
+      :class="[
+        disabled ? 'cursor-not-allowed border-borde bg-fondo' : error ? 'border-error bg-white' : 'border-borde bg-white focus-within:border-enlace',
+        icono ? 'pr-9' : '',
+      ]"
     >
       <input
         :id="idCampo"
@@ -60,6 +65,7 @@ const idHint = useId()
         class="w-full bg-transparent text-cuerpo text-tinta outline-none placeholder:text-tinta-suave disabled:cursor-not-allowed disabled:text-tinta-suave"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
+      <IconoMaterial v-if="icono" :nombre="icono" class="pointer-events-none absolute right-3 h-5 w-5 text-tinta-suave" />
     </div>
     <p v-if="error" :id="idError" role="alert" class="flex items-center gap-1 text-nota text-error">
       <IconoMaterial nombre="cancel" class="h-[14px] w-[14px] shrink-0" />{{ error }}

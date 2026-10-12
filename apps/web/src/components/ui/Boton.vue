@@ -27,13 +27,16 @@ withDefaults(
   <button
     type="button"
     :disabled="disabled"
-    class="inline-flex h-[44px] items-center justify-center rounded-[4px] px-5 font-semibold text-cuerpo transition-opacity enabled:hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-borde disabled:text-tinta-suave"
+    class="inline-flex h-[44px] items-center justify-center gap-2 rounded-[4px] px-5 font-semibold text-cuerpo transition-opacity enabled:hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-borde disabled:text-tinta-suave"
     :class="{
       'bg-primario text-white': variante === 'primario',
       'border border-primario bg-white text-primario': variante === 'secundario',
       'bg-error text-white': variante === 'destructivo',
     }"
   >
+    <!-- Ícono líder opcional (p. ej. Figma 2001:1359 "Reintentar", con glifo refresh): el botón base
+    no trae ninguno por defecto, solo abre el hueco para cuando Figma sí documenta uno. -->
+    <slot name="icono" />
     <slot />
   </button>
 </template>
