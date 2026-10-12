@@ -1,8 +1,8 @@
 version: 2
 updates:
-  - { package-ecosystem: npm, directory: /apps/web, schedule: { interval: weekly } }
-  - { package-ecosystem: npm, directory: /e2e, schedule: { interval: weekly } }
-  - { package-ecosystem: github-actions, directory: /, schedule: { interval: monthly } }
+  - { package-ecosystem: npm, directory: /apps/web, target-branch: develop, schedule: { interval: weekly } }
+  - { package-ecosystem: npm, directory: /e2e, target-branch: develop, schedule: { interval: weekly } }
+  - { package-ecosystem: github-actions, directory: /, target-branch: develop, schedule: { interval: monthly } }
 
   # Descomentar cuando exista apps/mobile/pubspec.yaml (Dependabot falla si no encuentra el manifiesto):
-  # - { package-ecosystem: pub, directory: /apps/mobile, schedule: { interval: weekly } }
+  # - { package-ecosystem: pub, directory: /apps/mobile, target-branch: develop, schedule: { interval: weekly } }

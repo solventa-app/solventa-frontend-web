@@ -1,12 +1,57 @@
 # Convenciones del repo
 
-Mismas reglas de flujo que `solventa-backend` (ver su `docs/convenciones.md` y ADR-06).
+Mismo flujo que `solventa-backend` (ver su `docs/convenciones.md` y ADR-06, ADR-08): este repo adoptó
+**git-flow** el 2026-10-11, reemplazando el trunk-based original para quedar igual al backend (antes cada repo
+tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, antes de ADR-08).
 
-## Ramas y flujo
+## Ramas y flujo (git-flow, ADR-08)
 
-- **Trunk-based.** `main` protegida (PR obligatorio, 1 revisión, CI en verde). Ramas cortas desde `main`: `KAN-24-formulario-captura`.
-- Tag por sprint al cerrarlo: `sprint-1`, `sprint-2`, `sprint-3` (el mismo nombre que en `solventa-backend`).
-- Cada merge a `main` deja la web publicable en staging.
+- **`main`** guarda lo liberado; **`develop`** integra y es la rama predeterminada del repo (también donde
+  apuntan los PR de Dependabot). El trabajo vive en ramas `feat|fix|chore/KAN-N-descripcion` que salen de y
+  vuelven a `develop`.
+- Cierre de sprint con **`release/sprint-N`** (solo correcciones) → `main` con tag `sprint-N` → reintegración
+  `main` → `develop`. Correcciones urgentes con **`hotfix/KAN-N-descripcion`** desde `main`.
+- **Squash** para ramas de trabajo hacia `develop` (1 PR = 1 historia = 1 commit); **merge commit** para
+  `release`, `hotfix` y la reintegración, porque squashear ramas de larga vida rompe el vínculo con `develop`.
+- Ambas ramas están protegidas por ruleset (`.github/rulesets/main.json`, `develop.json`): PR obligatorio, 1
+  aprobación (se descarta si hay push nuevo), hilos de revisión resueltos, checks `web`, `mobile`, `Título del
+  PR` y `Nombre de rama` en verde, historial lineal (solo `main`) y sin force-push ni borrado. Sin excepciones
+  de bypass. `main` solo acepta merge commit (`allowed_merge_methods: ["merge"]`); `develop`, squash o merge.
+- **Ramas con el patrón `tipo/KAN-N-descripcion`** (tipo `feat`, `fix` o `chore`) hacia `develop`; `fix|chore`
+  hacia un `release/sprint-N`; `release/sprint-N` o `hotfix/KAN-N-descripcion` hacia `main`. Lo valida el check
+  `Nombre de rama` (`pr-rama.yml`), que también exige la pareja origen→destino correcta: bloquea el merge, no
+  la creación de la rama (GitHub no aplica reglas de nombre de rama en los rulesets de este plan). Las ramas de
+  Dependabot (`dependabot/**`) están exentas. GitHub las borra al hacer merge.
+- **Dependabot:** apunta a `develop` (`target-branch` en `.github/dependabot.yml`), así sus PR no llegan a
+  `main` fuera de un release. Los patch y minor se aprueban y se integran solos cuando los checks pasan
+  (`dependabot-auto-merge.yml`); los major los revisa una persona.
+- **El repo es público**, que es lo que hace gratuitos los rulesets: no se versionan secretos ni datos
+  personales. *Secret scanning* y *push protection* están activos.
+- `CI web` y `CI mobile` corren en **todo** PR (sin filtro de rutas) para que `web` y `mobile` se puedan exigir
+  como checks en `main` y `develop` — un check filtrado por ruta nunca reportaría en los PR que no la tocan; en
+  `push` a `main`/`develop` siguen filtrados por ruta.
+- Los rulesets son código. Si hay que recrearlos: `gh api -X POST repos/solventa-app/solventa-frontend-web/rulesets --input .github/rulesets/<archivo>.json`
+  (`main.json`, `develop.json`, `tags.json`). **Cuidado con el orden:** un check solo puede exigirse una vez
+  que su workflow existe en la rama protegida; exigirlo antes de que el primer PR que lo agrega se integre deja
+  a todos los demás PR bloqueados esperando un check que nunca va a reportar (nos pasó con `mobile`, `Título
+  del PR` y `Nombre de rama` al aplicar el ruleset de `main` en el mismo PR que los creaba: KAN-175).
+
+## Versionamiento
+
+- **Tag por sprint al cerrarlo:** `sprint-1`, `sprint-2`, `sprint-3`… (el mismo nombre que en
+  `solventa-backend`, sobre el `main` de ambos repos a la vez). Los `sprint-*` están protegidos: no se pueden
+  mover ni borrar (`.github/rulesets/tags.json`).
+- **`package.json` (raíz, `apps/web`, `e2e`) con SemVer**, hoy `0.1.0` en los tres. Se sube la versión menor al
+  cerrar cada sprint, en el mismo commit de `release/sprint-N` que crea el tag — no hay automatización todavía
+  (`npm version` manual antes de abrir el PR del release).
+- **Móvil:** cuando exista `apps/mobile/pubspec.yaml` (Sprint 2), su `version:` sigue la misma cadencia por
+  sprint que la web.
+- **Contrato:** `contrato/schema.graphql` es una copia de solo lectura de `contracts/graphql/schema.graphql`
+  del backend, sincronizada con `npm run contrato:sincronizar`. Hoy se lee del `main` del backend (ADR-06, pt.
+  2) — con ADR-08 eso significa **lo liberado**, no lo que está en curso en `develop` del backend. Si una
+  pantalla del sprint necesita un campo que el backend aún no liberó, se coordina con ese equipo si conviene
+  leer de su `develop` en vez de esperar al release (decisión pendiente de confirmar entre los dos repos, igual
+  que señala la ADR-08 del backend).
 
 ## Commits y PR
 
@@ -16,7 +61,7 @@ Mismas reglas de flujo que `solventa-backend` (ver su `docs/convenciones.md` y A
 
 ## Definición de hecho (propuesta del equipo)
 
-- Código integrado a `main` por PR con revisión de al menos otro integrante.
+- Código integrado a `develop` por PR con revisión de al menos otro integrante.
 - Pruebas unitarias del código nuevo en verde en el pipeline (Vitest en web, `flutter_test` en móvil).
 - Quality gate de SonarQube aprobado y Dependabot sin vulnerabilidades críticas abiertas.
 - Flujo E2E de la historia en verde en staging (Cypress en web, `integration_test` en móvil).
