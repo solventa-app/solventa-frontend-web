@@ -20,9 +20,11 @@ export function crearRutas(): RouteRecordRaw[] {
     meta: { pantalla },
   }))
 
-  // Índice de pantallas solo en desarrollo: sirve para revisar el prototipo sin navegar a mano.
+  // Índice de pantallas e índice de componentes solo en desarrollo: sirven para revisar el
+  // prototipo y la librería de componentes (D-F1) sin navegar a mano.
   if (import.meta.env.DEV) {
     rutas.push({ path: '/_pantallas', component: () => import('../views/IndicePantallas.vue') })
+    rutas.push({ path: '/_componentes', component: () => import('../views/IndiceComponentes.vue') })
   }
 
   rutas.push({ path: '/', redirect: '/login' })
