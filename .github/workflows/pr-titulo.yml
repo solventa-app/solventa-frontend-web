@@ -12,8 +12,10 @@ permissions: {}
 jobs:
   titulo:
     name: Título del PR
-    # Dependabot usa su propio formato.
-    if: github.actor != 'dependabot[bot]'
+    # Dependabot usa su propio formato. Se compara el autor del PR, no github.actor: un "Update branch"
+    # (gh pr update-branch, o el botón en GitHub) dispara `synchronize` con el actor de quien lo pidió, no
+    # el de Dependabot, y github.actor != 'dependabot[bot]' dejaría de exentar el PR en ese caso.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
