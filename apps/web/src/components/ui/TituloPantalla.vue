@@ -3,7 +3,7 @@
   solo por pantalla (lo garantiza quien construye cada vista, no este componente).
 -->
 <template>
-  <h1 class="w-full text-[22px] font-bold leading-[28px] text-tinta">
+  <h1 class="w-full font-bold text-titulo text-tinta">
     <slot />
   </h1>
 </template>

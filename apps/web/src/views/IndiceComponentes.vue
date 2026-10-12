@@ -7,8 +7,11 @@
 import { ref } from 'vue'
 import {
   AvatarPerfil,
+  Badge,
+  BarraDeCerrarSesion,
   Boton,
   CampoFormulario,
+  Chip,
   Divisor,
   FooterPantalla,
   HeaderPantalla,
@@ -21,6 +24,7 @@ import {
 const documento = ref('')
 const idioma = ref<'ES' | 'EN'>('ES')
 const moneda = ref('COP')
+const filtroActivo = ref('Todos')
 </script>
 
 <template>
@@ -51,12 +55,38 @@ const moneda = ref('COP')
       <CampoFormulario v-model="documento" label="Número de documento" placeholder="1.024.578.113" />
       <div style="height: 0.75rem"></div>
       <CampoFormulario model-value="1.024.578.11" label="Número de documento" error="El documento no coincide con el titular" />
+      <div style="height: 0.75rem"></div>
+      <CampoFormulario model-value="1.024.578.113" label="Número de documento" disabled />
+    </section>
+
+    <section style="margin-top: 1.5rem">
+      <h2>Badges</h2>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+        <Badge tipo="exito">Cobrado</Badge>
+        <Badge tipo="alerta">Pendiente</Badge>
+        <Badge tipo="error">Rechazado</Badge>
+        <Badge tipo="enCurso">En revisión</Badge>
+      </div>
+    </section>
+
+    <section style="margin-top: 1.5rem">
+      <h2>Chips (filtro)</h2>
+      <div style="display: flex; gap: 0.5rem">
+        <Chip :activo="filtroActivo === 'Todos'" @click="filtroActivo = 'Todos'">Todos</Chip>
+        <Chip :activo="filtroActivo === 'Pendiente'" @click="filtroActivo = 'Pendiente'">Pendiente</Chip>
+      </div>
+    </section>
+
+    <section style="margin-top: 1.5rem">
+      <h2>Barra de cerrar sesión</h2>
+      <BarraDeCerrarSesion nombre="María Gutiérrez" rol="Cliente" />
     </section>
 
     <section style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center">
       <h2 style="width: 100%">Idioma, moneda y avatar</h2>
       <SelectorIdioma v-model="idioma" />
       <SelectorMoneda v-model="moneda" />
+      <SelectorMoneda model-value="USD" disabled />
       <AvatarPerfil />
     </section>
 

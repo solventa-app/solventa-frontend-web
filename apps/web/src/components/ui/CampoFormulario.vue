@@ -4,6 +4,14 @@
   de docs/convenciones.md). No usa v-model directo sobre un elemento nativo: expone
   modelValue/update:modelValue para que el padre controle el valor (sin guardar datos personales
   aquí mismo, ver CLAUDE.md regla 7).
+
+  `disabled` (antes no existía, hallazgo de la revisión de QA de D-F1): la plantilla tiene como raíz
+  un `<div>` que envuelve el `<input>`, así que el fallthrough de atributos de Vue colocaba
+  `disabled` en ese `<div>` (que lo ignora en silencio) y el campo seguía editable — sin error de
+  TypeScript ni de consola. Se agrega el prop explícito, enlazado al `<input>` real, con un
+  tratamiento visual análogo al de Boton.vue deshabilitado (bg/texto apagados): SG-01 no documenta
+  un estado "Campo deshabilitado" en su ficha de Figma (solo Normal/Con foco/Error), así que este
+  estilo es una extrapolación razonada, no una cita literal de un nodo.
 -->
 <script setup lang="ts">
 import { useId } from 'vue'
@@ -19,10 +27,11 @@ const props = withDefaults(
     error?: string
     hint?: string
     required?: boolean
+    disabled?: boolean
     /** Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home). */
     icono?: 'badge' | 'payments' | 'home' | 'lock'
   }>(),
-  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false, icono: undefined },
+  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false, disabled: false, icono: undefined },
 )
 
 defineEmits<{ 'update:modelValue': [valor: string] }>()
@@ -34,12 +43,15 @@ const idHint = useId()
 
 <template>
   <div class="flex w-full flex-col gap-1">
-    <label :for="idCampo" class="text-[12px] font-medium leading-[16px] text-tinta-suave">
+    <label :for="idCampo" class="font-medium text-etiqueta text-tinta-suave">
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <div
-      class="relative flex h-[40px] items-center rounded-[4px] border bg-white px-3 focus-within:border-2 focus-within:px-[11px]"
-      :class="[error ? 'border-error' : 'border-borde focus-within:border-enlace', icono ? 'pr-9' : '']"
+      class="relative flex h-[40px] items-center rounded-[4px] border px-3 focus-within:border-2 focus-within:px-[11px]"
+      :class="[
+        disabled ? 'cursor-not-allowed border-borde bg-fondo' : error ? 'border-error bg-white' : 'border-borde bg-white focus-within:border-enlace',
+        icono ? 'pr-9' : '',
+      ]"
     >
       <input
         :id="idCampo"
@@ -47,16 +59,17 @@ const idHint = useId()
         :value="modelValue"
         :placeholder="placeholder"
         :required="required"
+        :disabled="disabled"
         :aria-invalid="!!error"
         :aria-describedby="error ? idError : hint ? idHint : undefined"
-        class="w-full bg-transparent text-[13px] leading-[18px] text-tinta outline-none placeholder:text-tinta-suave"
+        class="w-full bg-transparent text-cuerpo text-tinta outline-none placeholder:text-tinta-suave disabled:cursor-not-allowed disabled:text-tinta-suave"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
       <IconoMaterial v-if="icono" :nombre="icono" class="pointer-events-none absolute right-3 h-5 w-5 text-tinta-suave" />
     </div>
-    <p v-if="error" :id="idError" role="alert" class="flex items-center gap-1 text-[11px] leading-[14px] text-error">
+    <p v-if="error" :id="idError" role="alert" class="flex items-center gap-1 text-nota text-error">
       <IconoMaterial nombre="cancel" class="h-[14px] w-[14px] shrink-0" />{{ error }}
     </p>
-    <p v-else-if="hint" :id="idHint" class="text-[11px] leading-[14px] text-tinta-suave">{{ hint }}</p>
+    <p v-else-if="hint" :id="idHint" class="text-nota text-tinta-suave">{{ hint }}</p>
   </div>
 </template>

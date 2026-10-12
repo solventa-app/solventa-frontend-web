@@ -15,6 +15,7 @@ defineEmits<{ 'update:modelValue': [valor: 'ES' | 'EN'] }>()
     <button
       type="button"
       :aria-pressed="modelValue === 'ES'"
+      class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-1"
       :class="modelValue === 'ES' ? 'font-semibold text-tinta' : 'text-tinta-suave'"
       @click="$emit('update:modelValue', 'ES')"
     >
@@ -24,6 +25,7 @@ defineEmits<{ 'update:modelValue': [valor: 'ES' | 'EN'] }>()
     <button
       type="button"
       :aria-pressed="modelValue === 'EN'"
+      class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-1"
       :class="modelValue === 'EN' ? 'font-semibold text-tinta' : 'text-tinta-suave'"
       @click="$emit('update:modelValue', 'EN')"
     >

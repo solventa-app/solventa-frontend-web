@@ -32,7 +32,7 @@ defineEmits<{
     <div class="flex items-center gap-3">
       <span class="text-[24px] font-bold tracking-[-0.6px] text-enlace">Solventa</span>
       <span v-if="titulo" class="text-[16px] text-borde" aria-hidden="true">|</span>
-      <span v-if="titulo" class="text-[22px] font-bold text-tinta">{{ titulo }}</span>
+      <span v-if="titulo" class="font-bold text-titulo text-tinta">{{ titulo }}</span>
     </div>
     <div class="flex items-center gap-3">
       <SelectorIdioma :model-value="idioma" @update:model-value="$emit('update:idioma', $event)" />
