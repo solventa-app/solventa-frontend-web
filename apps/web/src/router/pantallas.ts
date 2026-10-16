@@ -18,7 +18,7 @@ export const pantallas: Pantalla[] = [
   { id: 'G-01', ruta: '/login', nombre: 'Ingreso con selector de rol', historia: 'Global', sprint: 1, criterios: [], componente: () => import('../views/IngresoConRol.vue') },
   { id: 'G-02', ruta: '/inicio', nombre: 'Inicio del cliente', historia: 'Global', sprint: 1, criterios: [], componente: () => import('../views/HomeCliente.vue') },
   { id: 'G-02a', ruta: '/asesor', nombre: 'Inicio del asesor comercial', historia: 'Global', sprint: 1, criterios: ['CA-W01-11'], componente: () => import('../views/HomeAsesor.vue') },
-  { id: 'G-02b', ruta: '/operador', nombre: 'Inicio del operador (back-office)', historia: 'Global', sprint: 1, criterios: ['CA-W05-01'] },
+  { id: 'G-02b', ruta: '/operador', nombre: 'Inicio del operador (back-office)', historia: 'Global', sprint: 1, criterios: ['CA-W05-01'], componente: () => import('../views/HomeOperador.vue') },
   // G-06 no tiene pantalla propia todavía (ninguna HU de este sprint cubre consultar pólizas
   // emitidas): se registra solo como destino honesto de las tarjetas "Mis pólizas"/"Pólizas
   // emitidas" de los homes (G-02/G-02a), que sin esto no tenían a dónde llevar al hacer clic.
@@ -30,5 +30,5 @@ export const pantallas: Pantalla[] = [
   { id: 'W01-03c', ruta: '/cotizacion/error', nombre: 'Error con reintento y asesor', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-05'], componente: () => import('../views/OfertaError.vue') },
   { id: 'W01-04', ruta: '/cotizacion/fuentes', nombre: 'Detalle de fuentes consultadas', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-06'], componente: () => import('../views/DetalleDeFuentes.vue') },
   { id: 'W01-05', ruta: '/cotizacion/asesor', nombre: 'Contacto con asesor', historia: 'HU-W01', sprint: 1, criterios: ['CA-W01-07'], componente: () => import('../views/ContactarAsesor.vue') },
-  { id: 'W05-01', ruta: '/operador/conciliacion', nombre: 'Conciliación de pagos', historia: 'HU-W05', sprint: 1, criterios: ['CA-W05-01', 'CA-W05-02'] },
+  { id: 'W05-01', ruta: '/operador/conciliacion', nombre: 'Conciliación de pagos', historia: 'HU-W05', sprint: 1, criterios: ['CA-W05-01', 'CA-W05-02'], componente: () => import('../views/ConciliacionDePagos.vue') },
 ]

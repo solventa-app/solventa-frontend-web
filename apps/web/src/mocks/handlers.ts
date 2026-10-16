@@ -52,11 +52,61 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   vigente: !revocado,
 })
 
-const cobros: Cobro[] = [
-  { id: 'cobro-1', polizaId: 'pol-1001', estado: 'COBRADO', monto: { valor: '48500.00', moneda: 'COP' }, actualizadoEn: ahora() },
-  { id: 'cobro-2', polizaId: 'pol-1002', estado: 'RECHAZADO', monto: { valor: '51200.00', moneda: 'COP' }, actualizadoEn: ahora() },
-  { id: 'cobro-3', polizaId: 'pol-1003', estado: 'PENDIENTE', monto: { valor: '47800.00', moneda: 'COP' }, actualizadoEn: ahora() },
+// 4 cobros (HU-W05), uno por cada EstadoCobro, con los mismos nombres/montos/fechas que el
+// prototipo de alta fidelidad (Figma 2vfK0e8t62OvvDk4c7QnK5, frame W05-01, nodo 27:44) para que
+// la pantalla se vea exactamente igual a la maqueta. idTransaccion es null para el cobro en
+// COBRANDO: la pasarela todavía no asigna id mientras el cobro está en curso (ver Cobro en
+// contrato/schema.graphql). cliente e idTransaccion son campos nuevos, adelantados en el
+// frontend antes de que el backend los exponga de verdad (ver contrato/CHANGELOG.md).
+// cobros es mutable (reintentarCobro lo actualiza en el sitio, ver más abajo) para que el estado
+// persista entre pantallas durante una sesión de demo. Por eso es `let` + fábrica en vez de
+// const: las pruebas necesitan poder reiniciarlo con restablecerCobrosDePrueba para no arrastrar
+// mutaciones de una prueba a la siguiente.
+const cobrosIniciales = (): Cobro[] => [
+  {
+    id: 'cobro-1',
+    cliente: 'Andrés Felipe Duarte',
+    polizaId: 'SOL-VH-2026-004905',
+    estado: 'COBRANDO',
+    monto: { valor: '198000.00', moneda: 'COP' },
+    idTransaccion: null,
+    actualizadoEn: '2026-09-05T15:00:00Z',
+  },
+  {
+    id: 'cobro-2',
+    cliente: 'Laura Gómez Rico',
+    polizaId: 'SOL-VH-2026-004821',
+    estado: 'COBRADO',
+    monto: { valor: '185000.00', moneda: 'COP' },
+    idTransaccion: 'txn_8a2f19c3',
+    actualizadoEn: '2026-09-05T14:14:00Z',
+  },
+  {
+    id: 'cobro-3',
+    cliente: 'Julián Torres Mesa',
+    polizaId: 'SOL-VH-2026-004798',
+    estado: 'RECHAZADO',
+    monto: { valor: '142500.00', moneda: 'COP' },
+    idTransaccion: 'txn_5b0e77d1',
+    actualizadoEn: '2026-09-04T23:02:00Z',
+  },
+  {
+    id: 'cobro-4',
+    cliente: 'Carlos Andrés Peña',
+    polizaId: 'SOL-VH-2026-004790',
+    estado: 'PENDIENTE',
+    monto: { valor: '210000.00', moneda: 'COP' },
+    idTransaccion: 'txn_c91a4402',
+    actualizadoEn: '2026-09-04T16:47:00Z',
+  },
 ]
+
+let cobros: Cobro[] = cobrosIniciales()
+
+/** Solo para pruebas: reinicia el estado mutable de `cobros` entre casos de prueba. */
+export function restablecerCobrosDePrueba(): void {
+  cobros = cobrosIniciales()
+}
 
 export const handlers = [
   graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
@@ -97,8 +147,13 @@ export const handlers = [
   graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>(
     'reintentarCobro',
     ({ variables }) => {
+      // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
+      // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
       const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]
-      return HttpResponse.json({ data: { reintentarCobro: { ...cobro, estado: 'COBRANDO', actualizadoEn: ahora() } } })
+      cobro.estado = 'COBRANDO'
+      cobro.idTransaccion = null // la pasarela aun no asigna id mientras el cobro esta en curso
+      cobro.actualizadoEn = ahora()
+      return HttpResponse.json({ data: { reintentarCobro: cobro } })
     },
   ),
 ]
