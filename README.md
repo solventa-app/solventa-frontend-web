@@ -56,5 +56,7 @@ cd apps/web && npm run codegen # regenerar src/graphql/tipos.ts
 | Settings → Variables → Actions | `BACKEND_REPO` = `solventa-app/solventa-backend` | Activa el job `contrato` del CI (compara con el `main` del backend) |
 | Settings → Secrets → Actions | `BACKEND_READ_TOKEN` (solo si `solventa-backend` es privado) | Permite al CI leer el backend |
 | Settings → Secrets → Actions | `SONAR_TOKEN` y `SONAR_HOST_URL` | Activa el análisis de SonarQube |
-| Settings → Branches | Proteger `main`: PR + 1 revisión + CI en verde | ADR-06 y `docs/convenciones.md` |
 | `.github/CODEOWNERS` | Reemplazar los roles por usuarios reales | Revisores automáticos |
+
+`main` y `develop` ya quedan protegidas por los rulesets versionados en `.github/rulesets/` (ver
+`docs/convenciones.md`, sección "Ramas y flujo") — no es configuración manual pendiente.

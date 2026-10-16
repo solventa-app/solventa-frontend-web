@@ -1,14 +1,10 @@
-// Sesión activa (Global). Singleton a nivel de módulo, igual patrón que useConciliacion.ts: no hace
-// falta una librería de estado global para un dato tan chico (CLAUDE.md regla 8, "no sobre-construir").
-// El contrato (contrato/schema.graphql) no modela login ni roles — no hay mutación de autenticación —
-// así que esto es pura navegación del lado del cliente: decide qué home vuelve a mostrar "Cerrar
-// sesión" (G-02/G-02a/G-02b) y permite a HomeOperador.vue cerrar sesión con el mismo patrón que las
-// otras dos pantallas "home" del proyecto. No se guarda en localStorage (CLAUDE.md regla 7): si se
-// recarga la página, se vuelve al rol por defecto.
-//
-// Nota: este mismo archivo existe también en feature/HU-W01-pantallas (con el mismo contenido);
-// ambas ramas lo necesitan de forma independiente porque todavía no se han integrado a main. Al
-// fusionar no debería haber conflicto real más allá de "añadido en ambos lados" con el mismo texto.
+// Sesión activa (HU-W01/Global). Singleton a nivel de módulo, igual patrón que useCotizacion.ts:
+// no hace falta una librería de estado global para un dato tan chico (CLAUDE.md regla 8, "no
+// sobre-construir"). El contrato (contrato/schema.graphql) no modela login ni roles — no hay
+// mutación de autenticación — así que esto es pura navegación del lado del cliente: decide a qué
+// home vuelve "Inicio" en las pantallas compartidas entre Cliente y Asesor comercial (W01-01 a
+// W01-05) y qué tarjeta de bienvenida mostrar en G-02/G-02a. No se guarda en localStorage (CLAUDE.md
+// regla 7): si se recarga la página, se vuelve al rol por defecto.
 import { reactive } from 'vue'
 
 export type Rol = 'CLIENTE' | 'ASESOR' | 'OPERADOR'
@@ -31,8 +27,8 @@ const NOMBRE_POR_DEFECTO: Record<Rol, string> = {
   OPERADOR: 'Equipo de Operaciones',
 }
 
-// Por defecto CLIENTE: así una pantalla sigue siendo navegable escribiendo la URL directamente (sin
-// pasar por /login primero), como ya permitía el prototipo de desarrollo con mocks.
+// Por defecto CLIENTE: así una pantalla de /cotizacion/* sigue siendo navegable escribiendo la URL
+// directamente (sin pasar por /login primero), como ya permitía el prototipo de desarrollo con mocks.
 const estado = reactive<EstadoSesion>({
   rol: 'CLIENTE',
   nombre: NOMBRE_POR_DEFECTO.CLIENTE,

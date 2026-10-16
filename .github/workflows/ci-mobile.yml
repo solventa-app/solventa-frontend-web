@@ -2,11 +2,12 @@ name: CI mobile
 
 # No hace nada hasta que exista apps/mobile/pubspec.yaml (el móvil arranca en el Sprint 2).
 # SIN PROBAR: este workflow no se ha ejecutado nunca; revisarlo en el primer PR del móvil.
+# En PR corre siempre: el check `mobile` es obligatorio en `main` y `develop`, y un check filtrado por ruta
+# nunca reportaría en los PRs que no tocan el móvil (sin pubspec.yaml el job no hace nada y termina en verde).
 on:
   pull_request:
-    paths: ['apps/mobile/**', '.github/workflows/ci-mobile.yml']
   push:
-    branches: [main]
+    branches: [main, develop]
     paths: ['apps/mobile/**', '.github/workflows/ci-mobile.yml']
 
 concurrency:
