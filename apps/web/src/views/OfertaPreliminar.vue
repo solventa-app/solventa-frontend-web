@@ -43,7 +43,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-03b">
+  <div class="flex min-h-screen flex-col" data-pantalla="W01-03b">
     <HeaderPantalla titulo="Oferta preliminar" />
     <TituloPantalla class="sr-only">Oferta preliminar</TituloPantalla>
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />

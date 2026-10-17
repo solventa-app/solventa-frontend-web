@@ -260,3 +260,43 @@ describe('HeaderPantalla', () => {
     expect(header.emitted('update:idioma')?.[0]).toEqual(['EN'])
   })
 })
+
+// KAN-203: IconoMaterial nunca tenía una prueba propia, solo se ejercitaba de rebote a través de
+// CampoFormulario (que monta un solo ícono conocido). Esto cubre que cambia de trazo según `nombre`
+// (prop reactiva) y que los 4 glifos que trajo HU-W05 (assignment/schedule/swap_horiz/gavel, usados
+// en ConciliacionDePagos.vue) quedaron bien agregados al set que ya traía develop tras el merge de
+// componentes-globales, sin pisar ninguno de los 24 anteriores.
+describe('IconoMaterial', () => {
+  it('renderiza un <svg> decorativo (aria-hidden, no focuseable)', () => {
+    const icono = mount(IconoMaterial, { props: { nombre: 'home' } })
+    expect(icono.element.tagName).toBe('svg')
+    expect(icono.attributes('aria-hidden')).toBe('true')
+    expect(icono.attributes('focusable')).toBe('false')
+  })
+
+  it('el trazo (atributo d del <path>) cambia según la prop `nombre`', async () => {
+    const icono = mount(IconoMaterial, { props: { nombre: 'home' } })
+    const trazoHome = icono.get('path').attributes('d')
+    await icono.setProps({ nombre: 'logout' })
+    const trazoLogout = icono.get('path').attributes('d')
+    expect(trazoHome).toBeTruthy()
+    expect(trazoLogout).toBeTruthy()
+    expect(trazoHome).not.toBe(trazoLogout)
+  })
+
+  it.each(['assignment', 'schedule', 'swap_horiz', 'gavel'] as const)(
+    'renderiza el glifo "%s" que agregó HU-W05 (ConciliacionDePagos.vue) sin romper el set existente',
+    (nombre) => {
+      const icono = mount(IconoMaterial, { props: { nombre } })
+      expect(icono.get('path').attributes('d')).toBeTruthy()
+    },
+  )
+
+  it.each(['badge', 'payments', 'logout', 'home', 'verified_user', 'progress_activity', 'check_circle', 'warning'] as const)(
+    'sigue teniendo el glifo "%s" que ya traía develop (componentes-globales/HU-W01)',
+    (nombre) => {
+      const icono = mount(IconoMaterial, { props: { nombre } })
+      expect(icono.get('path').attributes('d')).toBeTruthy()
+    },
+  )
+})

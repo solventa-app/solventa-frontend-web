@@ -61,7 +61,7 @@ function rutaVolver() {
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-04">
+  <div class="flex min-h-screen flex-col" data-pantalla="W01-04">
     <HeaderPantalla titulo="Detalle de fuentes" />
     <MigasDePan seccion="Detalle de fuentes" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="oferta" class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
@@ -77,10 +77,10 @@ function rutaVolver() {
             <li
               v-for="fuente in openFinance"
               :key="fuente.id"
-              class="flex items-center justify-between border-b border-borde bg-white px-4 py-3.5 last:border-b-0"
+              class="flex flex-wrap items-center justify-between gap-2 border-b border-borde bg-white px-4 py-3.5 last:border-b-0"
             >
               <span class="text-[13px] font-semibold text-tinta">{{ fuente.nombre }}</span>
-              <span class="flex items-center gap-2">
+              <span class="flex flex-wrap items-center justify-end gap-2">
                 <span
                   class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                   :class="{
@@ -110,10 +110,10 @@ function rutaVolver() {
             <li
               v-for="fuente in openData"
               :key="fuente.id"
-              class="flex items-center justify-between border-b border-borde bg-white px-4 py-3.5 last:border-b-0"
+              class="flex flex-wrap items-center justify-between gap-2 border-b border-borde bg-white px-4 py-3.5 last:border-b-0"
             >
               <span class="text-[13px] font-semibold text-tinta">{{ fuente.nombre }}</span>
-              <span class="flex items-center gap-2">
+              <span class="flex flex-wrap items-center justify-end gap-2">
                 <span
                   class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
                   :class="{

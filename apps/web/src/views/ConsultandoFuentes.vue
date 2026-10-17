@@ -52,7 +52,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-02">
+  <div class="flex min-h-screen flex-col" data-pantalla="W01-02">
     <HeaderPantalla titulo="Consultando fuentes" />
     <TituloPantalla class="sr-only">Consultando fuentes</TituloPantalla>
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />

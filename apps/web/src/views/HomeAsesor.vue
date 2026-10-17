@@ -60,7 +60,7 @@ function alCerrarSesion() {
       <div class="flex flex-wrap items-stretch gap-5">
         <RouterLink
           to="/cotizacion"
-          class="flex w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          class="flex w-full max-w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         >
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
@@ -72,7 +72,7 @@ function alCerrarSesion() {
         </RouterLink>
         <RouterLink
           to="/polizas"
-          class="flex w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          class="flex w-full max-w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         >
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
@@ -84,7 +84,7 @@ function alCerrarSesion() {
         </RouterLink>
         <RouterLink
           to="/cotizacion/fuentes"
-          class="flex w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          class="flex w-full max-w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         >
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />

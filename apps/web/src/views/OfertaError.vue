@@ -52,7 +52,7 @@ function reintentar() {
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-03c">
+  <div class="flex min-h-screen flex-col" data-pantalla="W01-03c">
     <HeaderPantalla titulo="Nueva cotización" />
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
     <main v-if="error" class="flex flex-1 flex-col items-center justify-center bg-fondo px-10 py-16">
@@ -67,7 +67,7 @@ function reintentar() {
           {{ error.mensaje }}
         </p>
         <div class="flex flex-col items-center gap-4">
-          <Boton v-if="error.puedeReintentar" class="w-[340px]" @click="reintentar">
+          <Boton v-if="error.puedeReintentar" class="w-full" @click="reintentar">
             <template #icono><IconoMaterial nombre="refresh" class="h-4 w-4" /></template>
             Reintentar
           </Boton>
