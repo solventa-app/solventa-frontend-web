@@ -49,6 +49,25 @@ npm run contrato:sincronizar   # traer la versión del backend
 cd apps/web && npm run codegen # regenerar src/graphql/tipos.ts
 ```
 
+## Despliegue (Vercel)
+
+`.github/workflows/deploy-web.yml` despliega `apps/web` a **producción** en cada push a `main` que toque la web
+(con git-flow: un `release/sprint-N` o un `hotfix`; nada se publica desde `develop`). Corre typecheck y pruebas primero.
+El build lo hace Vercel con `apps/web/vercel.json` (que también reescribe todas las rutas a `index.html`, porque el
+router usa history).
+
+**Para probarlo sin tocar producción:** Actions → *Deploy web* → *Run workflow* y elige una rama que no sea `main`
+(p. ej. `develop`): hace una **vista previa**, no producción. El botón solo aparece cuando el workflow ya está en
+`develop` (la rama predeterminada). La URL sale en el resumen del job; si Vercel pide login, es *Deployment Protection*.
+
+1. El proyecto de Vercel (IDs en el workflow) debe tener **Root Directory vacío** y no estar conectado al repo por la
+   integración de Git (si no, cada push desplegaría dos veces). Se revisa en Vercel → Settings → General y → Git.
+2. Crea un token en https://vercel.com/account/tokens y guárdalo como secreto `VERCEL_TOKEN` del repo (tabla de abajo).
+3. Mientras no exista el BFF, define la variable `VITE_USE_MOCKS=true`: la web desplegada responde con los mocks de MSW.
+4. Cuando el BFF esté desplegado, quita esa variable y agrega en `apps/web/vercel.json`, **antes** del rewrite a
+   `index.html`, `{ "source": "/graphql/:path*", "destination": "https://<host-del-bff>/graphql/:path*" }`
+   (el cliente llama a `/graphql/web` en la misma origen; el proxy de Vite solo existe en desarrollo).
+
 ## Documentación
 
 - [`CLAUDE.md`](CLAUDE.md) — contexto de trabajo, reglas y agentes (léelo antes de tocar código).
@@ -63,6 +82,8 @@ cd apps/web && npm run codegen # regenerar src/graphql/tipos.ts
 | Settings → Variables → Actions | `BACKEND_REPO` = `solventa-app/solventa-backend` | Activa el job `contrato` del CI (compara con el `main` del backend) |
 | Settings → Secrets → Actions | `BACKEND_READ_TOKEN` (solo si `solventa-backend` es privado) | Permite al CI leer el backend |
 | Settings → Secrets → Actions | `SONAR_TOKEN` y `SONAR_HOST_URL` | Activa el análisis de SonarQube |
+| Settings → Secrets → Actions | `VERCEL_TOKEN` | Activa el despliegue a Vercel (`deploy-web.yml`) |
+| Settings → Variables → Actions | `VITE_USE_MOCKS` = `true` (opcional) | Despliega la web con los mocks de MSW mientras no haya BFF |
 | `.github/CODEOWNERS` | Reemplazar los roles por usuarios reales | Revisores automáticos |
 
 `main` y `develop` ya quedan protegidas por los rulesets versionados en `.github/rulesets/` (ver
