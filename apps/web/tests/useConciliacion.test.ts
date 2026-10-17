@@ -9,7 +9,7 @@ import { servidor } from '../src/mocks/node'
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
 describe('useConciliacion', () => {
-  beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+  beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
   afterEach(() => servidor.resetHandlers())
   afterAll(() => servidor.close())
 

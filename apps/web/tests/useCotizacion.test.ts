@@ -19,7 +19,7 @@ function llenarCaptura(cotizacion: ReturnType<typeof useCotizacion>, documentoId
 }
 
 describe('useCotizacion', () => {
-  beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+  beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
   afterEach(() => servidor.resetHandlers())
   afterAll(() => servidor.close())
 

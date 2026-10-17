@@ -6,9 +6,10 @@
 // `estado` de useCotizacion es un singleton a nivel de módulo (ver useCotizacion.ts), así que cada
 // wrapper montado se desmonta al terminar su prueba (`afterEach`): de lo contrario un wrapper viejo
 // sigue reactivo y se vuelve a renderizar cuando una prueba posterior cambia el estado compartido.
-import { graphql, http, HttpResponse } from 'msw'
+import { http, HttpResponse } from 'msw'
+import { graphql } from 'msw/graphql'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import ConsultandoFuentes from '../src/views/ConsultandoFuentes.vue'
 import ContactarAsesor from '../src/views/ContactarAsesor.vue'
@@ -54,7 +55,7 @@ function crearRouterDePrueba() {
   return createRouter({ history: createMemoryHistory(), routes: crearRutas() })
 }
 
-beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => servidor.resetHandlers())
 afterAll(() => servidor.close())
 
@@ -229,9 +230,11 @@ describe('ConsultandoFuentes (W01-02)', () => {
     cotizacion.captura.consentimiento = true
 
     let liberar: () => void = () => {}
+    let atendida = false
     servidor.use(
-      graphql.mutation('solicitarOferta', () => {
+      graphql.link('*').mutation('solicitarOferta', () => {
         return new Promise((resolve) => {
+          atendida = true
           liberar = () =>
             resolve(
               HttpResponse.json({
@@ -263,6 +266,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
     expect(wrapper.find('.animate-pulse').exists()).toBe(true)
     expect(router.currentRoute.value.path).toBe('/cotizacion/consulta')
 
+    // Con MSW 3 el handler corre un poco después de montar: hay que esperarlo antes de liberar la respuesta.
+    await vi.waitFor(() => expect(atendida).toBe(true))
     liberar()
     await flushPromises()
     await esperarRuta(router, '/cotizacion/oferta')

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import HomeOperador from '../src/views/HomeOperador.vue'
 import ConciliacionDePagos from '../src/views/ConciliacionDePagos.vue'
 import { useSesion } from '../src/composables/useSesion'
@@ -33,7 +33,7 @@ function montar(...args: Parameters<typeof mount>) {
 }
 
 describe('HU-W05 · pantallas', () => {
-  beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+  beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
   afterEach(() => {
     wrappers.forEach((w) => w.unmount())
     wrappers.length = 0
@@ -105,6 +105,8 @@ describe('HU-W05 · pantallas', () => {
       await router.isReady()
       const wrapper = montar(ConciliacionDePagos, { global: { plugins: [router] } })
       await flushPromises()
+      // Con MSW 3 la respuesta del mock llega un poco después de un flushPromises(): se espera a los datos.
+      await vi.waitFor(() => expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0))
       return { wrapper, router }
     }
 
@@ -171,11 +173,10 @@ describe('HU-W05 · pantallas', () => {
 
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
-      await flushPromises()
+      await vi.waitFor(() => expect(wrapper.text()).toContain('No hay cobros en este estado.'))
 
       // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: pasó a Cobrando.
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
-      expect(wrapper.text()).toContain('No hay cobros en este estado.')
       expect(wrapper.get('[role="status"]').text()).toContain('Cobro reenviado a la pasarela')
     })
 
@@ -193,10 +194,10 @@ describe('HU-W05 · pantallas', () => {
       servidor.use(http.post('/graphql/web', () => new HttpResponse(null, { status: 500 })))
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
-      await flushPromises()
-
-      const alertas = wrapper.findAll('[role="alert"]')
-      expect(alertas.some((a) => a.text().includes('No pudimos reintentar el cobro'))).toBe(true)
+      await vi.waitFor(() => {
+        const alertas = wrapper.findAll('[role="alert"]')
+        expect(alertas.some((a) => a.text().includes('No pudimos reintentar el cobro'))).toBe(true)
+      })
       // La tabla, las pestañas y el bloque legal siguen ahí: no se reemplazó todo por el error.
       expect(wrapper.findAll('[role="tab"]').length).toBeGreaterThan(0)
       expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0)
@@ -214,13 +215,14 @@ describe('HU-W05 · pantallas', () => {
         .trigger('click')
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
-      await flushPromises()
+      await vi.waitFor(() => expect(wrapper.text()).toContain('No hay cobros en este estado.'))
 
       // Simula volver a entrar a la pantalla (nuevo montaje -> nueva consulta `cobros` al mock).
       await router.push('/operador')
       const wrapper2 = montar(ConciliacionDePagos, { global: { plugins: [router] } })
       await router.push('/operador/conciliacion')
       await flushPromises()
+      await vi.waitFor(() => expect(wrapper2.findAll('tbody tr').length).toBeGreaterThan(0))
 
       await wrapper2
         .findAll('[role="tab"]')

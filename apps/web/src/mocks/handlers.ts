@@ -1,4 +1,5 @@
-import { graphql, HttpResponse } from 'msw'
+import { HttpResponse } from 'msw'
+import { graphql } from 'msw/graphql'
 import type {
   Cobro,
   ConfirmacionContacto,
@@ -154,8 +155,11 @@ const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
   AGENDAR: 'llamada agendada',
 }
 
+// MSW 3 quitó graphql.query y graphql.mutation: se cuelgan de un enlace. '*' conserva lo de antes (cualquier endpoint).
+const bff = graphql.link('*')
+
 export const handlers = [
-  graphql.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
+  bff.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
     const { usuario, clave } = variables.entrada
     // Mismo mensaje genérico que el BFF: no revela si el alias existe.
     if (clave === 'clave-erronea') {
@@ -173,17 +177,17 @@ export const handlers = [
     })
   }),
 
-  graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
+  bff.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
     'registrarConsentimiento',
     () => HttpResponse.json({ data: { registrarConsentimiento: consentimiento(false) } }),
   ),
 
-  graphql.mutation<{ revocarConsentimiento: Consentimiento }, MutationRevocarConsentimientoArgs>(
+  bff.mutation<{ revocarConsentimiento: Consentimiento }, MutationRevocarConsentimientoArgs>(
     'revocarConsentimiento',
     () => HttpResponse.json({ data: { revocarConsentimiento: consentimiento(true) } }),
   ),
 
-  graphql.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
+  bff.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
     'solicitarOferta',
     ({ variables }) => {
       const documento = variables.entrada.documentoIdentidad
@@ -199,7 +203,7 @@ export const handlers = [
     },
   ),
 
-  graphql.mutation<{ contactarAsesor: ConfirmacionContacto }, MutationContactarAsesorArgs>(
+  bff.mutation<{ contactarAsesor: ConfirmacionContacto }, MutationContactarAsesorArgs>(
     'contactarAsesor',
     ({ variables }) =>
       HttpResponse.json({
@@ -213,13 +217,13 @@ export const handlers = [
       }),
   ),
 
-  graphql.query<{ cobros: Cobro[] }, QueryCobrosArgs>('cobros', ({ variables }) =>
+  bff.query<{ cobros: Cobro[] }, QueryCobrosArgs>('cobros', ({ variables }) =>
     HttpResponse.json({
       data: { cobros: variables.estado ? cobros.filter((c) => c.estado === variables.estado) : cobros },
     }),
   ),
 
-  graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>('reintentarCobro', ({ variables }) => {
+  bff.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>('reintentarCobro', ({ variables }) => {
     // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
     // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
     const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]

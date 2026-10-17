@@ -64,7 +64,7 @@ describe('router', () => {
 describe('guardia de sesión (crearRouter)', () => {
   const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
-  beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+  beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
   afterEach(() => useSesion().cerrarSesion())
   afterAll(() => servidor.close())
 
