@@ -36,7 +36,10 @@ Observaciones:
 
 ## Sprint 2 (26 oct – 8 nov)
 
-- **Web:** HU-W03 (oferta, contrato/firma, resultado del pago, notificación de firma, emisión de póliza, documento de póliza; el plano v21 **no tiene** la pantalla de resultado del pago, hay que crearla en Figma o ajustar la fila); HU-W07 (portal técnico del socio: login, panel de API key y cuota, documentación) y E2E de W01 a W03 con Cypress.
+- **Web:** HU-W03 (oferta, contrato/firma, resultado del pago, notificación de firma, emisión de póliza, documento de póliza; el plano v21 **no tiene** la pantalla de resultado del pago, hay que crearla en Figma o ajustar la fila);
+  - Revisado el 2026-10-17 en Figma `Solventa-web-Final`: W03-02b dice que la prima "se facturará junto con la cuota de tu crédito hipotecario" y que al confirmar la firma "se activa el cobro de la prima". Después vienen W03-03 Firma confirmada, W03-04 Póliza emitida y W03-05 Documento de póliza: **no hay pantalla de resultado del cobro ni se pide tarjeta**.
+  - Antes de construir W03 hay que decidir (D-03): si el primer cobro va antes de emitir; qué pasa si sale rechazado o pendiente (¿se emite igual?); y diseñar la pantalla de resultado (cobrado, en proceso, rechazado). Detalle y preguntas en `solventa-backend/docs/cobros-conciliacion.md`, sección 10.
+ HU-W07 (portal técnico del socio: login, panel de API key y cuota, documentación) y E2E de W01 a W03 con Cypress.
 - **Móvil (arranca aquí):** esqueleto de la app Flutter (3 h) y home `G-03`; HU-M02 biometría nativa (lectura biométrica, no reconocida, ingreso con PIN, acceso concedido).
 
 ## Sprint 3 (9 – 29 nov)
