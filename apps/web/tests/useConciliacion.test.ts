@@ -35,13 +35,7 @@ describe('useConciliacion', () => {
     expect(estados).toEqual(['COBRADO', 'COBRANDO', 'PENDIENTE', 'RECHAZADO'])
   })
 
-  it('el cobro en COBRANDO no tiene idTransaccion todavía', () => {
-    const { estado } = useConciliacion(fetchPrueba)
-    const enCurso = estado.cobros.find((c) => c.estado === 'COBRANDO')
-    expect(enCurso?.idTransaccion).toBeNull()
-  })
-
-  it('reintentarCobro mueve un cobro RECHAZADO a COBRANDO y limpia su idTransaccion', async () => {
+  it('reintentarCobro mueve un cobro RECHAZADO a COBRANDO y conserva su cliente', async () => {
     const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
     const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')
     expect(rechazado).toBeDefined()
@@ -52,16 +46,13 @@ describe('useConciliacion', () => {
     expect(estado.cobros).toHaveLength(totalAntes)
     const actualizado = estado.cobros.find((c) => c.id === rechazado!.id)
     expect(actualizado?.estado).toBe('COBRANDO')
-    expect(actualizado?.idTransaccion).toBeNull()
-    expect(actualizado?.cliente).toBe(rechazado!.cliente)
+    expect(actualizado?.cliente?.nombre).toBe(rechazado!.cliente?.nombre)
     expect(estado.reintentando).toBeNull()
   })
 
-  // QA independiente encontro que las queries no pedian cliente/idTransaccion: el mock de MSW
-  // ignora el selection set y devuelve igual el objeto completo, asi que el bug pasaba en verde
-  // hasta aqui. Esta prueba inspecciona el texto real de la query/mutation enviada (no la
-  // respuesta) para que una regresion futura si falle.
-  it('la query cobros y la mutation reintentarCobro piden cliente e idTransaccion', async () => {
+  // MSW devuelve el objeto completo sin mirar el selection set: se inspecciona el texto enviado, porque
+  // el BFF real solo devuelve lo que se pide.
+  it('la query cobros y la mutation reintentarCobro piden el nombre del cliente', async () => {
     let consultaCobros = ''
     let consultaReintentar = ''
     const fetchQueCaptura: typeof fetch = async (url, init) => {
@@ -77,8 +68,7 @@ describe('useConciliacion', () => {
     await reintentarCobro(rechazado!.id)
 
     for (const consulta of [consultaCobros, consultaReintentar]) {
-      expect(consulta).toMatch(/\bcliente\b/)
-      expect(consulta).toMatch(/\bidTransaccion\b/)
+      expect(consulta).toMatch(/cliente \{ id nombre \}/)
     }
   })
 

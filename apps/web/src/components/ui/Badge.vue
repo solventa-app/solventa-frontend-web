@@ -31,6 +31,7 @@ defineProps<{
     class="inline-flex items-center gap-1 rounded-full px-[10px] py-1 text-[11px] font-semibold leading-[14px]"
     :class="CLASES[tipo]"
   >
-    <span aria-hidden="true">{{ GLIFOS[tipo] }}</span><slot />
+    <span aria-hidden="true">{{ GLIFOS[tipo] }}</span
+    ><slot />
   </span>
 </template>

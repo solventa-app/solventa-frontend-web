@@ -1,34 +1,27 @@
 // Formateo de dinero (CLAUDE.md regla 7: nunca concatenar el símbolo a mano, siempre Intl.NumberFormat).
-// `Monto.valor` llega del contrato como texto decimal ("48500.00"), nunca float (ver contrato/schema.graphql).
+// `Monto.valor` llega como texto decimal ("48500.00") y se le pasa así a Intl, que formatea cadenas
+// numéricas sin pasarlas por float: no se pierde precisión en montos grandes.
 import type { Monto } from '../graphql/tipos'
 
 export function formatearMonto(monto: Pick<Monto, 'valor' | 'moneda'>): string {
-  const numero = Number(monto.valor)
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: monto.moneda,
     maximumFractionDigits: 0,
-  }).format(numero)
+  }).format(monto.valor as Intl.StringNumericLiteral)
 }
 
-export function formatearRangoMonto(minima: Pick<Monto, 'valor' | 'moneda'>, maxima: Pick<Monto, 'valor' | 'moneda'>): string {
+export function formatearRangoMonto(
+  minima: Pick<Monto, 'valor' | 'moneda'>,
+  maxima: Pick<Monto, 'valor' | 'moneda'>,
+): string {
   return `${formatearMonto(minima)} — ${formatearMonto(maxima)}`
 }
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
-// Formato "12 sep 2026, 10:45 a. m." (día de 2 dígitos, mes abreviado de 3 letras, año, hora 12h con
-// meridiano en español) — viene de HU-W05, re-verificado contra el archivo correcto de Figma
-// (yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo 2001:3156, confirmado con captura de pantalla):
-// una versión anterior de esta utilidad producía "05 sep, 09:14" (sin año, hora 24h), formato que
-// correspondía al archivo de Figma equivocado (2vfK0e8t62OvvDk4c7QnK5 "Solventa-web"), no al real.
-// El Intl.DateTimeFormat de Node con locale es-CO no deja el día en 2 dígitos ni el mes en 3 letras
-// directamente (da "sept" y sin cero a la izquierda), así que se arma a mano a partir de
-// formatToParts en vez de confiar en el string por defecto del locale. Siempre en hora de Bogotá
-// (America/Bogota), sin importar en qué huso corra el servidor/navegador. (La versión que trajo
-// `develop` usaba `Intl.DateTimeFormat(..., { dateStyle: 'medium', timeStyle: 'short' })`, sin zona
-// horaria forzada ni formato verificado contra Figma: se reemplaza por esta, que además tiene
-// pruebas unitarias dedicadas en apps/web/tests/formato.test.ts.)
+// Formato del prototipo (W05-01, nodo 2001:3156): "12 sep 2026, 10:45 a. m.", siempre en hora de Bogotá.
+// Se arma con formatToParts porque es-CO da "sept" y el día sin cero a la izquierda.
 export function formatearFecha(iso: string): string {
   const partes = new Intl.DateTimeFormat('es-CO', {
     timeZone: 'America/Bogota',

@@ -10,15 +10,15 @@ describe('G-01 · Ingreso con selector de rol (pantalla aislada)', () => {
   it('existe con su data-pantalla y el formulario de ingreso', () => {
     cy.get('[data-pantalla="G-01"]').within(() => {
       cy.contains('h1, h2', 'Iniciar sesión').should('exist')
-      cy.get('input[type="email"]').should('exist')
+      cy.contains('label', 'Usuario').parent().find('input').should('exist')
       cy.get('input[type="password"]').should('exist')
     })
   })
 
-  it('"Ingresar" está deshabilitado hasta completar correo y contraseña', () => {
+  it('"Ingresar" está deshabilitado hasta completar usuario y clave', () => {
     cy.get('[data-pantalla="G-01"]').within(() => {
       cy.contains('button', 'Ingresar').should('be.disabled')
-      cy.get('input[type="email"]').type('persona@correo.com')
+      cy.contains('label', 'Usuario').parent().find('input').type('asesor.demo')
       cy.contains('button', 'Ingresar').should('be.disabled')
       cy.get('input[type="password"]').type('secreta123')
       cy.contains('button', 'Ingresar').should('not.be.disabled')
@@ -37,7 +37,7 @@ describe('G-01 · Ingreso con selector de rol (pantalla aislada)', () => {
 
   it('con el rol "Asesor comercial" y credenciales válidas, ingresar navega a /asesor', () => {
     cy.get('[data-pantalla="G-01"]').within(() => {
-      cy.get('input[type="email"]').type('persona@correo.com')
+      cy.contains('label', 'Usuario').parent().find('input').type('asesor.demo')
       cy.get('input[type="password"]').type('secreta123')
       cy.contains('[role="radio"]', 'Asesor comercial').click()
       cy.contains('button', 'Ingresar').click()

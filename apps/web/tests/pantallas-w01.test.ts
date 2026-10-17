@@ -75,7 +75,10 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     cotizacion.reiniciar()
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
 
-    await wrapper.findAll('button').find((b) => b.text().includes('fallo total'))!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('fallo total'))!
+      .trigger('click')
 
     expect(cotizacion.captura.documentoIdentidad.endsWith('000')).toBe(true)
     expect(cotizacion.captura.consentimiento).toBe(true)
@@ -93,7 +96,10 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     const wrapper = montar(SolicitudYConsentimiento, router)
 
     await wrapper.find('input[type="checkbox"]').setValue(true)
-    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Consultar oferta')!
+      .trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/cotizacion')
@@ -108,7 +114,10 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
     await wrapper.find('input[type="checkbox"]').setValue(true)
     await wrapper.findAll('input')[1].setValue('no-es-un-numero') // input[1] = Monto del crédito
-    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Consultar oferta')!
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Ingresa un monto válido, mayor a cero.')
@@ -123,7 +132,10 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
     await wrapper.find('input[type="checkbox"]').setValue(true)
     await wrapper.findAll('input')[2].setValue('3.5') // input[2] = Plazo (meses)
-    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Consultar oferta')!
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Ingresa un plazo válido en meses, mayor a cero.')
@@ -138,7 +150,10 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
 
     await wrapper.find('input[type="checkbox"]').setValue(true)
-    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Consultar oferta')!
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Ingresa la dirección del inmueble a asegurar.')
@@ -151,7 +166,10 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
     await wrapper.find('input[type="checkbox"]').setValue(true)
     await wrapper.findAll('input')[0].setValue('12') // claramente incompleto, no solo "vacío"
-    await wrapper.findAll('button').find((b) => b.text() === 'Consultar oferta')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Consultar oferta')!
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Ingresa un número de documento válido')
@@ -345,7 +363,13 @@ describe('DetalleDeFuentes (W01-04)', () => {
         cobertura: { valor: '200000000', moneda: 'COP' },
         desgloseScore: [],
         fuentes: [
-          { id: 'cuentas-bancarias', nombre: 'cuentas-bancarias', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null },
+          {
+            id: 'cuentas-bancarias',
+            nombre: 'cuentas-bancarias',
+            origen: 'OPEN_FINANCE',
+            estado: 'OK',
+            capturadoEn: null,
+          },
           { id: 'afiliacion-pila', nombre: 'afiliacion-pila', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
         ],
       },
@@ -440,7 +464,10 @@ describe('ContactarAsesor (W01-05)', () => {
 
     expect(wrapper.text()).not.toContain('SOL-24817')
 
-    await wrapper.findAll('button').find((b) => b.text() === 'Llamar')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Llamar')!
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Un asesor te contactará')
@@ -456,7 +483,10 @@ describe('ContactarAsesor (W01-05)', () => {
     useCotizacion().reiniciar()
     const wrapper = montar(ContactarAsesor, crearRouterDePrueba())
 
-    await wrapper.findAll('button').find((b) => b.text() === 'Llamar')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Llamar')!
+      .trigger('click')
     await flushPromises()
 
     const alerta = wrapper.get('[role="alert"]')
@@ -469,80 +499,148 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
   beforeEach(() => useSesion().cerrarSesion())
   afterEach(() => useSesion().cerrarSesion())
 
-  it('G-01 deshabilita "Ingresar" hasta completar correo y contraseña, y navega según el rol elegido', async () => {
+  it('G-01 deshabilita "Ingresar" hasta completar usuario y clave, e inicia sesión con el rol del token', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')
     await router.isReady()
     const wrapper = montar(IngresoConRol, router)
 
-    expect(wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.attributes('disabled')).toBeDefined()
+    expect(
+      wrapper
+        .findAll('button')
+        .find((b) => b.text() === 'Ingresar')!
+        .attributes('disabled'),
+    ).toBeDefined()
 
-    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('persona@correo.com')
+    await wrapper
+      .findAll('input')
+      .find((i) => i.attributes('type') !== 'password')!
+      .setValue('asesor.demo')
     await wrapper.find('input[type="password"]').setValue('secreta123')
-    await wrapper.findAll('button').find((b) => b.text() === 'Asesor comercial')!.trigger('click')
-    await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Asesor comercial')!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Ingresar')!
+      .trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/asesor')
     expect(useSesion().estado.rol).toBe('ASESOR')
+    // El nombre sale del token, no de un valor fijo del frontend.
+    expect(useSesion().estado.nombre).toBe('Asesor Demo')
+  })
+
+  it('G-01 rechaza el ingreso si el rol del token no coincide con el chip elegido', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    await wrapper
+      .findAll('input')
+      .find((i) => i.attributes('type') !== 'password')!
+      .setValue('cliente.demo')
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Operador')!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Ingresar')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Tu usuario no corresponde al rol seleccionado.')
+    expect(useSesion().sesionActiva()).toBe(false)
+  })
+
+  it('G-01 muestra el mensaje genérico del BFF con credenciales incorrectas', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    await wrapper
+      .findAll('input')
+      .find((i) => i.attributes('type') !== 'password')!
+      .setValue('cliente.demo')
+    await wrapper.find('input[type="password"]').setValue('clave-erronea')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Ingresar')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Usuario o clave incorrectos.')
   })
 
   it('G-02 (home cliente): "Cerrar sesión" vuelve a /login y la tarjeta navega a /cotizacion', async () => {
-    useSesion().iniciarSesion('CLIENTE')
+    await useSesion(fetchPrueba).iniciarSesion('maria.restrepo', 'secreta123')
     const router = crearRouterDePrueba()
     router.push('/inicio')
     await router.isReady()
     const wrapper = montar(HomeCliente, router)
 
     expect(wrapper.text()).toContain('Nueva cotización')
-    // Saludo personalizado real (estado.nombre), no un placeholder fijo.
-    expect(wrapper.text()).toContain(`Hola, ${useSesion().estado.nombre}`)
+    expect(wrapper.text()).toContain('Hola, Maria Restrepo')
 
-    await wrapper.findAll('button').find((b) => b.text().includes('Cerrar sesión'))!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Cerrar sesión'))!
+      .trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/login')
   })
 
   it('G-02a (home asesor): copy distinto al del cliente, mismo destino /cotizacion', async () => {
-    useSesion().iniciarSesion('ASESOR')
+    await useSesion(fetchPrueba).iniciarSesion('asesor.demo', 'secreta123')
     const router = crearRouterDePrueba()
     router.push('/asesor')
     await router.isReady()
     const wrapper = montar(HomeAsesor, router)
 
     expect(wrapper.text()).toContain('Nueva cotización para un cliente')
-    // Re-verificado contra el archivo correcto de Figma (nodo 2001:732): el saludo real es "Hola,
-    // {{ nombre }}" sin el sufijo "(Asesor comercial)" (que no está en ningún nodo) — el rol ya se
-    // comunica con el label "Portal Asesor Comercial" de la franja superior.
-    expect(wrapper.text()).toContain(`Hola, ${useSesion().estado.nombre}`)
+    expect(wrapper.text()).toContain('Hola, Asesor Demo')
     expect(wrapper.text()).toContain('Portal Asesor Comercial')
     expect(wrapper.find('a[href="/cotizacion"]').exists()).toBe(true)
   })
 
-  // El rol "Operador" no tiene su propia pantalla G-02b en esta rama (vive en
-  // feature/HU-W05-conciliacion): ingresar con ese chip debe navegar a /operador y caer con
-  // honestidad en PantallaPendiente, nunca en una pantalla rota, en blanco, o quedarse sin navegar.
-  it('G-01: el chip "Operador" navega a /operador (PantallaPendiente en esta rama, no un error)', async () => {
+  it('G-01: un usuario BACKOFFICE con el chip "Operador" navega a /operador', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')
     await router.isReady()
     const wrapper = montar(IngresoConRol, router)
 
-    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('persona@correo.com')
+    await wrapper
+      .findAll('input')
+      .find((i) => i.attributes('type') !== 'password')!
+      .setValue('admin.solventa')
     await wrapper.find('input[type="password"]').setValue('secreta123')
-    await wrapper.findAll('button').find((b) => b.text() === 'Operador')!.trigger('click')
-    await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Operador')!
+      .trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Ingresar')!
+      .trigger('click')
     await esperarRuta(router, '/operador')
 
     expect(router.currentRoute.value.path).toBe('/operador')
-    expect(useSesion().estado.rol).toBe('OPERADOR')
+    expect(useSesion().estado.rol).toBe('BACKOFFICE')
   })
 
   // El "Inicio" de la Barra de navegación debe volver al home del rol activo: Cliente/Asesor
   // comparten las mismas 7 pantallas de /cotizacion/*, pero cada uno tiene su propio home.
   it('la Barra de navegación de W01-01 vuelve a /asesor cuando la sesión activa es Asesor comercial', async () => {
-    useSesion().iniciarSesion('ASESOR')
+    await useSesion(fetchPrueba).iniciarSesion('asesor.demo', 'secreta123')
     useCotizacion(fetchPrueba).reiniciar()
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
 

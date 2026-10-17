@@ -1,23 +1,27 @@
 # Solventa — Frontend (contexto de trabajo)
 
-Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proyecto Final 2 de MISW4501. Este repo construye la **web** (Vue 3) y el **móvil** (Flutter). El backend, el contrato y la infraestructura viven en `../solventa-backend`; la evidencia de los experimentos en `../solventa-arquitectura` (congelado). Estrategia de repos: ADR-06 en `../solventa-backend/docs/adr/`.
+Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proyecto Final 2 de MISW4501. Este repo construye la **web** (Vue 3); el móvil (Flutter) vive en otro repositorio. El backend, el contrato y la infraestructura viven en `../solventa-backend`; la evidencia de los experimentos en `../solventa-arquitectura` (congelado). Estrategia de repos: ADR-06 en `../solventa-backend/docs/adr/`.
 
 Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-frontend.md). Convenciones: [`docs/convenciones.md`](docs/convenciones.md).
 
-## Estado (2026-10-03)
+## Estado (2026-10-17)
 
-- Repo **recién estructurado**: la web arranca, tiene el catálogo de las 12 pantallas del Sprint 1 como placeholders con su ruta, mocks del BFF (MSW), tipos generados desde el contrato, CI y agentes. Typecheck, 18 pruebas de Vitest y `vite build` pasan. **Ninguna pantalla está construida todavía.**
-- `apps/mobile` no tiene código: arranca en el Sprint 2.
-- Cypress (`e2e/`) tiene una prueba de humo **sin ejecutar** (no se instaló el binario).
-- Sprint 1 (tentativo): 12–25 de octubre de 2026. La web depende del BFF, que aún no existe → se trabaja con mocks.
-- GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git, repo vacío; aún sin commit ni push).
-- Pendiente de decidir: **D-F1** librería de componentes de UI (hoy solo CSS base) y si el equipo es de 3 o 4 personas (el plan supone 4).
-- Las decisiones D-01…D-06 del Sprint 1 son del backend y están sin cerrar (ver `../solventa-backend/docs/sprint-1.md`).
+- Sprint 1 (12–25 de octubre de 2026): las 12 pantallas de HU-W01 y HU-W05 están construidas (`src/views/`) e
+  integradas con el BFF real (KAN-24). Siguen funcionando con mocks (`dev:mock`).
+- **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive solo en memoria (`useSesion.ts`) y viaja en
+  `Authorization: Bearer`. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
+  backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
+- Pendiente con el backend (`contrato/CHANGELOG.md`): el claim `nombre` en el JWT (hoy se muestra el alias) y
+  `Cobro.idTransaccion`.
+- Calidad: typecheck, ESLint, Prettier, Vitest y `vite build` en el CI. Cypress (`e2e/`) tiene specs por historia y
+  por pantalla, **todavía sin ejecutar** contra un navegador.
+- D-F1 cerrada: componentes propios en `src/components/ui/` y Twind para los estilos (`docs/plan-frontend.md`).
+- La app móvil se construye en otro repositorio.
+- GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git).
 
 ## Stack
 
-- **Web:** Vue 3 (`<script setup lang="ts">`), TypeScript estricto, Vite, Vue Router. Pruebas: Vitest + `@vue/test-utils` (jsdom). Mocks: MSW. Tipos del contrato: `graphql-codegen`. E2E: Cypress.
-- **Móvil:** Flutter (prioridad Android), `local_auth`, `flutter_secure_storage`, `flutter_test`, `integration_test` y Firebase Test Lab.
+- **Web:** Vue 3 (`<script setup lang="ts">`), TypeScript estricto, Vite 8 (Node ≥ 22.12), Vue Router, Twind. Pruebas: Vitest + `@vue/test-utils` (jsdom). Mocks: MSW. Tipos del contrato: `graphql-codegen`. E2E: Cypress. Lint: ESLint + Prettier.
 - **CI:** GitHub Actions con filtro por ruta (la web no dispara el móvil, ni al revés), SonarQube Community y Dependabot.
 
 ## Reglas (no las reinterpretes)
@@ -28,7 +32,7 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 4. **Una pantalla = un componente en `src/views/`**, registrado en `src/router/pantallas.ts` (campo `componente`) y con `data-pantalla="<id>"` en su raíz.
 5. **Nunca mostrar un error técnico ni un 5xx.** Hay estados de carga, vacío, error y degradado (oferta preliminar, cobro pendiente) y todos se diseñan.
 6. **Consentimiento explícito.** El checkbox de Habeas Data no viene marcado y el botón de enviar está deshabilitado hasta marcarlo (CA-W01-01). Nunca un valor por defecto.
-7. **Sin datos personales** en `localStorage`, consola, URL ni logs. Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
+7. **Sin datos personales** en `localStorage`, consola, URL ni logs (tampoco el JWT: vive solo en memoria). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
 8. **No sobre-construir.** Cada tarea se traza a una pantalla o criterio de `docs/plan-frontend.md`. Sin librerías ni capas que una pantalla del sprint no pida (Pinia, un cliente GraphQL pesado y una librería de UI se agregan cuando haya una razón).
 
 ## Agentes de este repo (`.claude/agents/`)
@@ -40,6 +44,6 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 
 ## Reglas de trabajo
 
-- **Verifica antes de reportar éxito:** `npm run typecheck`, `npm test` y `npm run build` en `apps/web`, con la salida a la vista. Una pantalla no está lista hasta verla en el navegador (`dev:mock`).
+- **Verifica antes de reportar éxito:** `npm run typecheck`, `npm run lint`, `npm run formato:verificar`, `npm test` y `npm run build` en `apps/web`, con la salida a la vista. Una pantalla no está lista hasta verla en el navegador (`dev:mock`).
 - No hagas commit ni push sin que el usuario lo pida.
 - Español en documentación, comentarios y commits (Conventional Commits con la clave de Jira).

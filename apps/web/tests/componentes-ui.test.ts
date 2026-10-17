@@ -74,7 +74,11 @@ describe('CampoFormulario', () => {
 
   it('muestra el error con role="alert" y marca aria-invalid', () => {
     const campo = mount(CampoFormulario, {
-      props: { modelValue: '1.024.578.11', label: 'Número de documento', error: 'El documento no coincide con el titular' },
+      props: {
+        modelValue: '1.024.578.11',
+        label: 'Número de documento',
+        error: 'El documento no coincide con el titular',
+      },
     })
     const alerta = campo.get('[role="alert"]')
     expect(alerta.text()).toContain('El documento no coincide con el titular')
@@ -87,7 +91,9 @@ describe('CampoFormulario', () => {
   })
 
   it('propaga disabled al <input> real (hallazgo QA: antes quedaba en el <div> envolvente)', () => {
-    const campo = mount(CampoFormulario, { props: { modelValue: '1024578113', label: 'Número de documento', disabled: true } })
+    const campo = mount(CampoFormulario, {
+      props: { modelValue: '1024578113', label: 'Número de documento', disabled: true },
+    })
     expect(campo.get('input').attributes('disabled')).toBeDefined()
   })
 
@@ -292,11 +298,17 @@ describe('IconoMaterial', () => {
     },
   )
 
-  it.each(['badge', 'payments', 'logout', 'home', 'verified_user', 'progress_activity', 'check_circle', 'warning'] as const)(
-    'sigue teniendo el glifo "%s" que ya traía develop (componentes-globales/HU-W01)',
-    (nombre) => {
-      const icono = mount(IconoMaterial, { props: { nombre } })
-      expect(icono.get('path').attributes('d')).toBeTruthy()
-    },
-  )
+  it.each([
+    'badge',
+    'payments',
+    'logout',
+    'home',
+    'verified_user',
+    'progress_activity',
+    'check_circle',
+    'warning',
+  ] as const)('sigue teniendo el glifo "%s" que ya traía develop (componentes-globales/HU-W01)', (nombre) => {
+    const icono = mount(IconoMaterial, { props: { nombre } })
+    expect(icono.get('path').attributes('d')).toBeTruthy()
+  })
 })

@@ -29,10 +29,26 @@ npm install
 npm run dev:mock      # con mocks del BFF (MSW): lo normal mientras el backend no esté desplegado
 npm run dev           # contra el BFF real (proxy a VITE_BFF_URL, por defecto http://localhost:8000)
 npm test              # Vitest
+npm run lint          # ESLint
+npm run formato       # Prettier (formatea); el CI corre formato:verificar
 npm run build         # vue-tsc + vite build
 ```
 
-**Contra el backend en local:** levanta `solventa-backend` (`docker compose --profile servicios up -d --build`), copia
+Requisitos: **Node 22.12 o superior** (`.nvmrc`), que es el mínimo de Vite 8. Los comandos se corren desde `apps/web`, no
+desde la raíz.
+
+**Problemas comunes al arrancar en local:**
+
+- `Cannot find module @rolldown/binding-…` u otro error de binarios nativos (frecuente en Mac con Apple Silicon): Vite 8
+  empaqueta con Rolldown, que trae un binario por plataforma. Reinstala desde cero con `rm -rf node_modules && npm ci`.
+  Si persiste, revisa que Node corra nativo y no bajo Rosetta: `node -p process.arch` debe decir `arm64`.
+- `Port 5173 is in use`: quedó corriendo un Vite anterior. Ciérralo con `lsof -ti :5173 | xargs kill`.
+
+**Sesión:** la web inicia sesión contra el BFF (`iniciarSesion`) y guarda el JWT solo en memoria: al recargar hay que volver a
+entrar. Con `dev:mock` cualquier clave sirve y el rol sale del usuario: `asesor…` → Asesor, `admin…` u `operador…` →
+Operador y cualquier otro → Cliente (por ejemplo, `cliente.demo`). Con `clave-erronea` el login falla.
+
+**Contra el backend en local:** levanta `solventa-backend` (`docker compose --profile servicios up -d --build`), crea los usuarios (ver `solventa-backend/docs/autenticacion-usuarios.md`), copia
 `apps/web/.env.example` a `apps/web/.env.local` (`VITE_USE_MOCKS=false`, `VITE_BFF_URL=http://localhost:8000`) y corre
 `npm run dev`. Las convenciones de los mocks (documento terminado en `999` o `000`) no existen en el backend: para ver
 una oferta preliminar, pon el stub de Open Finance en modo lento

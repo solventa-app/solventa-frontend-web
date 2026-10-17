@@ -5,6 +5,7 @@ import type {
   Consentimiento,
   FuenteConsultada,
   MutationContactarAsesorArgs,
+  MutationIniciarSesionArgs,
   MutationRegistrarConsentimientoArgs,
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
@@ -12,6 +13,8 @@ import type {
   Oferta,
   QueryCobrosArgs,
   ResultadoOferta,
+  ResultadoSesion,
+  RolUsuario,
 } from '../graphql/tipos'
 
 // Mocks del BFF (contrato/schema.graphql). Convención de demo (equivale a los "disparadores de demo"
@@ -50,7 +53,9 @@ const oferta = (tipo: Oferta['tipo']): Oferta => ({
   tipo,
   prima: tipo === 'COMPLETA' ? { valor: '94680.00', moneda: 'COP' } : null,
   rangoPrima:
-    tipo === 'PRELIMINAR' ? { minima: { valor: '81792.00', moneda: 'COP' }, maxima: { valor: '122688.00', moneda: 'COP' } } : null,
+    tipo === 'PRELIMINAR'
+      ? { minima: { valor: '81792.00', moneda: 'COP' }, maxima: { valor: '122688.00', moneda: 'COP' } }
+      : null,
   cobertura: { valor: '200000000', moneda: 'COP' },
   desgloseScore: [
     { nombre: 'historial-crediticio', peso: 0.3 },
@@ -71,51 +76,40 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   vigente: !revocado,
 })
 
-// 4 cobros (HU-W05), uno por cada EstadoCobro, con los mismos nombres/montos/fechas que el
-// prototipo de alta fidelidad (Figma 2vfK0e8t62OvvDk4c7QnK5, frame W05-01, nodo 27:44) para que
-// la pantalla se vea exactamente igual a la maqueta. idTransaccion es null para el cobro en
-// COBRANDO: la pasarela todavía no asigna id mientras el cobro está en curso (ver Cobro en
-// contrato/schema.graphql). cliente e idTransaccion son campos nuevos, adelantados en el
-// frontend antes de que el backend los exponga de verdad (ver contrato/CHANGELOG.md).
-// cobros es mutable (reintentarCobro lo actualiza en el sitio, ver más abajo) para que el estado
-// persista entre pantallas durante una sesión de demo. Por eso es `let` + fábrica en vez de
-// const: las pruebas necesitan poder reiniciarlo con restablecerCobrosDePrueba para no arrastrar
-// mutaciones de una prueba a la siguiente.
+// 4 cobros (HU-W05), uno por cada EstadoCobro, con los nombres, montos y fechas del frame W05-01 de
+// Figma. `cobros` es mutable (reintentarCobro lo actualiza en el sitio) para que el estado persista
+// durante una demo; las pruebas lo reinician con restablecerCobrosDePrueba.
 const cobrosIniciales = (): Cobro[] => [
   {
     id: 'cobro-1',
-    cliente: 'Andrés Felipe Duarte',
+    cliente: { id: 'cliente-1', nombre: 'Andrés Felipe Duarte' },
     polizaId: 'SOL-VH-2026-004905',
     estado: 'COBRANDO',
     monto: { valor: '198000.00', moneda: 'COP' },
-    idTransaccion: null,
     actualizadoEn: '2026-09-05T15:00:00Z',
   },
   {
     id: 'cobro-2',
-    cliente: 'Laura Gómez Rico',
+    cliente: { id: 'cliente-2', nombre: 'Laura Gómez Rico' },
     polizaId: 'SOL-VH-2026-004821',
     estado: 'COBRADO',
     monto: { valor: '185000.00', moneda: 'COP' },
-    idTransaccion: 'txn_8a2f19c3',
     actualizadoEn: '2026-09-05T14:14:00Z',
   },
   {
     id: 'cobro-3',
-    cliente: 'Julián Torres Mesa',
+    cliente: { id: 'cliente-3', nombre: 'Julián Torres Mesa' },
     polizaId: 'SOL-VH-2026-004798',
     estado: 'RECHAZADO',
     monto: { valor: '142500.00', moneda: 'COP' },
-    idTransaccion: 'txn_5b0e77d1',
     actualizadoEn: '2026-09-04T23:02:00Z',
   },
   {
     id: 'cobro-4',
-    cliente: 'Carlos Andrés Peña',
+    cliente: { id: 'cliente-4', nombre: 'Carlos Andrés Peña' },
     polizaId: 'SOL-VH-2026-004790',
     estado: 'PENDIENTE',
     monto: { valor: '210000.00', moneda: 'COP' },
-    idTransaccion: 'txn_c91a4402',
     actualizadoEn: '2026-09-04T16:47:00Z',
   },
 ]
@@ -127,6 +121,33 @@ export function restablecerCobrosDePrueba(): void {
   cobros = cobrosIniciales()
 }
 
+// Sesión de demo (convención de los mocks, NO del backend real): cualquier clave sirve salvo
+// `clave-erronea`; el rol sale del alias (`asesor…` → ASESOR, `admin…`/`operador…` → BACKOFFICE, otro →
+// CLIENTE). El token es un JWT sin firma con los mismos claims que emite AUTH, más `nombre`, que el
+// backend todavía no emite (ver contrato/CHANGELOG.md): aquí se deriva del alias.
+function rolDeDemo(usuario: string): RolUsuario {
+  if (usuario.startsWith('asesor')) return 'ASESOR'
+  if (usuario.startsWith('admin') || usuario.startsWith('operador')) return 'BACKOFFICE'
+  return 'CLIENTE'
+}
+
+const base64url = (texto: string) =>
+  btoa(String.fromCharCode(...new TextEncoder().encode(texto)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
+export function tokenDeDemo(usuario: string, rol: RolUsuario = rolDeDemo(usuario)): string {
+  const nombre = usuario
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map((parte) => parte[0].toUpperCase() + parte.slice(1))
+    .join(' ')
+  const ahoraSeg = Math.floor(Date.now() / 1000)
+  const claims = { sub: `usuario-${usuario}`, usuario, rol, nombre, iat: ahoraSeg, exp: ahoraSeg + 3600 }
+  return `${base64url(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${base64url(JSON.stringify(claims))}.demo`
+}
+
 const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
   LLAMAR: 'llamada',
   CHAT: 'chat',
@@ -134,6 +155,24 @@ const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
 }
 
 export const handlers = [
+  graphql.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
+    const { usuario, clave } = variables.entrada
+    // Mismo mensaje genérico que el BFF: no revela si el alias existe.
+    if (clave === 'clave-erronea') {
+      return HttpResponse.json({ data: { iniciarSesion: { mensaje: 'Usuario o clave incorrectos.' } } })
+    }
+    const rol = rolDeDemo(usuario)
+    return HttpResponse.json({
+      data: {
+        iniciarSesion: {
+          token: tokenDeDemo(usuario, rol),
+          expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+          usuario: { id: `usuario-${usuario}`, usuario, rol, estado: 'ACTIVO', creadoEn: ahora() },
+        },
+      },
+    })
+  }),
+
   graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
     'registrarConsentimiento',
     () => HttpResponse.json({ data: { registrarConsentimiento: consentimiento(false) } }),
@@ -151,7 +190,8 @@ export const handlers = [
       const resultado: ResultadoOferta = documento.endsWith('000')
         ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
           {
-            mensaje: 'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
+            mensaje:
+              'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
             puedeReintentar: true,
           }
         : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
@@ -165,7 +205,10 @@ export const handlers = [
       HttpResponse.json({
         data: {
           // Mismo texto que el BFF (sin el id de la oferta, que no le dice nada al cliente).
-          contactarAsesor: { canal: variables.canal, resumen: `Recibimos tu solicitud de ${RESUMEN_CANAL[variables.canal]}. Un asesor te contactará para continuar tu cotización.` },
+          contactarAsesor: {
+            canal: variables.canal,
+            resumen: `Recibimos tu solicitud de ${RESUMEN_CANAL[variables.canal]}. Un asesor te contactará para continuar tu cotización.`,
+          },
         },
       }),
   ),
@@ -176,16 +219,12 @@ export const handlers = [
     }),
   ),
 
-  graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>(
-    'reintentarCobro',
-    ({ variables }) => {
-      // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
-      // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
-      const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]
-      cobro.estado = 'COBRANDO'
-      cobro.idTransaccion = null // la pasarela aun no asigna id mientras el cobro esta en curso
-      cobro.actualizadoEn = ahora()
-      return HttpResponse.json({ data: { reintentarCobro: cobro } })
-    },
-  ),
+  graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>('reintentarCobro', ({ variables }) => {
+    // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
+    // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
+    const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]
+    cobro.estado = 'COBRANDO'
+    cobro.actualizadoEn = ahora()
+    return HttpResponse.json({ data: { reintentarCobro: cobro } })
+  }),
 ]

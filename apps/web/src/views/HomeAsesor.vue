@@ -1,22 +1,7 @@
 <!--
-  G-02a · Home del Asesor comercial (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
-  2001:732). Mismo tratamiento que G-02 (HomeCliente.vue, esta misma rama) y G-02b
-  (HomeOperador.vue, construida en feature/HU-W05-conciliacion, fuera del alcance de archivos de
-  esta rama): franja "Cerrar sesión" de ancho completo en vez de Barra de navegación (SG-01: nunca
-  las dos juntas en una pantalla "home").
+  G-02a · Home del Asesor comercial (Figma "Solventa-web-Final", nodo 2001:732). CA-W01-11.
 
-  Re-verificada contra el archivo correcto (la ronda anterior la había citado y "corregido" contra
-  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", el equivocado): el mockup real muestra 3 tarjetas de acceso
-  (Nueva cotización para un cliente, Pólizas emitidas, Fuentes consultadas), no 1 — "Fuentes
-  consultadas" ya tenía pantalla construida en esta rama (W01-04, /cotizacion/fuentes) pero no había
-  ningún camino de clic hacia ella desde el home; "Pólizas emitidas" no tiene pantalla en este
-  sprint, así que enlaza a /polizas (PantallaPendiente, ver router/pantallas.ts) en vez de a un
-  enlace roto o a ningún lado. El "Hola, {{ nombre }}" es el H1 real y visible de la pantalla (antes
-  estaba oculto sr-only y llevaba un sufijo "(Asesor comercial)" que no existe en Figma).
-
-  [MEDIA, hallazgo de UX] "Portal Asesor Comercial" llevaba un ícono de 24px a la izquierda que esta
-  pantalla no mostraba (solo texto) — mismo caso que "Portal Cliente" en HomeCliente.vue (ver su
-  comentario de cabecera para el detalle del criterio usado al elegir `badge`).
+  Mismo tratamiento que G-02 (HomeCliente.vue). "Pólizas emitidas" lleva a /polizas, aún pendiente.
 -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
