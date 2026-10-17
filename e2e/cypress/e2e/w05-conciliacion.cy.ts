@@ -26,13 +26,12 @@ describe('HU-W05 · Conciliación de pagos (back-office)', () => {
       cy.contains('button', 'Reintentar cobro').click()
       cy.contains('Cobro reenviado a la pasarela').should('exist')
 
-      // Al pasar a "Cobrando" desaparece de la pestaña "Rechazado" (filtro sigue activo).
+      // Al quedar "Cobrado" desaparece de la pestaña "Rechazado" (filtro sigue activo).
       cy.contains('td', 'Julián Torres Mesa').should('not.exist')
       cy.contains('No hay cobros en este estado.').should('exist')
 
-      cy.get('[role="tab"]').contains('Cobrando').click()
+      cy.get('[role="tab"]').contains('Cobrado').click()
       cy.contains('td', 'Julián Torres Mesa').should('exist')
-      cy.contains('td', 'en curso').should('exist')
     })
   })
 })

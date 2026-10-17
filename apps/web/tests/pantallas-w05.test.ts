@@ -162,7 +162,7 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
     })
 
-    it('reintentar cobro mueve la fila Rechazado a Cobrando y muestra el toast de confirmación', async () => {
+    it('reintentar cobro deja la fila Rechazado en Cobrado y muestra el toast de confirmación', async () => {
       const { wrapper } = await montarConciliacion()
       await wrapper
         .findAll('[role="tab"]')
@@ -173,7 +173,7 @@ describe('HU-W05 · pantallas', () => {
       await boton!.trigger('click')
       await flushPromises()
 
-      // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: pasó a Cobrando.
+      // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: quedó Cobrado.
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
       expect(wrapper.text()).toContain('No hay cobros en este estado.')
       expect(wrapper.get('[role="status"]').text()).toContain('Cobro reenviado a la pasarela')

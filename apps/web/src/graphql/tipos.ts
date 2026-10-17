@@ -32,10 +32,12 @@ export type Cobro = {
   cliente?: Maybe<ClienteCobro>;
   estado: EstadoCobro;
   id: Scalars['ID']['output'];
+  idTransaccion?: Maybe<Scalars['String']['output']>;
   intentos?: Maybe<Scalars['Int']['output']>;
   monto: Monto;
   motivo?: Maybe<Scalars['String']['output']>;
   polizaId: Scalars['ID']['output'];
+  reintentosRestantes?: Maybe<Scalars['Int']['output']>;
 };
 
 export type ConfirmacionContacto = {

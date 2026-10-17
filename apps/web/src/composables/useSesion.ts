@@ -1,6 +1,10 @@
 // Sesión del usuario autenticado (HU-M02 en el backend, docs/autenticacion-usuarios.md). `iniciarSesion`
-// del BFF devuelve un JWT; de sus claims salen el rol y el nombre que se muestran. El token vive solo en
-// memoria (regla 7): al recargar la página hay que volver a iniciar sesión.
+// del BFF devuelve un JWT; de sus claims salen el rol y el nombre que se muestran.
+//
+// La sesión sobrevive a recargar la página (decisión del equipo, 2026-10-17): el token se guarda en
+// `sessionStorage`, que vive mientras la pestaña esté abierta y se borra al cerrarla. Solo se guarda el
+// token (no trae datos personales: rol, alias y vencimiento, regla 7). Al cargar, se restaura si sigue
+// vigente; uno vencido o ilegible se descarta.
 //
 // El nombre se lee del claim `nombre`, que el backend todavía no emite (pedido en contrato/CHANGELOG.md);
 // mientras no llegue se muestra el alias (`usuario`), que nunca es un dato personal.
@@ -55,6 +59,27 @@ export function leerClaims(token: string): ClaimsSesion | null {
   }
 }
 
+/** Dónde se guarda el token para que la sesión sobreviva a recargar la página. */
+export const CLAVE_TOKEN = 'solventa.token'
+
+// `sessionStorage` puede no existir o fallar (modo privado, cuota): la sesión sigue funcionando en memoria.
+function guardarToken(token: string | null): void {
+  try {
+    if (token) sessionStorage.setItem(CLAVE_TOKEN, token)
+    else sessionStorage.removeItem(CLAVE_TOKEN)
+  } catch {
+    /* sin almacenamiento disponible: solo en memoria */
+  }
+}
+
+function leerTokenGuardado(): string | null {
+  try {
+    return sessionStorage.getItem(CLAVE_TOKEN)
+  } catch {
+    return null
+  }
+}
+
 const estado = reactive<EstadoSesion>({ token: null, rol: null, nombre: '', expiraEn: 0 })
 
 function sesionActiva(): boolean {
@@ -73,6 +98,7 @@ function abrirSesion(token: string): boolean {
   estado.nombre = claims.nombre?.trim() || claims.usuario
   estado.expiraEn = claims.exp * 1000
   usarToken(token)
+  guardarToken(token)
   return true
 }
 
@@ -82,7 +108,17 @@ function cerrarSesion(): void {
   estado.nombre = ''
   estado.expiraEn = 0
   usarToken(null)
+  guardarToken(null)
 }
+
+/** Recupera la sesión guardada si sigue vigente. Se llama al cargar el módulo, es decir, al recargar. */
+export function restaurarSesion(): void {
+  const token = leerTokenGuardado()
+  if (!token) return
+  if (!abrirSesion(token) || !sesionActiva()) cerrarSesion()
+}
+
+restaurarSesion()
 
 export function useSesion(fetchFn: typeof fetch = fetch) {
   /** Devuelve `null` si la sesión quedó abierta, o el mensaje que se le muestra al usuario. */

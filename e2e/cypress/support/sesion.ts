@@ -1,5 +1,5 @@
-// La sesión vive solo en memoria (apps/web/src/composables/useSesion.ts): un `cy.visit` recarga la
-// página y la pierde. Por eso se inicia sesión por G-01 y se navega dentro de la SPA (pushState +
+// La sesión se guarda en sessionStorage (apps/web/src/composables/useSesion.ts); igual se navega
+// dentro de la SPA tras iniciar sesión por G-01 (pushState +
 // popstate, que es lo que escucha vue-router) sin recargar.
 //
 // Contra los mocks, cualquier clave sirve y el rol sale del alias (ver src/mocks/handlers.ts). Contra

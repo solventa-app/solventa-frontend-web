@@ -1,5 +1,12 @@
 # contrato/CHANGELOG.md
 
+## 2026-10-17 · Sincronizado con el contrato v0.6 del backend (KAN-28)
+
+- Llegan `Cobro.idTransaccion` (la referencia de la pasarela; lo que se pedía abajo) y `Cobro.reintentosRestantes`:
+  un RECHAZADO se reintenta a mano hasta 3 veces (prototipo W05-01). W05-01 muestra el ID de transacción y pone
+  "Reintentar cobro" solo en los rechazados con reintentos.
+- PR gemelo del backend: `feat/KAN-28-reintento-rechazados` (hay que integrarlo antes que este).
+
 ## 2026-10-17 · Sincronizado con `solventa-backend` (KAN-207)
 
 - Llegan sesión y usuarios (HU-M02): `iniciarSesion`, `yo`, `Usuario`, `Sesion`, `RolUsuario`
@@ -17,5 +24,4 @@
   y G-02a debe mostrar el nombre del usuario autenticado. Mientras no llegue, la web muestra el
   alias (`usuario`). Ojo: el nombre es dato personal cifrado en AUTH, así que el equipo de backend
   decide si puede viajar en el token o si se expone en `yo`.
-- **`Cobro.idTransaccion: String`** para la columna "ID de transacción" de W05-01. Hasta entonces
-  la columna muestra "—".
+- ~~**`Cobro.idTransaccion: String`**~~: llegó en el contrato v0.6 (ver arriba).
