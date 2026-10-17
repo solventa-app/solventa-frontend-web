@@ -13,11 +13,17 @@ const USUARIO_DEMO: Record<Rol, string> = { CLIENTE: 'cliente.demo', ASESOR: 'as
 
 export function ingresar(rol: Rol = 'CLIENTE'): void {
   cy.visit('/login')
-  cy.get('[data-pantalla="G-01"]').within(() => {
-    cy.contains('label', 'Usuario').parent().find('input').type(Cypress.env(`USUARIO_${rol}`) ?? USUARIO_DEMO[rol])
-    cy.get('input[type="password"]').type(Cypress.env(`CLAVE_${rol}`) ?? 'clave-demo-0001', { log: false })
-    cy.contains('[role="radio"]', CHIP[rol]).click()
-    cy.contains('button', 'Ingresar').click()
+  // Cypress 16 quitó `Cypress.env()`; las credenciales de staging son sensibles, así que se leen con `cy.env()`.
+  cy.env([`USUARIO_${rol}`, `CLAVE_${rol}`]).then((vars) => {
+    cy.get('[data-pantalla="G-01"]').within(() => {
+      cy.contains('label', 'Usuario')
+        .parent()
+        .find('input')
+        .type(vars[`USUARIO_${rol}`] ?? USUARIO_DEMO[rol])
+      cy.get('input[type="password"]').type(vars[`CLAVE_${rol}`] ?? 'clave-demo-0001', { log: false })
+      cy.contains('[role="radio"]', CHIP[rol]).click()
+      cy.contains('button', 'Ingresar').click()
+    })
   })
   cy.location('pathname').should('eq', HOME[rol])
 }
