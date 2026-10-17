@@ -1,0 +1,74 @@
+name: Deploy web
+
+# Producción: push a main que toque la web (con git-flow, un release/sprint-N o un hotfix). Nada se publica
+# desde develop. A mano (Actions → Run workflow) desde cualquier otra rama despliega una VISTA PREVIA, para
+# probar el pipeline sin tocar producción. Ver "Despliegue" en el README.
+# Mismo flujo que el pipeline de GitLab de Comuna (verificar → `vercel deploy`), con el build de Vite.
+on:
+  push:
+    branches: [main]
+    paths: ['apps/web/**', '.github/workflows/deploy-web.yml']
+  workflow_dispatch:
+
+# Un despliegue a producción en curso no se cancela: el siguiente espera.
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Tipos (vue-tsc)
+        run: npm run typecheck
+      - name: Pruebas (Vitest)
+        run: npm test
+
+  desplegar:
+    needs: [verificar]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      url: ${{ steps.vercel.outputs.url }}
+    # Se despliega desde apps/web (el proyecto de Vercel debe tener el Root Directory vacío).
+    # El build lo hace Vercel (`npm ci` + `npm run build`, ver apps/web/vercel.json).
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      # Identificadores (no son secretos). El único secreto es VERCEL_TOKEN.
+      VERCEL_ORG_ID: team_HS3nNJe3RCcdQQWoIWjvm2WO
+      VERCEL_PROJECT_ID: prj_1VmD5vS9QWm2MEkWCAFLS7yvVc02
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g vercel@64
+      - name: Desplegar
+        id: vercel
+        # --prod solo en main: cualquier otra rama (workflow_dispatch) queda como vista previa.
+        # La CLI escribe la URL del despliegue en stdout y sus logs en stderr.
+        run: |
+          flags=()
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then flags+=(--prod); fi
+          url=$(vercel deploy "${flags[@]}" --yes --token "$VERCEL_TOKEN" \
+            --build-env VITE_USE_MOCKS="$VITE_USE_MOCKS")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # 'true' = la web responde con los mocks de MSW (mientras no haya BFF desplegado).
+          VITE_USE_MOCKS: ${{ vars.VITE_USE_MOCKS || 'false' }}
