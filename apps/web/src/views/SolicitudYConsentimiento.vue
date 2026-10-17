@@ -120,10 +120,10 @@ function simular(sufijo: '999' | '000') {
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-01">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-01">
     <HeaderPantalla titulo="Solicitud y consentimiento" />
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-8">
+    <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[880px] flex-col items-center gap-6">
         <TituloPantalla class="text-center">Solicitud de seguro de vida hipotecario</TituloPantalla>
         <form class="flex w-full max-w-[400px] flex-col gap-5" novalidate @submit.prevent="enviar">

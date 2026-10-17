@@ -14,6 +14,13 @@ body {
   margin: 0;
 }
 
+/* Uso exclusivo de PantallaPendiente.vue (el stub "pantalla pendiente de construir"): columna angosta
+   centrada con padding, para que el placeholder no se vea como una página en blanco de borde a borde.
+   NO poner esta clase en el <div> raíz de una pantalla real (el que envuelve Header+main+Footer):
+   limita TODO a 40rem de ancho, incluido el header y el footer, que deben ocupar el ancho completo del
+   viewport (ver HeaderPantalla.vue/FooterPantalla.vue, que ya traen w-full). KAN-203: 7 pantallas ya
+   construidas (ConsultandoFuentes, ContactarAsesor, DetalleDeFuentes, OfertaCompleta, OfertaError,
+   OfertaPreliminar, SolicitudYConsentimiento) habían copiado esta clase por error a su <div> raíz. */
 .pantalla {
   max-width: 40rem;
   margin: 0 auto;

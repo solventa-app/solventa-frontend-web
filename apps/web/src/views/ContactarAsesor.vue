@@ -73,7 +73,7 @@ async function elegirCanal(canal: CanalContacto) {
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-05">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-05">
     <HeaderPantalla titulo="Contactar a un asesor" />
     <TituloPantalla class="sr-only">Contactar a un asesor</TituloPantalla>
     <MigasDePan seccion="Hablar con un asesor" :a-inicio="RUTA_INICIO[sesion.rol]" />
@@ -83,7 +83,7 @@ async function elegirCanal(canal: CanalContacto) {
         Radicación Segura
       </span>
     </div>
-    <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
+    <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5">
         <div v-if="errorContacto" role="alert" class="rounded-md border border-error bg-error-fondo px-4 py-3 text-[13px] text-error">
           {{ errorContacto }}
@@ -152,7 +152,7 @@ async function elegirCanal(canal: CanalContacto) {
               Iniciar chat
             </button>
           </article>
-          <article class="flex items-center justify-between gap-4 p-4">
+          <article class="flex flex-wrap items-center justify-between gap-4 p-4">
             <div class="flex items-center gap-4">
               <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-info-fondo">
                 <IconoMaterial nombre="event" class="h-5 w-5 text-primario" />
@@ -162,7 +162,7 @@ async function elegirCanal(canal: CanalContacto) {
                 <p class="text-[13px] leading-[18px] text-tinta-suave">Programa una comunicación telefónica personalizada</p>
               </div>
             </div>
-            <div class="flex items-end gap-2">
+            <div class="flex flex-wrap items-end gap-2">
               <div class="flex flex-col gap-1">
                 <span class="text-[11px] text-tinta-suave">Franja horaria disponible (COT)</span>
                 <span class="flex h-10 items-center rounded-[4px] border border-borde bg-white px-3 text-[13px] text-tinta">

@@ -5,6 +5,11 @@
   selectores + avatar; el texto corto junto al logo varía por pantalla (aquí, "Home del Cliente").
   Compone los componentes de la librería (SelectorIdioma, SelectorMoneda, AvatarPerfil) en vez de
   repetir su marcado.
+
+  KAN-203: se agrega flex-wrap (+ min-w-0/truncate/shrink-0 en los grupos internos) porque sin
+  esto el logo+título de un lado y los 3 selectores del otro se salían del ancho del viewport en
+  pantallas angostas (no hay ningún punto de quiebre responsive en todo el proyecto; la técnica
+  usada en el resto del código es siempre flex-wrap, nunca prefijos sm:/md:/lg:).
 -->
 <script setup lang="ts">
 import AvatarPerfil from './AvatarPerfil.vue'
@@ -28,13 +33,13 @@ defineEmits<{
 </script>
 
 <template>
-  <header class="flex w-full items-center justify-between border-b border-borde bg-white px-10 pb-[17px] pt-4">
-    <div class="flex items-center gap-3">
-      <span class="text-[24px] font-bold tracking-[-0.6px] text-enlace">Solventa</span>
+  <header class="flex w-full flex-wrap items-center justify-between gap-3 border-b border-borde bg-white px-10 pb-[17px] pt-4">
+    <div class="flex min-w-0 items-center gap-3">
+      <span class="shrink-0 text-[24px] font-bold tracking-[-0.6px] text-enlace">Solventa</span>
       <span v-if="titulo" class="text-[16px] text-borde" aria-hidden="true">|</span>
-      <span v-if="titulo" class="font-bold text-titulo text-tinta">{{ titulo }}</span>
+      <span v-if="titulo" class="truncate font-bold text-titulo text-tinta">{{ titulo }}</span>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex shrink-0 items-center gap-3">
       <SelectorIdioma :model-value="idioma" @update:model-value="$emit('update:idioma', $event)" />
       <SelectorMoneda :model-value="moneda" @update:model-value="$emit('update:moneda', $event)" />
       <AvatarPerfil @click="$emit('perfil')" />

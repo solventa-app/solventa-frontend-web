@@ -34,7 +34,7 @@ function alCerrarSesion() {
 </script>
 
 <template>
-  <div data-pantalla="G-02a" class="flex min-h-screen flex-col bg-fondo">
+  <div data-pantalla="G-02a" class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla titulo="Home del Asesor comercial" />
 
     <div class="flex w-full items-center justify-between border-b border-borde bg-fondo px-4 py-2 text-[11px]">
@@ -54,13 +54,13 @@ function alCerrarSesion() {
 
     <Divisor />
 
-    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-10 py-10">
+    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 overflow-y-auto px-10 py-10 min-h-0">
       <TituloPantalla>Hola, {{ estado.nombre }}</TituloPantalla>
 
       <div class="flex flex-wrap items-stretch gap-5">
         <RouterLink
           to="/cotizacion"
-          class="flex w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          class="flex w-full max-w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         >
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
@@ -72,7 +72,7 @@ function alCerrarSesion() {
         </RouterLink>
         <RouterLink
           to="/polizas"
-          class="flex w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          class="flex w-full max-w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         >
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
@@ -84,7 +84,7 @@ function alCerrarSesion() {
         </RouterLink>
         <RouterLink
           to="/cotizacion/fuentes"
-          class="flex w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          class="flex w-full max-w-[253px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         >
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />

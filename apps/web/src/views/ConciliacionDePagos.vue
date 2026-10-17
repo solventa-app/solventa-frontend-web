@@ -128,11 +128,11 @@ onMounted(() => cargarCobros())
 </script>
 
 <template>
-  <div data-pantalla="W05-01" class="flex min-h-screen flex-col bg-fondo">
+  <div data-pantalla="W05-01" class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla titulo="Conciliación de pagos" />
     <TituloPantalla class="sr-only">Conciliación de pagos</TituloPantalla>
 
-    <main class="mx-auto flex w-full max-w-[1100px] flex-1 flex-col gap-5 px-10 py-6">
+    <main class="mx-auto flex w-full max-w-[1100px] flex-1 flex-col gap-5 overflow-y-auto px-10 py-6 min-h-0">
       <RouterLink to="/operador" class="text-[13px] font-normal text-primario hover:underline">
         ‹ Volver a Inicio
       </RouterLink>

@@ -52,11 +52,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="pantalla flex min-h-screen flex-col" data-pantalla="W01-02">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-02">
     <HeaderPantalla titulo="Consultando fuentes" />
     <TituloPantalla class="sr-only">Consultando fuentes</TituloPantalla>
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main v-if="!sinDatosCapturados" class="flex flex-1 flex-col items-center justify-center gap-5 bg-fondo px-10 py-16" role="status" aria-live="polite">
+    <main v-if="!sinDatosCapturados" class="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto bg-fondo px-10 py-16" role="status" aria-live="polite">
       <svg class="h-6 w-6 animate-spin text-primario" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
         <path class="opacity-80" d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
@@ -71,7 +71,7 @@ onMounted(async () => {
         (avanza automáticamente según la respuesta del ACL — no tiene botón manual)
       </p>
     </main>
-    <main v-else class="flex flex-1 flex-col items-center justify-center gap-3 bg-fondo px-10 py-16 text-center" role="status" aria-live="polite">
+    <main v-else class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-16 text-center" role="status" aria-live="polite">
       <p class="text-[13px] text-tinta-suave">No hay una solicitud en curso para consultar.</p>
       <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">Ir a la solicitud</RouterLink>
     </main>

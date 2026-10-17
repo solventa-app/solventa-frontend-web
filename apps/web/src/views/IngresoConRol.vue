@@ -70,9 +70,9 @@ function ingresar() {
 </script>
 
 <template>
-  <div data-pantalla="G-01" class="flex min-h-screen flex-col">
+  <div data-pantalla="G-01" class="flex h-screen flex-col overflow-hidden">
     <HeaderPantalla titulo="Iniciar sesión" />
-    <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-8">
+    <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[464px] flex-col gap-5">
         <Divisor />
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
