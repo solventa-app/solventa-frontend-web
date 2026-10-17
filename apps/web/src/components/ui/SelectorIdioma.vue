@@ -10,7 +10,11 @@ defineEmits<{ 'update:modelValue': [valor: 'ES' | 'EN'] }>()
 </script>
 
 <template>
-  <div role="group" aria-label="Selector de idioma" class="flex h-7 items-center gap-1 rounded-full border border-borde bg-fondo px-[13px] text-[11px] leading-[11px]">
+  <div
+    role="group"
+    aria-label="Selector de idioma"
+    class="flex h-7 items-center gap-1 rounded-full border border-borde bg-fondo px-[13px] text-[11px] leading-[11px]"
+  >
     <span class="text-tinta">Idioma:</span>
     <button
       type="button"

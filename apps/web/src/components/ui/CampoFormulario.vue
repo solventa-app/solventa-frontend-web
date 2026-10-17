@@ -1,23 +1,13 @@
 <!--
-  Campo de formulario · librería de componentes (Figma 2006:12). Etiqueta siempre visible encima,
-  caja de 40 px de alto. En error: borde rojo, mensaje debajo con role="alert" (CA de accesibilidad
-  de docs/convenciones.md). No usa v-model directo sobre un elemento nativo: expone
-  modelValue/update:modelValue para que el padre controle el valor (sin guardar datos personales
-  aquí mismo, ver CLAUDE.md regla 7).
-
-  `disabled` (antes no existía, hallazgo de la revisión de QA de D-F1): la plantilla tiene como raíz
-  un `<div>` que envuelve el `<input>`, así que el fallthrough de atributos de Vue colocaba
-  `disabled` en ese `<div>` (que lo ignora en silencio) y el campo seguía editable — sin error de
-  TypeScript ni de consola. Se agrega el prop explícito, enlazado al `<input>` real, con un
-  tratamiento visual análogo al de Boton.vue deshabilitado (bg/texto apagados): SG-01 no documenta
-  un estado "Campo deshabilitado" en su ficha de Figma (solo Normal/Con foco/Error), así que este
-  estilo es una extrapolación razonada, no una cita literal de un nodo.
+  Campo de formulario · librería de componentes (Figma 2006:12). Etiqueta siempre visible encima y
+  caja de 40 px. En error: borde rojo y mensaje debajo con role="alert". `disabled` es un prop
+  explícito porque la raíz es un <div> y el atributo no llegaría al <input>.
 -->
 <script setup lang="ts">
 import { useId } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     modelValue: string
     label: string
@@ -31,7 +21,15 @@ const props = withDefaults(
     /** Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home). */
     icono?: 'badge' | 'payments' | 'home' | 'lock'
   }>(),
-  { type: 'text', placeholder: undefined, error: undefined, hint: undefined, required: false, disabled: false, icono: undefined },
+  {
+    type: 'text',
+    placeholder: undefined,
+    error: undefined,
+    hint: undefined,
+    required: false,
+    disabled: false,
+    icono: undefined,
+  },
 )
 
 defineEmits<{ 'update:modelValue': [valor: string] }>()
@@ -49,7 +47,11 @@ const idHint = useId()
     <div
       class="relative flex h-[40px] items-center rounded-[4px] border px-3 focus-within:border-2 focus-within:px-[11px]"
       :class="[
-        disabled ? 'cursor-not-allowed border-borde bg-fondo' : error ? 'border-error bg-white' : 'border-borde bg-white focus-within:border-enlace',
+        disabled
+          ? 'cursor-not-allowed border-borde bg-fondo'
+          : error
+            ? 'border-error bg-white'
+            : 'border-borde bg-white focus-within:border-enlace',
         icono ? 'pr-9' : '',
       ]"
     >
@@ -65,7 +67,11 @@ const idHint = useId()
         class="w-full bg-transparent text-cuerpo text-tinta outline-none placeholder:text-tinta-suave disabled:cursor-not-allowed disabled:text-tinta-suave"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
-      <IconoMaterial v-if="icono" :nombre="icono" class="pointer-events-none absolute right-3 h-5 w-5 text-tinta-suave" />
+      <IconoMaterial
+        v-if="icono"
+        :nombre="icono"
+        class="pointer-events-none absolute right-3 h-5 w-5 text-tinta-suave"
+      />
     </div>
     <p v-if="error" :id="idError" role="alert" class="flex items-center gap-1 text-nota text-error">
       <IconoMaterial nombre="cancel" class="h-[14px] w-[14px] shrink-0" />{{ error }}

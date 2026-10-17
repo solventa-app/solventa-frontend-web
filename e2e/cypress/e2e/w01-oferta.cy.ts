@@ -1,3 +1,5 @@
+import { ingresar } from '../support/sesion'
+
 // E2E de la historia HU-W01 (Jira KAN-203 pide, ADEMÁS de esto, un E2E por pantalla individual —
 // ver cypress/e2e/pantallas/*.cy.ts): flujo completo de cotización cruzando varias pantallas, tal
 // como lo recorre una persona real. Localiza por [data-pantalla="<id>"] y por roles/etiquetas
@@ -5,15 +7,7 @@
 // (`npm run web:dev:mock`, ver handlers.ts): el documento termina en 999 → oferta preliminar, en
 // 000 → error; cualquier otro → oferta completa.
 describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
-  beforeEach(() => {
-    cy.visit('/login')
-    cy.get('[data-pantalla="G-01"]').within(() => {
-      cy.get('input:not([type="password"])').first().type('cliente.demo')
-      cy.get('input[type="password"]').type('secreta123')
-      cy.contains('button', 'Ingresar').click()
-    })
-    cy.location('pathname').should('eq', '/inicio')
-  })
+  beforeEach(() => ingresar('CLIENTE'))
 
   it('W01-01 → W01-02 → W01-03a → W01-04: oferta completa y su detalle de fuentes', () => {
     cy.contains('a', 'Nueva cotización').click()

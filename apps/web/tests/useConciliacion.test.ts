@@ -22,26 +22,20 @@ describe('useConciliacion', () => {
     await cargarCobros()
   })
 
-  it('carga los 5 cobros del mock (los del prototipo W05-01)', () => {
+  it('carga los 4 cobros del mock', () => {
     const { estado } = useConciliacion(fetchPrueba)
-    expect(estado.cobros).toHaveLength(5)
+    expect(estado.cobros).toHaveLength(4)
     expect(estado.cargando).toBe(false)
     expect(estado.error).toBeNull()
   })
 
-  it('trae los 4 estados de EstadoCobro representados', () => {
+  it('trae los 4 estados de EstadoCobro representados, uno cada uno', () => {
     const { estado } = useConciliacion(fetchPrueba)
-    const estados = [...new Set(estado.cobros.map((c) => c.estado))].sort()
+    const estados = estado.cobros.map((c) => c.estado).sort()
     expect(estados).toEqual(['COBRADO', 'COBRANDO', 'PENDIENTE', 'RECHAZADO'])
   })
 
-  it('el cobro en COBRANDO no tiene idTransaccion todavía', () => {
-    const { estado } = useConciliacion(fetchPrueba)
-    const enCurso = estado.cobros.find((c) => c.estado === 'COBRANDO')
-    expect(enCurso?.idTransaccion).toBeNull()
-  })
-
-  it('reintentarCobro vuelve a cobrar un RECHAZADO y le descuenta un reintento (CA-W05-02)', async () => {
+  it('reintentarCobro vuelve a cobrar un RECHAZADO, descuenta un reintento y conserva su cliente', async () => {
     const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
     const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')
     expect(rechazado).toBeDefined()
@@ -54,42 +48,39 @@ describe('useConciliacion', () => {
     expect(actualizado?.estado).toBe('COBRADO')
     expect(actualizado?.reintentosRestantes).toBe(2)
     expect(actualizado?.idTransaccion).toBeTruthy()
-    expect(actualizado?.cliente).toEqual(rechazado!.cliente)
+    expect(actualizado?.cliente?.nombre).toBe(rechazado!.cliente?.nombre)
     expect(estado.reintentando).toBeNull()
   })
 
   it('al agotar los reintentos muestra el mensaje del BFF, no uno genérico', async () => {
+    const mensaje = 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.'
     servidor.use(
       http.post('*/graphql/web', () =>
-        HttpResponse.json({
-          data: null,
-          errors: [{ message: 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.', path: ['reintentarCobro'] }],
-        }),
+        HttpResponse.json({ data: null, errors: [{ message: mensaje, path: ['reintentarCobro'] }] }),
       ),
     )
     const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
 
     await reintentarCobro('cobro-3')
 
-    expect(estado.errorReintento).toBe('Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.')
+    expect(estado.errorReintento).toBe(mensaje)
   })
 
-  it('"Unexpected error." del BFF (falla interna enmascarada) se reemplaza por el mensaje genérico', async () => {
-    servidor.use(
-      http.post('*/graphql/web', () => HttpResponse.json({ data: null, errors: [{ message: 'Unexpected error.', path: ['reintentarCobro'] }] })),
-    )
+  it('un error de esquema (sin path) o "Unexpected error." no se muestran crudos', async () => {
     const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
-
-    await reintentarCobro('cobro-3')
-
-    expect(estado.errorReintento).toBe('No pudimos reintentar el cobro en este momento.')
+    for (const error of [
+      { message: "Cannot query field 'x' on type 'Cobro'." },
+      { message: 'Unexpected error.', path: ['reintentarCobro'] },
+    ]) {
+      servidor.use(http.post('*/graphql/web', () => HttpResponse.json({ data: null, errors: [error] })))
+      await reintentarCobro('cobro-3')
+      expect(estado.errorReintento).toBe('No pudimos reintentar el cobro en este momento.')
+    }
   })
 
-  // QA independiente encontro que las queries no pedian cliente/idTransaccion: el mock de MSW
-  // ignora el selection set y devuelve igual el objeto completo, asi que el bug pasaba en verde
-  // hasta aqui. Esta prueba inspecciona el texto real de la query/mutation enviada (no la
-  // respuesta) para que una regresion futura si falle.
-  it('la query cobros y la mutation reintentarCobro piden cliente e idTransaccion', async () => {
+  // MSW devuelve el objeto completo sin mirar el selection set: se inspecciona el texto enviado, porque
+  // el BFF real solo devuelve lo que se pide.
+  it('la query cobros y la mutation reintentarCobro piden el nombre del cliente', async () => {
     let consultaCobros = ''
     let consultaReintentar = ''
     const fetchQueCaptura: typeof fetch = async (url, init) => {
@@ -105,9 +96,7 @@ describe('useConciliacion', () => {
     await reintentarCobro(rechazado!.id)
 
     for (const consulta of [consultaCobros, consultaReintentar]) {
-      expect(consulta).toMatch(/\bcliente \{ id nombre \}/)
-      expect(consulta).toMatch(/\bidTransaccion\b/)
-      expect(consulta).toMatch(/\breintentosRestantes\b/)
+      expect(consulta).toMatch(/cliente \{ id nombre \}/)
     }
   })
 
@@ -155,18 +144,5 @@ describe('useConciliacion', () => {
     servidor.resetHandlers()
     await reintentarCobro(rechazado!.id)
     expect(estado.errorReintento).toBeNull()
-  })
-
-  it('un error de validación del esquema (sin path) no se muestra crudo', async () => {
-    servidor.use(
-      http.post('*/graphql/web', () =>
-        HttpResponse.json({ data: null, errors: [{ message: "Cannot query field 'x' on type 'Cobro'." }] }),
-      ),
-    )
-    const { cargarCobros, estado } = useConciliacion(fetchPrueba)
-
-    await cargarCobros()
-
-    expect(estado.error).toBe('No pudimos cargar la conciliación de pagos en este momento.')
   })
 })

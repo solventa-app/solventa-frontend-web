@@ -8,6 +8,8 @@ import { useSesion } from '../src/composables/useSesion'
 import { restablecerCobrosDePrueba } from '../src/mocks/handlers'
 import { servidor } from '../src/mocks/node'
 
+const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
+
 function crearRouterDePrueba(): Router {
   return createRouter({
     history: createMemoryHistory(),
@@ -72,12 +74,11 @@ describe('HU-W05 · pantallas', () => {
       expect(router.currentRoute.value.path).toBe('/operador/conciliacion')
     })
 
-    it('"Cerrar sesión" limpia el rol de la sesión y navega a /login', async () => {
-      // Antes era un RouterLink directo a /login que nunca llamaba a cerrarSesion(): navegaba
-      // bien, pero dejaba el rol de sesión sin limpiar (a diferencia de HomeCliente/HomeAsesor).
+    it('"Cerrar sesión" borra el token y el rol, y navega a /login', async () => {
       const router = crearRouterDePrueba()
-      const { establecerSesion, estado } = useSesion()
-      establecerSesion('BACKOFFICE')
+      const { iniciarSesion, estado } = useSesion(fetchPrueba)
+      await iniciarSesion('admin.solventa', 'secreta123')
+      expect(estado.rol).toBe('BACKOFFICE')
       router.push('/operador')
       await router.isReady()
       const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
@@ -87,7 +88,8 @@ describe('HU-W05 · pantallas', () => {
       await boton!.trigger('click')
       await flushPromises()
       expect(router.currentRoute.value.path).toBe('/login')
-      expect(estado.rol).toBe('CLIENTE')
+      expect(estado.rol).toBeNull()
+      expect(estado.token).toBeNull()
     })
   })
 
@@ -106,30 +108,33 @@ describe('HU-W05 · pantallas', () => {
       return { wrapper, router }
     }
 
-    it('marca la pantalla, tiene exactamente un <h1> y carga los 5 cobros del mock', async () => {
+    it('marca la pantalla, tiene exactamente un <h1> y carga los 4 cobros del mock', async () => {
       const { wrapper } = await montarConciliacion()
       expect(wrapper.find('[data-pantalla="W05-01"]').exists()).toBe(true)
       expect(wrapper.findAll('h1')).toHaveLength(1)
-      expect(wrapper.findAll('tbody tr')).toHaveLength(5)
+      expect(wrapper.findAll('tbody tr')).toHaveLength(4)
     })
 
-    // Re-verificado contra el archivo correcto de Figma (nodo 2001:3156, confirmado con captura de
-    // pantalla): las columnas son "Prima" (no "Monto"), "Fecha del intento" (no "Fecha / hora") e
-    // "ID de transacción" (no "ID transacción") — una ronda anterior las había dejado con el texto
-    // del archivo de Figma equivocado.
-    it('trae las columnas Cliente e ID de transacción (sí están en este contrato) y usa N.º de póliza / Prima', async () => {
+    // Columnas literales del frame de Figma (nodo 2001:3156).
+    it('trae las columnas del prototipo y el nombre del cliente desde Cobro.cliente', async () => {
       const { wrapper } = await montarConciliacion()
       const encabezados = wrapper.findAll('th').map((th) => th.text())
-      expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Prima', 'Estado', 'Fecha del intento', 'ID de transacción', 'Acciones'])
-      // El nombre llega como `cliente { nombre }` (contrato v0.6), no como texto suelto.
-      expect(wrapper.text()).toContain('María Gutiérrez')
-      expect(wrapper.text()).toContain('VH-2026-0048217')
-      expect(wrapper.text()).toContain('pg-8a2f19c3')
+      expect(encabezados).toEqual([
+        'Cliente',
+        'N.º de póliza',
+        'Prima',
+        'Estado',
+        'Fecha del intento',
+        'ID de transacción',
+        'Acciones',
+      ])
+      expect(wrapper.text()).toContain('Andrés Felipe Duarte')
+      expect(wrapper.text()).toContain('SOL-VH-2026-004905')
     })
 
     it('el cobro Cobrando muestra "en curso" (minúscula, texto literal de Figma) y "—" en vez de fecha/id de transacción', async () => {
       const { wrapper } = await montarConciliacion()
-      const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Carlos Rincón'))
+      const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
       expect(filaCobrando?.text()).toContain('en curso')
       expect(filaCobrando?.text()).toContain('—')
     })
@@ -157,15 +162,18 @@ describe('HU-W05 · pantallas', () => {
       expect(wrapper.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
     })
 
-    it('reintentar cobro mueve la fila Rechazado a Cobrando y muestra el toast de confirmación', async () => {
+    it('reintentar cobro deja la fila Rechazado en Cobrado y muestra el toast de confirmación', async () => {
       const { wrapper } = await montarConciliacion()
-      await wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
 
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
       await flushPromises()
 
-      // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: pasó a Cobrando.
+      // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: quedó Cobrado.
       expect(wrapper.findAll('tbody tr')).toHaveLength(1)
       expect(wrapper.text()).toContain('No hay cobros en este estado.')
       expect(wrapper.get('[role="status"]').text()).toContain('Cobro reenviado a la pasarela')
@@ -177,7 +185,10 @@ describe('HU-W05 · pantallas', () => {
     // bloqueante y el resto de la pantalla sigue visible.
     it('un reintento fallido muestra una alerta sin ocultar la tabla, las pestañas ni el pie', async () => {
       const { wrapper } = await montarConciliacion()
-      await wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
 
       servidor.use(http.post('/graphql/web', () => new HttpResponse(null, { status: 500 })))
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
@@ -197,7 +208,10 @@ describe('HU-W05 · pantallas', () => {
 
     it('el reintento persiste en el mock: volver a cargar cobros ya no trae el Rechazado', async () => {
       const { wrapper, router } = await montarConciliacion()
-      await wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
       await boton!.trigger('click')
       await flushPromises()
@@ -208,7 +222,10 @@ describe('HU-W05 · pantallas', () => {
       await router.push('/operador/conciliacion')
       await flushPromises()
 
-      await wrapper2.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')!.trigger('click')
+      await wrapper2
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
       expect(wrapper2.text()).toContain('No hay cobros en este estado.')
     })
 

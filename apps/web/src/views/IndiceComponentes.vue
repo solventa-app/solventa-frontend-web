@@ -30,11 +30,13 @@ const filtroActivo = ref('Todos')
 <template>
   <main class="pantalla" style="max-width: 56rem">
     <h1>Librería de componentes (D-F1)</h1>
-    <p class="pendiente">Referencia viva, tomada de "Librería de componentes · alta fidelidad" y "SG-01 · Guía de estilos" en Figma.</p>
+    <p class="pendiente">
+      Referencia viva, tomada de "Librería de componentes · alta fidelidad" y "SG-01 · Guía de estilos" en Figma.
+    </p>
 
     <section style="margin-top: 2rem">
       <h2>Header de pantalla</h2>
-      <HeaderPantalla titulo="Home del Cliente" v-model:idioma="idioma" v-model:moneda="moneda" />
+      <HeaderPantalla v-model:idioma="idioma" v-model:moneda="moneda" titulo="Home del Cliente" />
     </section>
 
     <section style="margin-top: 1.5rem">
@@ -54,7 +56,11 @@ const filtroActivo = ref('Todos')
       <h2>Campo de formulario</h2>
       <CampoFormulario v-model="documento" label="Número de documento" placeholder="1.024.578.113" />
       <div style="height: 0.75rem"></div>
-      <CampoFormulario model-value="1.024.578.11" label="Número de documento" error="El documento no coincide con el titular" />
+      <CampoFormulario
+        model-value="1.024.578.11"
+        label="Número de documento"
+        error="El documento no coincide con el titular"
+      />
       <div style="height: 0.75rem"></div>
       <CampoFormulario model-value="1.024.578.113" label="Número de documento" disabled />
     </section>

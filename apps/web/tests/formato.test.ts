@@ -76,3 +76,9 @@ describe('formatearMonto', () => {
     expect(formatearMonto({ valor: '198000.00', moneda: 'COP' })).toBe('$\u00A0198.000')
   })
 })
+
+describe('formatearMonto con montos grandes', () => {
+  it('no pierde precisión más allá de Number.MAX_SAFE_INTEGER', () => {
+    expect(formatearMonto({ valor: '12345678901234567890', moneda: 'COP' })).toBe('$ 12.345.678.901.234.567.890')
+  })
+})

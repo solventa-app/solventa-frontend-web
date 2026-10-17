@@ -5,12 +5,12 @@ import type {
   Consentimiento,
   FuenteConsultada,
   MutationContactarAsesorArgs,
+  MutationIniciarSesionArgs,
   MutationRegistrarConsentimientoArgs,
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
   Oferta,
-  MutationIniciarSesionArgs,
   QueryCobrosArgs,
   ResultadoOferta,
   ResultadoSesion,
@@ -53,7 +53,9 @@ const oferta = (tipo: Oferta['tipo']): Oferta => ({
   tipo,
   prima: tipo === 'COMPLETA' ? { valor: '94680.00', moneda: 'COP' } : null,
   rangoPrima:
-    tipo === 'PRELIMINAR' ? { minima: { valor: '81792.00', moneda: 'COP' }, maxima: { valor: '122688.00', moneda: 'COP' } } : null,
+    tipo === 'PRELIMINAR'
+      ? { minima: { valor: '81792.00', moneda: 'COP' }, maxima: { valor: '122688.00', moneda: 'COP' } }
+      : null,
   cobertura: { valor: '200000000', moneda: 'COP' },
   desgloseScore: [
     { nombre: 'historial-crediticio', peso: 0.3 },
@@ -74,39 +76,55 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   vigente: !revocado,
 })
 
-// Los 5 cobros del prototipo (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", W05-01, nodo 2001:3156),
-// con la forma del BFF real: `cliente { id nombre }`, `idTransaccion` y `reintentosRestantes` (contrato v0.6). Son los mismos
-// que deja `scripts/sembrar_cobros.py` en el backend local. Un RECHAZADO se reintenta a mano hasta 3 veces;
-// un PENDIENTE lo reintenta el sistema solo. `cobros` es mutable (reintentarCobro lo actualiza en el sitio)
-// para que el estado persista entre pantallas; las pruebas lo reinician con restablecerCobrosDePrueba.
-const cobro = (
-  id: string,
-  nombre: string,
-  polizaId: string,
-  estado: Cobro['estado'],
-  valor: string,
-  actualizadoEn: string,
-  motivo: string | null = null,
-  idTransaccion: string | null = null,
-): Cobro => ({
-  id,
-  cliente: { id: `cliente-${id}`, nombre },
-  polizaId,
-  estado,
-  monto: { valor, moneda: 'COP' },
-  actualizadoEn,
-  idTransaccion,
-  motivo,
-  intentos: 1,
-  reintentosRestantes: 3,
-})
-
+// 4 cobros (HU-W05), uno por cada EstadoCobro, con los nombres, montos y fechas del frame W05-01 de
+// Figma, con la forma del BFF (contrato v0.6): `idTransaccion` (null mientras no hay cobro hecho) y
+// `reintentosRestantes` (un RECHAZADO se reintenta a mano hasta 3 veces). `cobros` es mutable (reintentarCobro lo actualiza en el sitio) para que el estado persista
+// durante una demo; las pruebas lo reinician con restablecerCobrosDePrueba.
 const cobrosIniciales = (): Cobro[] => [
-  cobro('cobro-1', 'María Gutiérrez', 'VH-2026-0048217', 'COBRADO', '185000.00', '2026-09-12T15:45:00Z', null, 'pg-8a2f19c3'),
-  cobro('cobro-2', 'Carlos Rincón', 'VH-2026-0048190', 'COBRANDO', '212400.00', '2026-09-12T15:50:00Z'),
-  cobro('cobro-3', 'Luisa Fernanda Parra', 'VH-2026-0048155', 'RECHAZADO', '164800.00', '2026-09-11T21:12:00Z', 'fondos_insuficientes'),
-  cobro('cobro-4', 'Jorge Mendoza', 'VH-2026-0048101', 'PENDIENTE', '240000.00', '2026-09-10T14:03:00Z', 'pasarela_no_disponible'),
-  cobro('cobro-5', 'Sandra Ospina', 'VH-2026-0048077', 'COBRADO', '198500.00', '2026-09-09T19:27:00Z', null, 'pg-c91a4402'),
+  {
+    id: 'cobro-1',
+    cliente: { id: 'cliente-1', nombre: 'Andrés Felipe Duarte' },
+    polizaId: 'SOL-VH-2026-004905',
+    estado: 'COBRANDO',
+    monto: { valor: '198000.00', moneda: 'COP' },
+    actualizadoEn: '2026-09-05T15:00:00Z',
+    idTransaccion: null,
+    motivo: null,
+    reintentosRestantes: 3,
+  },
+  {
+    id: 'cobro-2',
+    cliente: { id: 'cliente-2', nombre: 'Laura Gómez Rico' },
+    polizaId: 'SOL-VH-2026-004821',
+    estado: 'COBRADO',
+    monto: { valor: '185000.00', moneda: 'COP' },
+    actualizadoEn: '2026-09-05T14:14:00Z',
+    idTransaccion: 'pg-8a2f19c3',
+    motivo: null,
+    reintentosRestantes: 3,
+  },
+  {
+    id: 'cobro-3',
+    cliente: { id: 'cliente-3', nombre: 'Julián Torres Mesa' },
+    polizaId: 'SOL-VH-2026-004798',
+    estado: 'RECHAZADO',
+    monto: { valor: '142500.00', moneda: 'COP' },
+    actualizadoEn: '2026-09-04T23:02:00Z',
+    idTransaccion: null,
+    motivo: 'fondos_insuficientes',
+    reintentosRestantes: 3,
+  },
+  {
+    id: 'cobro-4',
+    cliente: { id: 'cliente-4', nombre: 'Carlos Andrés Peña' },
+    polizaId: 'SOL-VH-2026-004790',
+    estado: 'PENDIENTE',
+    monto: { valor: '210000.00', moneda: 'COP' },
+    actualizadoEn: '2026-09-04T16:47:00Z',
+    idTransaccion: null,
+    motivo: 'pasarela_no_disponible',
+    reintentosRestantes: 3,
+  },
 ]
 
 let cobros: Cobro[] = cobrosIniciales()
@@ -116,32 +134,56 @@ export function restablecerCobrosDePrueba(): void {
   cobros = cobrosIniciales()
 }
 
+// Sesión de demo (convención de los mocks, NO del backend real): cualquier clave sirve salvo
+// `clave-erronea`; el rol sale del alias (`asesor…` → ASESOR, `admin…`/`operador…` → BACKOFFICE, otro →
+// CLIENTE). El token es un JWT sin firma con los mismos claims que emite AUTH, más `nombre`, que el
+// backend todavía no emite (ver contrato/CHANGELOG.md): aquí se deriva del alias.
+function rolDeDemo(usuario: string): RolUsuario {
+  if (usuario.startsWith('asesor')) return 'ASESOR'
+  if (usuario.startsWith('admin') || usuario.startsWith('operador')) return 'BACKOFFICE'
+  return 'CLIENTE'
+}
+
+const base64url = (texto: string) =>
+  btoa(String.fromCharCode(...new TextEncoder().encode(texto)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
+export function tokenDeDemo(usuario: string, rol: RolUsuario = rolDeDemo(usuario)): string {
+  const nombre = usuario
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map((parte) => parte[0].toUpperCase() + parte.slice(1))
+    .join(' ')
+  const ahoraSeg = Math.floor(Date.now() / 1000)
+  const claims = { sub: `usuario-${usuario}`, usuario, rol, nombre, iat: ahoraSeg, exp: ahoraSeg + 3600 }
+  return `${base64url(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${base64url(JSON.stringify(claims))}.demo`
+}
+
 const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
   LLAMAR: 'llamada',
   CHAT: 'chat',
   AGENDAR: 'llamada agendada',
 }
 
-// Login de demo (solo mocks): el rol sale del alias, como si cada alias fuera un usuario distinto.
-// "clave-incorrecta" simula credenciales inválidas. En el backend real el rol lo da AUTH.
-function rolDeDemo(alias: string): RolUsuario {
-  if (/^(admin|operador|backoffice)/.test(alias)) return 'BACKOFFICE'
-  if (alias.startsWith('asesor')) return 'ASESOR'
-  return 'CLIENTE'
-}
-
 export const handlers = [
   graphql.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
     const { usuario, clave } = variables.entrada
-    const resultado: ResultadoSesion =
-      clave === 'clave-incorrecta'
-        ? { mensaje: 'Usuario o clave incorrectos.' }
-        : {
-            token: `token-demo-${usuario}`,
-            expiraEn: new Date(Date.now() + 3600_000).toISOString(),
-            usuario: { id: `u-${usuario}`, usuario, rol: rolDeDemo(usuario), estado: 'ACTIVO', creadoEn: ahora() },
-          }
-    return HttpResponse.json({ data: { iniciarSesion: resultado } })
+    // Mismo mensaje genérico que el BFF: no revela si el alias existe.
+    if (clave === 'clave-erronea') {
+      return HttpResponse.json({ data: { iniciarSesion: { mensaje: 'Usuario o clave incorrectos.' } } })
+    }
+    const rol = rolDeDemo(usuario)
+    return HttpResponse.json({
+      data: {
+        iniciarSesion: {
+          token: tokenDeDemo(usuario, rol),
+          expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+          usuario: { id: `usuario-${usuario}`, usuario, rol, estado: 'ACTIVO', creadoEn: ahora() },
+        },
+      },
+    })
   }),
 
   graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
@@ -161,7 +203,8 @@ export const handlers = [
       const resultado: ResultadoOferta = documento.endsWith('000')
         ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
           {
-            mensaje: 'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
+            mensaje:
+              'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
             puedeReintentar: true,
           }
         : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
@@ -175,7 +218,10 @@ export const handlers = [
       HttpResponse.json({
         data: {
           // Mismo texto que el BFF (sin el id de la oferta, que no le dice nada al cliente).
-          contactarAsesor: { canal: variables.canal, resumen: `Recibimos tu solicitud de ${RESUMEN_CANAL[variables.canal]}. Un asesor te contactará para continuar tu cotización.` },
+          contactarAsesor: {
+            canal: variables.canal,
+            resumen: `Recibimos tu solicitud de ${RESUMEN_CANAL[variables.canal]}. Un asesor te contactará para continuar tu cotización.`,
+          },
         },
       }),
   ),
@@ -186,29 +232,32 @@ export const handlers = [
     }),
   ),
 
-  graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>(
-    'reintentarCobro',
-    ({ variables }) => {
-      // Igual que el BFF: un RECHAZADO con reintentos se vuelve a cobrar (aquí siempre queda COBRADO) y
-      // descuenta uno; sin reintentos, error. Muta el cobro en el arreglo para que persista entre pantallas.
-      const encontrado = cobros.find((c) => c.id === variables.cobroId)
-      if (!encontrado) {
-        return HttpResponse.json({ data: null, errors: [{ message: 'Cobro no encontrado.', path: ['reintentarCobro'] }] })
+  graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>('reintentarCobro', ({ variables }) => {
+    // Igual que el BFF (contrato v0.6): un RECHAZADO con reintentos se vuelve a cobrar (aquí siempre queda
+    // COBRADO) y descuenta uno; sin reintentos, error para el usuario. Muta el cobro en el arreglo para que
+    // una consulta `cobros` posterior vea el nuevo estado.
+    const cobro = cobros.find((c) => c.id === variables.cobroId)
+    if (!cobro) {
+      return HttpResponse.json({ data: null, errors: [{ message: 'Cobro no encontrado.', path: ['reintentarCobro'] }] })
+    }
+    if (cobro.estado === 'RECHAZADO') {
+      if (!cobro.reintentosRestantes) {
+        return HttpResponse.json({
+          data: null,
+          errors: [
+            {
+              message: 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.',
+              path: ['reintentarCobro'],
+            },
+          ],
+        })
       }
-      if (encontrado.estado === 'RECHAZADO') {
-        if (!encontrado.reintentosRestantes) {
-          return HttpResponse.json({
-            data: null,
-            errors: [{ message: 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.', path: ['reintentarCobro'] }],
-          })
-        }
-        encontrado.reintentosRestantes -= 1
-        encontrado.estado = 'COBRADO'
-        encontrado.motivo = null
-        encontrado.idTransaccion = `pg-reintento-${encontrado.id}`
-        encontrado.actualizadoEn = ahora()
-      }
-      return HttpResponse.json({ data: { reintentarCobro: encontrado } })
-    },
-  ),
+      cobro.reintentosRestantes -= 1
+      cobro.estado = 'COBRADO'
+      cobro.motivo = null
+      cobro.idTransaccion = `pg-reintento-${cobro.id}`
+      cobro.actualizadoEn = ahora()
+    }
+    return HttpResponse.json({ data: { reintentarCobro: cobro } })
+  }),
 ]

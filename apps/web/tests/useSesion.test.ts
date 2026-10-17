@@ -1,148 +1,151 @@
-// KAN-203: useSesion nunca tenía una prueba propia, solo se ejercitaba de rebote dentro de las
-// pruebas de las vistas (pantallas-w01.test.ts/pantallas-w05.test.ts). Cubre lo que de verdad
-// decide: a qué home vuelve "Inicio" por rol (RUTA_INICIO), el nombre por defecto que muestra cada
-// home al iniciar sesión, y que cerrarSesion siempre vuelve a CLIENTE (nunca deja al usuario
-// "atrapado" en un rol sin salida, ver nota del propio composable sobre el rol por defecto).
-import { http, HttpResponse } from 'msw'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { ejecutar } from '../src/graphql/cliente'
+import { CLAVE_TOKEN, leerClaims, restaurarSesion, RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import { tokenDeDemo } from '../src/mocks/handlers'
 import { servidor } from '../src/mocks/node'
-import { CLAVE_SESION, RUTA_INICIO, restaurarSesion, useSesion } from '../src/composables/useSesion'
-
-// `estado` es un singleton a nivel de módulo (mismo patrón que useCotizacion/useConciliacion): se
-// resetea después de cada prueba para que una prueba no herede el rol que dejó la anterior.
-afterEach(() => {
-  useSesion().cerrarSesion()
-  servidor.resetHandlers()
-})
-beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
-afterAll(() => servidor.close())
 
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
+/** JWT sin firma con los claims dados (la firma la verifica el BFF, no el frontend). */
+function token(claims: Record<string, unknown>): string {
+  const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, '')
+  return `${b64({ alg: 'none' })}.${b64(claims)}.x`
+}
+
+beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+afterEach(() => {
+  servidor.resetHandlers()
+  useSesion().cerrarSesion()
+})
+afterAll(() => servidor.close())
+
+describe('leerClaims', () => {
+  it('lee usuario, rol, exp y nombre del payload, incluidos caracteres con tilde', () => {
+    const claims = leerClaims(tokenDeDemo('andrés.duarte', 'CLIENTE'))
+    expect(claims).toMatchObject({ usuario: 'andrés.duarte', rol: 'CLIENTE', nombre: 'Andrés Duarte' })
+  })
+
+  it('rechaza un token mal formado o con un rol desconocido', () => {
+    expect(leerClaims('no-es-un-jwt')).toBeNull()
+    expect(leerClaims(token({ usuario: 'x', rol: 'OPERADOR', exp: 9999999999 }))).toBeNull()
+  })
+})
+
 describe('useSesion', () => {
-  it('arranca en CLIENTE por defecto (una pantalla de /cotizacion/* es navegable sin pasar por /login)', () => {
-    const { estado } = useSesion()
-    expect(estado.rol).toBe('CLIENTE')
-    expect(estado.nombre).toBeTruthy()
+  it('arranca sin sesión', () => {
+    const { estado, sesionActiva, rutaInicio } = useSesion()
+    expect(estado.token).toBeNull()
+    expect(sesionActiva()).toBe(false)
+    expect(rutaInicio()).toBe('/login')
   })
 
-  it('RUTA_INICIO mapea los 3 roles a su propio home (G-02/G-02a/G-02b)', () => {
-    expect(RUTA_INICIO).toEqual({
-      CLIENTE: '/inicio',
-      ASESOR: '/asesor',
-      BACKOFFICE: '/operador',
-    })
+  it('RUTA_INICIO mapea los 3 roles del backend a su home (G-02/G-02a/G-02b)', () => {
+    expect(RUTA_INICIO).toEqual({ CLIENTE: '/inicio', ASESOR: '/asesor', BACKOFFICE: '/operador' })
   })
 
-  it('establecerSesion cambia el rol y el nombre a los del rol entrante', () => {
-    const { estado, establecerSesion } = useSesion()
-    establecerSesion('ASESOR')
+  it('iniciarSesion toma el rol y el nombre del JWT', async () => {
+    const { estado, iniciarSesion, sesionActiva, rutaInicio } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('asesor.pena', 'secreta123')).toBeNull()
     expect(estado.rol).toBe('ASESOR')
-    const nombreAsesor = estado.nombre
-    expect(nombreAsesor).toBeTruthy()
-
-    establecerSesion('BACKOFFICE')
-    expect(estado.rol).toBe('BACKOFFICE')
-    // El nombre cambia junto con el rol: cada rol tiene su propio nombre por defecto, no se arrastra
-    // el del rol anterior.
-    expect(estado.nombre).not.toBe(nombreAsesor)
+    expect(estado.nombre).toBe('Asesor Pena')
+    expect(sesionActiva()).toBe(true)
+    expect(rutaInicio()).toBe('/asesor')
   })
 
-  it('cerrarSesion siempre vuelve a CLIENTE, sin importar desde qué rol se llame', () => {
-    const { estado, establecerSesion, cerrarSesion } = useSesion()
-    establecerSesion('BACKOFFICE')
-    expect(estado.rol).toBe('BACKOFFICE')
-
-    cerrarSesion()
-    expect(estado.rol).toBe('CLIENTE')
+  it('sin claim `nombre` (el backend aún no lo emite) muestra el alias', async () => {
+    const sinNombre = token({
+      sub: '1',
+      usuario: 'cliente.demo',
+      rol: 'CLIENTE',
+      exp: Math.floor(Date.now() / 1000) + 60,
+    })
+    const fetchSinNombre: typeof fetch = async () => Response.json({ data: { iniciarSesion: { token: sinNombre } } })
+    const { estado, iniciarSesion } = useSesion(fetchSinNombre)
+    expect(await iniciarSesion('cliente.demo', 'x')).toBeNull()
+    expect(estado.nombre).toBe('cliente.demo')
   })
 
-  it('el estado es compartido (singleton): dos llamadas a useSesion() ven el mismo cambio', () => {
-    const primera = useSesion()
-    const segunda = useSesion()
-    primera.establecerSesion('ASESOR')
-    expect(segunda.estado.rol).toBe('ASESOR')
-  })
-
-  it('ingresar guarda el token y ejecutar() lo manda en Authorization; cerrarSesion lo borra', async () => {
-    const { estado, ingresar, cerrarSesion } = useSesion(fetchPrueba)
-    const resultado = await ingresar('admin.solventa', 'clave', 'BACKOFFICE')
-    expect(resultado).toEqual({ ok: true, rol: 'BACKOFFICE' })
-    expect(estado.autenticado).toBe(true)
-    expect(estado.usuario).toBe('admin.solventa')
-
+  it('envía el token en Authorization en las peticiones siguientes', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'x')
     let cabecera: string | null = null
-    servidor.use(
-      http.post('*/graphql/web', ({ request }) => {
-        cabecera = request.headers.get('authorization')
-        return HttpResponse.json({ data: { yo: null } })
-      }),
-    )
-    await ejecutar('{ yo { id } }', {}, fetchPrueba)
-    expect(cabecera).toBe('Bearer token-demo-admin.solventa')
+    const fetchQueCaptura: typeof fetch = async (url, init) => {
+      cabecera = new Headers(init?.headers).get('Authorization')
+      return fetchPrueba(url, init)
+    }
+    await useSesion(fetchQueCaptura).iniciarSesion('cliente.demo', 'x')
+    expect(cabecera).toMatch(/^Bearer ey/)
+  })
+
+  it('devuelve el mensaje genérico del BFF con credenciales incorrectas y no abre sesión', async () => {
+    const { iniciarSesion, sesionActiva } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('cliente.demo', 'clave-erronea')).toBe('Usuario o clave incorrectos.')
+    expect(sesionActiva()).toBe(false)
+  })
+
+  it('una falla técnica nunca llega como texto crudo (regla 5)', async () => {
+    const fetchCaido: typeof fetch = async () => new Response(null, { status: 500 })
+    const mensaje = await useSesion(fetchCaido).iniciarSesion('cliente.demo', 'x')
+    expect(mensaje).toBeTruthy()
+    expect(mensaje).not.toMatch(/500|BFF/)
+  })
+
+  it('un token vencido no cuenta como sesión activa', async () => {
+    const vencido = token({ sub: '1', usuario: 'cliente.demo', rol: 'CLIENTE', exp: Math.floor(Date.now() / 1000) - 1 })
+    const fetchVencido: typeof fetch = async () => Response.json({ data: { iniciarSesion: { token: vencido } } })
+    const { iniciarSesion, sesionActiva } = useSesion(fetchVencido)
+    await iniciarSesion('cliente.demo', 'x')
+    expect(sesionActiva()).toBe(false)
+  })
+
+  it('cerrarSesion borra token, rol y nombre', async () => {
+    const { estado, iniciarSesion, cerrarSesion } = useSesion(fetchPrueba)
+    await iniciarSesion('admin.solventa', 'x')
+    cerrarSesion()
+    expect(estado).toMatchObject({ token: null, rol: null, nombre: '' })
+  })
+})
+
+describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
+  const enUnMinuto = () => Math.floor(Date.now() / 1000) + 60
+
+  afterEach(() => sessionStorage.clear())
+
+  it('iniciarSesion guarda solo el token y cerrarSesion lo borra', async () => {
+    const { iniciarSesion, cerrarSesion, estado } = useSesion(fetchPrueba)
+    await iniciarSesion('asesor.pena', 'secreta123')
+
+    expect(sessionStorage.length).toBe(1)
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBe(estado.token)
 
     cerrarSesion()
-    await ejecutar('{ yo { id } }', {}, fetchPrueba)
-    expect(cabecera).toBeNull()
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
   })
 
-  it('ingresar con un rol que no es el del usuario no abre sesión', async () => {
-    const { estado, ingresar } = useSesion(fetchPrueba)
-    const resultado = await ingresar('asesor.demo', 'clave', 'CLIENTE')
-    expect(resultado).toEqual({ ok: false, mensaje: 'Tu usuario es de Asesor comercial: elige ese rol para ingresar.' })
-    expect(estado.autenticado).toBe(false)
+  it('al recargar, un token vigente reabre la sesión con su rol', () => {
+    sessionStorage.setItem(CLAVE_TOKEN, token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: enUnMinuto() }))
+
+    restaurarSesion()
+
+    const { estado, sesionActiva, rutaInicio } = useSesion()
+    expect(sesionActiva()).toBe(true)
+    expect(estado.rol).toBe('BACKOFFICE')
+    expect(rutaInicio()).toBe('/operador')
   })
 
-  describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
-    afterEach(() => sessionStorage.clear())
+  it('un token vencido no se restaura y se borra', () => {
+    const vencido = Math.floor(Date.now() / 1000) - 10
+    sessionStorage.setItem(CLAVE_TOKEN, token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: vencido }))
 
-    it('ingresar la guarda (sin datos personales) y cerrarSesion la borra', async () => {
-      const { ingresar, cerrarSesion } = useSesion(fetchPrueba)
-      await ingresar('admin.solventa', 'clave', 'BACKOFFICE')
+    restaurarSesion()
 
-      const guardada = JSON.parse(sessionStorage.getItem(CLAVE_SESION)!)
-      expect(Object.keys(guardada).sort()).toEqual(['expiraEn', 'rol', 'token', 'usuario'])
-      expect(guardada).toMatchObject({ rol: 'BACKOFFICE', usuario: 'admin.solventa', token: 'token-demo-admin.solventa' })
+    expect(useSesion().sesionActiva()).toBe(false)
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
+  })
 
-      cerrarSesion()
-      expect(sessionStorage.getItem(CLAVE_SESION)).toBeNull()
-    })
+  it('un token ilegible no rompe la app y se borra', () => {
+    sessionStorage.setItem(CLAVE_TOKEN, 'basura')
 
-    it('al recargar, una sesión vigente se restaura y el token vuelve a viajar', async () => {
-      const expiraEn = new Date(Date.now() + 60_000).toISOString()
-      sessionStorage.setItem(CLAVE_SESION, JSON.stringify({ token: 't-1', rol: 'BACKOFFICE', usuario: 'admin.solventa', expiraEn }))
-
-      restaurarSesion()
-
-      const { estado } = useSesion()
-      expect(estado).toMatchObject({ rol: 'BACKOFFICE', usuario: 'admin.solventa', autenticado: true })
-      let cabecera: string | null = null
-      servidor.use(
-        http.post('*/graphql/web', ({ request }) => {
-          cabecera = request.headers.get('authorization')
-          return HttpResponse.json({ data: { yo: null } })
-        }),
-      )
-      await ejecutar('{ yo { id } }', {}, fetchPrueba)
-      expect(cabecera).toBe('Bearer t-1')
-    })
-
-    it('una sesión vencida no se restaura y se borra', () => {
-      const expiraEn = new Date(Date.now() - 1000).toISOString()
-      sessionStorage.setItem(CLAVE_SESION, JSON.stringify({ token: 't-1', rol: 'BACKOFFICE', usuario: 'admin.solventa', expiraEn }))
-
-      restaurarSesion()
-
-      expect(useSesion().estado.autenticado).toBe(false)
-      expect(sessionStorage.getItem(CLAVE_SESION)).toBeNull()
-    })
-
-    it('un valor corrupto en sessionStorage no rompe la app', () => {
-      sessionStorage.setItem(CLAVE_SESION, '{no es json')
-
-      expect(() => restaurarSesion()).not.toThrow()
-      expect(useSesion().estado.autenticado).toBe(false)
-    })
+    expect(() => restaurarSesion()).not.toThrow()
+    expect(useSesion().sesionActiva()).toBe(false)
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
   })
 })
