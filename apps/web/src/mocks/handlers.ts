@@ -127,6 +127,12 @@ export function restablecerCobrosDePrueba(): void {
   cobros = cobrosIniciales()
 }
 
+const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
+  LLAMAR: 'llamada',
+  CHAT: 'chat',
+  AGENDAR: 'llamada agendada',
+}
+
 export const handlers = [
   graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
     'registrarConsentimiento',
@@ -157,7 +163,10 @@ export const handlers = [
     'contactarAsesor',
     ({ variables }) =>
       HttpResponse.json({
-        data: { contactarAsesor: { canal: variables.canal, resumen: 'Un asesor te contactará con el resumen de tu trámite.' } },
+        data: {
+          // Mismo texto que el BFF (sin el id de la oferta, que no le dice nada al cliente).
+          contactarAsesor: { canal: variables.canal, resumen: `Recibimos tu solicitud de ${RESUMEN_CANAL[variables.canal]}. Un asesor te contactará para continuar tu cotización.` },
+        },
       }),
   ),
 
