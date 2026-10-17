@@ -42,10 +42,10 @@ function alCerrarSesion() {
 </script>
 
 <template>
-  <div data-pantalla="G-02b" class="flex min-h-screen flex-col bg-fondo">
+  <div data-pantalla="G-02b" class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla titulo="Home del Operador" />
 
-    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-10 py-10">
+    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 overflow-y-auto px-10 py-10 min-h-0">
       <button
         type="button"
         class="flex w-full items-center justify-end gap-2 rounded-md bg-fondo px-[14px] py-[10px] text-[13px] font-normal text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"

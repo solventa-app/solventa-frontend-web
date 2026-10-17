@@ -52,10 +52,10 @@ function reintentar() {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col" data-pantalla="W01-03c">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-03c">
     <HeaderPantalla titulo="Nueva cotización" />
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main v-if="error" class="flex flex-1 flex-col items-center justify-center bg-fondo px-10 py-16">
+    <main v-if="error" class="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto bg-fondo px-10 py-16">
       <div class="flex w-full max-w-[560px] flex-col items-center gap-4 rounded-lg border border-borde bg-white p-6">
         <div class="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-error bg-error-fondo text-error">
           <svg viewBox="0 -960 960 960" fill="currentColor" class="h-8 w-8" aria-hidden="true">
@@ -84,7 +84,7 @@ function reintentar() {
         </div>
       </div>
     </main>
-    <main v-else class="flex flex-1 flex-col items-center justify-center gap-3 bg-fondo px-10 py-12 text-center">
+    <main v-else class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center">
       <p class="text-[13px] text-tinta-suave">No hay un error activo en memoria todavía.</p>
       <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">Ir a la solicitud</RouterLink>
     </main>

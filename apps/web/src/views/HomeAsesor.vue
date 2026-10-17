@@ -34,7 +34,7 @@ function alCerrarSesion() {
 </script>
 
 <template>
-  <div data-pantalla="G-02a" class="flex min-h-screen flex-col bg-fondo">
+  <div data-pantalla="G-02a" class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla titulo="Home del Asesor comercial" />
 
     <div class="flex w-full items-center justify-between border-b border-borde bg-fondo px-4 py-2 text-[11px]">
@@ -54,7 +54,7 @@ function alCerrarSesion() {
 
     <Divisor />
 
-    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-10 py-10">
+    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 overflow-y-auto px-10 py-10 min-h-0">
       <TituloPantalla>Hola, {{ estado.nombre }}</TituloPantalla>
 
       <div class="flex flex-wrap items-stretch gap-5">

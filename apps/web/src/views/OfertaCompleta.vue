@@ -33,11 +33,11 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col" data-pantalla="W01-03a">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-03a">
     <HeaderPantalla titulo="Oferta lista" />
     <TituloPantalla class="sr-only">Oferta lista</TituloPantalla>
     <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main v-if="oferta && oferta.prima" class="flex flex-1 flex-col items-center bg-fondo px-10 py-12">
+    <main v-if="oferta && oferta.prima" class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-12">
       <div class="flex w-full max-w-[560px] flex-col items-center gap-5 rounded-lg border border-borde bg-white p-6">
         <div class="flex h-14 w-14 items-center justify-center rounded-full border-2 border-exito text-exito">
           <svg viewBox="0 -960 960 960" fill="currentColor" class="h-7 w-7" aria-hidden="true">
@@ -69,7 +69,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         </p>
       </div>
     </main>
-    <main v-else class="flex flex-1 flex-col items-center justify-center gap-3 bg-fondo px-10 py-12 text-center">
+    <main v-else class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center">
       <p class="text-[13px] text-tinta-suave">No hay una oferta activa en memoria todavía.</p>
       <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">Ir a la solicitud</RouterLink>
     </main>

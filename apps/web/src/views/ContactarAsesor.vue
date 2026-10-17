@@ -73,7 +73,7 @@ async function elegirCanal(canal: CanalContacto) {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col" data-pantalla="W01-05">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-05">
     <HeaderPantalla titulo="Contactar a un asesor" />
     <TituloPantalla class="sr-only">Contactar a un asesor</TituloPantalla>
     <MigasDePan seccion="Hablar con un asesor" :a-inicio="RUTA_INICIO[sesion.rol]" />
@@ -83,7 +83,7 @@ async function elegirCanal(canal: CanalContacto) {
         Radicación Segura
       </span>
     </div>
-    <main class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
+    <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5">
         <div v-if="errorContacto" role="alert" class="rounded-md border border-error bg-error-fondo px-4 py-3 text-[13px] text-error">
           {{ errorContacto }}

@@ -61,10 +61,10 @@ function rutaVolver() {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col" data-pantalla="W01-04">
+  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-04">
     <HeaderPantalla titulo="Detalle de fuentes" />
     <MigasDePan seccion="Detalle de fuentes" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main v-if="oferta" class="flex flex-1 flex-col items-center bg-fondo px-10 py-6">
+    <main v-if="oferta" class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5 rounded-lg border border-borde bg-white p-5">
         <TituloPantalla class="border-b border-borde pb-4">Fuentes consultadas para tu oferta</TituloPantalla>
 
@@ -148,7 +148,7 @@ function rutaVolver() {
         </div>
       </div>
     </main>
-    <main v-else class="flex flex-1 flex-col items-center justify-center gap-3 bg-fondo px-10 py-12 text-center">
+    <main v-else class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center">
       <p class="text-[13px] text-tinta-suave">No hay fuentes para mostrar: aún no se ha consultado ninguna oferta.</p>
       <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">Ir a la solicitud</RouterLink>
     </main>
