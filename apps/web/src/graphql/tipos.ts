@@ -22,14 +22,22 @@ export type CanalContacto =
   | 'CHAT'
   | 'LLAMAR';
 
+export type ClienteCobro = {
+  id: Scalars['ID']['output'];
+  nombre?: Maybe<Scalars['String']['output']>;
+};
+
 export type Cobro = {
   actualizadoEn: Scalars['DateTime']['output'];
-  cliente: Scalars['String']['output'];
+  cliente?: Maybe<ClienteCobro>;
   estado: EstadoCobro;
   id: Scalars['ID']['output'];
   idTransaccion?: Maybe<Scalars['String']['output']>;
+  intentos?: Maybe<Scalars['Int']['output']>;
   monto: Monto;
+  motivo?: Maybe<Scalars['String']['output']>;
   polizaId: Scalars['ID']['output'];
+  reintentosRestantes?: Maybe<Scalars['Int']['output']>;
 };
 
 export type ConfirmacionContacto = {
@@ -51,9 +59,41 @@ export type ConsentimientoInput = {
   versionTexto: Scalars['String']['input'];
 };
 
+export type CrearCobroInput = {
+  clienteId?: InputMaybe<Scalars['ID']['input']>;
+  idIntentoCobro: Scalars['ID']['input'];
+  monto: MontoInput;
+  polizaId: Scalars['ID']['input'];
+  tokenMedioPago: Scalars['String']['input'];
+};
+
+export type CrearUsuarioInput = {
+  clave: Scalars['String']['input'];
+  nombre?: InputMaybe<Scalars['String']['input']>;
+  rol: RolUsuario;
+  usuario: Scalars['String']['input'];
+};
+
+export type CredencialesInput = {
+  clave: Scalars['String']['input'];
+  usuario: Scalars['String']['input'];
+};
+
+export type ErrorAutenticacion = {
+  mensaje: Scalars['String']['output'];
+};
+
+export type ErrorCobro = {
+  mensaje: Scalars['String']['output'];
+};
+
 export type ErrorOferta = {
   mensaje: Scalars['String']['output'];
   puedeReintentar: Scalars['Boolean']['output'];
+};
+
+export type ErrorUsuario = {
+  mensaje: Scalars['String']['output'];
 };
 
 export type EstadoCobro =
@@ -66,6 +106,10 @@ export type EstadoFuente =
   | 'CACHE'
   | 'FALLO'
   | 'OK';
+
+export type EstadoUsuario =
+  | 'ACTIVO'
+  | 'SUSPENDIDO';
 
 export type FactorScore = {
   nombre: Scalars['String']['output'];
@@ -85,18 +129,49 @@ export type Monto = {
   valor: Scalars['String']['output'];
 };
 
+export type MontoInput = {
+  moneda: Scalars['String']['input'];
+  valor: Scalars['String']['input'];
+};
+
 export type Mutation = {
+  cambiarRolUsuario: ResultadoUsuario;
   contactarAsesor: ConfirmacionContacto;
+  crearCobro: ResultadoCobro;
+  crearUsuario: ResultadoUsuario;
+  iniciarSesion: ResultadoSesion;
   registrarConsentimiento: Consentimiento;
   reintentarCobro: Cobro;
   revocarConsentimiento: Consentimiento;
   solicitarOferta: ResultadoOferta;
+  suspenderUsuario: ResultadoUsuario;
+};
+
+
+export type MutationCambiarRolUsuarioArgs = {
+  id: Scalars['ID']['input'];
+  rol: RolUsuario;
 };
 
 
 export type MutationContactarAsesorArgs = {
   canal: CanalContacto;
   ofertaId: Scalars['ID']['input'];
+};
+
+
+export type MutationCrearCobroArgs = {
+  entrada: CrearCobroInput;
+};
+
+
+export type MutationCrearUsuarioArgs = {
+  entrada: CrearUsuarioInput;
+};
+
+
+export type MutationIniciarSesionArgs = {
+  entrada: CredencialesInput;
 };
 
 
@@ -119,6 +194,11 @@ export type MutationSolicitarOfertaArgs = {
   entrada: SolicitudOfertaInput;
 };
 
+
+export type MutationSuspenderUsuarioArgs = {
+  id: Scalars['ID']['input'];
+};
+
 export type Oferta = {
   cobertura: Monto;
   desgloseScore: Array<FactorScore>;
@@ -136,11 +216,14 @@ export type OrigenFuente =
 export type Query = {
   cobros: Array<Cobro>;
   oferta?: Maybe<Oferta>;
+  usuarios: Array<Usuario>;
+  yo?: Maybe<Usuario>;
 };
 
 
 export type QueryCobrosArgs = {
   estado?: InputMaybe<EstadoCobro>;
+  polizaId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -148,12 +231,34 @@ export type QueryOfertaArgs = {
   id: Scalars['ID']['input'];
 };
 
+
+export type QueryUsuariosArgs = {
+  rol?: InputMaybe<RolUsuario>;
+};
+
 export type RangoPrima = {
   maxima: Monto;
   minima: Monto;
 };
 
+export type ResultadoCobro = Cobro | ErrorCobro;
+
 export type ResultadoOferta = ErrorOferta | Oferta;
+
+export type ResultadoSesion = ErrorAutenticacion | Sesion;
+
+export type ResultadoUsuario = ErrorUsuario | Usuario;
+
+export type RolUsuario =
+  | 'ASESOR'
+  | 'BACKOFFICE'
+  | 'CLIENTE';
+
+export type Sesion = {
+  expiraEn: Scalars['DateTime']['output'];
+  token: Scalars['String']['output'];
+  usuario: Usuario;
+};
 
 export type SolicitudOfertaInput = {
   consentimientoId: Scalars['ID']['input'];
@@ -166,3 +271,11 @@ export type SolicitudOfertaInput = {
 export type TipoOferta =
   | 'COMPLETA'
   | 'PRELIMINAR';
+
+export type Usuario = {
+  creadoEn: Scalars['DateTime']['output'];
+  estado: EstadoUsuario;
+  id: Scalars['ID']['output'];
+  rol: RolUsuario;
+  usuario: Scalars['String']['output'];
+};

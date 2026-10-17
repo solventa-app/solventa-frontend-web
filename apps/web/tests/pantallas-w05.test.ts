@@ -76,8 +76,8 @@ describe('HU-W05 · pantallas', () => {
       // Antes era un RouterLink directo a /login que nunca llamaba a cerrarSesion(): navegaba
       // bien, pero dejaba el rol de sesión sin limpiar (a diferencia de HomeCliente/HomeAsesor).
       const router = crearRouterDePrueba()
-      const { iniciarSesion, estado } = useSesion()
-      iniciarSesion('OPERADOR')
+      const { establecerSesion, estado } = useSesion()
+      establecerSesion('BACKOFFICE')
       router.push('/operador')
       await router.isReady()
       const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
@@ -106,11 +106,11 @@ describe('HU-W05 · pantallas', () => {
       return { wrapper, router }
     }
 
-    it('marca la pantalla, tiene exactamente un <h1> y carga los 4 cobros del mock', async () => {
+    it('marca la pantalla, tiene exactamente un <h1> y carga los 5 cobros del mock', async () => {
       const { wrapper } = await montarConciliacion()
       expect(wrapper.find('[data-pantalla="W05-01"]').exists()).toBe(true)
       expect(wrapper.findAll('h1')).toHaveLength(1)
-      expect(wrapper.findAll('tbody tr')).toHaveLength(4)
+      expect(wrapper.findAll('tbody tr')).toHaveLength(5)
     })
 
     // Re-verificado contra el archivo correcto de Figma (nodo 2001:3156, confirmado con captura de
@@ -121,14 +121,15 @@ describe('HU-W05 · pantallas', () => {
       const { wrapper } = await montarConciliacion()
       const encabezados = wrapper.findAll('th').map((th) => th.text())
       expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Prima', 'Estado', 'Fecha del intento', 'ID de transacción', 'Acciones'])
-      expect(wrapper.text()).toContain('Andrés Felipe Duarte')
-      expect(wrapper.text()).toContain('SOL-VH-2026-004905')
-      expect(wrapper.text()).toContain('txn_8a2f19c3')
+      // El nombre llega como `cliente { nombre }` (contrato v0.6), no como texto suelto.
+      expect(wrapper.text()).toContain('María Gutiérrez')
+      expect(wrapper.text()).toContain('VH-2026-0048217')
+      expect(wrapper.text()).toContain('pg-8a2f19c3')
     })
 
     it('el cobro Cobrando muestra "en curso" (minúscula, texto literal de Figma) y "—" en vez de fecha/id de transacción', async () => {
       const { wrapper } = await montarConciliacion()
-      const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
+      const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Carlos Rincón'))
       expect(filaCobrando?.text()).toContain('en curso')
       expect(filaCobrando?.text()).toContain('—')
     })

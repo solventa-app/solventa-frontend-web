@@ -8,7 +8,7 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
   beforeEach(() => {
     cy.visit('/login')
     cy.get('[data-pantalla="G-01"]').within(() => {
-      cy.get('input[type="email"]').type('persona@correo.com')
+      cy.get('input:not([type="password"])').first().type('cliente.demo')
       cy.get('input[type="password"]').type('secreta123')
       cy.contains('button', 'Ingresar').click()
     })
@@ -70,7 +70,7 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/error')
     cy.get('[data-pantalla="W01-03c"]').within(() => {
-      cy.contains('No pudimos calcular tu oferta en este momento.').should('exist')
+      cy.contains('No pudimos consultar tu historial crediticio en este momento.').should('exist')
       cy.contains('a', 'Hablar con un asesor').click()
     })
 

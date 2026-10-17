@@ -9,11 +9,12 @@
   la tarjeta blanca con borde que muestra el mockup, y el encabezado "Iniciar sesión" es un H1
   visible dentro de esa tarjeta, no un texto oculto para lectores de pantalla.
 
-  El contrato (contrato/schema.graphql) no modela login ni roles: no hay mutación de autenticación
-  que llamar. "Ingresar" es, por eso, navegación pura del lado del cliente (useSesion.ts) — correo y
-  contraseña solo se exigen no vacíos (no hay backend contra el cual validarlos todavía). El enlace
-  "portal de socios" apunta a HU-W07 (Sprint 2, fuera de alcance de este sprint): se muestra fiel al
-  mockup pero sin navegación real, igual criterio que "Continuar a suscripción" en OfertaCompleta.vue.
+  Ingreso real (KAN-28, 2026-10-17): "Ingresar" llama a `iniciarSesion` del BFF con alias y clave
+  (useSesion.ts). El backend identifica por alias, nunca por correo ni documento, por eso el campo es
+  "Usuario". El rol lo decide el token: los chips son una preselección y, si no coinciden con el rol
+  del usuario, no se entra y se dice cuál elegir (decisión del equipo, para respetar el prototipo).
+  El token queda solo en memoria. El enlace "portal de socios" apunta a HU-W07 (Sprint 2, fuera de
+  alcance de este sprint): se muestra fiel al mockup pero sin navegación real.
 
   Chip "Operador": en router/pantallas.ts, G-02b (home del Operador, /operador) todavía no tiene
   `componente` EN ESTA RAMA — HomeOperador.vue vive en feature/HU-W05-conciliacion y no se trajo
@@ -47,25 +48,34 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
-import { RUTA_INICIO, useSesion, type Rol } from '../composables/useSesion'
+import { ETIQUETA_ROL, RUTA_INICIO, useSesion, type Rol } from '../composables/useSesion'
 
 const router = useRouter()
-const { iniciarSesion } = useSesion()
+const { ingresar } = useSesion()
 
-const correo = ref('')
+// El BFF identifica por alias (`Usuario.usuario`), nunca por correo ni documento (datos personales).
+const usuario = ref('')
 const contrasena = ref('')
 const rol = ref<Rol>('CLIENTE')
+const error = ref<string | null>(null)
+const ingresando = ref(false)
 
-const CHIPS: { rol: Rol; etiqueta: string }[] = [
-  { rol: 'CLIENTE', etiqueta: 'Cliente' },
-  { rol: 'ASESOR', etiqueta: 'Asesor comercial' },
-  { rol: 'OPERADOR', etiqueta: 'Operador' },
-]
+const CHIPS: { rol: Rol; etiqueta: string }[] = (['CLIENTE', 'ASESOR', 'BACKOFFICE'] as Rol[]).map((r) => ({
+  rol: r,
+  etiqueta: ETIQUETA_ROL[r],
+}))
 
-function ingresar() {
-  if (!correo.value.trim() || !contrasena.value.trim()) return
-  iniciarSesion(rol.value)
-  router.push(RUTA_INICIO[rol.value])
+async function alIngresar() {
+  if (!usuario.value.trim() || !contrasena.value.trim() || ingresando.value) return
+  ingresando.value = true
+  error.value = null
+  const resultado = await ingresar(usuario.value, contrasena.value, rol.value)
+  ingresando.value = false
+  if (!resultado.ok) {
+    error.value = resultado.mensaje
+    return
+  }
+  router.push(RUTA_INICIO[resultado.rol])
 }
 </script>
 
@@ -77,8 +87,8 @@ function ingresar() {
         <Divisor />
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
           <TituloPantalla class="mb-6">Iniciar sesión</TituloPantalla>
-          <form class="flex w-full flex-col gap-5" novalidate @submit.prevent="ingresar">
-            <CampoFormulario v-model="correo" type="email" label="Correo electrónico" placeholder="nombre@correo.com" required />
+          <form class="flex w-full flex-col gap-5" novalidate @submit.prevent="alIngresar">
+            <CampoFormulario v-model="usuario" label="Usuario" placeholder="tu.usuario" required />
             <CampoFormulario
               v-model="contrasena"
               type="password"
@@ -106,7 +116,16 @@ function ingresar() {
               </div>
             </div>
 
-            <Boton :disabled="!correo.trim() || !contrasena.trim()" class="w-full" @click="ingresar">Ingresar</Boton>
+            <p v-if="error" role="alert" class="rounded-lg bg-error-fondo px-3 py-2 text-[13px] text-error">{{ error }}</p>
+
+            <Boton
+              :disabled="!usuario.trim() || !contrasena.trim() || ingresando"
+              :aria-busy="ingresando"
+              class="w-full"
+              @click="alIngresar"
+            >
+              {{ ingresando ? 'Ingresando…' : 'Ingresar' }}
+            </Boton>
 
             <p class="text-[11px] leading-[14px] text-tinta-suave">
               Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de

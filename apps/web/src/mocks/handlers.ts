@@ -10,8 +10,11 @@ import type {
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
   Oferta,
+  MutationIniciarSesionArgs,
   QueryCobrosArgs,
   ResultadoOferta,
+  ResultadoSesion,
+  RolUsuario,
 } from '../graphql/tipos'
 
 // Mocks del BFF (contrato/schema.graphql). Convención de demo (equivale a los "disparadores de demo"
@@ -71,53 +74,39 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   vigente: !revocado,
 })
 
-// 4 cobros (HU-W05), uno por cada EstadoCobro, con los mismos nombres/montos/fechas que el
-// prototipo de alta fidelidad (Figma 2vfK0e8t62OvvDk4c7QnK5, frame W05-01, nodo 27:44) para que
-// la pantalla se vea exactamente igual a la maqueta. idTransaccion es null para el cobro en
-// COBRANDO: la pasarela todavía no asigna id mientras el cobro está en curso (ver Cobro en
-// contrato/schema.graphql). cliente e idTransaccion son campos nuevos, adelantados en el
-// frontend antes de que el backend los exponga de verdad (ver contrato/CHANGELOG.md).
-// cobros es mutable (reintentarCobro lo actualiza en el sitio, ver más abajo) para que el estado
-// persista entre pantallas durante una sesión de demo. Por eso es `let` + fábrica en vez de
-// const: las pruebas necesitan poder reiniciarlo con restablecerCobrosDePrueba para no arrastrar
-// mutaciones de una prueba a la siguiente.
+// Los 5 cobros del prototipo (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", W05-01, nodo 2001:3156),
+// con la forma del BFF real: `cliente { id nombre }`, `idTransaccion` y `reintentosRestantes` (contrato v0.6). Son los mismos
+// que deja `scripts/sembrar_cobros.py` en el backend local. Un RECHAZADO se reintenta a mano hasta 3 veces;
+// un PENDIENTE lo reintenta el sistema solo. `cobros` es mutable (reintentarCobro lo actualiza en el sitio)
+// para que el estado persista entre pantallas; las pruebas lo reinician con restablecerCobrosDePrueba.
+const cobro = (
+  id: string,
+  nombre: string,
+  polizaId: string,
+  estado: Cobro['estado'],
+  valor: string,
+  actualizadoEn: string,
+  motivo: string | null = null,
+  idTransaccion: string | null = null,
+): Cobro => ({
+  id,
+  cliente: { id: `cliente-${id}`, nombre },
+  polizaId,
+  estado,
+  monto: { valor, moneda: 'COP' },
+  actualizadoEn,
+  idTransaccion,
+  motivo,
+  intentos: 1,
+  reintentosRestantes: 3,
+})
+
 const cobrosIniciales = (): Cobro[] => [
-  {
-    id: 'cobro-1',
-    cliente: 'Andrés Felipe Duarte',
-    polizaId: 'SOL-VH-2026-004905',
-    estado: 'COBRANDO',
-    monto: { valor: '198000.00', moneda: 'COP' },
-    idTransaccion: null,
-    actualizadoEn: '2026-09-05T15:00:00Z',
-  },
-  {
-    id: 'cobro-2',
-    cliente: 'Laura Gómez Rico',
-    polizaId: 'SOL-VH-2026-004821',
-    estado: 'COBRADO',
-    monto: { valor: '185000.00', moneda: 'COP' },
-    idTransaccion: 'txn_8a2f19c3',
-    actualizadoEn: '2026-09-05T14:14:00Z',
-  },
-  {
-    id: 'cobro-3',
-    cliente: 'Julián Torres Mesa',
-    polizaId: 'SOL-VH-2026-004798',
-    estado: 'RECHAZADO',
-    monto: { valor: '142500.00', moneda: 'COP' },
-    idTransaccion: 'txn_5b0e77d1',
-    actualizadoEn: '2026-09-04T23:02:00Z',
-  },
-  {
-    id: 'cobro-4',
-    cliente: 'Carlos Andrés Peña',
-    polizaId: 'SOL-VH-2026-004790',
-    estado: 'PENDIENTE',
-    monto: { valor: '210000.00', moneda: 'COP' },
-    idTransaccion: 'txn_c91a4402',
-    actualizadoEn: '2026-09-04T16:47:00Z',
-  },
+  cobro('cobro-1', 'María Gutiérrez', 'VH-2026-0048217', 'COBRADO', '185000.00', '2026-09-12T15:45:00Z', null, 'pg-8a2f19c3'),
+  cobro('cobro-2', 'Carlos Rincón', 'VH-2026-0048190', 'COBRANDO', '212400.00', '2026-09-12T15:50:00Z'),
+  cobro('cobro-3', 'Luisa Fernanda Parra', 'VH-2026-0048155', 'RECHAZADO', '164800.00', '2026-09-11T21:12:00Z', 'fondos_insuficientes'),
+  cobro('cobro-4', 'Jorge Mendoza', 'VH-2026-0048101', 'PENDIENTE', '240000.00', '2026-09-10T14:03:00Z', 'pasarela_no_disponible'),
+  cobro('cobro-5', 'Sandra Ospina', 'VH-2026-0048077', 'COBRADO', '198500.00', '2026-09-09T19:27:00Z', null, 'pg-c91a4402'),
 ]
 
 let cobros: Cobro[] = cobrosIniciales()
@@ -133,7 +122,28 @@ const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
   AGENDAR: 'llamada agendada',
 }
 
+// Login de demo (solo mocks): el rol sale del alias, como si cada alias fuera un usuario distinto.
+// "clave-incorrecta" simula credenciales inválidas. En el backend real el rol lo da AUTH.
+function rolDeDemo(alias: string): RolUsuario {
+  if (/^(admin|operador|backoffice)/.test(alias)) return 'BACKOFFICE'
+  if (alias.startsWith('asesor')) return 'ASESOR'
+  return 'CLIENTE'
+}
+
 export const handlers = [
+  graphql.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
+    const { usuario, clave } = variables.entrada
+    const resultado: ResultadoSesion =
+      clave === 'clave-incorrecta'
+        ? { mensaje: 'Usuario o clave incorrectos.' }
+        : {
+            token: `token-demo-${usuario}`,
+            expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+            usuario: { id: `u-${usuario}`, usuario, rol: rolDeDemo(usuario), estado: 'ACTIVO', creadoEn: ahora() },
+          }
+    return HttpResponse.json({ data: { iniciarSesion: resultado } })
+  }),
+
   graphql.mutation<{ registrarConsentimiento: Consentimiento }, MutationRegistrarConsentimientoArgs>(
     'registrarConsentimiento',
     () => HttpResponse.json({ data: { registrarConsentimiento: consentimiento(false) } }),
@@ -179,13 +189,26 @@ export const handlers = [
   graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>(
     'reintentarCobro',
     ({ variables }) => {
-      // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
-      // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
-      const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]
-      cobro.estado = 'COBRANDO'
-      cobro.idTransaccion = null // la pasarela aun no asigna id mientras el cobro esta en curso
-      cobro.actualizadoEn = ahora()
-      return HttpResponse.json({ data: { reintentarCobro: cobro } })
+      // Igual que el BFF: un RECHAZADO con reintentos se vuelve a cobrar (aquí siempre queda COBRADO) y
+      // descuenta uno; sin reintentos, error. Muta el cobro en el arreglo para que persista entre pantallas.
+      const encontrado = cobros.find((c) => c.id === variables.cobroId)
+      if (!encontrado) {
+        return HttpResponse.json({ data: null, errors: [{ message: 'Cobro no encontrado.', path: ['reintentarCobro'] }] })
+      }
+      if (encontrado.estado === 'RECHAZADO') {
+        if (!encontrado.reintentosRestantes) {
+          return HttpResponse.json({
+            data: null,
+            errors: [{ message: 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.', path: ['reintentarCobro'] }],
+          })
+        }
+        encontrado.reintentosRestantes -= 1
+        encontrado.estado = 'COBRADO'
+        encontrado.motivo = null
+        encontrado.idTransaccion = `pg-reintento-${encontrado.id}`
+        encontrado.actualizadoEn = ahora()
+      }
+      return HttpResponse.json({ data: { reintentarCobro: encontrado } })
     },
   ),
 ]

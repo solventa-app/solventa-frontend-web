@@ -33,9 +33,8 @@
   - "ID de transacción" / "N.º de póliza" usan una fuente monoespaciada (el mockup pide Liberation
     Mono; aquí se usa la pila monoespaciada del sistema vía la utilidad font-mono en vez de sumar
     una fuente nueva al proyecto — mismo efecto visual sin una dependencia más).
-  - Las columnas "Cliente" e "ID de transacción" no estaban en el contrato original: se agregaron
-    como cambio aditivo (Cobro.cliente, Cobro.idTransaccion) adelantado en el frontend — ver
-    contrato/CHANGELOG.md — porque todavía falta el PR gemelo del backend (ADR-06 regla 2).
+  - "Cliente" e "ID de transacción" vienen del BFF (contrato v0.6, KAN-28): `cliente { nombre }` (AUTH lo
+    guarda cifrado) e `idTransaccion` (la referencia que devolvió la pasarela; null mientras está en curso).
   - Al reintentar un cobro, aparece un toast "Cobro reenviado a la pasarela" que se oculta solo a
     los 3-4s (anotación del propio archivo de Figma).
   - `formatearFecha` (utils/formato.ts) se corrige para producir "12 sep 2026, 10:45 a. m." (con
@@ -101,6 +100,12 @@ const INSIGNIA: Record<EstadoCobro, { etiqueta: string; texto: string; fondo: st
   COBRANDO: { etiqueta: 'Cobrando', texto: 'text-info', fondo: 'bg-info-fondo', icono: 'sync' },
   RECHAZADO: { etiqueta: 'Rechazado', texto: 'text-error', fondo: 'bg-error-fondo', icono: 'cancel' },
   PENDIENTE: { etiqueta: 'Pendiente', texto: 'text-alerta', fondo: 'bg-alerta-fondo', icono: 'schedule' },
+}
+
+// CA-W05-02 (prototipo W05-01, decisión del 2026-10-17): un RECHAZADO se reintenta a mano hasta 3
+// veces; el BFF dice cuántos le quedan. Un PENDIENTE lo reintenta el sistema solo.
+function puedeReintentar(cobro: Cobro): boolean {
+  return cobro.estado === 'RECHAZADO' && (cobro.reintentosRestantes ?? 0) > 0
 }
 
 function fechaDelIntento(cobro: Cobro): string {
@@ -197,7 +202,7 @@ onMounted(() => cargarCobros())
                   <td colspan="7" class="py-6 text-center text-[13px] text-tinta-suave">No hay cobros en este estado.</td>
                 </tr>
                 <tr v-for="cobro in cobrosFiltrados" :key="cobro.id" class="border-b border-borde last:border-b-0">
-                  <td class="py-[24px] pl-4 pr-[14px] text-[13px] text-tinta">{{ cobro.cliente }}</td>
+                  <td class="py-[24px] pl-4 pr-[14px] text-[13px] text-tinta">{{ cobro.cliente?.nombre ?? '—' }}</td>
                   <td class="py-[24px] pr-[14px] font-mono text-[13px] text-tinta-suave">{{ cobro.polizaId }}</td>
                   <td class="py-[24px] pr-[14px] text-right text-[13px] text-tinta">{{ formatearMonto(cobro.monto) }}</td>
                   <td class="py-[18px] pr-[14px]">
@@ -215,7 +220,7 @@ onMounted(() => cargarCobros())
                   <td class="py-[24px] pr-[14px] font-mono text-[11px] text-tinta">{{ cobro.idTransaccion ?? '—' }}</td>
                   <td class="py-[16px] pr-4 text-center">
                     <Boton
-                      v-if="cobro.estado === 'RECHAZADO'"
+                      v-if="puedeReintentar(cobro)"
                       variante="secundario"
                       :disabled="estado.reintentando === cobro.id"
                       :aria-busy="estado.reintentando === cobro.id"
@@ -223,6 +228,8 @@ onMounted(() => cargarCobros())
                     >
                       {{ estado.reintentando === cobro.id ? 'Reintentando…' : 'Reintentar cobro' }}
                     </Boton>
+                    <span v-else-if="cobro.estado === 'RECHAZADO'" class="text-[11px] text-error">Requiere otro medio de pago</span>
+                    <span v-else-if="cobro.estado === 'PENDIENTE'" class="text-[11px] text-tinta-suave">Reintento automático</span>
                   </td>
                 </tr>
               </tbody>

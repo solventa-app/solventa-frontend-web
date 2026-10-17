@@ -4,28 +4,28 @@
 describe('W05-01 · Conciliación de pagos (pantalla aislada)', () => {
   beforeEach(() => cy.visit('/operador/conciliacion'))
 
-  it('muestra las 4 transacciones con sus columnas reales', () => {
+  it('muestra las 5 transacciones con sus columnas reales', () => {
     cy.get('[data-pantalla="W05-01"]').within(() => {
       cy.get('table thead th').should('contain.text', 'Prima')
       cy.get('table thead th').should('contain.text', 'Fecha del intento')
       cy.get('table thead th').should('contain.text', 'ID de transacción')
-      cy.get('table tbody tr').should('have.length', 4)
-      cy.contains('Mostrando 4 transacciones sincronizadas con Core Asegurador').should('exist')
+      cy.get('table tbody tr').should('have.length', 5)
+      cy.contains('Mostrando 5 transacciones sincronizadas con Core Asegurador').should('exist')
     })
   })
 
   it('las pestañas de estado filtran la tabla (y "Todos" lleva el contador total)', () => {
     cy.get('[data-pantalla="W05-01"]').within(() => {
-      cy.contains('[role="tab"]', 'Todos').should('contain.text', '4')
+      cy.contains('[role="tab"]', 'Todos').should('contain.text', '5')
       cy.contains('[role="tab"]', 'Rechazado').click()
       cy.get('table tbody tr').should('have.length', 1)
-      cy.contains('td', 'Julián Torres Mesa').should('exist')
+      cy.contains('td', 'Luisa Fernanda Parra').should('exist')
     })
   })
 
   it('"Reintentar cobro" solo aparece para el cobro Rechazado, y al reintentarlo muestra el toast de confirmación', () => {
     cy.get('[data-pantalla="W05-01"]').within(() => {
-      cy.get('table tbody tr').should('have.length', 4)
+      cy.get('table tbody tr').should('have.length', 5)
       cy.contains('button', 'Reintentar cobro').should('have.length', 1)
       cy.contains('button', 'Reintentar cobro').click()
       cy.contains('Cobro reenviado a la pasarela').should('exist')

@@ -3,14 +3,22 @@
 // decide: a qué home vuelve "Inicio" por rol (RUTA_INICIO), el nombre por defecto que muestra cada
 // home al iniciar sesión, y que cerrarSesion siempre vuelve a CLIENTE (nunca deja al usuario
 // "atrapado" en un rol sin salida, ver nota del propio composable sobre el rol por defecto).
-import { afterEach, describe, expect, it } from 'vitest'
+import { http, HttpResponse } from 'msw'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { ejecutar } from '../src/graphql/cliente'
+import { servidor } from '../src/mocks/node'
 import { RUTA_INICIO, useSesion } from '../src/composables/useSesion'
 
 // `estado` es un singleton a nivel de módulo (mismo patrón que useCotizacion/useConciliacion): se
 // resetea después de cada prueba para que una prueba no herede el rol que dejó la anterior.
 afterEach(() => {
   useSesion().cerrarSesion()
+  servidor.resetHandlers()
 })
+beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+afterAll(() => servidor.close())
+
+const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
 describe('useSesion', () => {
   it('arranca en CLIENTE por defecto (una pantalla de /cotizacion/* es navegable sin pasar por /login)', () => {
@@ -23,28 +31,28 @@ describe('useSesion', () => {
     expect(RUTA_INICIO).toEqual({
       CLIENTE: '/inicio',
       ASESOR: '/asesor',
-      OPERADOR: '/operador',
+      BACKOFFICE: '/operador',
     })
   })
 
-  it('iniciarSesion cambia el rol y el nombre a los del rol entrante', () => {
-    const { estado, iniciarSesion } = useSesion()
-    iniciarSesion('ASESOR')
+  it('establecerSesion cambia el rol y el nombre a los del rol entrante', () => {
+    const { estado, establecerSesion } = useSesion()
+    establecerSesion('ASESOR')
     expect(estado.rol).toBe('ASESOR')
     const nombreAsesor = estado.nombre
     expect(nombreAsesor).toBeTruthy()
 
-    iniciarSesion('OPERADOR')
-    expect(estado.rol).toBe('OPERADOR')
+    establecerSesion('BACKOFFICE')
+    expect(estado.rol).toBe('BACKOFFICE')
     // El nombre cambia junto con el rol: cada rol tiene su propio nombre por defecto, no se arrastra
     // el del rol anterior.
     expect(estado.nombre).not.toBe(nombreAsesor)
   })
 
   it('cerrarSesion siempre vuelve a CLIENTE, sin importar desde qué rol se llame', () => {
-    const { estado, iniciarSesion, cerrarSesion } = useSesion()
-    iniciarSesion('OPERADOR')
-    expect(estado.rol).toBe('OPERADOR')
+    const { estado, establecerSesion, cerrarSesion } = useSesion()
+    establecerSesion('BACKOFFICE')
+    expect(estado.rol).toBe('BACKOFFICE')
 
     cerrarSesion()
     expect(estado.rol).toBe('CLIENTE')
@@ -53,7 +61,36 @@ describe('useSesion', () => {
   it('el estado es compartido (singleton): dos llamadas a useSesion() ven el mismo cambio', () => {
     const primera = useSesion()
     const segunda = useSesion()
-    primera.iniciarSesion('ASESOR')
+    primera.establecerSesion('ASESOR')
     expect(segunda.estado.rol).toBe('ASESOR')
+  })
+
+  it('ingresar guarda el token y ejecutar() lo manda en Authorization; cerrarSesion lo borra', async () => {
+    const { estado, ingresar, cerrarSesion } = useSesion(fetchPrueba)
+    const resultado = await ingresar('admin.solventa', 'clave', 'BACKOFFICE')
+    expect(resultado).toEqual({ ok: true, rol: 'BACKOFFICE' })
+    expect(estado.autenticado).toBe(true)
+    expect(estado.usuario).toBe('admin.solventa')
+
+    let cabecera: string | null = null
+    servidor.use(
+      http.post('*/graphql/web', ({ request }) => {
+        cabecera = request.headers.get('authorization')
+        return HttpResponse.json({ data: { yo: null } })
+      }),
+    )
+    await ejecutar('{ yo { id } }', {}, fetchPrueba)
+    expect(cabecera).toBe('Bearer token-demo-admin.solventa')
+
+    cerrarSesion()
+    await ejecutar('{ yo { id } }', {}, fetchPrueba)
+    expect(cabecera).toBeNull()
+  })
+
+  it('ingresar con un rol que no es el del usuario no abre sesión', async () => {
+    const { estado, ingresar } = useSesion(fetchPrueba)
+    const resultado = await ingresar('asesor.demo', 'clave', 'CLIENTE')
+    expect(resultado).toEqual({ ok: false, mensaje: 'Tu usuario es de Asesor comercial: elige ese rol para ingresar.' })
+    expect(estado.autenticado).toBe(false)
   })
 })

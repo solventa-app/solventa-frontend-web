@@ -469,7 +469,7 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
   beforeEach(() => useSesion().cerrarSesion())
   afterEach(() => useSesion().cerrarSesion())
 
-  it('G-01 deshabilita "Ingresar" hasta completar correo y contraseña, y navega según el rol elegido', async () => {
+  it('G-01 deshabilita "Ingresar" hasta completar usuario y contraseña, e ingresa con el rol del token', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')
     await router.isReady()
@@ -477,7 +477,7 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
 
     expect(wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.attributes('disabled')).toBeDefined()
 
-    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('persona@correo.com')
+    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('asesor.demo')
     await wrapper.find('input[type="password"]').setValue('secreta123')
     await wrapper.findAll('button').find((b) => b.text() === 'Asesor comercial')!.trigger('click')
     await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
@@ -487,8 +487,39 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     expect(useSesion().estado.rol).toBe('ASESOR')
   })
 
+  it('G-01: si el chip no coincide con el rol del usuario, no entra y dice cuál elegir', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('operador.demo')
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(wrapper.get('[role="alert"]').text()).toContain('Tu usuario es de Operador')
+    expect(useSesion().estado.autenticado).toBe(false)
+  })
+
+  it('G-01: con clave incorrecta muestra el mensaje del BFF y no navega', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('cliente.demo')
+    await wrapper.find('input[type="password"]').setValue('clave-incorrecta')
+    await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Usuario o clave incorrectos.')
+  })
+
   it('G-02 (home cliente): "Cerrar sesión" vuelve a /login y la tarjeta navega a /cotizacion', async () => {
-    useSesion().iniciarSesion('CLIENTE')
+    useSesion().establecerSesion('CLIENTE')
     const router = crearRouterDePrueba()
     router.push('/inicio')
     await router.isReady()
@@ -505,7 +536,7 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
   })
 
   it('G-02a (home asesor): copy distinto al del cliente, mismo destino /cotizacion', async () => {
-    useSesion().iniciarSesion('ASESOR')
+    useSesion().establecerSesion('ASESOR')
     const router = crearRouterDePrueba()
     router.push('/asesor')
     await router.isReady()
@@ -529,20 +560,20 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     await router.isReady()
     const wrapper = montar(IngresoConRol, router)
 
-    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('persona@correo.com')
+    await wrapper.findAll('input').find((i) => i.attributes('type') !== 'password')!.setValue('operador.demo')
     await wrapper.find('input[type="password"]').setValue('secreta123')
     await wrapper.findAll('button').find((b) => b.text() === 'Operador')!.trigger('click')
     await wrapper.findAll('button').find((b) => b.text() === 'Ingresar')!.trigger('click')
     await esperarRuta(router, '/operador')
 
     expect(router.currentRoute.value.path).toBe('/operador')
-    expect(useSesion().estado.rol).toBe('OPERADOR')
+    expect(useSesion().estado.rol).toBe('BACKOFFICE')
   })
 
   // El "Inicio" de la Barra de navegación debe volver al home del rol activo: Cliente/Asesor
   // comparten las mismas 7 pantallas de /cotizacion/*, pero cada uno tiene su propio home.
   it('la Barra de navegación de W01-01 vuelve a /asesor cuando la sesión activa es Asesor comercial', async () => {
-    useSesion().iniciarSesion('ASESOR')
+    useSesion().establecerSesion('ASESOR')
     useCotizacion(fetchPrueba).reiniciar()
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
 

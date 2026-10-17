@@ -10,30 +10,36 @@
 // argumento `estado` de cargarCobros() se deja disponible por si una pantalla futura sí necesita
 // paginar/filtrar en servidor.
 import { reactive } from 'vue'
-import { ejecutar } from '../graphql/cliente'
+import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 
 const COBROS = `query cobros($estado: EstadoCobro) {
   cobros(estado: $estado) {
     id
-    cliente
+    cliente { id nombre }
     polizaId
     estado
     monto { valor moneda }
     idTransaccion
     actualizadoEn
+    motivo
+    intentos
+    reintentosRestantes
   }
 }`
 
 const REINTENTAR_COBRO = `mutation reintentarCobro($cobroId: ID!) {
   reintentarCobro(cobroId: $cobroId) {
     id
-    cliente
+    cliente { id nombre }
     polizaId
     estado
     monto { valor moneda }
     idTransaccion
     actualizadoEn
+    motivo
+    intentos
+    reintentosRestantes
   }
 }`
 
@@ -60,6 +66,19 @@ const estado = reactive<EstadoConciliacion>({
   reintentando: null,
 })
 
+/**
+ * Mensaje para el usuario: el del BFF solo si salió de un resolutor (trae `path`), p. ej. "Debes iniciar
+ * sesión." o "Se agotaron los 3 reintentos…": esos los escribe el BFF para el usuario. Un error de
+ * validación del esquema (sin `path`), "Unexpected error." (falla interna enmascarada), la red o un HTTP
+ * de error dan el genérico. Nunca el texto técnico crudo (CLAUDE.md regla 5).
+ */
+function mensajeParaUsuario(error: unknown, generico: string): string {
+  if (!(error instanceof ErrorGraphQL)) return generico
+  const primero = error.errores[0] as { message?: string; path?: unknown } | undefined
+  const deResolutor = Array.isArray(primero?.path) && primero.path.length > 0
+  return deResolutor && error.message !== 'Unexpected error.' ? error.message : generico
+}
+
 export function useConciliacion(fetchFn: typeof fetch = fetch) {
   async function cargarCobros(filtro?: EstadoCobro) {
     estado.cargando = true
@@ -67,9 +86,9 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
     try {
       const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, { estado: filtro }, fetchFn)
       estado.cobros = r.cobros
-    } catch {
+    } catch (error) {
       // Nunca se muestra el error técnico/5xx crudo al usuario (CLAUDE.md regla 5).
-      estado.error = 'No pudimos cargar la conciliación de pagos en este momento.'
+      estado.error = mensajeParaUsuario(error, 'No pudimos cargar la conciliación de pagos en este momento.')
     } finally {
       estado.cargando = false
     }
@@ -82,8 +101,8 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       const r = await ejecutar<{ reintentarCobro: Cobro }>(REINTENTAR_COBRO, { cobroId }, fetchFn)
       const indice = estado.cobros.findIndex((c) => c.id === cobroId)
       if (indice !== -1) estado.cobros.splice(indice, 1, r.reintentarCobro)
-    } catch {
-      estado.errorReintento = 'No pudimos reintentar el cobro en este momento.'
+    } catch (error) {
+      estado.errorReintento = mensajeParaUsuario(error, 'No pudimos reintentar el cobro en este momento.')
     } finally {
       estado.reintentando = null
     }

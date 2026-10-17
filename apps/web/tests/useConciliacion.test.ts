@@ -22,16 +22,16 @@ describe('useConciliacion', () => {
     await cargarCobros()
   })
 
-  it('carga los 4 cobros del mock', () => {
+  it('carga los 5 cobros del mock (los del prototipo W05-01)', () => {
     const { estado } = useConciliacion(fetchPrueba)
-    expect(estado.cobros).toHaveLength(4)
+    expect(estado.cobros).toHaveLength(5)
     expect(estado.cargando).toBe(false)
     expect(estado.error).toBeNull()
   })
 
-  it('trae los 4 estados de EstadoCobro representados, uno cada uno', () => {
+  it('trae los 4 estados de EstadoCobro representados', () => {
     const { estado } = useConciliacion(fetchPrueba)
-    const estados = estado.cobros.map((c) => c.estado).sort()
+    const estados = [...new Set(estado.cobros.map((c) => c.estado))].sort()
     expect(estados).toEqual(['COBRADO', 'COBRANDO', 'PENDIENTE', 'RECHAZADO'])
   })
 
@@ -41,7 +41,7 @@ describe('useConciliacion', () => {
     expect(enCurso?.idTransaccion).toBeNull()
   })
 
-  it('reintentarCobro mueve un cobro RECHAZADO a COBRANDO y limpia su idTransaccion', async () => {
+  it('reintentarCobro vuelve a cobrar un RECHAZADO y le descuenta un reintento (CA-W05-02)', async () => {
     const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
     const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')
     expect(rechazado).toBeDefined()
@@ -51,10 +51,38 @@ describe('useConciliacion', () => {
 
     expect(estado.cobros).toHaveLength(totalAntes)
     const actualizado = estado.cobros.find((c) => c.id === rechazado!.id)
-    expect(actualizado?.estado).toBe('COBRANDO')
-    expect(actualizado?.idTransaccion).toBeNull()
-    expect(actualizado?.cliente).toBe(rechazado!.cliente)
+    expect(actualizado?.estado).toBe('COBRADO')
+    expect(actualizado?.reintentosRestantes).toBe(2)
+    expect(actualizado?.idTransaccion).toBeTruthy()
+    expect(actualizado?.cliente).toEqual(rechazado!.cliente)
     expect(estado.reintentando).toBeNull()
+  })
+
+  it('al agotar los reintentos muestra el mensaje del BFF, no uno genérico', async () => {
+    servidor.use(
+      http.post('*/graphql/web', () =>
+        HttpResponse.json({
+          data: null,
+          errors: [{ message: 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.', path: ['reintentarCobro'] }],
+        }),
+      ),
+    )
+    const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+
+    await reintentarCobro('cobro-3')
+
+    expect(estado.errorReintento).toBe('Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.')
+  })
+
+  it('"Unexpected error." del BFF (falla interna enmascarada) se reemplaza por el mensaje genérico', async () => {
+    servidor.use(
+      http.post('*/graphql/web', () => HttpResponse.json({ data: null, errors: [{ message: 'Unexpected error.', path: ['reintentarCobro'] }] })),
+    )
+    const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+
+    await reintentarCobro('cobro-3')
+
+    expect(estado.errorReintento).toBe('No pudimos reintentar el cobro en este momento.')
   })
 
   // QA independiente encontro que las queries no pedian cliente/idTransaccion: el mock de MSW
@@ -77,8 +105,9 @@ describe('useConciliacion', () => {
     await reintentarCobro(rechazado!.id)
 
     for (const consulta of [consultaCobros, consultaReintentar]) {
-      expect(consulta).toMatch(/\bcliente\b/)
+      expect(consulta).toMatch(/\bcliente \{ id nombre \}/)
       expect(consulta).toMatch(/\bidTransaccion\b/)
+      expect(consulta).toMatch(/\breintentosRestantes\b/)
     }
   })
 
@@ -126,5 +155,18 @@ describe('useConciliacion', () => {
     servidor.resetHandlers()
     await reintentarCobro(rechazado!.id)
     expect(estado.errorReintento).toBeNull()
+  })
+
+  it('un error de validación del esquema (sin path) no se muestra crudo', async () => {
+    servidor.use(
+      http.post('*/graphql/web', () =>
+        HttpResponse.json({ data: null, errors: [{ message: "Cannot query field 'x' on type 'Cobro'." }] }),
+      ),
+    )
+    const { cargarCobros, estado } = useConciliacion(fetchPrueba)
+
+    await cargarCobros()
+
+    expect(estado.error).toBe('No pudimos cargar la conciliación de pagos en este momento.')
   })
 })

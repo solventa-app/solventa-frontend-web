@@ -1,13 +1,13 @@
 # contrato/CHANGELOG.md
 
-## Pendiente de sincronizar (frontend adelantado, falta el PR gemelo del backend)
+Bitácora de las sincronizaciones de `contrato/schema.graphql` con `solventa-backend/contracts/graphql/schema.graphql`
+(la bitácora completa de cada versión vive en el backend: `contracts/CHANGELOG.md`).
 
-- `Cobro.cliente: String!` y `Cobro.idTransaccion: String` — agregados para HU-W05
-  (pantalla W05-01, Conciliacion de pagos: el prototipo de alta fidelidad trae columnas
-  "Cliente" e "ID de transaccion" que el contrato no tenia). Cambio aditivo (ADR-06 regla 1),
-  no rompe nada existente.
-- Estado: PR del frontend (este repo, rama feature/HU-W05-conciliacion) hecho. Falta el PR
-  gemelo en `solventa-backend` (ADR-06 regla 2) que exponga estos dos campos de verdad; hasta
-  entonces `npm run contrato:sincronizar` sobreescribiria este cambio con el schema real del
-  backend (que todavia no los tiene). No correr `contrato:sincronizar` en esta rama hasta que
-  ese PR exista y estos dos campos ya esten en el schema real.
+## 2026-10-17 · sincronizado con el contrato v0.6 del backend
+
+- Se descarta el adelanto local de HU-W05 (`Cobro.cliente: String!`): el backend lo resolvió como
+  `cliente: ClienteCobro { id nombre }` (el nombre lo guarda AUTH cifrado). `idTransaccion` sí quedó en el backend
+  (la referencia de la pasarela).
+- Llegan del backend: usuarios y sesión (`iniciarSesion`, `yo`, `Usuario`, `RolUsuario`…), `Cobro.motivo`,
+  `Cobro.intentos`, `Cobro.reintentosRestantes`, `crearCobro` y el filtro `cobros(polizaId)`.
+- PR gemelo del backend: `feat/KAN-28-reintento-rechazados` (contrato v0.6). Hay que integrarlo antes que este.
