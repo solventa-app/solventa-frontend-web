@@ -1,7 +1,11 @@
 // Sesión activa (HU-M02, CA-W01-11). Singleton a nivel de módulo, igual patrón que useCotizacion.ts.
-// `ingresar` llama a `iniciarSesion` del BFF (alias + clave) y guarda el token SOLO en memoria (CLAUDE.md
-// regla 7): si se recarga la página, se vuelve al rol por defecto y hay que entrar de nuevo. El rol lo
-// decide el token, no la pantalla: los chips de G-01 son una preselección que se valida contra él.
+// `ingresar` llama a `iniciarSesion` del BFF (alias + clave). El rol lo decide el token, no la pantalla:
+// los chips de G-01 son una preselección que se valida contra él.
+//
+// La sesión sobrevive a recargar la página (decisión del equipo, 2026-10-17): se guarda en
+// `sessionStorage`, que vive mientras la pestaña esté abierta y se borra al cerrarla. Solo se guarda el
+// token, el rol, el alias y el vencimiento: nada de datos personales (CLAUDE.md regla 7; el alias nunca es
+// un correo ni un documento). Al vencer el token (`expiraEn`), la sesión guardada se descarta.
 import { reactive } from 'vue'
 import { ejecutar } from '../graphql/cliente'
 import { fijarToken } from '../graphql/token'
@@ -50,6 +54,41 @@ const MUTACION_INICIAR_SESION = `
   }
 `
 
+/** Dónde se guarda la sesión para que sobreviva a recargar la página. */
+export const CLAVE_SESION = 'solventa.sesion'
+
+interface SesionGuardada {
+  token: string
+  rol: Rol
+  usuario: string
+  expiraEn: string
+}
+
+// `sessionStorage` puede no existir o fallar (modo privado, cuota): la sesión sigue funcionando en memoria.
+function guardarSesion(sesion: SesionGuardada | null): void {
+  try {
+    if (sesion) sessionStorage.setItem(CLAVE_SESION, JSON.stringify(sesion))
+    else sessionStorage.removeItem(CLAVE_SESION)
+  } catch {
+    /* sin almacenamiento disponible: solo en memoria */
+  }
+}
+
+function leerSesionGuardada(): SesionGuardada | null {
+  try {
+    const crudo = sessionStorage.getItem(CLAVE_SESION)
+    if (!crudo) return null
+    const sesion = JSON.parse(crudo) as SesionGuardada
+    if (!sesion.token || !(sesion.rol in RUTA_INICIO) || Date.parse(sesion.expiraEn) <= Date.now()) {
+      sessionStorage.removeItem(CLAVE_SESION)
+      return null
+    }
+    return sesion
+  } catch {
+    return null
+  }
+}
+
 export type ResultadoIngreso = { ok: true; rol: Rol } | { ok: false; mensaje: string }
 
 // Por defecto CLIENTE: así una pantalla de /cotizacion/* sigue siendo navegable escribiendo la URL
@@ -61,14 +100,32 @@ const estado = reactive<EstadoSesion>({
   autenticado: false,
 })
 
+function aplicarSesion(rol: Rol, token: string | null, usuario: string | null): void {
+  estado.rol = rol
+  estado.nombre = NOMBRE_POR_DEFECTO[rol]
+  estado.usuario = usuario
+  estado.autenticado = token !== null
+  fijarToken(token)
+}
+
+/** Recupera la sesión guardada (si sigue vigente). Se llama al cargar el módulo, es decir, al recargar. */
+export function restaurarSesion(): void {
+  const guardada = leerSesionGuardada()
+  if (guardada) aplicarSesion(guardada.rol, guardada.token, guardada.usuario)
+}
+
+restaurarSesion()
+
 export function useSesion(fetchFn: typeof fetch = fetch) {
   /** Fija el rol de la sesión (con token, si lo hay). Lo usa `ingresar`; las pruebas lo usan directo. */
-  function establecerSesion(rol: Rol, token: string | null = null, usuario: string | null = null) {
-    estado.rol = rol
-    estado.nombre = NOMBRE_POR_DEFECTO[rol]
-    estado.usuario = usuario
-    estado.autenticado = token !== null
-    fijarToken(token)
+  function establecerSesion(
+    rol: Rol,
+    token: string | null = null,
+    usuario: string | null = null,
+    expiraEn: string | null = null,
+  ) {
+    aplicarSesion(rol, token, usuario)
+    guardarSesion(token && usuario && expiraEn ? { token, rol, usuario, expiraEn } : null)
   }
 
   /**
@@ -92,7 +149,7 @@ export function useSesion(fetchFn: typeof fetch = fetch) {
     if (rol !== rolElegido) {
       return { ok: false, mensaje: `Tu usuario es de ${ETIQUETA_ROL[rol]}: elige ese rol para ingresar.` }
     }
-    establecerSesion(rol, resultado.token, resultado.usuario.usuario)
+    establecerSesion(rol, resultado.token, resultado.usuario.usuario, resultado.expiraEn)
     return { ok: true, rol }
   }
 

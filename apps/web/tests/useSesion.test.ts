@@ -7,7 +7,7 @@ import { http, HttpResponse } from 'msw'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { ejecutar } from '../src/graphql/cliente'
 import { servidor } from '../src/mocks/node'
-import { RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import { CLAVE_SESION, RUTA_INICIO, restaurarSesion, useSesion } from '../src/composables/useSesion'
 
 // `estado` es un singleton a nivel de módulo (mismo patrón que useCotizacion/useConciliacion): se
 // resetea después de cada prueba para que una prueba no herede el rol que dejó la anterior.
@@ -92,5 +92,57 @@ describe('useSesion', () => {
     const resultado = await ingresar('asesor.demo', 'clave', 'CLIENTE')
     expect(resultado).toEqual({ ok: false, mensaje: 'Tu usuario es de Asesor comercial: elige ese rol para ingresar.' })
     expect(estado.autenticado).toBe(false)
+  })
+
+  describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
+    afterEach(() => sessionStorage.clear())
+
+    it('ingresar la guarda (sin datos personales) y cerrarSesion la borra', async () => {
+      const { ingresar, cerrarSesion } = useSesion(fetchPrueba)
+      await ingresar('admin.solventa', 'clave', 'BACKOFFICE')
+
+      const guardada = JSON.parse(sessionStorage.getItem(CLAVE_SESION)!)
+      expect(Object.keys(guardada).sort()).toEqual(['expiraEn', 'rol', 'token', 'usuario'])
+      expect(guardada).toMatchObject({ rol: 'BACKOFFICE', usuario: 'admin.solventa', token: 'token-demo-admin.solventa' })
+
+      cerrarSesion()
+      expect(sessionStorage.getItem(CLAVE_SESION)).toBeNull()
+    })
+
+    it('al recargar, una sesión vigente se restaura y el token vuelve a viajar', async () => {
+      const expiraEn = new Date(Date.now() + 60_000).toISOString()
+      sessionStorage.setItem(CLAVE_SESION, JSON.stringify({ token: 't-1', rol: 'BACKOFFICE', usuario: 'admin.solventa', expiraEn }))
+
+      restaurarSesion()
+
+      const { estado } = useSesion()
+      expect(estado).toMatchObject({ rol: 'BACKOFFICE', usuario: 'admin.solventa', autenticado: true })
+      let cabecera: string | null = null
+      servidor.use(
+        http.post('*/graphql/web', ({ request }) => {
+          cabecera = request.headers.get('authorization')
+          return HttpResponse.json({ data: { yo: null } })
+        }),
+      )
+      await ejecutar('{ yo { id } }', {}, fetchPrueba)
+      expect(cabecera).toBe('Bearer t-1')
+    })
+
+    it('una sesión vencida no se restaura y se borra', () => {
+      const expiraEn = new Date(Date.now() - 1000).toISOString()
+      sessionStorage.setItem(CLAVE_SESION, JSON.stringify({ token: 't-1', rol: 'BACKOFFICE', usuario: 'admin.solventa', expiraEn }))
+
+      restaurarSesion()
+
+      expect(useSesion().estado.autenticado).toBe(false)
+      expect(sessionStorage.getItem(CLAVE_SESION)).toBeNull()
+    })
+
+    it('un valor corrupto en sessionStorage no rompe la app', () => {
+      sessionStorage.setItem(CLAVE_SESION, '{no es json')
+
+      expect(() => restaurarSesion()).not.toThrow()
+      expect(useSesion().estado.autenticado).toBe(false)
+    })
   })
 })

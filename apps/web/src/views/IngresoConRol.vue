@@ -13,7 +13,7 @@
   (useSesion.ts). El backend identifica por alias, nunca por correo ni documento, por eso el campo es
   "Usuario". El rol lo decide el token: los chips son una preselección y, si no coinciden con el rol
   del usuario, no se entra y se dice cuál elegir (decisión del equipo, para respetar el prototipo).
-  El token queda solo en memoria. El enlace "portal de socios" apunta a HU-W07 (Sprint 2, fuera de
+  La sesión se guarda en `sessionStorage` (sobrevive a recargar, se borra al cerrar la pestaña). El enlace "portal de socios" apunta a HU-W07 (Sprint 2, fuera de
   alcance de este sprint): se muestra fiel al mockup pero sin navegación real.
 
   Chip "Operador": en router/pantallas.ts, G-02b (home del Operador, /operador) todavía no tiene
