@@ -1,11 +1,6 @@
-// Estado compartido del asistente de cotización (HU-W01). Es un singleton a nivel de módulo (no una
-// librería de estado global: no hace falta para un único flujo lineal, ver CLAUDE.md regla 8 "no
-// sobre-construir") para que las 7 pantallas de `/cotizacion/*` compartan la captura, el consentimiento
-// y el resultado aunque el router destruya y vuelva a montar cada vista al navegar entre ellas.
-//
-// No se guarda nada de esto en localStorage ni se registra en consola (CLAUDE.md regla 7): vive solo en
-// memoria y se pierde al recargar la página, que es la postura más simple y seguro-por-defecto para
-// datos de una solicitud de seguro todavía sin confirmar.
+// Estado compartido del asistente de cotización (HU-W01): singleton a nivel de módulo para que las 7
+// pantallas de `/cotizacion/*` compartan captura, consentimiento y resultado. Vive solo en memoria
+// (regla 7) y se pierde al recargar.
 import { reactive } from 'vue'
 import { ejecutar } from '../graphql/cliente'
 import type {
@@ -55,10 +50,16 @@ export function esOferta(resultado: ResultadoOferta | null | undefined): resulta
   return !!resultado && 'tipo' in resultado
 }
 
+// Se piden todos los campos que usa alguna pantalla: el BFF real solo devuelve lo que se pide y los
+// mocks devuelven el objeto completo, así que una omisión solo se nota contra el BFF.
 const MUTACION_REGISTRAR_CONSENTIMIENTO = `
   mutation registrarConsentimiento($entrada: ConsentimientoInput!) {
     registrarConsentimiento(entrada: $entrada) {
       id
+      finalidad
+      versionTexto
+      otorgadoEn
+      revocadoEn
       vigente
     }
   }
@@ -134,14 +135,8 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
       )
       estado.resultado = datos.solicitarOferta
     } catch {
-      // Falla técnica/de red (nunca un ErrorOferta de negocio: eso ya viene manejado arriba por el
-      // BFF como un resultado válido). Antes, esto no dejaba ningún rastro legible por ninguna
-      // pantalla: W01-02 (ConsultandoFuentes.vue) se quedaba mostrando el spinner para siempre,
-      // porque `estado.resultado` seguía sin ser ni Oferta ni ErrorOferta.
-      // Se corrige construyendo un ErrorOferta "sintético" con un mensaje seguro (CLAUDE.md regla 5:
-      // nunca el texto técnico crudo del BFF, p. ej. "El BFF respondió 500") y asignándolo a
-      // `estado.resultado`: así se reusa el camino que W01-02/W01-03c ya tienen para `ErrorOferta`
-      // en vez de inventar un estado nuevo.
+      // Falla técnica o de red: se convierte en un ErrorOferta con mensaje seguro (regla 5), así
+      // W01-02 y W01-03c la muestran por el mismo camino que un error de negocio.
       estado.resultado = {
         mensaje: 'No pudimos completar tu consulta. Intenta nuevamente o habla con un asesor.',
         puedeReintentar: true,
@@ -152,11 +147,8 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
   }
 
   /**
-   * Contacto con asesor (W01-05). El contrato exige un `ofertaId` (ver contrato/schema.graphql),
-   * pero el único punto de entrada de esta pantalla en el plano v21 es W01-03c (fallo), donde nunca
-   * hubo una oferta exitosa. Se documenta aquí el mismo tipo de hueco que AvatarPerfil.vue deja para
-   * G-05: se envía cadena vacía (los mocks no la validan) hasta que el contrato tenga un caso para
-   * "contactar sin oferta previa".
+   * Contacto con asesor (W01-05). El contrato exige `ofertaId`, pero se llega desde W01-03c, donde no
+   * hubo oferta: se envía cadena vacía hasta que el contrato cubra "contactar sin oferta previa".
    */
   async function contactarAsesor(canal: CanalContacto): Promise<ConfirmacionContacto> {
     const ofertaId = esOferta(estado.resultado) ? estado.resultado.id : ''

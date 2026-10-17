@@ -1,8 +1,10 @@
+import { visitarComo } from '../../support/sesion'
+
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
 // `cargarCobros()` trae la lista completa de los mocks al montar (sin depender de ninguna otra
 // pantalla): por eso esta pantalla es alcanzable y funcional de forma totalmente aislada.
 describe('W05-01 · Conciliación de pagos (pantalla aislada)', () => {
-  beforeEach(() => cy.visit('/operador/conciliacion'))
+  beforeEach(() => visitarComo('BACKOFFICE', '/operador/conciliacion'))
 
   it('muestra las 4 transacciones con sus columnas reales', () => {
     cy.get('[data-pantalla="W05-01"]').within(() => {

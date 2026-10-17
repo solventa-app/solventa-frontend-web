@@ -32,7 +32,7 @@ Observaciones:
 - La web depende del BFF, que aún no existe: se trabaja con **mocks** (`npm run web:dev:mock`) y se cambian por el BFF real cuando esté desplegado.
 - W01-04 depende de W01-02; la oferta (W01-03a/b/c) depende de `solicitarOferta` del contrato.
 - El desarrollador móvil no tiene pantallas en el Sprint 1: el plan le asigna tareas de backend (endpoint de datos de usuario, integración con Open Data, pruebas de contrato).
-- Decisión pendiente **D-F1**: librería de componentes de UI (ninguna o una) — decidir antes de la primera pantalla real, mirando el prototipo de Figma. Hoy solo hay CSS base.
+- **D-F1 (cerrada):** sin librería de componentes de terceros. Los componentes propios viven en `src/components/ui/` (contra la librería de Figma) y el estilo usa Twind (utilidades de Tailwind en tiempo de ejecución, tokens en `src/styles/twind.ts`).
 
 ## Sprint 2 (26 oct – 8 nov)
 

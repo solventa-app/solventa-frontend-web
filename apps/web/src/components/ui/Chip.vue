@@ -24,9 +24,7 @@ defineEmits<{ click: [MouseEvent] }>()
     type="button"
     class="rounded-full px-[14px] py-[6px] text-[11px] font-medium leading-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-1"
     :class="
-      activo
-        ? 'bg-primario text-white'
-        : 'border border-borde bg-white text-tinta-suave hover:border-tinta-suave'
+      activo ? 'bg-primario text-white' : 'border border-borde bg-white text-tinta-suave hover:border-tinta-suave'
     "
     :aria-pressed="activo"
     @click="$emit('click', $event)"

@@ -1,14 +1,25 @@
 import { mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import App from '../src/App.vue'
-import { crearRutas } from '../src/router'
+import { crearRouter, crearRutas } from '../src/router'
+import { useSesion } from '../src/composables/useSesion'
+import { servidor } from '../src/mocks/node'
 import { pantallas } from '../src/router/pantallas'
 
 // Pantallas que el plan del Sprint 1 asigna a HU-W01 y HU-W05 (12 en total).
 const SPRINT_1 = [
-  'G-01', 'G-02', 'G-02a', 'G-02b',
-  'W01-01', 'W01-02', 'W01-03a', 'W01-03b', 'W01-03c', 'W01-04', 'W01-05',
+  'G-01',
+  'G-02',
+  'G-02a',
+  'G-02b',
+  'W01-01',
+  'W01-02',
+  'W01-03a',
+  'W01-03b',
+  'W01-03c',
+  'W01-04',
+  'W01-05',
   'W05-01',
 ]
 
@@ -47,5 +58,33 @@ describe('router', () => {
     router.push('/')
     await router.isReady()
     expect(router.currentRoute.value.path).toBe('/login')
+  })
+})
+
+describe('guardia de sesión (crearRouter)', () => {
+  const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
+
+  beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+  afterEach(() => useSesion().cerrarSesion())
+  afterAll(() => servidor.close())
+
+  it('sin sesión, una pantalla protegida redirige a /login', async () => {
+    const router = crearRouter(createMemoryHistory())
+    await router.push('/cotizacion')
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('con un rol sin acceso, redirige al home de ese rol', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'x')
+    const router = crearRouter(createMemoryHistory())
+    await router.push('/operador/conciliacion')
+    expect(router.currentRoute.value.path).toBe('/inicio')
+  })
+
+  it('con el rol correcto, deja pasar', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('admin.solventa', 'x')
+    const router = crearRouter(createMemoryHistory())
+    await router.push('/operador/conciliacion')
+    expect(router.currentRoute.value.path).toBe('/operador/conciliacion')
   })
 })

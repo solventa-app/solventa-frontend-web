@@ -12,6 +12,9 @@ coverage/
 .env.*.local
 *.pem
 
+# Vercel (lo crea `vercel link`)
+.vercel/
+
 # Cypress
 e2e/cypress/videos/
 e2e/cypress/screenshots/

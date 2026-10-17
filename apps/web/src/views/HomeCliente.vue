@@ -1,25 +1,8 @@
 <!--
-  G-02 · Home del Cliente (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo 2001:679). Mismo
-  tratamiento que G-02a (HomeAsesor.vue, esta misma rama) y G-02b (HomeOperador.vue, construida en
-  la rama feature/HU-W05-conciliacion, fuera del alcance de archivos de esta rama): franja "Cerrar
-  sesión" de ancho completo en vez de Barra de navegación (SG-01: nunca las dos juntas en una
-  pantalla "home").
+  G-02 · Home del Cliente (Figma "Solventa-web-Final", nodo 2001:679).
 
-  Re-verificada contra el archivo correcto (la ronda anterior la había citado y "corregido" contra
-  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", el equivocado): el mockup real muestra 3 tarjetas de acceso
-  (Nueva cotización, Mis pólizas, Fuentes consultadas), no 1 — "Fuentes consultadas" ya tenía
-  pantalla construida en esta rama (W01-04, /cotizacion/fuentes) pero no había ningún camino de clic
-  hacia ella desde el home; "Mis pólizas" no tiene pantalla en este sprint, así que enlaza a /polizas
-  (PantallaPendiente, ver router/pantallas.ts) en vez de a un enlace roto o a ningún lado. El "Hola,
-  {{ nombre }}" es el H1 real y visible de la pantalla (antes estaba como texto gris pequeño,
-  duplicando "Home del Cliente" como H1 oculto en su lugar).
-
-  [MEDIA, hallazgo de UX] "Portal Cliente" (nodo 2053:58-62) llevaba un ícono de 24px a la
-  izquierda que esta pantalla no mostraba (solo texto). Se usa `badge` del set de íconos de esta
-  rama (mismo que ya usan las tarjetas "Nueva cotización"/etc.): a esa resolución el ícono real del
-  Figma no se distingue con certeza entre los íconos disponibles, así que se prioriza una opción
-  temáticamente razonable (identidad/portal) usando un ícono ya existente en vez de fabricar uno
-  nuevo — mismo criterio usado en el resto de esta ronda para no inventar glifos.
+  Franja "Cerrar sesión" en vez de barra de navegación (SG-01: nunca las dos juntas). El saludo usa el
+  nombre de la sesión (useSesion.ts). "Mis pólizas" lleva a /polizas, aún pendiente (G-06).
 -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'

@@ -1,18 +1,11 @@
+import { ingresar } from '../support/sesion'
+
 // E2E de la historia HU-W05 (ver nota de convención en w01-oferta.cy.ts: esta cruza varias
 // pantallas a propósito, el E2E por pantalla individual vive en cypress/e2e/pantallas/*.cy.ts).
 // Corre contra los mocks de MSW: 4 cobros fijos (ver handlers.ts), uno de ellos RECHAZADO
 // ("Julián Torres Mesa") es el único con botón "Reintentar cobro".
 describe('HU-W05 · Conciliación de pagos (back-office)', () => {
-  beforeEach(() => {
-    cy.visit('/login')
-    cy.get('[data-pantalla="G-01"]').within(() => {
-      cy.get('input[type="email"]').type('operador@correo.com')
-      cy.get('input[type="password"]').type('secreta123')
-      cy.contains('button', 'Operador').click()
-      cy.contains('button', 'Ingresar').click()
-    })
-    cy.location('pathname').should('eq', '/operador')
-  })
+  beforeEach(() => ingresar('BACKOFFICE'))
 
   it('G-02b → W05-01: entra a conciliación, filtra por estado y reintenta un cobro rechazado', () => {
     cy.contains('a', 'Conciliación de pagos').click()

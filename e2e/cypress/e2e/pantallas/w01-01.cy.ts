@@ -1,6 +1,8 @@
+import { visitarComo } from '../../support/sesion'
+
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
 describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
-  beforeEach(() => cy.visit('/cotizacion'))
+  beforeEach(() => visitarComo('CLIENTE', '/cotizacion'))
 
   it('"Consultar oferta" está deshabilitado hasta marcar el consentimiento', () => {
     cy.get('[data-pantalla="W01-01"]').within(() => {

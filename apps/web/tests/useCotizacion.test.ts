@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { buildSchema, graphql } from 'graphql'
 import { http, HttpResponse } from 'msw'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { esErrorOferta, esOferta, useCotizacion } from '../src/composables/useCotizacion'
@@ -118,5 +121,38 @@ describe('useCotizacion', () => {
 
     await expect(cotizacion.contactarAsesor('LLAMAR')).rejects.toBeTruthy()
     expect(cotizacion.estado.contacto).toBeNull()
+  })
+
+  it('pide al BFF todos los campos del consentimiento que muestran las pantallas', async () => {
+    // A diferencia de MSW, el BFF real solo devuelve los campos pedidos. Este handler ejecuta la
+    // consulta contra el contrato (contrato/schema.graphql), igual que el BFF: si la mutación no
+    // pide `otorgadoEn`, la pantalla W01-04 (DetalleDeFuentes.vue) no tendría fecha que mostrar.
+    const esquema = buildSchema(readFileSync(resolve(process.cwd(), '../../contrato/schema.graphql'), 'utf8'))
+    const completo = {
+      id: 'consentimiento-real',
+      finalidad: 'perfilamiento',
+      versionTexto: 'v1',
+      otorgadoEn: '2026-10-17T12:00:00+00:00',
+      revocadoEn: null,
+      vigente: true,
+    }
+    servidor.use(
+      http.post('*/graphql/web', async ({ request }) => {
+        const { query, variables } = (await request.json()) as { query: string; variables: Record<string, unknown> }
+        const resultado = await graphql({
+          schema: esquema,
+          source: query,
+          variableValues: variables,
+          rootValue: { registrarConsentimiento: () => completo },
+        })
+        return HttpResponse.json(resultado)
+      }),
+    )
+    const cotizacion = useCotizacion(fetchPrueba)
+
+    const recibido = await cotizacion.registrarConsentimiento()
+
+    expect(recibido).toEqual(completo)
+    expect(cotizacion.estado.consentimiento?.otorgadoEn).toBe('2026-10-17T12:00:00+00:00')
   })
 })

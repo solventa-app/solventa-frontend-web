@@ -1,9 +1,5 @@
-import {
-  createRouter,
-  createWebHistory,
-  type RouteRecordRaw,
-  type RouterHistory,
-} from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw, type RouterHistory } from 'vue-router'
+import { useSesion } from '../composables/useSesion'
 import { pantallas, type Pantalla } from './pantallas'
 
 declare module 'vue-router' {
@@ -32,5 +28,20 @@ export function crearRutas(): RouteRecordRaw[] {
 }
 
 export function crearRouter(history: RouterHistory = createWebHistory()) {
-  return createRouter({ history, routes: crearRutas() })
+  const router = createRouter({ history, routes: crearRutas() })
+
+  // Sin sesión vigente se vuelve a G-01; con un rol sin acceso, al home de ese rol. El BFF aplica los
+  // mismos permisos del lado del servidor: esto solo evita mostrar pantallas que van a fallar.
+  router.beforeEach((destino) => {
+    const roles = destino.meta.pantalla?.roles
+    if (!roles) return true
+    const { estado, sesionActiva, cerrarSesion, rutaInicio } = useSesion()
+    if (!sesionActiva()) {
+      cerrarSesion()
+      return '/login'
+    }
+    return estado.rol && roles.includes(estado.rol) ? true : rutaInicio()
+  })
+
+  return router
 }
