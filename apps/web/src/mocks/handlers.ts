@@ -77,7 +77,8 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
 })
 
 // 4 cobros (HU-W05), uno por cada EstadoCobro, con los nombres, montos y fechas del frame W05-01 de
-// Figma. `cobros` es mutable (reintentarCobro lo actualiza en el sitio) para que el estado persista
+// Figma, con la forma del BFF (contrato v0.6): `idTransaccion` (null mientras no hay cobro hecho) y
+// `reintentosRestantes` (un RECHAZADO se reintenta a mano hasta 3 veces). `cobros` es mutable (reintentarCobro lo actualiza en el sitio) para que el estado persista
 // durante una demo; las pruebas lo reinician con restablecerCobrosDePrueba.
 const cobrosIniciales = (): Cobro[] => [
   {
@@ -87,6 +88,9 @@ const cobrosIniciales = (): Cobro[] => [
     estado: 'COBRANDO',
     monto: { valor: '198000.00', moneda: 'COP' },
     actualizadoEn: '2026-09-05T15:00:00Z',
+    idTransaccion: null,
+    motivo: null,
+    reintentosRestantes: 3,
   },
   {
     id: 'cobro-2',
@@ -95,6 +99,9 @@ const cobrosIniciales = (): Cobro[] => [
     estado: 'COBRADO',
     monto: { valor: '185000.00', moneda: 'COP' },
     actualizadoEn: '2026-09-05T14:14:00Z',
+    idTransaccion: 'pg-8a2f19c3',
+    motivo: null,
+    reintentosRestantes: 3,
   },
   {
     id: 'cobro-3',
@@ -103,6 +110,9 @@ const cobrosIniciales = (): Cobro[] => [
     estado: 'RECHAZADO',
     monto: { valor: '142500.00', moneda: 'COP' },
     actualizadoEn: '2026-09-04T23:02:00Z',
+    idTransaccion: null,
+    motivo: 'fondos_insuficientes',
+    reintentosRestantes: 3,
   },
   {
     id: 'cobro-4',
@@ -111,6 +121,9 @@ const cobrosIniciales = (): Cobro[] => [
     estado: 'PENDIENTE',
     monto: { valor: '210000.00', moneda: 'COP' },
     actualizadoEn: '2026-09-04T16:47:00Z',
+    idTransaccion: null,
+    motivo: 'pasarela_no_disponible',
+    reintentosRestantes: 3,
   },
 ]
 
@@ -220,11 +233,31 @@ export const handlers = [
   ),
 
   graphql.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>('reintentarCobro', ({ variables }) => {
-    // Muta el cobro en el arreglo (no una copia): así una consulta `cobros` posterior (p. ej. al
-    // volver a entrar a la pantalla) ve el nuevo estado en vez de revertirlo al original.
-    const cobro = cobros.find((c) => c.id === variables.cobroId) ?? cobros[1]
-    cobro.estado = 'COBRANDO'
-    cobro.actualizadoEn = ahora()
+    // Igual que el BFF (contrato v0.6): un RECHAZADO con reintentos se vuelve a cobrar (aquí siempre queda
+    // COBRADO) y descuenta uno; sin reintentos, error para el usuario. Muta el cobro en el arreglo para que
+    // una consulta `cobros` posterior vea el nuevo estado.
+    const cobro = cobros.find((c) => c.id === variables.cobroId)
+    if (!cobro) {
+      return HttpResponse.json({ data: null, errors: [{ message: 'Cobro no encontrado.', path: ['reintentarCobro'] }] })
+    }
+    if (cobro.estado === 'RECHAZADO') {
+      if (!cobro.reintentosRestantes) {
+        return HttpResponse.json({
+          data: null,
+          errors: [
+            {
+              message: 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.',
+              path: ['reintentarCobro'],
+            },
+          ],
+        })
+      }
+      cobro.reintentosRestantes -= 1
+      cobro.estado = 'COBRADO'
+      cobro.motivo = null
+      cobro.idTransaccion = `pg-reintento-${cobro.id}`
+      cobro.actualizadoEn = ahora()
+    }
     return HttpResponse.json({ data: { reintentarCobro: cobro } })
   }),
 ]

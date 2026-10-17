@@ -48,6 +48,12 @@ const INSIGNIA: Record<
   PENDIENTE: { etiqueta: 'Pendiente', texto: 'text-alerta', fondo: 'bg-alerta-fondo', icono: 'schedule' },
 }
 
+// CA-W05-02 (prototipo W05-01, decisión del 2026-10-17): un RECHAZADO se reintenta a mano hasta 3 veces; el
+// BFF dice cuántos le quedan. Un PENDIENTE lo reintenta el sistema solo.
+function puedeReintentar(cobro: Cobro): boolean {
+  return cobro.estado === 'RECHAZADO' && (cobro.reintentosRestantes ?? 0) > 0
+}
+
 function fechaDelIntento(cobro: Cobro): string {
   return cobro.estado === 'COBRANDO' ? 'en curso' : formatearFecha(cobro.actualizadoEn)
 }
@@ -177,10 +183,10 @@ onMounted(() => cargarCobros())
                   >
                     {{ fechaDelIntento(cobro) }}
                   </td>
-                  <td class="py-[24px] pr-[14px] font-mono text-[11px] text-tinta">—</td>
+                  <td class="py-[24px] pr-[14px] font-mono text-[11px] text-tinta">{{ cobro.idTransaccion ?? '—' }}</td>
                   <td class="py-[16px] pr-4 text-center">
                     <Boton
-                      v-if="cobro.estado === 'RECHAZADO'"
+                      v-if="puedeReintentar(cobro)"
                       variante="secundario"
                       :disabled="estado.reintentando === cobro.id"
                       :aria-busy="estado.reintentando === cobro.id"
@@ -188,6 +194,12 @@ onMounted(() => cargarCobros())
                     >
                       {{ estado.reintentando === cobro.id ? 'Reintentando…' : 'Reintentar cobro' }}
                     </Boton>
+                    <span v-else-if="cobro.estado === 'RECHAZADO'" class="text-[11px] text-error">
+                      Requiere otro medio de pago
+                    </span>
+                    <span v-else-if="cobro.estado === 'PENDIENTE'" class="text-[11px] text-tinta-suave">
+                      Reintento automático
+                    </span>
                   </td>
                 </tr>
               </tbody>
