@@ -22,7 +22,13 @@ describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
     cy.location('pathname').should('eq', '/cotizacion')
   })
 
-  it('con todos los campos válidos y el consentimiento marcado, navega a /cotizacion/consulta', () => {
+  // La navegación real al hacer clic es /cotizacion/consulta (W01-02), pero esa pantalla "avanza
+  // automáticamente según la respuesta del ACL" (ver su propio comentario de cabecera) y, contra
+  // los mocks, resuelve casi al instante: en la práctica, lo único observable de forma estable es
+  // dónde termina aterrizando. Por eso se afirma la ruta final (con más margen de tiempo, igual
+  // que w01-oferta.cy.ts) en vez de la ruta intermedia, que un `cy.location().should('eq', …)`
+  // sin margen puede no alcanzar a ver nunca (carrera perdida contra el propio mock).
+  it('con todos los campos válidos y el consentimiento marcado, termina en la oferta completa', () => {
     cy.get('[data-pantalla="W01-01"]').within(() => {
       cy.contains('label', 'Documento de identidad').parent().find('input').type('1020304050')
       cy.contains('label', 'Monto del crédito hipotecario').parent().find('input').type('185000000')
@@ -31,13 +37,20 @@ describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
       cy.get('input[type="checkbox"]').check()
       cy.contains('button', 'Consultar oferta').click()
     })
-    cy.location('pathname').should('eq', '/cotizacion/consulta')
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
   })
 
-  it('los dos enlaces de disparo de demo completan el formulario y marcan el consentimiento solos', () => {
+  it('el enlace de disparo de demo de oferta degradada completa el formulario y termina en la oferta preliminar', () => {
     cy.get('[data-pantalla="W01-01"]').within(() => {
       cy.contains('button', 'Simular oferta degradada: timeout de fuentes con valor en caché').click()
     })
-    cy.location('pathname').should('eq', '/cotizacion/consulta')
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta-preliminar')
+  })
+
+  it('el enlace de disparo de demo de fallo total completa el formulario y termina en el error', () => {
+    cy.get('[data-pantalla="W01-01"]').within(() => {
+      cy.contains('button', 'Simular fallo total de la consulta de fuentes').click()
+    })
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/error')
   })
 })
