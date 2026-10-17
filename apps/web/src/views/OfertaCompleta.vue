@@ -26,6 +26,7 @@ import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } fro
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 import { formatearMonto, formatearPorcentaje } from '../utils/formato'
+import { nombreFuente } from '../utils/nombres'
 
 const { estado, captura } = useCotizacion()
 const { estado: sesion } = useSesion()
@@ -55,7 +56,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
             <span class="text-[13px] font-semibold text-tinta">{{ captura.plazoMeses }} meses</span>
           </div>
           <div v-for="factor in oferta.desgloseScore" :key="factor.nombre" class="flex items-center justify-between px-1">
-            <span class="text-[13px] text-tinta-suave">{{ factor.nombre }}:</span>
+            <span class="text-[13px] text-tinta-suave">{{ nombreFuente(factor.nombre) }}:</span>
             <span class="text-[13px] font-semibold text-tinta">{{ formatearPorcentaje(factor.peso) }} del score</span>
           </div>
         </div>

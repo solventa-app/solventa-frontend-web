@@ -55,10 +55,17 @@ export function esOferta(resultado: ResultadoOferta | null | undefined): resulta
   return !!resultado && 'tipo' in resultado
 }
 
+// Se piden TODOS los campos que usa alguna pantalla: el BFF real solo devuelve lo que se pide (a
+// diferencia de los mocks, que devuelven el objeto completo). W01-04 (DetalleDeFuentes.vue) muestra
+// `otorgadoEn`; si no se pide, llega `undefined` y la fecha no se puede formatear.
 const MUTACION_REGISTRAR_CONSENTIMIENTO = `
   mutation registrarConsentimiento($entrada: ConsentimientoInput!) {
     registrarConsentimiento(entrada: $entrada) {
       id
+      finalidad
+      versionTexto
+      otorgadoEn
+      revocadoEn
       vigente
     }
   }

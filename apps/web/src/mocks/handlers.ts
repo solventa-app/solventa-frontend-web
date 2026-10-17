@@ -21,24 +21,43 @@ import type {
 
 const ahora = () => new Date().toISOString()
 
+// Misma forma que devuelve el BFF real (solventa-backend: services/rating): los 5 identificadores de fuente
+// (2 Open Finance + 3 Open Data) y, en el desglose, el peso fijo de cada una. Las pantallas los muestran con
+// nombres legibles (src/utils/nombres.ts). En la PRELIMINAR, como en el backend con Open Finance lento, el
+// historial llega de caché y una fuente de Open Data falla.
 const fuentes = (degradada: boolean): FuenteConsultada[] => [
-  { id: 'of-1', nombre: 'Cuentas y saldos', origen: 'OPEN_FINANCE', estado: 'OK' },
-  { id: 'of-2', nombre: 'Historial crediticio', origen: 'OPEN_FINANCE', estado: degradada ? 'CACHE' : 'OK', capturadoEn: degradada ? ahora() : null },
-  { id: 'od-1', nombre: 'Catastro', origen: 'OPEN_DATA', estado: 'OK' },
-  { id: 'od-2', nombre: 'Registro de propiedad', origen: 'OPEN_DATA', estado: 'OK' },
-  { id: 'od-3', nombre: 'Indicadores de la zona', origen: 'OPEN_DATA', estado: degradada ? 'FALLO' : 'OK' },
+  { id: 'cuentas-bancarias', nombre: 'cuentas-bancarias', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null },
+  {
+    id: 'historial-crediticio',
+    nombre: 'historial-crediticio',
+    origen: 'OPEN_FINANCE',
+    estado: degradada ? 'CACHE' : 'OK',
+    capturadoEn: degradada ? ahora() : null,
+  },
+  { id: 'afiliacion-pila', nombre: 'afiliacion-pila', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+  { id: 'camara-comercio', nombre: 'camara-comercio', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+  {
+    id: 'antecedentes-judiciales',
+    nombre: 'antecedentes-judiciales',
+    origen: 'OPEN_DATA',
+    estado: degradada ? 'FALLO' : 'OK',
+    capturadoEn: null,
+  },
 ]
 
 const oferta = (tipo: Oferta['tipo']): Oferta => ({
   id: `oferta-${tipo.toLowerCase()}`,
   tipo,
-  prima: tipo === 'COMPLETA' ? { valor: '48500.00', moneda: 'COP' } : null,
-  rangoPrima: tipo === 'PRELIMINAR' ? { minima: { valor: '42000.00', moneda: 'COP' }, maxima: { valor: '56000.00', moneda: 'COP' } } : null,
-  cobertura: { valor: '250000000.00', moneda: 'COP' },
+  prima: tipo === 'COMPLETA' ? { valor: '94680.00', moneda: 'COP' } : null,
+  rangoPrima:
+    tipo === 'PRELIMINAR' ? { minima: { valor: '81792.00', moneda: 'COP' }, maxima: { valor: '122688.00', moneda: 'COP' } } : null,
+  cobertura: { valor: '200000000', moneda: 'COP' },
   desgloseScore: [
-    { nombre: 'Ingresos', peso: 0.4 },
-    { nombre: 'Historial crediticio', peso: 0.35 },
-    { nombre: 'Zona del inmueble', peso: 0.25 },
+    { nombre: 'historial-crediticio', peso: 0.3 },
+    { nombre: 'cuentas-bancarias', peso: 0.2 },
+    { nombre: 'afiliacion-pila', peso: 0.2 },
+    { nombre: 'camara-comercio', peso: 0.15 },
+    { nombre: 'antecedentes-judiciales', peso: 0.15 },
   ],
   fuentes: fuentes(tipo === 'PRELIMINAR'),
 })
@@ -124,7 +143,11 @@ export const handlers = [
     ({ variables }) => {
       const documento = variables.entrada.documentoIdentidad
       const resultado: ResultadoOferta = documento.endsWith('000')
-        ? { mensaje: 'No pudimos calcular tu oferta en este momento.', puedeReintentar: true }
+        ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
+          {
+            mensaje: 'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
+            puedeReintentar: true,
+          }
         : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
     },
