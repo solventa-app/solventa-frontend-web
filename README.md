@@ -32,6 +32,13 @@ npm test              # Vitest
 npm run build         # vue-tsc + vite build
 ```
 
+**Contra el backend en local:** levanta `solventa-backend` (`docker compose --profile servicios up -d --build`), copia
+`apps/web/.env.example` a `apps/web/.env.local` (`VITE_USE_MOCKS=false`, `VITE_BFF_URL=http://localhost:8000`) y corre
+`npm run dev`. Las convenciones de los mocks (documento terminado en `999` o `000`) no existen en el backend: para ver
+una oferta preliminar, pon el stub de Open Finance en modo lento
+(`curl -X POST localhost:8101/control/modo -H 'Content-Type: application/json' -d '{"modo":"lento"}'`); con un
+documento que no se haya consultado antes, el historial crediticio no llega y sale la pantalla de error.
+
 Con `npm run dev` o `dev:mock`, abre `http://localhost:5173/_pantallas` para ver el índice de las 12 pantallas del prototipo (solo en desarrollo).
 
 ## Contrato con el backend

@@ -36,6 +36,7 @@ import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 import { formatearMonto, formatearPorcentaje, formatearRangoMonto } from '../utils/formato'
+import { nombreFuente } from '../utils/nombres'
 
 const { estado, captura } = useCotizacion()
 const { estado: sesion } = useSesion()
@@ -71,7 +72,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         </div>
         <div class="flex w-full flex-col gap-2 border-y border-borde py-4">
           <div v-for="factor in oferta.desgloseScore" :key="factor.nombre" class="flex items-center justify-between px-1">
-            <span class="text-[13px] text-tinta-suave">{{ factor.nombre }}:</span>
+            <span class="text-[13px] text-tinta-suave">{{ nombreFuente(factor.nombre) }}:</span>
             <span class="text-[13px] font-semibold text-tinta">{{ formatearPorcentaje(factor.peso) }} del score</span>
           </div>
           <div class="flex items-center justify-between px-1">

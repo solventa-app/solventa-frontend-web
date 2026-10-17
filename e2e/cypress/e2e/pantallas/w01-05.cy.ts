@@ -18,7 +18,7 @@ describe('W01-05 · Contactar a un asesor (pantalla aislada)', () => {
     cy.get('[data-pantalla="W01-05"]').within(() => {
       cy.contains('button', 'Llamar').click()
       cy.contains('[role="status"]', 'Un asesor te contactará en breve').should('exist')
-      cy.contains('Un asesor te contactará con el resumen de tu trámite.').should('exist')
+      cy.contains('Un asesor te contactará para continuar tu cotización.').should('exist')
     })
   })
 

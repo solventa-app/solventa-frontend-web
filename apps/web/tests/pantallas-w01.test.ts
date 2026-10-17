@@ -333,6 +333,30 @@ describe('Pantallas de resultado de oferta', () => {
 })
 
 describe('DetalleDeFuentes (W01-04)', () => {
+  it('muestra con nombre legible los identificadores de fuente que devuelve el BFF real', () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    Object.assign(cotizacion.estado, {
+      resultado: {
+        id: 'oferta-completa',
+        tipo: 'COMPLETA',
+        prima: { valor: '94680.00', moneda: 'COP' },
+        rangoPrima: null,
+        cobertura: { valor: '200000000', moneda: 'COP' },
+        desgloseScore: [],
+        fuentes: [
+          { id: 'cuentas-bancarias', nombre: 'cuentas-bancarias', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null },
+          { id: 'afiliacion-pila', nombre: 'afiliacion-pila', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+        ],
+      },
+    })
+    const wrapper = montar(DetalleDeFuentes, crearRouterDePrueba())
+
+    expect(wrapper.text()).toContain('Cuentas bancarias')
+    expect(wrapper.text()).toContain('Afiliación a seguridad social (PILA)')
+    expect(wrapper.text()).not.toContain('cuentas-bancarias')
+  })
+
   it('agrupa las fuentes por origen con el nombre real de cada una', () => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()

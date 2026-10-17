@@ -47,6 +47,7 @@ import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { RUTA_INICIO, useSesion } from '../composables/useSesion'
 import { formatearFecha } from '../utils/formato'
+import { nombreFuente } from '../utils/nombres'
 
 const { estado } = useCotizacion()
 const { estado: sesion } = useSesion()
@@ -79,7 +80,7 @@ function rutaVolver() {
               :key="fuente.id"
               class="flex flex-wrap items-center justify-between gap-2 border-b border-borde bg-white px-4 py-3.5 last:border-b-0"
             >
-              <span class="text-[13px] font-semibold text-tinta">{{ fuente.nombre }}</span>
+              <span class="text-[13px] font-semibold text-tinta">{{ nombreFuente(fuente.nombre) }}</span>
               <span class="flex flex-wrap items-center justify-end gap-2">
                 <span
                   class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
@@ -112,7 +113,7 @@ function rutaVolver() {
               :key="fuente.id"
               class="flex flex-wrap items-center justify-between gap-2 border-b border-borde bg-white px-4 py-3.5 last:border-b-0"
             >
-              <span class="text-[13px] font-semibold text-tinta">{{ fuente.nombre }}</span>
+              <span class="text-[13px] font-semibold text-tinta">{{ nombreFuente(fuente.nombre) }}</span>
               <span class="flex flex-wrap items-center justify-end gap-2">
                 <span
                   class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
