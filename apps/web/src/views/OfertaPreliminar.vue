@@ -1,45 +1,21 @@
 <!--
-  W01-03b · Oferta preliminar / degradada (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
-  2001:1262, CA-W01-04).
+  W01-03b · Oferta preliminar / degradada (Figma "Solventa-web-Final", nodo 2001:1262). CA-W01-04.
 
-  Re-verificada contra el archivo correcto (confirmado con captura de pantalla vía
-  get_design_context, no solo con la metadata): una ronda anterior había reconstruido esta pantalla
-  citando 2vfK0e8t62OvvDk4c7QnK5 "Solventa-web" (nodo 10:23, el archivo equivocado) y, basada en esa
-  captura, había ELIMINADO contenido que sí existe en el archivo correcto: el ícono arrow_circle_right
-  en círculo ámbar, el encabezado "Oferta preliminar", la línea "Cobertura: $ 185.000.000", la nota
-  "Calculada con el último valor disponible en caché." y el desglose de score/plazo. Se restaura todo
-  eso ahora, respaldado por campos no-nulos del contrato (`cobertura: Monto!`, `desgloseScore:
-  [FactorScore!]!`, ver contrato/schema.graphql) — ningún dato mostrado es inventado.
-
-  Mismo criterio ya aplicado en OfertaCompleta.vue (pantalla hermana): el prototipo muestra "Score de
-  riesgo: 782/850 (preliminar)", pero el contrato no expone un score numérico único, solo el desglose
-  por factor — se muestra ese desglose real en vez de inventar un número. El plazo tampoco está en
-  `Oferta`, así que se toma de la captura del usuario (`SolicitudOfertaInput.plazoMeses`).
-
-  Título del header: el nodo real (2001:1314) usa un tratamiento más liviano y propio solo de esta
-  pantalla ("Solventa" + "Oferta preliminar" en 14px, sin divisor "|" ni los 22px bold del resto de
-  pantallas) — se mantiene el componente `HeaderPantalla` compartido (igual que las otras ~20
-  pantallas de este flujo, consistente con SG-01) en vez de construir un header de un solo uso,
-  simplemente corrigiendo el texto a "Oferta preliminar" (antes decía "Oferta — degradada", que no
-  está en ningún nodo).
-
-  "Continuar con oferta preliminar" se deja deshabilitado y anotado "(HU-W03, fuera de este sprint)",
-  igual que "Continuar a suscripción" en OfertaCompleta.vue — el Figma literal lo muestra como un
-  botón activo sin anotación, pero HU-W03 no existe todavía en este sprint, así que un botón "activo"
-  que no lleva a ningún lado sería peor que uno deshabilitado y explicado; mismo criterio ya aplicado
-  en la pantalla hermana.
+  - El prototipo muestra un score único ("782/850"); el contrato solo trae `desgloseScore`, y eso es lo
+    que se muestra. El plazo sale de la captura (`plazoMeses`), porque `Oferta` no lo trae.
+  - "Continuar con oferta preliminar" va deshabilitado: lleva a HU-W03, fuera de este sprint.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
-import { RUTA_INICIO, useSesion } from '../composables/useSesion'
+import { useSesion } from '../composables/useSesion'
 import { formatearMonto, formatearPorcentaje, formatearRangoMonto } from '../utils/formato'
 import { nombreFuente } from '../utils/nombres'
 
 const { estado, captura } = useCotizacion()
-const { estado: sesion } = useSesion()
+const { rutaInicio } = useSesion()
 const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : null))
 </script>
 
@@ -47,8 +23,11 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
   <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-03b">
     <HeaderPantalla titulo="Oferta preliminar" />
     <TituloPantalla class="sr-only">Oferta preliminar</TituloPantalla>
-    <MigasDePan seccion="Nueva cotización" :a-inicio="RUTA_INICIO[sesion.rol]" />
-    <main v-if="oferta && oferta.rangoPrima" class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-12">
+    <MigasDePan seccion="Nueva cotización" :a-inicio="rutaInicio()" />
+    <main
+      v-if="oferta && oferta.rangoPrima"
+      class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-12"
+    >
       <div class="flex w-full max-w-[560px] flex-col items-center gap-5 rounded-lg border border-borde bg-white p-6">
         <div class="w-full rounded-md border border-borde bg-alerta-fondo p-4">
           <p class="text-[13px] font-medium leading-[18px] text-alerta">
@@ -71,7 +50,11 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
           </p>
         </div>
         <div class="flex w-full flex-col gap-2 border-y border-borde py-4">
-          <div v-for="factor in oferta.desgloseScore" :key="factor.nombre" class="flex items-center justify-between px-1">
+          <div
+            v-for="factor in oferta.desgloseScore"
+            :key="factor.nombre"
+            class="flex items-center justify-between px-1"
+          >
             <span class="text-[13px] text-tinta-suave">{{ nombreFuente(factor.nombre) }}:</span>
             <span class="text-[13px] font-semibold text-tinta">{{ formatearPorcentaje(factor.peso) }} del score</span>
           </div>
@@ -82,14 +65,22 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         </div>
         <Boton disabled class="w-full">Continuar con oferta preliminar</Boton>
         <p class="-mt-3 text-center text-[11px] text-tinta-suave">(HU-W03, fuera de este sprint)</p>
-        <RouterLink to="/cotizacion/fuentes" class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline">
+        <RouterLink
+          to="/cotizacion/fuentes"
+          class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"
+        >
           Ver detalle de fuentes consultadas
         </RouterLink>
       </div>
     </main>
-    <main v-else class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center">
+    <main
+      v-else
+      class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center"
+    >
       <p class="text-[13px] text-tinta-suave">No hay una oferta preliminar activa en memoria todavía.</p>
-      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">Ir a la solicitud</RouterLink>
+      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline"
+        >Ir a la solicitud</RouterLink
+      >
     </main>
     <FooterPantalla />
   </div>

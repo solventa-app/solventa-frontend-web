@@ -1,30 +1,8 @@
 <!--
-  G-02b · Home del Operador de back-office (Figma yKWD8jrwERtJkuSj0mk0Gz "Solventa-web-Final", nodo
-  2001:794). Mismo tratamiento que G-02/G-02a (franja "Cerrar sesión" en vez de Barra de navegación,
-  SG-01: nunca las dos juntas en una pantalla "home").
+  G-02b · Home del Operador de back-office (Figma "Solventa-web-Final", nodo 2001:794).
 
-  Re-verificada contra el archivo correcto (una ronda anterior la había construido contra
-  2vfK0e8t62OvvDk4c7QnK5 "Solventa-web", el equivocado, aunque en los puntos más visibles —estructura
-  general, copy de las tarjetas, nota de pie— ya coincidía por casualidad con el archivo correcto):
-  - El título del header (nodo 2001:846) es "Home del Operador"; el H1 real y VISIBLE del cuerpo
-    (nodo 2001:806) es un texto distinto, "Home / Dashboard — Operador" — antes ambos mostraban el
-    mismo texto largo y el H1 estaba oculto (sr-only), duplicando contenido en vez de usar los dos
-    textos reales del mockup (mismo patrón ya aplicado en G-02/G-02a: el header nombra el portal, el
-    H1 es el texto visible del cuerpo).
-  - "Cerrar sesión" (nodo 2001:801) es peso normal, no negrita (`font-bold` era incorrecto).
-  - Las dos tarjetas de acceso llevan un ícono (nodos 2001:809/818) que antes no se mostraba; se usa
-    el mismo tratamiento de insignia circular (`bg-info-fondo` + ícono `assignment`) que ya usan las
-    tarjetas de G-02/G-02a, para mantener consistencia visual entre los 3 homes del proyecto (el nodo
-    de este frame específico muestra el ícono suelto de 24px sin círculo, pero se prioriza la
-    consistencia entre pantallas hermanas sobre una fidelidad pixel-perfect de un detalle menor).
-  - "Cerrar sesión" NO se movió a una franja de ancho completo fuera de `<main>` como en G-02/G-02a:
-    se verificó con get_metadata sobre el nodo 2001:794 que en el archivo correcto el Link "Cerrar
-    sesión" (2001:799) SÍ está anidado dentro de Main > Container (2001:797/798), a diferencia de
-    G-02/G-02a donde el mockup lo pone en una franja hermana del Header. Es una diferencia real y
-    deliberada del propio diseño para esta pantalla, no una inconsistencia a corregir. Lo que SÍ
-    era un bug real (ahora corregido) es que el control no llamaba a `cerrarSesion()`: era un
-    `RouterLink` directo a /login que dejaba el rol de sesión sin limpiar, a diferencia de
-    HomeCliente.vue/HomeAsesor.vue.
+  A diferencia de G-02/G-02a, "Cerrar sesión" va dentro del contenido (así está en el prototipo, nodo
+  2001:799). Las tarjetas usan la insignia circular de los otros homes por consistencia.
 -->
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
@@ -66,10 +44,7 @@ function alCerrarSesion() {
             pero no está en el alcance de este sprint (sin pantalla ni campo de contrato propio),
             así que la tarjeta se muestra fiel al mockup pero sin navegación real.
           -->
-          <div
-            class="flex w-full max-w-[272px] gap-3 rounded-md border border-borde bg-white p-5"
-            aria-disabled="true"
-          >
+          <div class="flex w-full max-w-[272px] gap-3 rounded-md border border-borde bg-white p-5" aria-disabled="true">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
               <IconoMaterial nombre="assignment" class="h-6 w-6 text-primario" />
             </span>

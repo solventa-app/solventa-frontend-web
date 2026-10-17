@@ -1,10 +1,9 @@
+import { visitarComo } from '../../support/sesion'
+
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
-// A diferencia de las demás pantallas de resultado de oferta, esta no exige una oferta previa en
-// memoria: `contactarAsesor` envía un ofertaId vacío cuando no hay oferta (ver la nota en
-// useCotizacion.contactarAsesor) y el mock no lo valida — por eso es alcanzable y funcional de
-// forma totalmente aislada, visitada en frío.
+// No exige una oferta previa: `contactarAsesor` envía un ofertaId vacío y el mock no lo valida.
 describe('W01-05 · Contactar a un asesor (pantalla aislada)', () => {
-  beforeEach(() => cy.visit('/cotizacion/asesor'))
+  beforeEach(() => visitarComo('CLIENTE', '/cotizacion/asesor'))
 
   it('muestra los 3 canales de contacto', () => {
     cy.get('[data-pantalla="W01-05"]').within(() => {

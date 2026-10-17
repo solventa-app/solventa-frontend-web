@@ -1,13 +1,21 @@
 # contrato/CHANGELOG.md
 
-## Pendiente de sincronizar (frontend adelantado, falta el PR gemelo del backend)
+## 2026-10-17 · Sincronizado con `solventa-backend` (KAN-207)
 
-- `Cobro.cliente: String!` y `Cobro.idTransaccion: String` — agregados para HU-W05
-  (pantalla W05-01, Conciliacion de pagos: el prototipo de alta fidelidad trae columnas
-  "Cliente" e "ID de transaccion" que el contrato no tenia). Cambio aditivo (ADR-06 regla 1),
-  no rompe nada existente.
-- Estado: PR del frontend (este repo, rama feature/HU-W05-conciliacion) hecho. Falta el PR
-  gemelo en `solventa-backend` (ADR-06 regla 2) que exponga estos dos campos de verdad; hasta
-  entonces `npm run contrato:sincronizar` sobreescribiria este cambio con el schema real del
-  backend (que todavia no los tiene). No correr `contrato:sincronizar` en esta rama hasta que
-  ese PR exista y estos dos campos ya esten en el schema real.
+- Llegan sesión y usuarios (HU-M02): `iniciarSesion`, `yo`, `Usuario`, `Sesion`, `RolUsuario`
+  (`CLIENTE`, `ASESOR`, `BACKOFFICE`). La web inicia sesión con `iniciarSesion` y envía el JWT en
+  `Authorization: Bearer`.
+- **Ruptura para W05:** `Cobro.cliente` pasa de `String!` (la copia adelantada del frontend) a
+  `ClienteCobro { id, nombre }`. `Cobro.idTransaccion` no existe en el backend. Las consultas de
+  `useConciliacion.ts` y los mocks se ajustaron.
+- Llegan además `crearCobro`, `Cobro.motivo` y `Cobro.intentos` y la gestión de usuarios, que la
+  web todavía no usa.
+
+## Pendiente de pedir al backend (cambios aditivos, ADR-06)
+
+- **Claim `nombre` en el JWT** que emite AUTH (`services/auth/app/sesiones.py`): el saludo de G-02
+  y G-02a debe mostrar el nombre del usuario autenticado. Mientras no llegue, la web muestra el
+  alias (`usuario`). Ojo: el nombre es dato personal cifrado en AUTH, así que el equipo de backend
+  decide si puede viajar en el token o si se expone en `yo`.
+- **`Cobro.idTransaccion: String`** para la columna "ID de transacción" de W05-01. Hasta entonces
+  la columna muestra "—".

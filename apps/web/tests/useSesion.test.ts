@@ -1,59 +1,105 @@
-// KAN-203: useSesion nunca tenía una prueba propia, solo se ejercitaba de rebote dentro de las
-// pruebas de las vistas (pantallas-w01.test.ts/pantallas-w05.test.ts). Cubre lo que de verdad
-// decide: a qué home vuelve "Inicio" por rol (RUTA_INICIO), el nombre por defecto que muestra cada
-// home al iniciar sesión, y que cerrarSesion siempre vuelve a CLIENTE (nunca deja al usuario
-// "atrapado" en un rol sin salida, ver nota del propio composable sobre el rol por defecto).
-import { afterEach, describe, expect, it } from 'vitest'
-import { RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { leerClaims, RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import { tokenDeDemo } from '../src/mocks/handlers'
+import { servidor } from '../src/mocks/node'
 
-// `estado` es un singleton a nivel de módulo (mismo patrón que useCotizacion/useConciliacion): se
-// resetea después de cada prueba para que una prueba no herede el rol que dejó la anterior.
+const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
+
+/** JWT sin firma con los claims dados (la firma la verifica el BFF, no el frontend). */
+function token(claims: Record<string, unknown>): string {
+  const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, '')
+  return `${b64({ alg: 'none' })}.${b64(claims)}.x`
+}
+
+beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {
+  servidor.resetHandlers()
   useSesion().cerrarSesion()
+})
+afterAll(() => servidor.close())
+
+describe('leerClaims', () => {
+  it('lee usuario, rol, exp y nombre del payload, incluidos caracteres con tilde', () => {
+    const claims = leerClaims(tokenDeDemo('andrés.duarte', 'CLIENTE'))
+    expect(claims).toMatchObject({ usuario: 'andrés.duarte', rol: 'CLIENTE', nombre: 'Andrés Duarte' })
+  })
+
+  it('rechaza un token mal formado o con un rol desconocido', () => {
+    expect(leerClaims('no-es-un-jwt')).toBeNull()
+    expect(leerClaims(token({ usuario: 'x', rol: 'OPERADOR', exp: 9999999999 }))).toBeNull()
+  })
 })
 
 describe('useSesion', () => {
-  it('arranca en CLIENTE por defecto (una pantalla de /cotizacion/* es navegable sin pasar por /login)', () => {
-    const { estado } = useSesion()
-    expect(estado.rol).toBe('CLIENTE')
-    expect(estado.nombre).toBeTruthy()
+  it('arranca sin sesión', () => {
+    const { estado, sesionActiva, rutaInicio } = useSesion()
+    expect(estado.token).toBeNull()
+    expect(sesionActiva()).toBe(false)
+    expect(rutaInicio()).toBe('/login')
   })
 
-  it('RUTA_INICIO mapea los 3 roles a su propio home (G-02/G-02a/G-02b)', () => {
-    expect(RUTA_INICIO).toEqual({
-      CLIENTE: '/inicio',
-      ASESOR: '/asesor',
-      OPERADOR: '/operador',
-    })
+  it('RUTA_INICIO mapea los 3 roles del backend a su home (G-02/G-02a/G-02b)', () => {
+    expect(RUTA_INICIO).toEqual({ CLIENTE: '/inicio', ASESOR: '/asesor', BACKOFFICE: '/operador' })
   })
 
-  it('iniciarSesion cambia el rol y el nombre a los del rol entrante', () => {
-    const { estado, iniciarSesion } = useSesion()
-    iniciarSesion('ASESOR')
+  it('iniciarSesion toma el rol y el nombre del JWT', async () => {
+    const { estado, iniciarSesion, sesionActiva, rutaInicio } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('asesor.pena', 'secreta123')).toBeNull()
     expect(estado.rol).toBe('ASESOR')
-    const nombreAsesor = estado.nombre
-    expect(nombreAsesor).toBeTruthy()
-
-    iniciarSesion('OPERADOR')
-    expect(estado.rol).toBe('OPERADOR')
-    // El nombre cambia junto con el rol: cada rol tiene su propio nombre por defecto, no se arrastra
-    // el del rol anterior.
-    expect(estado.nombre).not.toBe(nombreAsesor)
+    expect(estado.nombre).toBe('Asesor Pena')
+    expect(sesionActiva()).toBe(true)
+    expect(rutaInicio()).toBe('/asesor')
   })
 
-  it('cerrarSesion siempre vuelve a CLIENTE, sin importar desde qué rol se llame', () => {
-    const { estado, iniciarSesion, cerrarSesion } = useSesion()
-    iniciarSesion('OPERADOR')
-    expect(estado.rol).toBe('OPERADOR')
+  it('sin claim `nombre` (el backend aún no lo emite) muestra el alias', async () => {
+    const sinNombre = token({
+      sub: '1',
+      usuario: 'cliente.demo',
+      rol: 'CLIENTE',
+      exp: Math.floor(Date.now() / 1000) + 60,
+    })
+    const fetchSinNombre: typeof fetch = async () => Response.json({ data: { iniciarSesion: { token: sinNombre } } })
+    const { estado, iniciarSesion } = useSesion(fetchSinNombre)
+    expect(await iniciarSesion('cliente.demo', 'x')).toBeNull()
+    expect(estado.nombre).toBe('cliente.demo')
+  })
 
+  it('envía el token en Authorization en las peticiones siguientes', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'x')
+    let cabecera: string | null = null
+    const fetchQueCaptura: typeof fetch = async (url, init) => {
+      cabecera = new Headers(init?.headers).get('Authorization')
+      return fetchPrueba(url, init)
+    }
+    await useSesion(fetchQueCaptura).iniciarSesion('cliente.demo', 'x')
+    expect(cabecera).toMatch(/^Bearer ey/)
+  })
+
+  it('devuelve el mensaje genérico del BFF con credenciales incorrectas y no abre sesión', async () => {
+    const { iniciarSesion, sesionActiva } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('cliente.demo', 'clave-erronea')).toBe('Usuario o clave incorrectos.')
+    expect(sesionActiva()).toBe(false)
+  })
+
+  it('una falla técnica nunca llega como texto crudo (regla 5)', async () => {
+    const fetchCaido: typeof fetch = async () => new Response(null, { status: 500 })
+    const mensaje = await useSesion(fetchCaido).iniciarSesion('cliente.demo', 'x')
+    expect(mensaje).toBeTruthy()
+    expect(mensaje).not.toMatch(/500|BFF/)
+  })
+
+  it('un token vencido no cuenta como sesión activa', async () => {
+    const vencido = token({ sub: '1', usuario: 'cliente.demo', rol: 'CLIENTE', exp: Math.floor(Date.now() / 1000) - 1 })
+    const fetchVencido: typeof fetch = async () => Response.json({ data: { iniciarSesion: { token: vencido } } })
+    const { iniciarSesion, sesionActiva } = useSesion(fetchVencido)
+    await iniciarSesion('cliente.demo', 'x')
+    expect(sesionActiva()).toBe(false)
+  })
+
+  it('cerrarSesion borra token, rol y nombre', async () => {
+    const { estado, iniciarSesion, cerrarSesion } = useSesion(fetchPrueba)
+    await iniciarSesion('admin.solventa', 'x')
     cerrarSesion()
-    expect(estado.rol).toBe('CLIENTE')
-  })
-
-  it('el estado es compartido (singleton): dos llamadas a useSesion() ven el mismo cambio', () => {
-    const primera = useSesion()
-    const segunda = useSesion()
-    primera.iniciarSesion('ASESOR')
-    expect(segunda.estado.rol).toBe('ASESOR')
+    expect(estado).toMatchObject({ token: null, rol: null, nombre: '' })
   })
 })

@@ -12,7 +12,9 @@ const anio = new Date().getFullYear()
 </script>
 
 <template>
-  <footer class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-borde bg-white px-10 pb-5 pt-[21px] text-[11px] leading-[18px] text-tinta-suave">
+  <footer
+    class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-borde bg-white px-10 pb-5 pt-[21px] text-[11px] leading-[18px] text-tinta-suave"
+  >
     <p>© {{ anio }} Solventa Tecnologías S.A.S. Todos los derechos reservados.</p>
     <p class="flex flex-wrap items-center gap-2">
       <span class="flex items-center gap-1">
