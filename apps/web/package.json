@@ -27,7 +27,7 @@
   "devDependencies": {
     "@graphql-codegen/cli": "^7.4.5",
     "@graphql-codegen/typescript": "^6.1.0",
-    "@material-symbols/svg-400": "^0.47.6",
+    "@material-symbols/svg-400": "^0.48.0",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/test-utils": "^2.4.6",
     "graphql": "^16.10.0",
