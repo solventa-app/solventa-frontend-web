@@ -28,9 +28,12 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
       cy.contains('button', 'Consultar oferta').click()
     })
 
-    cy.location('pathname').should('eq', '/cotizacion/consulta')
-    cy.get('[data-pantalla="W01-02"]').should('exist')
-
+    // No se afirma que la ruta pase por /cotizacion/consulta (W01-02): esa pantalla "avanza
+    // automáticamente" y, contra los mocks (sin delay artificial), resuelve casi al instante, así
+    // que Cypress puede llegar a comprobarlo cuando la app ya navegó más allá (carrera perdida
+    // contra el propio mock, confirmado corriendo este spec de verdad). El estado de carga de
+    // W01-02 ya lo cubre, de forma determinista, la prueba de Vitest que retrasa la respuesta a
+    // propósito (pantallas-w01.test.ts); aquí solo se afirma el destino final del viaje completo.
     cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
     cy.get('[data-pantalla="W01-03a"]').within(() => {
       cy.contains('Tu oferta está lista').should('exist')
