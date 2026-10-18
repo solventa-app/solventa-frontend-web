@@ -12,7 +12,7 @@ async function arrancar() {
   // Hasta que el BFF real esté desplegado se trabaja con mocks (`npm run dev:mock`).
   if (import.meta.env.VITE_USE_MOCKS === 'true') {
     const { worker } = await import('./mocks/browser')
-    await worker.start({ onUnhandledRequest: 'bypass' })
+    await worker.start({ onUnhandledFrame: 'bypass' })
   }
   createApp(App).use(crearRouter()).mount('#app')
 }

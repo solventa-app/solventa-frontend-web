@@ -11,7 +11,7 @@ function token(claims: Record<string, unknown>): string {
   return `${b64({ alg: 'none' })}.${b64(claims)}.x`
 }
 
-beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => {
   servidor.resetHandlers()
   useSesion().cerrarSesion()
