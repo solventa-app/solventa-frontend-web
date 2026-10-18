@@ -15,8 +15,10 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
   `release`, `hotfix` y la reintegración, porque squashear ramas de larga vida rompe el vínculo con `develop`.
 - Ambas ramas están protegidas por ruleset (`.github/rulesets/main.json`, `develop.json`): PR obligatorio, 1
   aprobación (se descarta si hay push nuevo), hilos de revisión resueltos, checks `web`, `mobile`, `Título del
-  PR` y `Nombre de rama` en verde, historial lineal (solo `main`) y sin force-push ni borrado. Sin excepciones
-  de bypass. `main` solo acepta merge commit (`allowed_merge_methods: ["merge"]`); `develop`, squash o merge.
+  PR` y `Nombre de rama` en verde y sin force-push ni borrado. Sin excepciones de bypass. `main` solo acepta
+  merge commit (`allowed_merge_methods: ["merge"]`) y por eso **no** exige historial lineal: las dos reglas juntas
+  bloquean todo release (un merge commit rompe el historial lineal). Igual que en `solventa-backend`. `develop`,
+  squash o merge.
 - **Ramas con el patrón `tipo/KAN-N-descripcion`** (tipo `feat`, `fix` o `chore`) hacia `develop`; `fix|chore`
   hacia un `release/sprint-N`; `release/sprint-N` o `hotfix/KAN-N-descripcion` hacia `main`. Lo valida el check
   `Nombre de rama` (`pr-rama.yml`), que también exige la pareja origen→destino correcta: bloquea el merge, no
