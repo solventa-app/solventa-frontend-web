@@ -1,7 +1,7 @@
 name: E2E staging
 
 # Manual: corre Cypress contra una URL desplegada (staging se publica desde el main de solventa-backend / este repo).
-# SIN PROBAR: no se ha ejecutado nunca; revisarlo cuando exista staging.
+# Los specs ya se ejecutaron contra los mocks (docs/evidencias/FC-01-2026-10-18.md); este workflow aún no se ha corrido contra staging.
 on:
   workflow_dispatch:
     inputs:

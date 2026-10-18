@@ -22,3 +22,5 @@ Cada pantalla lleva `data-pantalla="<id>"` en su raíz (Vitest y Cypress la usan
 Este segundo nivel es **adicional** al primero, no lo reemplaza: ambos se mantienen y se ejecutan juntos (`npm run correr` corre todos los specs de `cypress/e2e/**`).
 
 Registro de evidencia de FC-01 (HU-W01): ver [`../docs/evidencias/FC-01-2026-10-18.md`](../docs/evidencias/FC-01-2026-10-18.md).
+
+**Si Cypress no arranca** con `bad option: --no-sandbox` (pasa al lanzarlo desde la terminal de VS Code o de otra app Electron), ejecuta `unset ELECTRON_RUN_AS_NODE` antes de `npm run correr`.

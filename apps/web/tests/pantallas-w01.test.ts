@@ -560,7 +560,7 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
 
     expect(router.currentRoute.value.path).toBe('/asesor')
     expect(useSesion().estado.rol).toBe('ASESOR')
-    // El nombre sale del token, no de un valor fijo del frontend.
+    // El nombre sale de Usuario.nombre (no del token ni de un valor fijo del frontend).
     expect(useSesion().estado.nombre).toBe('Asesor Demo')
   })
 

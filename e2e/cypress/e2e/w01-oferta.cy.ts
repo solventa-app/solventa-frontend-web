@@ -75,43 +75,55 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
     })
   })
 
-  it('W01-01 valida valores límite (documento <6 y =6 dígitos, plazo 0/1/360/361, valor 0 y dirección vacía)', () => {
-    cy.contains('a', 'Nueva cotización').click()
-    cy.location('pathname').should('eq', '/cotizacion')
-
-    cy.get('[data-pantalla="W01-01"]').within(() => {
-      const inputDoc = () => cy.contains('label', 'Documento de identidad').parent().find('input')
-      const inputMonto = () => cy.contains('label', 'Monto del crédito hipotecario').parent().find('input')
-      const inputPlazo = () => cy.contains('label', 'Plazo (meses)').parent().find('input')
-      const inputDireccion = () => cy.contains('label', 'Dirección del inmueble a asegurar').parent().find('input')
-
-      // Límite inválido: documento de 5 dígitos (< 6), monto 0, plazo 0 y dirección vacía
-      inputDoc().clear().type('12345')
-      inputMonto().clear().type('0')
-      inputPlazo().clear().type('0')
-      inputDireccion().clear()
+  describe('W01-01 · valores límite (FC-01)', () => {
+    const campo = (etiqueta: string) => cy.contains('label', etiqueta).parent().find('input')
+    const llenar = (datos: { documento: string; monto: string; plazo: string; direccion: string }) => {
+      campo('Documento de identidad').clear()
+      if (datos.documento) campo('Documento de identidad').type(datos.documento)
+      campo('Monto del crédito hipotecario').clear()
+      if (datos.monto) campo('Monto del crédito hipotecario').type(datos.monto)
+      campo('Plazo (meses)').clear()
+      if (datos.plazo) campo('Plazo (meses)').type(datos.plazo)
+      campo('Dirección del inmueble a asegurar').clear()
+      if (datos.direccion) campo('Dirección del inmueble a asegurar').type(datos.direccion)
       cy.get('input[type="checkbox"]').check()
-      cy.contains('button', 'Consultar oferta').click()
+    }
+    const valido = { documento: '123456', monto: '185000000', plazo: '180', direccion: 'Cra 45 # 22-18, Bogotá D.C.' }
 
-      cy.contains('[role="alert"]', 'Ingresa un número de documento válido').should('exist')
-      cy.contains('[role="alert"]', 'Ingresa un monto válido, mayor a cero.').should('exist')
-      cy.contains('[role="alert"]', 'Ingresa un plazo válido en meses, mayor a cero.').should('exist')
-      cy.contains('[role="alert"]', 'Ingresa la dirección del inmueble a asegurar.').should('exist')
-
-      // Límite superior fuera de rango en plazo (361 meses)
-      inputDoc().clear().type('123456')
-      inputMonto().clear().type('185000000')
-      inputPlazo().clear().type('361')
-      inputDireccion().clear().type('Cra 45 # 22-18, Bogotá D.C.')
-      cy.contains('button', 'Consultar oferta').click()
-      cy.contains('[role="alert"]', 'Ingresa un plazo válido en meses, mayor a cero.').should('exist')
-
-      // Límite válido: documento de exactamente 6 dígitos y plazo 1 mes (y 360 meses)
-      inputPlazo().clear().type('360')
-      inputPlazo().clear().type('1')
-      cy.contains('button', 'Consultar oferta').click()
+    beforeEach(() => {
+      cy.contains('a', 'Nueva cotización').click()
+      cy.location('pathname').should('eq', '/cotizacion')
     })
 
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
+    it('rechaza documento de 5 dígitos, monto 0, plazo 0 y dirección vacía, sin salir de W01-01', () => {
+      cy.get('[data-pantalla="W01-01"]').within(() => {
+        llenar({ documento: '12345', monto: '0', plazo: '0', direccion: '' })
+        cy.contains('button', 'Consultar oferta').click()
+        cy.contains('[role="alert"]', 'Ingresa un número de documento válido').should('exist')
+        cy.contains('[role="alert"]', 'Ingresa un monto válido, mayor a cero.').should('exist')
+        cy.contains('[role="alert"]', 'Ingresa un plazo válido en meses, mayor a cero.').should('exist')
+        cy.contains('[role="alert"]', 'Ingresa la dirección del inmueble a asegurar.').should('exist')
+      })
+      cy.location('pathname').should('eq', '/cotizacion')
+    })
+
+    it('rechaza un plazo de 361 meses', () => {
+      cy.get('[data-pantalla="W01-01"]').within(() => {
+        llenar({ ...valido, plazo: '361' })
+        cy.contains('button', 'Consultar oferta').click()
+        cy.contains('[role="alert"]', 'Ingresa un plazo válido en meses').should('exist')
+      })
+      cy.location('pathname').should('eq', '/cotizacion')
+    })
+
+    for (const plazo of ['1', '360']) {
+      it(`acepta documento de 6 dígitos con plazo de ${plazo} mes(es) y llega a la oferta`, () => {
+        cy.get('[data-pantalla="W01-01"]').within(() => {
+          llenar({ ...valido, plazo })
+          cy.contains('button', 'Consultar oferta').click()
+        })
+        cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
+      })
+    }
   })
 })
