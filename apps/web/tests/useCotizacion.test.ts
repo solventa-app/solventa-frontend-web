@@ -123,7 +123,7 @@ describe('useCotizacion', () => {
     expect(cotizacion.estado.contacto).toBeNull()
   })
 
-  it('pide al BFF todos los campos del consentimiento que muestran las pantallas', async () => {
+  it('pide al BFF todos los campos del consentimiento que muestran las pantallas y envía titular/canal', async () => {
     // A diferencia de MSW, el BFF real solo devuelve los campos pedidos. Este handler ejecuta la
     // consulta contra el contrato (contrato/schema.graphql), igual que el BFF: si la mutación no
     // pide `otorgadoEn`, la pantalla W01-04 (DetalleDeFuentes.vue) no tendría fecha que mostrar.
@@ -134,11 +134,15 @@ describe('useCotizacion', () => {
       versionTexto: 'v1',
       otorgadoEn: '2026-10-17T12:00:00+00:00',
       revocadoEn: null,
+      venceEn: '2026-11-16T12:00:00+00:00',
       vigente: true,
+      estado: 'VIGENTE',
     }
+    let variablesRecibidas: Record<string, unknown> | null = null
     servidor.use(
       http.post('*/graphql/web', async ({ request }) => {
         const { query, variables } = (await request.json()) as { query: string; variables: Record<string, unknown> }
+        variablesRecibidas = variables
         const resultado = await graphql({
           schema: esquema,
           source: query,
@@ -149,10 +153,58 @@ describe('useCotizacion', () => {
       }),
     )
     const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.captura.documentoIdentidad = '1020304050'
 
     const recibido = await cotizacion.registrarConsentimiento()
 
     expect(recibido).toEqual(completo)
     expect(cotizacion.estado.consentimiento?.otorgadoEn).toBe('2026-10-17T12:00:00+00:00')
+    expect(variablesRecibidas).toEqual({
+      entrada: {
+        finalidad: 'perfilamiento',
+        versionTexto: 'v1',
+        documentoIdentidad: '1020304050',
+        tipoDato: 'FINANCIEROS_Y_ABIERTOS',
+        fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
+        canal: 'WEB',
+      },
+    })
+  })
+
+  it('cuando solicitarOferta responde CONSENTIMIENTO_NO_VIGENTE, descarta el consentimiento y desmarca el checkbox', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    llenarCaptura(cotizacion, '1020304998')
+    cotizacion.estado.consentimientoId = 'con-vencido'
+
+    await cotizacion.solicitarOferta()
+
+    expect(cotizacion.estado.consentimientoId).toBeNull()
+    expect(cotizacion.estado.consentimiento).toBeNull()
+    expect(cotizacion.captura.consentimiento).toBe(false)
+    expect(esErrorOferta(cotizacion.estado.resultado)).toBe(true)
+    if (esErrorOferta(cotizacion.estado.resultado)) {
+      expect(cotizacion.estado.resultado.motivo).toBe('CONSENTIMIENTO_NO_VIGENTE')
+      expect(cotizacion.estado.resultado.puedeReintentar).toBe(false)
+      expect(cotizacion.estado.resultado.mensaje).toBe(
+        'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',
+      )
+    }
+  })
+
+  it('un 502, 503 o 504 del API Gateway se guarda como ErrorOferta reintentable con mensaje amigable (Bloque 10)', async () => {
+    for (const codigo of [502, 503, 504]) {
+      servidor.use(http.post('http://localhost/graphql/web', () => new HttpResponse(null, { status: codigo })))
+
+      const cotizacion = useCotizacion(fetchPrueba)
+      llenarCaptura(cotizacion, '1020304050')
+      await cotizacion.solicitarOferta()
+
+      expect(esErrorOferta(cotizacion.estado.resultado)).toBe(true)
+      if (esErrorOferta(cotizacion.estado.resultado)) {
+        expect(cotizacion.estado.resultado.puedeReintentar).toBe(true)
+        expect(cotizacion.estado.resultado.mensaje).toBe('El servicio tardó más de lo esperado. Intenta nuevamente.')
+        expect(cotizacion.estado.resultado.mensaje).not.toMatch(/502|503|504|BFF/)
+      }
+    }
   })
 })

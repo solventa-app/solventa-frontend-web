@@ -23,9 +23,18 @@ jobs:
           browser: chrome
         env:
           CYPRESS_BASE_URL: ${{ inputs.base_url }}
+          CYPRESS_USUARIO_CLIENTE: ${{ secrets.CYPRESS_USUARIO_CLIENTE }}
+          CYPRESS_CLAVE_CLIENTE: ${{ secrets.CYPRESS_CLAVE_CLIENTE }}
+          CYPRESS_USUARIO_ASESOR: ${{ secrets.CYPRESS_USUARIO_ASESOR }}
+          CYPRESS_CLAVE_ASESOR: ${{ secrets.CYPRESS_CLAVE_ASESOR }}
+          CYPRESS_USUARIO_BACKOFFICE: ${{ secrets.CYPRESS_USUARIO_BACKOFFICE }}
+          CYPRESS_CLAVE_BACKOFFICE: ${{ secrets.CYPRESS_CLAVE_BACKOFFICE }}
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: cypress-capturas
-          path: e2e/cypress/screenshots
+          name: cypress-evidencia
+          path: |
+            e2e/cypress/screenshots
+            e2e/cypress/videos
+            e2e/cypress/results
           if-no-files-found: ignore

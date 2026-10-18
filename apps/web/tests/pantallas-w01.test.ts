@@ -273,6 +273,32 @@ describe('ConsultandoFuentes (W01-02)', () => {
     await esperarRuta(router, '/cotizacion/oferta')
     expect(router.currentRoute.value.path).toBe('/cotizacion/oferta')
   })
+
+  it('vuelve a /cotizacion con el checkbox desmarcado y aviso de re-autorización si el consentimiento no está vigente', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    cotizacion.captura.documentoIdentidad = '1020304998'
+    cotizacion.captura.valorCredito = '185000000'
+    cotizacion.captura.plazoMeses = '180'
+    cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18'
+    cotizacion.captura.consentimiento = true
+
+    const router = crearRouterDePrueba()
+    router.push('/cotizacion/consulta')
+    await router.isReady()
+
+    montar(ConsultandoFuentes, router)
+    await esperarRuta(router, '/cotizacion')
+
+    expect(router.currentRoute.value.path).toBe('/cotizacion')
+    expect(cotizacion.captura.consentimiento).toBe(false)
+    expect(cotizacion.estado.consentimientoId).toBeNull()
+
+    const solicitud = montar(SolicitudYConsentimiento, router)
+    expect(solicitud.get('[role="alert"]').text()).toBe(
+      'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',
+    )
+  })
 })
 
 describe('Pantallas de resultado de oferta', () => {

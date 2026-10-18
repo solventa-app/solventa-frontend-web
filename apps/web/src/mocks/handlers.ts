@@ -49,6 +49,8 @@ const fuentes = (degradada: boolean): FuenteConsultada[] => [
   },
 ]
 
+const enTreintaDias = () => new Date(Date.now() + 30 * 86_400_000).toISOString()
+
 const oferta = (tipo: Oferta['tipo']): Oferta => ({
   id: `oferta-${tipo.toLowerCase()}`,
   tipo,
@@ -66,6 +68,11 @@ const oferta = (tipo: Oferta['tipo']): Oferta => ({
     { nombre: 'antecedentes-judiciales', peso: 0.15 },
   ],
   fuentes: fuentes(tipo === 'PRELIMINAR'),
+  perfilRiesgo: {
+    score: tipo === 'PRELIMINAR' ? 680 : 780,
+    nivelRiesgo: tipo === 'PRELIMINAR' ? 'MEDIO' : 'BAJO',
+    fechaVigencia: enTreintaDias(),
+  },
 })
 
 const consentimiento = (revocado: boolean): Consentimiento => ({
@@ -74,7 +81,9 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   versionTexto: 'v1',
   otorgadoEn: ahora(),
   revocadoEn: revocado ? ahora() : null,
+  venceEn: enTreintaDias(),
   vigente: !revocado,
+  estado: revocado ? 'REVOCADO' : 'VIGENTE',
 })
 
 // 4 cobros (HU-W05), uno por cada EstadoCobro, con los nombres, montos y fechas del frame W05-01 de
@@ -203,15 +212,23 @@ export const handlers = [
   bff.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
     'solicitarOferta',
     ({ variables }) => {
-      const documento = variables.entrada.documentoIdentidad
-      const resultado: ResultadoOferta = documento.endsWith('000')
-        ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
-          {
-            mensaje:
-              'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
-            puedeReintentar: true,
-          }
-        : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
+      const { consentimientoId, documentoIdentidad: documento } = variables.entrada
+      const resultado: ResultadoOferta =
+        consentimientoId === 'con-vencido' || documento.endsWith('998')
+          ? {
+              mensaje: 'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',
+              puedeReintentar: false,
+              motivo: 'CONSENTIMIENTO_NO_VIGENTE',
+            }
+          : documento.endsWith('000')
+            ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
+              {
+                mensaje:
+                  'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
+                puedeReintentar: true,
+                motivo: 'DATOS_INSUFICIENTES',
+              }
+            : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
     },
   ),

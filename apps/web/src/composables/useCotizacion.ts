@@ -2,7 +2,7 @@
 // pantallas de `/cotizacion/*` compartan captura, consentimiento y resultado. Vive solo en memoria
 // (regla 7) y se pierde al recargar.
 import { reactive } from 'vue'
-import { ejecutar } from '../graphql/cliente'
+import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type {
   CanalContacto,
   ConfirmacionContacto,
@@ -60,7 +60,9 @@ const MUTACION_REGISTRAR_CONSENTIMIENTO = `
       versionTexto
       otorgadoEn
       revocadoEn
+      venceEn
       vigente
+      estado
     }
   }
 `
@@ -76,10 +78,12 @@ const MUTACION_SOLICITAR_OFERTA = `
         cobertura { valor moneda }
         desgloseScore { nombre peso }
         fuentes { id nombre origen estado capturadoEn }
+        perfilRiesgo { score nivelRiesgo fechaVigencia }
       }
       ... on ErrorOferta {
         mensaje
         puedeReintentar
+        motivo
       }
     }
   }
@@ -103,7 +107,16 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
   async function registrarConsentimiento(): Promise<Consentimiento> {
     const datos = await ejecutar<{ registrarConsentimiento: Consentimiento }>(
       MUTACION_REGISTRAR_CONSENTIMIENTO,
-      { entrada: { finalidad: 'perfilamiento', versionTexto: 'v1' } },
+      {
+        entrada: {
+          finalidad: 'perfilamiento',
+          versionTexto: 'v1',
+          documentoIdentidad: estado.captura.documentoIdentidad,
+          tipoDato: 'FINANCIEROS_Y_ABIERTOS',
+          fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
+          canal: 'WEB',
+        },
+      },
       fetchFn,
     )
     estado.consentimientoId = datos.registrarConsentimiento.id
@@ -133,12 +146,29 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         },
         fetchFn,
       )
-      estado.resultado = datos.solicitarOferta
-    } catch {
-      // Falla técnica o de red: se convierte en un ErrorOferta con mensaje seguro (regla 5), así
-      // W01-02 y W01-03c la muestran por el mismo camino que un error de negocio.
+      const resultado = datos.solicitarOferta
+      if (esErrorOferta(resultado) && resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE') {
+        estado.consentimientoId = null
+        estado.consentimiento = null
+        estado.captura.consentimiento = false
+        estado.resultado = {
+          mensaje: 'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',
+          puedeReintentar: false,
+          motivo: 'CONSENTIMIENTO_NO_VIGENTE',
+        }
+      } else {
+        estado.resultado = resultado
+      }
+    } catch (error) {
+      // Falla técnica o de red (incluyendo 502/503/504 del gateway): se convierte en un ErrorOferta
+      // con mensaje seguro (regla 5), así W01-02 y W01-03c la muestran por el mismo camino que un
+      // error de negocio.
+      const mensajeGateway =
+        error instanceof ErrorGraphQL && error.message === 'El servicio tardó más de lo esperado. Intenta nuevamente.'
+          ? error.message
+          : 'No pudimos completar tu consulta. Intenta nuevamente o habla con un asesor.'
       estado.resultado = {
-        mensaje: 'No pudimos completar tu consulta. Intenta nuevamente o habla con un asesor.',
+        mensaje: mensajeGateway,
         puedeReintentar: true,
       }
     } finally {

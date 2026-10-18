@@ -15,11 +15,11 @@ Catálogo en `apps/web/src/router/pantallas.ts` (fuente de verdad de rutas; una 
 | G-02 | `/inicio` | Tarjeta "Nueva cotización" y cerrar sesión | — |
 | G-02a | `/asesor` | Tarjeta "Nueva cotización para un cliente" (mismo formulario y flujo que el cliente) | CA-W01-11 |
 | G-02b | `/operador` | Tarjetas "Siniestros" y "Conciliación de pagos" | CA-W05-01 |
-| W01-01 | `/cotizacion` | Documento de identidad, datos del crédito, dirección del inmueble, checkbox Habeas Data / Open Finance-Open Data; **botón deshabilitado hasta consentir** | CA-W01-01/02/08 |
+| W01-01 | `/cotizacion` | Documento de identidad, datos del crédito, dirección del inmueble, checkbox Habeas Data / Open Finance-Open Data; **botón deshabilitado hasta consentir**. Envía titular (`documentoIdentidad`), `tipoDato`, `fuenteDatos` y `canal = WEB`; el consentimiento vence a los 30 días (`venceEn`) y, si está vencido o revocado (`CONSENTIMIENTO_NO_VIGENTE`), vuelve aquí con el checkbox desmarcado y aviso de re-autorización | CA-W01-01/02/08 |
 | W01-02 | `/cotizacion/consulta` | Spinner y barra indeterminada mientras se consultan las fuentes | CA-W01-02 |
 | W01-03a | `/cotizacion/oferta` | Prima, cobertura, desglose del score; continuar a suscripción o ver fuentes | CA-W01-03 |
 | W01-03b | `/cotizacion/oferta-preliminar` | Banner "oferta preliminar", prima estimada (rango) | CA-W01-04 |
-| W01-03c | `/cotizacion/error` | Mensaje de error, reintentar y hablar con un asesor. **Nunca un error 5xx crudo** | CA-W01-05 |
+| W01-03c | `/cotizacion/error` | Mensaje de error, reintentar y hablar con un asesor. **Nunca un error 5xx crudo** (incluidos `502`/`503`/`504` del API Gateway, que se muestran como error reintentable) | CA-W01-05 |
 | W01-04 | `/cotizacion/fuentes` | 5 filas (2 Open Finance + 3 Open Data) con badge de estado y fecha si es de caché | CA-W01-06 |
 | W01-05 | `/cotizacion/asesor` | 3 canales (llamar / chatear / agendar) y confirmación con resumen del trámite | CA-W01-07 |
 | W05-01 | `/operador/conciliacion` | Tabla por póliza (cobrando / cobrado / rechazado / pendiente), reintentar cobro con aviso | CA-W05-01/02 |

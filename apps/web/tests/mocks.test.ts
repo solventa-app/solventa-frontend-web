@@ -41,4 +41,18 @@ describe('mocks del BFF', () => {
     const r = await ejecutar<{ solicitarOferta: { puedeReintentar: boolean } }>(SOLICITAR, entrada('000'), fetchPrueba)
     expect(r.solicitarOferta.puedeReintentar).toBe(true)
   })
+
+  it('devuelve ErrorOferta por consentimiento no vigente cuando termina en 998', async () => {
+    const r = await ejecutar<{ solicitarOferta: { puedeReintentar: boolean } }>(SOLICITAR, entrada('998'), fetchPrueba)
+    expect(r.solicitarOferta.puedeReintentar).toBe(false)
+  })
+
+  it('cliente GraphQL lanza ErrorGraphQL con mensaje amigable de reintento ante HTTP 502, 503 o 504', async () => {
+    for (const status of [502, 503, 504]) {
+      const fetchGateway: typeof fetch = async () => new Response(null, { status })
+      await expect(ejecutar(SOLICITAR, entrada('123'), fetchGateway)).rejects.toThrow(
+        'El servicio tardó más de lo esperado. Intenta nuevamente.',
+      )
+    }
+  })
 })

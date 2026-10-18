@@ -9,16 +9,22 @@
   - "Inicio" vuelve al home del rol de la sesión: Cliente y Asesor comparten esta pantalla.
 -->
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
-import { useCotizacion } from '../composables/useCotizacion'
+import { esErrorOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 
 const router = useRouter()
-const { captura } = useCotizacion()
+const { estado, captura } = useCotizacion()
 const { rutaInicio } = useSesion()
+
+const avisoConsentimiento = computed(() =>
+  esErrorOferta(estado.resultado) && estado.resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE'
+    ? estado.resultado.mensaje
+    : null,
+)
 
 const errores = reactive<Record<string, string>>({})
 const intentoEnvio = ref(false)
@@ -36,7 +42,7 @@ function validar(): boolean {
     nuevosErrores.valorCredito = 'Ingresa un monto válido, mayor a cero.'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo <= 0) {
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 360) {
     nuevosErrores.plazoMeses = 'Ingresa un plazo válido en meses, mayor a cero.'
   }
   if (!captura.direccionInmueble.trim()) {
@@ -114,6 +120,13 @@ function simular(sufijo: '999' | '000') {
           />
 
           <div class="flex flex-col gap-2 pt-2">
+            <p
+              v-if="avisoConsentimiento"
+              role="alert"
+              class="rounded-md border border-error bg-error-fondo px-3 py-2 text-[12px] leading-[16px] text-error"
+            >
+              {{ avisoConsentimiento }}
+            </p>
             <label class="flex items-start gap-2">
               <input
                 v-model="captura.consentimiento"

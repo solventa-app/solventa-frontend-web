@@ -4,17 +4,30 @@ Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proye
 
 Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-frontend.md). Convenciones: [`docs/convenciones.md`](docs/convenciones.md).
 
-## Estado (2026-10-17)
+## Estado (2026-10-18)
 
-- Sprint 1 (12–25 de octubre de 2026): las 12 pantallas de HU-W01 y HU-W05 están construidas (`src/views/`) e
-  integradas con el BFF real (KAN-24). Siguen funcionando con mocks (`dev:mock`).
+- Sprint 1 (12–25 de octubre de 2026): las 12 pantallas de HU-W01 y HU-W05 están construidas (`src/views/`),
+  integradas con el BFF/gateway real y sincronizadas con el **contrato v0.8** (KAN-24). Siguen funcionando con mocks (`dev:mock`).
+- **Bloque 4 (consentimiento ligado al titular y vencimiento):** `useCotizacion.ts` envía `documentoIdentidad`,
+  `tipoDato = FINANCIEROS_Y_ABIERTOS`, `fuenteDatos = OPEN_FINANCE_OPEN_DATA` y `canal = WEB` en `registrarConsentimiento`,
+  y pide `venceEn` / `estado`. Si `solicitarOferta` responde `ErrorOferta` con `motivo = CONSENTIMIENTO_NO_VIGENTE`,
+  descarta `consentimientoId`, desmarca el checkbox y `W01-02` regresa a `W01-01` (`/cotizacion`) mostrando el aviso
+  de re-autorización.
+- **Bloque 6 (seguridad en CI):** `.github/workflows/ci-web.yml` ejecuta `npm audit --audit-level=high` informativo
+  (`continue-on-error: true`) en el job `web` y análisis con SonarCloud en el job `sonar`.
+- **Bloque 7 (pruebas FC-01 de W01):** `e2e/cypress/e2e/w01-oferta.cy.ts` incluye pruebas de valores límite en W01-01
+  (documento `<6` y `=6` dígitos, plazo `0/1/360/361`, monto `0`, dirección vacía); `.github/workflows/e2e-staging.yml`
+  inyecta las credenciales de staging por rol desde secretos y sube siempre el artefacto `cypress-evidencia`
+  (`if: always()`). Evidencia documentada en `docs/evidencias/FC-01-2026-10-18.md`.
+- **Bloque 10 (API Gateway delante del BFF):** `src/graphql/cliente.ts` traduce HTTP `502`, `503` y `504` del gateway
+  en `ErrorGraphQL` reintentable con mensaje amigable (`'El servicio tardó más de lo esperado. Intenta nuevamente.'`),
+  sin exponer códigos 5xx en `useCotizacion`, `useConciliacion` ni `useSesion`. `apps/web/.env.example`, `vite.config.ts`
+  y `README.md` apuntan por defecto al gateway Envoy local (`http://localhost:8080`) y `apps/web/vercel.json` reescribe
+  `/graphql/:path*` al gateway de staging.
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
-- Pendiente con el backend (`contrato/CHANGELOG.md`): el claim `nombre` en el JWT (hoy se muestra el alias) y
-  `Cobro.idTransaccion`.
-- Calidad: typecheck, ESLint, Prettier, Vitest y `vite build` en el CI. Cypress (`e2e/`) tiene specs por historia y
-  por pantalla, **todavía sin ejecutar** contra un navegador.
+- Calidad: typecheck, ESLint, Prettier, Vitest, `vite build` y `npm audit` informativo en el CI.
 - D-F1 cerrada: componentes propios en `src/components/ui/` y Twind para los estilos (`docs/plan-frontend.md`).
 - La app móvil se construye en otro repositorio.
 - GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git).
