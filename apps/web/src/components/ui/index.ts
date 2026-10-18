@@ -1,0 +1,15 @@
+// Barril de la librería de componentes (resuelve D-F1). Importar desde aquí, p. ej.
+// `import { Boton, CampoFormulario } from '@/components/ui'` (o la ruta relativa equivalente).
+export { default as AvatarPerfil } from './AvatarPerfil.vue'
+export { default as Badge } from './Badge.vue'
+export { default as BarraDeCerrarSesion } from './BarraDeCerrarSesion.vue'
+export { default as Boton } from './Boton.vue'
+export { default as CampoFormulario } from './CampoFormulario.vue'
+export { default as Chip } from './Chip.vue'
+export { default as Divisor } from './Divisor.vue'
+export { default as FooterPantalla } from './FooterPantalla.vue'
+export { default as HeaderPantalla } from './HeaderPantalla.vue'
+export { default as MigasDePan } from './MigasDePan.vue'
+export { default as SelectorIdioma } from './SelectorIdioma.vue'
+export { default as SelectorMoneda } from './SelectorMoneda.vue'
+export { default as TituloPantalla } from './TituloPantalla.vue'

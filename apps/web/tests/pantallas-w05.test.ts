@@ -1,0 +1,247 @@
+import { http, HttpResponse } from 'msw'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { createMemoryHistory, createRouter, type Router } from 'vue-router'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import HomeOperador from '../src/views/HomeOperador.vue'
+import ConciliacionDePagos from '../src/views/ConciliacionDePagos.vue'
+import { useSesion } from '../src/composables/useSesion'
+import { restablecerCobrosDePrueba } from '../src/mocks/handlers'
+import { servidor } from '../src/mocks/node'
+
+const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
+
+function crearRouterDePrueba(): Router {
+  return createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/login', component: { template: '<div data-pantalla="G-01" />' } },
+      { path: '/operador', component: HomeOperador },
+      { path: '/operador/conciliacion', component: ConciliacionDePagos },
+    ],
+  })
+}
+
+// Se desmontan todos los wrappers entre pruebas: useConciliacion usa un objeto reactive()
+// singleton a nivel de módulo (mismo patrón que useCotizacion en HU-W01), y un wrapper sin
+// desmontar de una prueba anterior se vuelve a renderizar cuando otra prueba muta ese estado
+// compartido, lo que puede lanzar excepciones no capturadas.
+const wrappers: VueWrapper[] = []
+function montar(...args: Parameters<typeof mount>) {
+  const w = mount(...args) as VueWrapper
+  wrappers.push(w)
+  return w
+}
+
+describe('HU-W05 · pantallas', () => {
+  beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
+  afterEach(() => {
+    wrappers.forEach((w) => w.unmount())
+    wrappers.length = 0
+    servidor.resetHandlers()
+  })
+  afterAll(() => servidor.close())
+
+  describe('G-02b · Home del Operador', () => {
+    it('marca la pantalla y la tarjeta de Siniestros no es un enlace (sin ruta en el Sprint 1)', async () => {
+      const router = crearRouterDePrueba()
+      router.push('/operador')
+      await router.isReady()
+      const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
+
+      expect(wrapper.find('[data-pantalla="G-02b"]').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Siniestros')
+      expect(wrapper.findAll('a').some((a) => a.text().includes('Siniestros'))).toBe(false)
+    })
+
+    it('tiene exactamente un <h1>', async () => {
+      const router = crearRouterDePrueba()
+      router.push('/operador')
+      await router.isReady()
+      const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+    })
+
+    it('la tarjeta de Conciliación de pagos navega a /operador/conciliacion', async () => {
+      const router = crearRouterDePrueba()
+      router.push('/operador')
+      await router.isReady()
+      const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
+
+      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Conciliación de pagos'))
+      expect(enlace).toBeDefined()
+      await enlace!.trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/operador/conciliacion')
+    })
+
+    it('"Cerrar sesión" borra el token y el rol, y navega a /login', async () => {
+      const router = crearRouterDePrueba()
+      const { iniciarSesion, estado } = useSesion(fetchPrueba)
+      await iniciarSesion('admin.solventa', 'secreta123')
+      expect(estado.rol).toBe('BACKOFFICE')
+      router.push('/operador')
+      await router.isReady()
+      const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
+
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Cerrar sesión'))
+      expect(boton).toBeDefined()
+      await boton!.trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/login')
+      expect(estado.rol).toBeNull()
+      expect(estado.token).toBeNull()
+    })
+  })
+
+  describe('W05-01 · Conciliación de pagos', () => {
+    // reintentarCobro muta el arreglo `cobros` del mock en el sitio (a propósito, para que el
+    // reintento persista entre pantallas en una demo real): hay que reiniciarlo antes de cada
+    // prueba para que una prueba no arrastre el estado que dejó la anterior.
+    beforeEach(() => restablecerCobrosDePrueba())
+
+    async function montarConciliacion() {
+      const router = crearRouterDePrueba()
+      router.push('/operador/conciliacion')
+      await router.isReady()
+      const wrapper = montar(ConciliacionDePagos, { global: { plugins: [router] } })
+      await flushPromises()
+      // Con MSW 3 la respuesta del mock llega un poco después de un flushPromises(): se espera a los datos.
+      await vi.waitFor(() => expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0))
+      return { wrapper, router }
+    }
+
+    it('marca la pantalla, tiene exactamente un <h1> y carga los 4 cobros del mock', async () => {
+      const { wrapper } = await montarConciliacion()
+      expect(wrapper.find('[data-pantalla="W05-01"]').exists()).toBe(true)
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+      expect(wrapper.findAll('tbody tr')).toHaveLength(4)
+    })
+
+    // Columnas literales del frame de Figma (nodo 2001:3156).
+    it('trae las columnas del prototipo y el nombre del cliente desde Cobro.cliente', async () => {
+      const { wrapper } = await montarConciliacion()
+      const encabezados = wrapper.findAll('th').map((th) => th.text())
+      expect(encabezados).toEqual([
+        'Cliente',
+        'N.º de póliza',
+        'Prima',
+        'Estado',
+        'Fecha del intento',
+        'ID de transacción',
+        'Acciones',
+      ])
+      expect(wrapper.text()).toContain('Andrés Felipe Duarte')
+      expect(wrapper.text()).toContain('SOL-VH-2026-004905')
+    })
+
+    it('el cobro Cobrando muestra "en curso" (minúscula, texto literal de Figma) y "—" en vez de fecha/id de transacción', async () => {
+      const { wrapper } = await montarConciliacion()
+      const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
+      expect(filaCobrando?.text()).toContain('en curso')
+      expect(filaCobrando?.text()).toContain('—')
+    })
+
+    it('filtra por pestaña y solo la fila Rechazado trae "Reintentar cobro"', async () => {
+      const { wrapper } = await montarConciliacion()
+      const rechazado = wrapper.findAll('[role="tab"]').find((t) => t.text() === 'Rechazado')
+      expect(rechazado).toBeDefined()
+      await rechazado!.trigger('click')
+
+      expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
+      expect(boton).toBeDefined()
+    })
+
+    it('Pendiente no trae botón de reintentar (el reintento ahí es automático)', async () => {
+      const { wrapper } = await montarConciliacion()
+      // "Pendiente de reintento" es el texto literal del archivo correcto de Figma (nodo 2001:3177);
+      // una ronda anterior lo había dejado como "Pendiente" a secas, citando el archivo equivocado.
+      const pendiente = wrapper.findAll('[role="tab"]').find((t) => t.text().startsWith('Pendiente de reintento'))
+      expect(pendiente).toBeDefined()
+      await pendiente!.trigger('click')
+
+      expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+      expect(wrapper.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
+    })
+
+    it('reintentar cobro deja la fila Rechazado en Cobrado y muestra el toast de confirmación', async () => {
+      const { wrapper } = await montarConciliacion()
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
+
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
+      await boton!.trigger('click')
+      await vi.waitFor(() => expect(wrapper.text()).toContain('No hay cobros en este estado.'))
+
+      // El cobro que estaba Rechazado ya no aparece en el filtro Rechazado: quedó Cobrado.
+      expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+      expect(wrapper.get('[role="status"]').text()).toContain('Cobro reenviado a la pasarela')
+    })
+
+    // Hallazgo ALTA de la revisión de QA: antes un reintento fallido escribía en el mismo
+    // estado.error que usa la carga inicial, así que esta pantalla reemplazaba toda la tabla
+    // (pestañas, pie, bloque legal) por el mensaje de error. Ahora debe quedar como una alerta no
+    // bloqueante y el resto de la pantalla sigue visible.
+    it('un reintento fallido muestra una alerta sin ocultar la tabla, las pestañas ni el pie', async () => {
+      const { wrapper } = await montarConciliacion()
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
+
+      servidor.use(http.post('/graphql/web', () => new HttpResponse(null, { status: 500 })))
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
+      await boton!.trigger('click')
+      await vi.waitFor(() => {
+        const alertas = wrapper.findAll('[role="alert"]')
+        expect(alertas.some((a) => a.text().includes('No pudimos reintentar el cobro'))).toBe(true)
+      })
+      // La tabla, las pestañas y el bloque legal siguen ahí: no se reemplazó todo por el error.
+      expect(wrapper.findAll('[role="tab"]').length).toBeGreaterThan(0)
+      expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0)
+      expect(wrapper.text()).toContain('Control de dispersión y reintentos automáticos')
+      // No se confirma un reenvío que en realidad falló: el toast de éxito existe en el DOM
+      // siempre (se anima con opacidad), así que se verifica que siga oculto, no su texto.
+      expect(wrapper.get('[role="status"]').classes()).toContain('opacity-0')
+    })
+
+    it('el reintento persiste en el mock: volver a cargar cobros ya no trae el Rechazado', async () => {
+      const { wrapper, router } = await montarConciliacion()
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
+      const boton = wrapper.findAll('button').find((b) => b.text().includes('Reintentar cobro'))
+      await boton!.trigger('click')
+      await vi.waitFor(() => expect(wrapper.text()).toContain('No hay cobros en este estado.'))
+
+      // Simula volver a entrar a la pantalla (nuevo montaje -> nueva consulta `cobros` al mock).
+      await router.push('/operador')
+      const wrapper2 = montar(ConciliacionDePagos, { global: { plugins: [router] } })
+      await router.push('/operador/conciliacion')
+      await flushPromises()
+      await vi.waitFor(() => expect(wrapper2.findAll('tbody tr').length).toBeGreaterThan(0))
+
+      await wrapper2
+        .findAll('[role="tab"]')
+        .find((t) => t.text() === 'Rechazado')!
+        .trigger('click')
+      expect(wrapper2.text()).toContain('No hay cobros en este estado.')
+    })
+
+    // Re-verificado contra el archivo correcto de Figma (nodo 2008:32, confirmado con captura de
+    // pantalla): esta pantalla usa un enlace de texto suelto "‹ Volver a Inicio", no la Barra de
+    // navegación compartida (MigasDePan, "Inicio › Sección") que sí usan las demás pantallas del
+    // flujo — una ronda anterior la había cambiado a MigasDePan citando el archivo equivocado.
+    it('el enlace "‹ Volver a Inicio" navega a /operador', async () => {
+      const { wrapper, router } = await montarConciliacion()
+      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Volver a Inicio'))
+      expect(enlace).toBeDefined()
+      await enlace!.trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/operador')
+    })
+  })
+})

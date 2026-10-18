@@ -1,3 +1,5 @@
+import { visitarComo } from '../support/sesion'
+
 // Prueba de humo: la app arranca y el catálogo de pantallas del Sprint 1 es alcanzable.
 // Los flujos reales (W01 → W03) se agregan cuando existan las pantallas y el BFF.
 
@@ -9,7 +11,7 @@ describe('humo', () => {
   })
 
   it('abre la captura de cotización (W01-01)', () => {
-    cy.visit('/cotizacion')
+    visitarComo('CLIENTE', '/cotizacion')
     cy.get('[data-pantalla="W01-01"]').should('exist')
   })
 })

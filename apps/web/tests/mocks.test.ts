@@ -24,7 +24,7 @@ const entrada = (documentoIdentidad: string) => ({
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
 describe('mocks del BFF', () => {
-  beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }))
+  beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
   afterAll(() => servidor.close())
 
   it('devuelve oferta COMPLETA por defecto', async () => {
