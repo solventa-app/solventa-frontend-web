@@ -99,7 +99,7 @@ router usa history).
 |---|---|---|
 | Settings → Variables → Actions | `BACKEND_REPO` = `solventa-app/solventa-backend` | Activa el job `contrato` del CI (compara con el `main` del backend) |
 | Settings → Secrets → Actions | `BACKEND_READ_TOKEN` (solo si `solventa-backend` es privado) | Permite al CI leer el backend |
-| Settings → Secrets → Actions | `SONAR_TOKEN` y `SONAR_HOST_URL` | Activa el análisis de SonarQube |
+| Settings → Secrets → Actions | `SONAR_TOKEN` | Activa el análisis en SonarQube Cloud (organización `global-spark`, proyecto `global-spark_solventa-frontend`) en cada push a `main` y `develop` |
 | Settings → Secrets → Actions | `VERCEL_TOKEN` | Activa el despliegue a Vercel (`deploy-web.yml`) |
 | Settings → Variables → Actions | `VITE_USE_MOCKS` = `true` (opcional) | Despliega la web con los mocks de MSW mientras no haya BFF |
 | `.github/CODEOWNERS` | Reemplazar los roles por usuarios reales | Revisores automáticos |
