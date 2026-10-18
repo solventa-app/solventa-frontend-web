@@ -1,7 +1,7 @@
 {
   "name": "solventa-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Frontend de Solventa: web (Vue 3) y móvil (Flutter). Cada app tiene su propio toolchain; este package.json solo ofrece atajos.",
   "type": "module",
   "scripts": {
