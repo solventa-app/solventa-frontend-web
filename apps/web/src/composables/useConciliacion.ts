@@ -3,7 +3,7 @@
 // filtro por pestaña se hace en la vista: para el volumen de un back-office evita una ida al BFF por clic
 // y mantiene correcto el contador de "Todos". `cobros` exige un token BACKOFFICE en el BFF.
 import { reactive } from 'vue'
-import { ejecutar } from '../graphql/cliente'
+import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 
 const COBROS = `query cobros($estado: EstadoCobro) {
@@ -14,6 +14,9 @@ const COBROS = `query cobros($estado: EstadoCobro) {
     estado
     monto { valor moneda }
     actualizadoEn
+    idTransaccion
+    motivo
+    reintentosRestantes
   }
 }`
 
@@ -25,6 +28,9 @@ const REINTENTAR_COBRO = `mutation reintentarCobro($cobroId: ID!) {
     estado
     monto { valor moneda }
     actualizadoEn
+    idTransaccion
+    motivo
+    reintentosRestantes
   }
 }`
 
@@ -45,6 +51,18 @@ const estado = reactive<EstadoConciliacion>({
   errorReintento: null,
   reintentando: null,
 })
+
+/**
+ * Mensaje para el usuario: el del BFF solo si salió de un resolutor (trae `path`), p. ej. "Se agotaron los 3
+ * reintentos…": esos los escribe el BFF para el usuario. Un error de validación del esquema (sin `path`),
+ * "Unexpected error." (falla interna enmascarada), la red o un HTTP de error dan el genérico (regla 5).
+ */
+function mensajeParaUsuario(error: unknown, generico: string): string {
+  if (!(error instanceof ErrorGraphQL)) return generico
+  const primero = error.errores[0] as { path?: unknown } | undefined
+  const deResolutor = Array.isArray(primero?.path) && primero.path.length > 0
+  return deResolutor && error.message !== 'Unexpected error.' ? error.message : generico
+}
 
 export function useConciliacion(fetchFn: typeof fetch = fetch) {
   async function cargarCobros(filtro?: EstadoCobro) {
@@ -68,8 +86,8 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       const r = await ejecutar<{ reintentarCobro: Cobro }>(REINTENTAR_COBRO, { cobroId }, fetchFn)
       const indice = estado.cobros.findIndex((c) => c.id === cobroId)
       if (indice !== -1) estado.cobros.splice(indice, 1, r.reintentarCobro)
-    } catch {
-      estado.errorReintento = 'No pudimos reintentar el cobro en este momento.'
+    } catch (error) {
+      estado.errorReintento = mensajeParaUsuario(error, 'No pudimos reintentar el cobro en este momento.')
     } finally {
       estado.reintentando = null
     }

@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { leerClaims, RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import { CLAVE_TOKEN, leerClaims, restaurarSesion, RUTA_INICIO, useSesion } from '../src/composables/useSesion'
 import { tokenDeDemo } from '../src/mocks/handlers'
 import { servidor } from '../src/mocks/node'
 
@@ -101,5 +101,51 @@ describe('useSesion', () => {
     await iniciarSesion('admin.solventa', 'x')
     cerrarSesion()
     expect(estado).toMatchObject({ token: null, rol: null, nombre: '' })
+  })
+})
+
+describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
+  const enUnMinuto = () => Math.floor(Date.now() / 1000) + 60
+
+  afterEach(() => sessionStorage.clear())
+
+  it('iniciarSesion guarda solo el token y cerrarSesion lo borra', async () => {
+    const { iniciarSesion, cerrarSesion, estado } = useSesion(fetchPrueba)
+    await iniciarSesion('asesor.pena', 'secreta123')
+
+    expect(sessionStorage.length).toBe(1)
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBe(estado.token)
+
+    cerrarSesion()
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
+  })
+
+  it('al recargar, un token vigente reabre la sesión con su rol', () => {
+    sessionStorage.setItem(CLAVE_TOKEN, token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: enUnMinuto() }))
+
+    restaurarSesion()
+
+    const { estado, sesionActiva, rutaInicio } = useSesion()
+    expect(sesionActiva()).toBe(true)
+    expect(estado.rol).toBe('BACKOFFICE')
+    expect(rutaInicio()).toBe('/operador')
+  })
+
+  it('un token vencido no se restaura y se borra', () => {
+    const vencido = Math.floor(Date.now() / 1000) - 10
+    sessionStorage.setItem(CLAVE_TOKEN, token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: vencido }))
+
+    restaurarSesion()
+
+    expect(useSesion().sesionActiva()).toBe(false)
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
+  })
+
+  it('un token ilegible no rompe la app y se borra', () => {
+    sessionStorage.setItem(CLAVE_TOKEN, 'basura')
+
+    expect(() => restaurarSesion()).not.toThrow()
+    expect(useSesion().sesionActiva()).toBe(false)
+    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
   })
 })

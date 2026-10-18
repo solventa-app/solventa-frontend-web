@@ -35,7 +35,7 @@ describe('useConciliacion', () => {
     expect(estados).toEqual(['COBRADO', 'COBRANDO', 'PENDIENTE', 'RECHAZADO'])
   })
 
-  it('reintentarCobro mueve un cobro RECHAZADO a COBRANDO y conserva su cliente', async () => {
+  it('reintentarCobro vuelve a cobrar un RECHAZADO, descuenta un reintento y conserva su cliente', async () => {
     const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
     const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')
     expect(rechazado).toBeDefined()
@@ -45,9 +45,37 @@ describe('useConciliacion', () => {
 
     expect(estado.cobros).toHaveLength(totalAntes)
     const actualizado = estado.cobros.find((c) => c.id === rechazado!.id)
-    expect(actualizado?.estado).toBe('COBRANDO')
+    expect(actualizado?.estado).toBe('COBRADO')
+    expect(actualizado?.reintentosRestantes).toBe(2)
+    expect(actualizado?.idTransaccion).toBeTruthy()
     expect(actualizado?.cliente?.nombre).toBe(rechazado!.cliente?.nombre)
     expect(estado.reintentando).toBeNull()
+  })
+
+  it('al agotar los reintentos muestra el mensaje del BFF, no uno genérico', async () => {
+    const mensaje = 'Se agotaron los 3 reintentos: el cobro requiere otro medio de pago.'
+    servidor.use(
+      http.post('*/graphql/web', () =>
+        HttpResponse.json({ data: null, errors: [{ message: mensaje, path: ['reintentarCobro'] }] }),
+      ),
+    )
+    const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+
+    await reintentarCobro('cobro-3')
+
+    expect(estado.errorReintento).toBe(mensaje)
+  })
+
+  it('un error de esquema (sin path) o "Unexpected error." no se muestran crudos', async () => {
+    const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+    for (const error of [
+      { message: "Cannot query field 'x' on type 'Cobro'." },
+      { message: 'Unexpected error.', path: ['reintentarCobro'] },
+    ]) {
+      servidor.use(http.post('*/graphql/web', () => HttpResponse.json({ data: null, errors: [error] })))
+      await reintentarCobro('cobro-3')
+      expect(estado.errorReintento).toBe('No pudimos reintentar el cobro en este momento.')
+    }
   })
 
   // MSW devuelve el objeto completo sin mirar el selection set: se inspecciona el texto enviado, porque
