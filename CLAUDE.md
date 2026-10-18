@@ -39,6 +39,9 @@ mismo PR. Lo que toca al front:
 - **Consentimiento ligado al titular (bloque 4, Sprint 1):** sin pantalla nueva. Se sigue usando el checkbox de W01-01 y
   `useCotizacion` manda además el documento y los campos fijos (`tipoDato`, `fuenteDatos`, `canal`) cuando el contrato
   los traiga (se sincroniza `contrato/` y los mocks).
+- **El consentimiento vence a los 30 días** (decisión 23 del plan): el contrato trae `Consentimiento.venceEn`. Si el
+  BFF responde que el consentimiento está vencido o revocado, la web descarta el `consentimientoId` guardado y vuelve a
+  pedir el checkbox de W01-01 (mensaje de "autoriza de nuevo", nunca un error técnico).
 - **Sonar:** SonarCloud.
 
 ## Stack
