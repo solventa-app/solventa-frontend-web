@@ -17,6 +17,7 @@
     "formato:verificar": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:cobertura": "vitest run --coverage",
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "@graphql-codegen/typescript": "^6.1.0",
     "@material-symbols/svg-400": "^0.48.0",
     "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "^5.0.5",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",

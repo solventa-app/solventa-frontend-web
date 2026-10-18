@@ -64,20 +64,3 @@ jobs:
         run: node scripts/contrato.mjs verificar
         env:
           BACKEND_SCHEMA_PATH: ${{ github.workspace }}/backend/contracts/graphql/schema.graphql
-
-  sonar:
-    # Análisis en SonarQube Cloud (organización y proyecto en sonar-project.properties) en cada push a main y
-    # develop que toque la web. Solo corre si existe el secreto SONAR_TOKEN.
-    needs: [web]
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-        if: env.SONAR_TOKEN != ''
-        with:
-          # Historial completo: con un clon superficial Sonar no puede atribuir el código nuevo.
-          fetch-depth: 0
-      - uses: SonarSource/sonarqube-scan-action@v6
-        if: env.SONAR_TOKEN != ''
