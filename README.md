@@ -79,10 +79,12 @@ router usa history).
 1. El proyecto de Vercel (IDs en el workflow) debe tener **Root Directory vacío** y no estar conectado al repo por la
    integración de Git (si no, cada push desplegaría dos veces). Se revisa en Vercel → Settings → General y → Git.
 2. Crea un token en https://vercel.com/account/tokens y guárdalo como secreto `VERCEL_TOKEN` del repo (tabla de abajo).
-3. Mientras no exista el BFF, define la variable `VITE_USE_MOCKS=true`: la web desplegada responde con los mocks de MSW.
-4. Cuando el BFF esté desplegado, quita esa variable y agrega en `apps/web/vercel.json`, **antes** del rewrite a
-   `index.html`, `{ "source": "/graphql/:path*", "destination": "https://<host-del-bff>/graphql/:path*" }`
-   (el cliente llama a `/graphql/web` en la misma origen; el proxy de Vite solo existe en desarrollo).
+3. **Con mocks o con el BFF real.** `VITE_USE_MOCKS=true` hace que la web desplegada responda con los mocks de MSW
+   (cualquier clave sirve); con `false` (o sin la variable) llama al BFF real. Es una variable de **construcción**: cambiarla
+   no afecta a lo ya desplegado, solo al siguiente despliegue.
+4. `apps/web/vercel.json` reescribe `/graphql/*` al BFF de staging en Cloud Run
+   (`https://bff-f5egaxcn6q-uc.a.run.app`), antes del rewrite a `index.html`: el cliente llama a `/graphql/web` en la misma
+   origen y Vercel hace de proxy (sin CORS). Si el BFF cambia de URL, se cambia ahí. El proxy de Vite solo existe en desarrollo.
 
 ## Documentación
 
