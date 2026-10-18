@@ -71,8 +71,32 @@ async function alReintentar(cobroId: string) {
   }, 3500)
 }
 
-onUnmounted(() => clearTimeout(temporizadorToast))
-onMounted(() => cargarCobros())
+// La tabla se vuelve a pedir sola mientras la pantalla está abierta, para ver un cobro pendiente que el
+// sistema ya cobró (CA-W05-05) sin recargar la página. Sin botón nuevo: el prototipo no lo tiene. No
+// recarga con la pestaña oculta y recarga apenas se vuelve a ella.
+const INTERVALO_REFRESCO_MS = 30_000
+let temporizadorRefresco: ReturnType<typeof setInterval> | undefined
+
+function refrescar() {
+  if (document.visibilityState === 'hidden') return
+  void cargarCobros(undefined, { silencioso: true })
+}
+
+function alCambiarVisibilidad() {
+  if (document.visibilityState === 'visible') refrescar()
+}
+
+onMounted(() => {
+  void cargarCobros()
+  temporizadorRefresco = setInterval(refrescar, INTERVALO_REFRESCO_MS)
+  document.addEventListener('visibilitychange', alCambiarVisibilidad)
+})
+
+onUnmounted(() => {
+  clearTimeout(temporizadorToast)
+  clearInterval(temporizadorRefresco)
+  document.removeEventListener('visibilitychange', alCambiarVisibilidad)
+})
 </script>
 
 <template>

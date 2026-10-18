@@ -110,6 +110,66 @@ describe('HU-W05 · pantallas', () => {
       return { wrapper, router }
     }
 
+    describe('recarga automática', () => {
+      afterEach(() => vi.useRealTimers())
+
+      it('vuelve a pedir la tabla cada 30 s sin mostrar "Cargando…" y se detiene al salir', async () => {
+        const { wrapper } = await montarConciliacion()
+        const llamadas: string[] = []
+        servidor.use(
+          http.post('*/graphql/web', async ({ request }) => {
+            llamadas.push(((await request.json()) as { query: string }).query)
+            return HttpResponse.json({ data: { cobros: [] } })
+          }),
+        )
+        vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+        // El intervalo se programó al montar con los temporizadores reales: se vuelve a montar con falsos.
+        wrapper.unmount()
+        const router = crearRouterDePrueba()
+        router.push('/operador/conciliacion')
+        await router.isReady()
+        const segunda = montar(ConciliacionDePagos, { global: { plugins: [router] } })
+        await flushPromises()
+        llamadas.length = 0
+
+        vi.advanceTimersByTime(29_000)
+        await flushPromises()
+        expect(llamadas).toHaveLength(0)
+
+        vi.advanceTimersByTime(1_000)
+        await vi.waitFor(() => expect(llamadas).toHaveLength(1))
+        expect(segunda.text()).not.toContain('Cargando conciliación de pagos')
+
+        segunda.unmount()
+        vi.advanceTimersByTime(60_000)
+        await flushPromises()
+        expect(llamadas).toHaveLength(1)
+      })
+
+      it('no recarga con la pestaña oculta y recarga al volver a ella', async () => {
+        const { wrapper } = await montarConciliacion()
+        let consultas = 0
+        servidor.use(
+          http.post('*/graphql/web', () => {
+            consultas++
+            return HttpResponse.json({ data: { cobros: [] } })
+          }),
+        )
+        const estadoVisibilidad = vi.spyOn(document, 'visibilityState', 'get')
+
+        estadoVisibilidad.mockReturnValue('hidden')
+        document.dispatchEvent(new Event('visibilitychange'))
+        await flushPromises()
+        expect(consultas).toBe(0)
+
+        estadoVisibilidad.mockReturnValue('visible')
+        document.dispatchEvent(new Event('visibilitychange'))
+        await vi.waitFor(() => expect(consultas).toBe(1))
+        estadoVisibilidad.mockRestore()
+        wrapper.unmount()
+      })
+    })
+
     it('marca la pantalla, tiene exactamente un <h1> y carga los 4 cobros del mock', async () => {
       const { wrapper } = await montarConciliacion()
       expect(wrapper.find('[data-pantalla="W05-01"]').exists()).toBe(true)

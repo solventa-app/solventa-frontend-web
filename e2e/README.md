@@ -21,6 +21,8 @@ Cada pantalla lleva `data-pantalla="<id>"` en su raíz (Vitest y Cypress la usan
 
 Este segundo nivel es **adicional** al primero, no lo reemplaza: ambos se mantienen y se ejecutan juntos (`npm run correr` corre todos los specs de `cypress/e2e/**`).
 
+**HU-W05 (conciliación de pagos).** Los specs `w05-conciliacion.cy.ts` y `pantallas/w05-01.cy.ts` cuentan los 4 cobros fijos de los mocks, así que **se saltan solos contra staging** (`support/entorno.ts` decide por la `baseUrl`: localhost = mocks). Contra staging corre `w05-staging.cy.ts`, que no cuenta filas ni nombres: entra como operador, comprueba la tabla, el filtro por estado y el reintento de un rechazado (confirmación o explicación del BFF, nunca un error técnico). Antes: staging encendido (*Costos staging → encender*) y cobros sembrados con `python3 scripts/sembrar_cobros.py` del backend. Reintentar gasta uno de los 3 reintentos reales de ese cobro. Evidencia: [`../docs/evidencias/FC-10-web-plantilla.md`](../docs/evidencias/FC-10-web-plantilla.md).
+
 Registro de evidencia de FC-01 (HU-W01): ver [`../docs/evidencias/FC-01-2026-10-18.md`](../docs/evidencias/FC-01-2026-10-18.md).
 
 **Si Cypress no arranca** con `bad option: --no-sandbox` (pasa al lanzarlo desde la terminal de VS Code o de otra app Electron), ejecuta `unset ELECTRON_RUN_AS_NODE` antes de `npm run correr`.

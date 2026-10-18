@@ -22,7 +22,7 @@ Catálogo en `apps/web/src/router/pantallas.ts` (fuente de verdad de rutas; una 
 | W01-03c | `/cotizacion/error` | Mensaje de error, reintentar y hablar con un asesor. **Nunca un error 5xx crudo** (incluidos `502`/`503`/`504` del API Gateway, que se muestran como error reintentable) | CA-W01-05 |
 | W01-04 | `/cotizacion/fuentes` | 5 filas (2 Open Finance + 3 Open Data) con badge de estado y fecha si es de caché | CA-W01-06 |
 | W01-05 | `/cotizacion/asesor` | 3 canales (llamar / chatear / agendar) y confirmación con resumen del trámite | CA-W01-07 |
-| W05-01 | `/operador/conciliacion` | Tabla por póliza (cobrando / cobrado / rechazado / pendiente), reintentar cobro con aviso | CA-W05-01/02 |
+| W05-01 | `/operador/conciliacion` | Tabla por póliza (cobrando / cobrado / rechazado / pendiente), reintentar cobro con aviso; se recarga sola cada 30 s (sin botón nuevo: el prototipo no lo tiene) | CA-W05-01/02/05 |
 
 Actividades de web del plan (equipo, horas): formulario de captura 2 h (T-W01-1), pantalla de consulta 1 h (T-W01-2), pantalla de resultado 3 h (T-W01-3), tabla de entidades externas 1 h (T-W01-5), back-office de cobros 2 h (T-W05-1) e integración con la pasarela de pago 3 h (T-W05-2). Total 12 h, la carga completa de la persona de web en el sprint.
 
