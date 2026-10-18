@@ -21,7 +21,7 @@ integrada con el BFF real (PR #45 y #47):
 |---|---|---|
 | W05-2 | Captura de tarjeta | **No se construye** pantalla ni componente de tarjeta: el prototipo no la tiene y la prima se factura con la cuota del crédito. |
 | W05-3 | Indemnizaciones | Sin pantalla en el Sprint 1: llegan en el Sprint 3, con siniestros. |
-| W05-7 | Reintento automático | Si se confirma Cloud Tasks, un `PENDIENTE` pasa solo a `COBRADO` en staging. La tabla no cambia, pero conviene un botón de **actualizar** para verlo sin recargar la página. |
+| W05-7 | Reintento automático | Si se confirma Cloud Tasks, un `PENDIENTE` pasa solo a `COBRADO` en staging. La tabla no cambia de diseño; se vuelve a pedir sola cada 30 segundos para verlo sin recargar la página. |
 | 16 (W01) | API Gateway | Las operaciones de cobros también pasan por el gateway; el manejo de 502/503/504 del bloque 10 de W01 cubre esta pantalla. |
 
 ## Plan de cambios (front)
@@ -37,8 +37,8 @@ integrada con el BFF real (PR #45 y #47):
 
 | Dónde | Cambio |
 |---|---|
-| `ConciliacionDePagos.vue` | Botón o acción de **actualizar la tabla** (vuelve a pedir `cobros`), para ver un pendiente que el sistema ya cobró. Si el prototipo no tiene un control así, se usa el mismo estilo del botón de reintentar y se avisa a diseño. |
-| Vitest | Caso del botón de actualizar. |
+| `ConciliacionDePagos.vue` | La tabla se **vuelve a pedir sola** cada 30 segundos mientras la pantalla está abierta y al volver a la pestaña, para ver un pendiente que el sistema ya cobró. Sin botón nuevo: el prototipo no lo tiene (regla 3). |
+| Vitest | Caso de la recarga automática (con temporizador falso). |
 
 Lo compartido con W01 (no se repite aquí): `npm audit` informativo y SonarCloud (bloque 6), rewrite de Vercel al
 gateway y manejo de 502/503/504 (bloque 10), credenciales de Cypress para staging (bloque 7).

@@ -38,7 +38,7 @@ bloque". Lo esencial:
 ## Plan de HU-W05 (2026-10-18)
 
 [`docs/plan-completar-hu-w05.md`](docs/plan-completar-hu-w05.md): la pantalla W05-01 ya está integrada; falta el E2E
-contra staging (evidencia de FC-10) y un botón para actualizar la tabla. **No** se construye captura de tarjeta ni
+contra staging (evidencia de FC-10) y la recarga automática de la tabla. **No** se construye captura de tarjeta ni
 pantallas de indemnizaciones (Sprint 3).
 
 ## Stack
