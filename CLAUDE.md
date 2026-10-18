@@ -21,28 +21,19 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 
 ## Plan y decisiones cerradas de HU-W01 (2026-10-18)
 
-El plan completo vive en el backend: [`../solventa-backend/docs/plan-completar-hu-w01.md`](../solventa-backend/docs/plan-completar-hu-w01.md).
-Sus decisiones están **cerradas**; si algo de este repo las contradice, gana el plan y se corrige el documento en el
-mismo PR. Lo que toca al front:
+Plan del front: [`docs/plan-completar-hu-w01.md`](docs/plan-completar-hu-w01.md) (qué cambia por bloque, despliegue,
+pipelines, documentos y pasos manuales). El del backend, con la tabla completa de decisiones:
+[`../solventa-backend/docs/plan-completar-hu-w01.md`](../solventa-backend/docs/plan-completar-hu-w01.md).
+Sus decisiones están **cerradas**: si algo de este repo las contradice, gana el plan y se corrige el documento en el
+mismo PR. Al ejecutar un bloque, actualiza en ese PR los documentos que lista su tabla "Documentos que actualiza cada
+bloque". Lo esencial:
 
-- **API Gateway (bloque 10, Sprint 1):** el BFF deja de ser público. En Vercel, el rewrite de `/graphql/:path*`
-  (`apps/web/vercel.json`) pasa a la URL del gateway; en local, `VITE_BFF_URL=http://localhost:8080` (Envoy del compose).
-  El gateway corta a 700 ms: un 502/503/504 se muestra como error con reintento (regla 5), nunca como pantalla rota.
-- **Pruebas (bloque 7):** Cypress de valores límite en W01-01 y los E2E de W01 **contra staging** (no solo mocks) como
-  evidencia de FC-01. Se mide contra lo desplegado, no contra el compose.
-- **Revocar consentimiento:** el prototipo no tiene esa pantalla, así que **no se construye en el Sprint 1** (regla 3).
-  El backend ya lo soporta (`revocarConsentimiento`) y se prueba allá; la pantalla llega cuando esté en Figma.
-- **Seguridad en CI (bloque 6):** `npm audit --audit-level=high` informativo en `ci-web.yml`; Sonar se activa cuando
-  existan `SONAR_TOKEN` y `SONAR_HOST_URL`.
-- **La oferta no se guarda en W01**: se recalcula si el cliente vuelve. Guardar la oferta aceptada va con HU-W03
-  (Sprint 2).
-- **Consentimiento ligado al titular (bloque 4, Sprint 1):** sin pantalla nueva. Se sigue usando el checkbox de W01-01 y
-  `useCotizacion` manda además el documento y los campos fijos (`tipoDato`, `fuenteDatos`, `canal`) cuando el contrato
-  los traiga (se sincroniza `contrato/` y los mocks).
-- **El consentimiento vence a los 30 días** (decisión 23 del plan): el contrato trae `Consentimiento.venceEn`. Si el
-  BFF responde que el consentimiento está vencido o revocado, la web descarta el `consentimientoId` guardado y vuelve a
-  pedir el checkbox de W01-01 (mensaje de "autoriza de nuevo", nunca un error técnico).
-- **Sonar:** SonarCloud.
+- **API Gateway (bloque 10):** el rewrite de Vercel y el entorno local (`:8080`) van al gateway; un 502/503/504 se
+  muestra como error con reintento.
+- **Consentimiento:** sin pantalla nueva; se mandan campos extra; vence a los 30 días y, vencido o revocado, se vuelve a
+  pedir el checkbox. La pantalla de revocar **no** se construye hasta que esté en Figma.
+- **E2E de W01 contra staging** como evidencia de FC-01; `npm audit` informativo; Sonar es SonarCloud.
+- **La oferta no se guarda en W01** (va con HU-W03, Sprint 2).
 
 ## Stack
 
