@@ -28,9 +28,9 @@ Un cambio de contrato = dos PR enlazados (primero el backend).
 
 | Dónde | Cambio |
 |---|---|
-| `contrato/` | Sincronizar la copia del esquema cuando el backend publique `ConsentimientoInput` con `documentoIdentidad`, `tipoDato`, `fuenteDatos`, `canal` y `Consentimiento.estado` / `venceEn`. Regenerar `src/graphql/tipos.ts`. |
+| `contrato/` | Sincronizar la copia del esquema cuando el backend publique `ConsentimientoInput` con `documentoIdentidad`, `tipoDato`, `fuenteDatos`, `canal`, `Consentimiento.estado` / `venceEn` y `ErrorOferta.motivo`. Regenerar `src/graphql/tipos.ts`. |
 | `useCotizacion.ts` | Al registrar el consentimiento manda el documento del formulario y los campos fijos (`tipoDato`, `fuenteDatos`, `canal = WEB`). |
-| `useCotizacion.ts` | Si el BFF responde que el consentimiento está **vencido o revocado**, descarta el `consentimientoId` guardado y vuelve a W01-01 con el checkbox desmarcado y un mensaje de "autoriza de nuevo" (regla 5: nunca un error técnico). |
+| `useCotizacion.ts` | **El front no valida el consentimiento**: eso lo hace el backend en cada solicitud. El front solo reacciona: si `solicitarOferta` responde `ErrorOferta` con `motivo = CONSENTIMIENTO_NO_VIGENTE` (vencido o revocado), descarta el `consentimientoId` guardado y vuelve a W01-01 con el checkbox desmarcado y un mensaje de "autoriza de nuevo" (regla 5: nunca un error técnico). |
 | `src/mocks/handlers.ts` | Mocks con los campos nuevos y un caso de consentimiento vencido. Vitest de los dos casos. |
 
 ### Bloque 6 · Seguridad en CI
