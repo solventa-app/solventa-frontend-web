@@ -35,6 +35,12 @@ bloque". Lo esencial:
 - **E2E de W01 contra staging** como evidencia de FC-01; `npm audit` informativo; Sonar es SonarCloud.
 - **La oferta no se guarda en W01** (va con HU-W03, Sprint 2).
 
+## Plan de HU-W05 (2026-10-18)
+
+[`docs/plan-completar-hu-w05.md`](docs/plan-completar-hu-w05.md): la pantalla W05-01 ya está integrada; falta el E2E
+contra staging (evidencia de FC-10) y un botón para actualizar la tabla. **No** se construye captura de tarjeta ni
+pantallas de indemnizaciones (Sprint 3).
+
 ## Stack
 
 - **Web:** Vue 3 (`<script setup lang="ts">`), TypeScript estricto, Vite 8 (Node ≥ 22.12), Vue Router, Twind. Pruebas: Vitest + `@vue/test-utils` (jsdom). Mocks: MSW. Tipos del contrato: `graphql-codegen`. E2E: Cypress. Lint: ESLint + Prettier.
