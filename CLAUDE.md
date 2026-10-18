@@ -24,6 +24,12 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   sin exponer códigos 5xx en `useCotizacion`, `useConciliacion` ni `useSesion`. `apps/web/.env.example`, `vite.config.ts`
   y `README.md` apuntan por defecto al gateway Envoy local (`http://localhost:8080`) y `apps/web/vercel.json` reescribe
   `/graphql/:path*` al gateway de staging.
+- **HU-W05 (plan de HU-W05, KAN-28):** W05-01 se **recarga sola cada 30 s** mientras está abierta y al volver a la
+  pestaña (`useConciliacion.cargarCobros(…, { silencioso: true })`: sin «Cargando…», conserva la tabla si falla y descarta
+  la respuesta que se cruce con un reintento), para ver un pendiente que Cloud Tasks ya cobró. Contra staging corre
+  `e2e/cypress/e2e/w05-staging.cy.ts`; los specs de mocks de W05 se saltan solos ahí (`e2e/cypress/support/entorno.ts`).
+  Sin captura de tarjeta ni pantallas de indemnizaciones (Sprint 3). La evidencia de FC-10 desde la web es una
+  plantilla sin ejecutar (`docs/evidencias/FC-10-web-plantilla.md`).
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
