@@ -30,12 +30,16 @@ mismo PR. Lo que toca al front:
   El gateway corta a 700 ms: un 502/503/504 se muestra como error con reintento (regla 5), nunca como pantalla rota.
 - **Pruebas (bloque 7):** Cypress de valores límite en W01-01 y los E2E de W01 **contra staging** (no solo mocks) como
   evidencia de FC-01. Se mide contra lo desplegado, no contra el compose.
-- **Revocar consentimiento** desde el detalle de fuentes (CA-W01-08, bloque 7).
+- **Revocar consentimiento:** el prototipo no tiene esa pantalla, así que **no se construye en el Sprint 1** (regla 3).
+  El backend ya lo soporta (`revocarConsentimiento`) y se prueba allá; la pantalla llega cuando esté en Figma.
 - **Seguridad en CI (bloque 6):** `npm audit --audit-level=high` informativo en `ci-web.yml`; Sonar se activa cuando
   existan `SONAR_TOKEN` y `SONAR_HOST_URL`.
 - **La oferta no se guarda en W01**: se recalcula si el cliente vuelve. Guardar la oferta aceptada va con HU-W03
   (Sprint 2).
-- **Pendiente de decidir:** el bloque 4 (consentimiento ligado al titular) cambia el contrato y `useCotizacion`.
+- **Consentimiento ligado al titular (bloque 4, Sprint 1):** sin pantalla nueva. Se sigue usando el checkbox de W01-01 y
+  `useCotizacion` manda además el documento y los campos fijos (`tipoDato`, `fuenteDatos`, `canal`) cuando el contrato
+  los traiga (se sincroniza `contrato/` y los mocks).
+- **Sonar:** SonarCloud.
 
 ## Stack
 
