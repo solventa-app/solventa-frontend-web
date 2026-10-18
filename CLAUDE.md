@@ -8,7 +8,7 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 
 - Sprint 1 (12–25 de octubre de 2026): las 12 pantallas de HU-W01 y HU-W05 están construidas (`src/views/`) e
   integradas con el BFF real (KAN-24). Siguen funcionando con mocks (`dev:mock`).
-- **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive solo en memoria (`useSesion.ts`) y viaja en
+- **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
 - Pendiente con el backend (`contrato/CHANGELOG.md`): el claim `nombre` en el JWT (hoy se muestra el alias) y
@@ -18,6 +18,24 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 - D-F1 cerrada: componentes propios en `src/components/ui/` y Twind para los estilos (`docs/plan-frontend.md`).
 - La app móvil se construye en otro repositorio.
 - GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git).
+
+## Plan y decisiones cerradas de HU-W01 (2026-10-18)
+
+El plan completo vive en el backend: [`../solventa-backend/docs/plan-completar-hu-w01.md`](../solventa-backend/docs/plan-completar-hu-w01.md).
+Sus decisiones están **cerradas**; si algo de este repo las contradice, gana el plan y se corrige el documento en el
+mismo PR. Lo que toca al front:
+
+- **API Gateway (bloque 10, Sprint 1):** el BFF deja de ser público. En Vercel, el rewrite de `/graphql/:path*`
+  (`apps/web/vercel.json`) pasa a la URL del gateway; en local, `VITE_BFF_URL=http://localhost:8080` (Envoy del compose).
+  El gateway corta a 700 ms: un 502/503/504 se muestra como error con reintento (regla 5), nunca como pantalla rota.
+- **Pruebas (bloque 7):** Cypress de valores límite en W01-01 y los E2E de W01 **contra staging** (no solo mocks) como
+  evidencia de FC-01. Se mide contra lo desplegado, no contra el compose.
+- **Revocar consentimiento** desde el detalle de fuentes (CA-W01-08, bloque 7).
+- **Seguridad en CI (bloque 6):** `npm audit --audit-level=high` informativo en `ci-web.yml`; Sonar se activa cuando
+  existan `SONAR_TOKEN` y `SONAR_HOST_URL`.
+- **La oferta no se guarda en W01**: se recalcula si el cliente vuelve. Guardar la oferta aceptada va con HU-W03
+  (Sprint 2).
+- **Pendiente de decidir:** el bloque 4 (consentimiento ligado al titular) cambia el contrato y `useCotizacion`.
 
 ## Stack
 
@@ -32,7 +50,7 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 4. **Una pantalla = un componente en `src/views/`**, registrado en `src/router/pantallas.ts` (campo `componente`) y con `data-pantalla="<id>"` en su raíz.
 5. **Nunca mostrar un error técnico ni un 5xx.** Hay estados de carga, vacío, error y degradado (oferta preliminar, cobro pendiente) y todos se diseñan.
 6. **Consentimiento explícito.** El checkbox de Habeas Data no viene marcado y el botón de enviar está deshabilitado hasta marcarlo (CA-W01-01). Nunca un valor por defecto.
-7. **Sin datos personales** en `localStorage`, consola, URL ni logs (tampoco el JWT: vive solo en memoria). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
+7. **Sin datos personales** en `localStorage`, consola, URL ni logs. El JWT es la única excepción: vive en `sessionStorage` (`solventa.token`) para que la sesión sobreviva a una recarga y se borra al cerrar la pestaña o la sesión (decisión de felipe, 2026-10-17). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
 8. **No sobre-construir.** Cada tarea se traza a una pantalla o criterio de `docs/plan-frontend.md`. Sin librerías ni capas que una pantalla del sprint no pida (Pinia, un cliente GraphQL pesado y una librería de UI se agregan cuando haya una razón).
 
 ## Agentes de este repo (`.claude/agents/`)
