@@ -27,7 +27,7 @@ Frontend de **Solventa**, aseguradora digital sobre Open Finance y Open Data (MI
 cd apps/web
 npm install
 npm run dev:mock      # con mocks del BFF (MSW): lo normal mientras el backend no esté desplegado
-npm run dev           # contra el BFF real (proxy a VITE_BFF_URL, por defecto http://localhost:8000)
+npm run dev           # contra el backend real (proxy a VITE_BFF_URL, por defecto http://localhost:8080 — gateway Envoy local)
 npm test              # Vitest
 npm run lint          # ESLint
 npm run formato       # Prettier (formatea); el CI corre formato:verificar
@@ -44,13 +44,12 @@ desde la raíz.
   Si persiste, revisa que Node corra nativo y no bajo Rosetta: `node -p process.arch` debe decir `arm64`.
 - `Port 5173 is in use`: quedó corriendo un Vite anterior. Ciérralo con `lsof -ti :5173 | xargs kill`.
 
-**Sesión:** la web inicia sesión contra el BFF (`iniciarSesion`) y guarda el JWT solo en memoria: al recargar hay que volver a
-entrar. Con `dev:mock` cualquier clave sirve y el rol sale del usuario: `asesor…` → Asesor, `admin…` u `operador…` →
+**Sesión:** la web inicia sesión contra el BFF (`iniciarSesion`) y guarda el JWT en `sessionStorage` (`solventa.token`) para sobrevivir a una recarga de pestaña. Con `dev:mock` cualquier clave sirve y el rol sale del usuario: `asesor…` → Asesor, `admin…` u `operador…` →
 Operador y cualquier otro → Cliente (por ejemplo, `cliente.demo`). Con `clave-erronea` el login falla.
 
 **Contra el backend en local:** levanta `solventa-backend` (`docker compose --profile servicios up -d --build`), crea los usuarios (ver `solventa-backend/docs/autenticacion-usuarios.md`), copia
-`apps/web/.env.example` a `apps/web/.env.local` (`VITE_USE_MOCKS=false`, `VITE_BFF_URL=http://localhost:8000`) y corre
-`npm run dev`. Las convenciones de los mocks (documento terminado en `999` o `000`) no existen en el backend: para ver
+`apps/web/.env.example` a `apps/web/.env.local` (`VITE_USE_MOCKS=false`, `VITE_BFF_URL=http://localhost:8080` apuntando al gateway Envoy local; `:8000` sigue sirviendo para depurar directo contra el BFF) y corre
+`npm run dev`. Las convenciones de los mocks (documento terminado en `999`, `998` o `000`) no existen en el backend: para ver
 una oferta preliminar, pon el stub de Open Finance en modo lento
 (`curl -X POST localhost:8101/control/modo -H 'Content-Type: application/json' -d '{"modo":"lento"}'`); con un
 documento que no se haya consultado antes, el historial crediticio no llega y sale la pantalla de error.
@@ -80,11 +79,11 @@ router usa history).
    integración de Git (si no, cada push desplegaría dos veces). Se revisa en Vercel → Settings → General y → Git.
 2. Crea un token en https://vercel.com/account/tokens y guárdalo como secreto `VERCEL_TOKEN` del repo (tabla de abajo).
 3. **Con mocks o con el BFF real.** `VITE_USE_MOCKS=true` hace que la web desplegada responda con los mocks de MSW
-   (cualquier clave sirve); con `false` (o sin la variable) llama al BFF real. Es una variable de **construcción**: cambiarla
+   (cualquier clave sirve); con `false` (o sin la variable) llama al BFF real a través del gateway. Es una variable de **construcción**: cambiarla
    no afecta a lo ya desplegado, solo al siguiente despliegue.
-4. `apps/web/vercel.json` reescribe `/graphql/*` al BFF de staging en Cloud Run
-   (`https://bff-f5egaxcn6q-uc.a.run.app`), antes del rewrite a `index.html`: el cliente llama a `/graphql/web` en la misma
-   origen y Vercel hace de proxy (sin CORS). Si el BFF cambia de URL, se cambia ahí. El proxy de Vite solo existe en desarrollo.
+4. `apps/web/vercel.json` reescribe `/graphql/*` al **API Gateway** de staging en Cloud Run
+   (`https://gateway-f5egaxcn6q-uc.a.run.app`, que corta a 700 ms delante del BFF), antes del rewrite a `index.html`: el cliente llama a `/graphql/web` en el mismo
+   origen y Vercel hace de proxy (sin CORS). Si el gateway cambia de URL tras un despliegue del backend, se actualiza ahí. El proxy de Vite solo existe en desarrollo.
 
 ## Documentación
 
@@ -101,6 +100,7 @@ router usa history).
 | Settings → Secrets → Actions | `BACKEND_READ_TOKEN` (solo si `solventa-backend` es privado) | Permite al CI leer el backend |
 | Settings → Secrets → Actions | `SONAR_TOKEN` | Activa `sonar.yml`: análisis en SonarQube Cloud (organización `global-spark`, proyecto `global-spark_solventa-frontend`) con la cobertura de Vitest, en cada push a `develop` que toque la web o a mano desde Actions |
 | Settings → Secrets → Actions | `VERCEL_TOKEN` | Activa el despliegue a Vercel (`deploy-web.yml`) |
+| Settings → Secrets → Actions | `CYPRESS_USUARIO_CLIENTE`, `CYPRESS_CLAVE_CLIENTE`, `CYPRESS_USUARIO_ASESOR`, `CYPRESS_CLAVE_ASESOR`, `CYPRESS_USUARIO_BACKOFFICE`, `CYPRESS_CLAVE_BACKOFFICE` | Credenciales de usuarios de prueba en staging para `.github/workflows/e2e-staging.yml` |
 | Settings → Variables → Actions | `VITE_USE_MOCKS` = `true` (opcional) | Despliega la web con los mocks de MSW mientras no haya BFF |
 | `.github/CODEOWNERS` | Reemplazar los roles por usuarios reales | Revisores automáticos |
 

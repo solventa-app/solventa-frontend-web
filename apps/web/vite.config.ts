@@ -8,9 +8,9 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
     server: {
       port: 5173,
-      // El BFF expone /graphql/web (web) y /graphql/app (móvil): ver contrato/README.md.
+      // El gateway Envoy local (:8080) y el BFF (:8000) exponen /graphql/web y /graphql/app: ver contrato/README.md.
       proxy: {
-        '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8000', changeOrigin: true },
+        '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
       },
     },
     test: {

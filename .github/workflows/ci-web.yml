@@ -44,6 +44,10 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Auditar dependencias (informativo)
+        working-directory: apps/web
+        continue-on-error: true
+        run: npm audit --audit-level=high
 
   contrato:
     # Se activa cuando el repo define la variable BACKEND_REPO (p. ej. "mi-org/solventa-backend") y,

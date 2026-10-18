@@ -6,8 +6,9 @@
 // token (no trae datos personales: rol, alias y vencimiento, regla 7). Al cargar, se restaura si sigue
 // vigente; uno vencido o ilegible se descarta.
 //
-// El nombre se lee del claim `nombre`, que el backend todavía no emite (pedido en contrato/CHANGELOG.md);
-// mientras no llegue se muestra el alias (`usuario`), que nunca es un dato personal.
+// El nombre NO viaja en el JWT (contrato v0.7: iría en base64, sin cifrar): se pide por GraphQL en
+// `iniciarSesion` y, al restaurar la sesión tras una recarga, con `yo`. Si es null o la consulta falla, se
+// muestra el alias (`usuario`), que nunca es un dato personal. El nombre no se guarda en el navegador.
 import { reactive } from 'vue'
 import { ejecutar, usarToken } from '../graphql/cliente'
 import type { ResultadoSesion, RolUsuario } from '../graphql/tipos'
@@ -33,9 +34,15 @@ const MENSAJE_FALLA = 'No pudimos iniciar sesión en este momento. Intenta de nu
 const MUTACION_INICIAR_SESION = `
   mutation iniciarSesion($entrada: CredencialesInput!) {
     iniciarSesion(entrada: $entrada) {
-      ... on Sesion { token }
+      ... on Sesion { token usuario { nombre } }
       ... on ErrorAutenticacion { mensaje }
     }
+  }
+`
+
+const CONSULTA_YO = `
+  query yo {
+    yo { nombre }
   }
 `
 
@@ -43,7 +50,6 @@ interface ClaimsSesion {
   usuario: string
   rol: Rol
   exp: number
-  nombre?: string
 }
 
 /** Lee el payload del JWT sin verificar la firma: eso lo hace el BFF en cada petición. */
@@ -90,12 +96,12 @@ function rutaInicio(): string {
   return estado.rol ? RUTA_INICIO[estado.rol] : '/login'
 }
 
-function abrirSesion(token: string): boolean {
+function abrirSesion(token: string, nombre?: string | null): boolean {
   const claims = leerClaims(token)
   if (!claims) return false
   estado.token = token
   estado.rol = claims.rol
-  estado.nombre = claims.nombre?.trim() || claims.usuario
+  estado.nombre = nombre?.trim() || claims.usuario
   estado.expiraEn = claims.exp * 1000
   usarToken(token)
   guardarToken(token)
@@ -111,11 +117,24 @@ function cerrarSesion(): void {
   guardarToken(null)
 }
 
+/** Pide el nombre del usuario autenticado; si falla, queda el alias (nunca se muestra un error). */
+async function cargarNombre(fetchFn: typeof fetch = fetch): Promise<void> {
+  const token = estado.token
+  try {
+    const datos = await ejecutar<{ yo: { nombre?: string | null } | null }>(CONSULTA_YO, {}, fetchFn)
+    const nombre = datos.yo?.nombre?.trim()
+    if (nombre && estado.token === token) estado.nombre = nombre
+  } catch {
+    /* se queda el alias */
+  }
+}
+
 /** Recupera la sesión guardada si sigue vigente. Se llama al cargar el módulo, es decir, al recargar. */
 export function restaurarSesion(): void {
   const token = leerTokenGuardado()
   if (!token) return
   if (!abrirSesion(token) || !sesionActiva()) cerrarSesion()
+  else void cargarNombre()
 }
 
 restaurarSesion()
@@ -131,11 +150,11 @@ export function useSesion(fetchFn: typeof fetch = fetch) {
       )
       const resultado = datos.iniciarSesion
       if ('mensaje' in resultado) return resultado.mensaje
-      return abrirSesion(resultado.token) ? null : MENSAJE_FALLA
+      return abrirSesion(resultado.token, resultado.usuario.nombre) ? null : MENSAJE_FALLA
     } catch {
       return MENSAJE_FALLA
     }
   }
 
-  return { estado, iniciarSesion, cerrarSesion, sesionActiva, rutaInicio }
+  return { estado, iniciarSesion, cargarNombre: () => cargarNombre(fetchFn), cerrarSesion, sesionActiva, rutaInicio }
 }

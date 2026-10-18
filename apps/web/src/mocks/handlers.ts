@@ -1,5 +1,6 @@
 import { HttpResponse } from 'msw'
 import { graphql } from 'msw/graphql'
+import { leerClaims } from '../composables/useSesion'
 import type {
   Cobro,
   ConfirmacionContacto,
@@ -16,6 +17,7 @@ import type {
   ResultadoOferta,
   ResultadoSesion,
   RolUsuario,
+  Usuario,
 } from '../graphql/tipos'
 
 // Mocks del BFF (contrato/schema.graphql). Convención de demo (equivale a los "disparadores de demo"
@@ -49,6 +51,8 @@ const fuentes = (degradada: boolean): FuenteConsultada[] => [
   },
 ]
 
+const enTreintaDias = () => new Date(Date.now() + 30 * 86_400_000).toISOString()
+
 const oferta = (tipo: Oferta['tipo']): Oferta => ({
   id: `oferta-${tipo.toLowerCase()}`,
   tipo,
@@ -66,6 +70,11 @@ const oferta = (tipo: Oferta['tipo']): Oferta => ({
     { nombre: 'antecedentes-judiciales', peso: 0.15 },
   ],
   fuentes: fuentes(tipo === 'PRELIMINAR'),
+  perfilRiesgo: {
+    score: tipo === 'PRELIMINAR' ? 680 : 780,
+    nivelRiesgo: tipo === 'PRELIMINAR' ? 'MEDIO' : 'BAJO',
+    fechaVigencia: enTreintaDias(),
+  },
 })
 
 const consentimiento = (revocado: boolean): Consentimiento => ({
@@ -74,7 +83,9 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
   versionTexto: 'v1',
   otorgadoEn: ahora(),
   revocadoEn: revocado ? ahora() : null,
+  venceEn: enTreintaDias(),
   vigente: !revocado,
+  estado: revocado ? 'REVOCADO' : 'VIGENTE',
 })
 
 // 4 cobros (HU-W05), uno por cada EstadoCobro, con los nombres, montos y fechas del frame W05-01 de
@@ -151,14 +162,18 @@ const base64url = (texto: string) =>
     .replace(/\//g, '_')
     .replace(/=+$/, '')
 
-export function tokenDeDemo(usuario: string, rol: RolUsuario = rolDeDemo(usuario)): string {
-  const nombre = usuario
+// El nombre no va en el token (contrato v0.7): lo devuelven `iniciarSesion` y `yo`. Se deriva del alias.
+export function nombreDeDemo(usuario: string): string {
+  return usuario
     .split(/[._-]/)
     .filter(Boolean)
     .map((parte) => parte[0].toUpperCase() + parte.slice(1))
     .join(' ')
+}
+
+export function tokenDeDemo(usuario: string, rol: RolUsuario = rolDeDemo(usuario)): string {
   const ahoraSeg = Math.floor(Date.now() / 1000)
-  const claims = { sub: `usuario-${usuario}`, usuario, rol, nombre, iat: ahoraSeg, exp: ahoraSeg + 3600 }
+  const claims = { sub: `usuario-${usuario}`, usuario, rol, iat: ahoraSeg, exp: ahoraSeg + 3600 }
   return `${base64url(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${base64url(JSON.stringify(claims))}.demo`
 }
 
@@ -184,7 +199,32 @@ export const handlers = [
         iniciarSesion: {
           token: tokenDeDemo(usuario, rol),
           expiraEn: new Date(Date.now() + 3600_000).toISOString(),
-          usuario: { id: `usuario-${usuario}`, usuario, rol, estado: 'ACTIVO', creadoEn: ahora() },
+          usuario: {
+            id: `usuario-${usuario}`,
+            usuario,
+            rol,
+            estado: 'ACTIVO',
+            creadoEn: ahora(),
+            nombre: nombreDeDemo(usuario),
+          },
+        },
+      },
+    })
+  }),
+
+  bff.query<{ yo: Usuario | null }>('yo', ({ request }) => {
+    const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
+    const claims = token ? leerClaims(token) : null
+    if (!claims) return HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.' }] })
+    return HttpResponse.json({
+      data: {
+        yo: {
+          id: `usuario-${claims.usuario}`,
+          usuario: claims.usuario,
+          rol: claims.rol,
+          estado: 'ACTIVO',
+          creadoEn: ahora(),
+          nombre: nombreDeDemo(claims.usuario),
         },
       },
     })
@@ -203,15 +243,23 @@ export const handlers = [
   bff.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
     'solicitarOferta',
     ({ variables }) => {
-      const documento = variables.entrada.documentoIdentidad
-      const resultado: ResultadoOferta = documento.endsWith('000')
-        ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
-          {
-            mensaje:
-              'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
-            puedeReintentar: true,
-          }
-        : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
+      const { consentimientoId, documentoIdentidad: documento } = variables.entrada
+      const resultado: ResultadoOferta =
+        consentimientoId === 'con-vencido' || documento.endsWith('998')
+          ? {
+              mensaje: 'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',
+              puedeReintentar: false,
+              motivo: 'CONSENTIMIENTO_NO_VIGENTE',
+            }
+          : documento.endsWith('000')
+            ? // Mismo mensaje que el BFF cuando no llega el historial crediticio (CA-W01-05).
+              {
+                mensaje:
+                  'No pudimos consultar tu historial crediticio en este momento. Intenta de nuevo o habla con un asesor.',
+                puedeReintentar: true,
+                motivo: 'DATOS_INSUFICIENTES',
+              }
+            : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
     },
   ),
