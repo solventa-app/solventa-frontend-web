@@ -68,18 +68,3 @@ jobs:
         run: node scripts/contrato.mjs verificar
         env:
           BACKEND_SCHEMA_PATH: ${{ github.workspace }}/backend/contracts/graphql/schema.graphql
-
-  sonar:
-    # Solo si existen los secretos SONAR_TOKEN y SONAR_HOST_URL.
-    needs: [web]
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-        if: env.SONAR_TOKEN != ''
-      - uses: SonarSource/sonarqube-scan-action@v6
-        if: env.SONAR_TOKEN != ''
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

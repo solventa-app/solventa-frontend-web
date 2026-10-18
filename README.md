@@ -98,7 +98,7 @@ router usa history).
 |---|---|---|
 | Settings → Variables → Actions | `BACKEND_REPO` = `solventa-app/solventa-backend` | Activa el job `contrato` del CI (compara con el `main` del backend) |
 | Settings → Secrets → Actions | `BACKEND_READ_TOKEN` (solo si `solventa-backend` es privado) | Permite al CI leer el backend |
-| Settings → Secrets → Actions | `SONAR_TOKEN` y `SONAR_HOST_URL` | Activa el análisis de SonarCloud (`ci-web.yml`) |
+| Settings → Secrets → Actions | `SONAR_TOKEN` | Activa `sonar.yml`: análisis en SonarQube Cloud (organización `global-spark`, proyecto `global-spark_solventa-frontend`) con la cobertura de Vitest, en cada push a `develop` que toque la web o a mano desde Actions |
 | Settings → Secrets → Actions | `VERCEL_TOKEN` | Activa el despliegue a Vercel (`deploy-web.yml`) |
 | Settings → Secrets → Actions | `CYPRESS_USUARIO_CLIENTE`, `CYPRESS_CLAVE_CLIENTE`, `CYPRESS_USUARIO_ASESOR`, `CYPRESS_CLAVE_ASESOR`, `CYPRESS_USUARIO_BACKOFFICE`, `CYPRESS_CLAVE_BACKOFFICE` | Credenciales de usuarios de prueba en staging para `.github/workflows/e2e-staging.yml` |
 | Settings → Variables → Actions | `VITE_USE_MOCKS` = `true` (opcional) | Despliega la web con los mocks de MSW mientras no haya BFF |
