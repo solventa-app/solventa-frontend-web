@@ -26,10 +26,24 @@ const PESTANAS: { etiqueta: string; valor?: EstadoCobro }[] = [
 ]
 
 const pestanaActiva = ref<EstadoCobro | undefined>(undefined)
+const paginaActual = ref(1)
+const TAMANO_PAGINA = 10
+
+function cambiarPestana(valor?: EstadoCobro) {
+  pestanaActiva.value = valor
+  paginaActual.value = 1
+}
 
 const cobrosFiltrados = computed(() =>
   pestanaActiva.value ? estado.cobros.filter((c) => c.estado === pestanaActiva.value) : estado.cobros,
 )
+
+const totalPaginas = computed(() => Math.max(1, Math.ceil(cobrosFiltrados.value.length / TAMANO_PAGINA)))
+
+const cobrosPaginados = computed(() => {
+  const inicio = (paginaActual.value - 1) * TAMANO_PAGINA
+  return cobrosFiltrados.value.slice(inicio, inicio + TAMANO_PAGINA)
+})
 
 // "Total procesado" (nodo 2001:3297): suma de los cobros visibles en la pestaña activa, en cualquier estado.
 const totalProcesado = computed(() => {
@@ -157,7 +171,7 @@ onUnmounted(() => {
                 ? 'bg-primario text-white'
                 : 'border border-borde bg-white text-tinta-suave hover:bg-fondo'
             "
-            @click="pestanaActiva = pestana.valor"
+            @click="cambiarPestana(pestana.valor)"
           >
             {{ pestana.etiqueta }}
             <span v-if="!pestana.valor" class="rounded-xl bg-white/20 px-1.5 py-0.5 text-[11px]">{{
@@ -167,8 +181,8 @@ onUnmounted(() => {
         </div>
 
         <div class="w-full overflow-hidden rounded-lg border border-borde bg-white">
-          <div class="overflow-auto">
-            <table class="w-full min-w-[880px] border-collapse text-left">
+          <div class="max-h-[520px] overflow-auto">
+            <table class="w-full min-w-[800px] border-collapse text-left">
               <thead>
                 <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
                   <th scope="col" class="py-[25px] pl-4 pr-[14px]">Cliente</th>
@@ -176,17 +190,16 @@ onUnmounted(() => {
                   <th scope="col" class="py-[25px] pr-[14px] text-right">Prima</th>
                   <th scope="col" class="py-[25px] pr-[14px]">Estado</th>
                   <th scope="col" class="py-[25px] pr-[14px]">Fecha del intento</th>
-                  <th scope="col" class="py-[25px] pr-[14px]">ID de transacción</th>
                   <th scope="col" class="py-[25px] pr-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="cobrosFiltrados.length === 0">
-                  <td colspan="7" class="py-6 text-center text-[13px] text-tinta-suave">
+                  <td colspan="6" class="py-6 text-center text-[13px] text-tinta-suave">
                     No hay cobros en este estado.
                   </td>
                 </tr>
-                <tr v-for="cobro in cobrosFiltrados" :key="cobro.id" class="border-b border-borde last:border-b-0">
+                <tr v-for="cobro in cobrosPaginados" :key="cobro.id" class="border-b border-borde last:border-b-0">
                   <td class="py-[24px] pl-4 pr-[14px] text-[13px] text-tinta">{{ cobro.cliente?.nombre ?? '—' }}</td>
                   <td class="py-[24px] pr-[14px] font-mono text-[13px] text-tinta-suave">{{ cobro.polizaId }}</td>
                   <td class="py-[24px] pr-[14px] text-right text-[13px] text-tinta">
@@ -207,7 +220,6 @@ onUnmounted(() => {
                   >
                     {{ fechaDelIntento(cobro) }}
                   </td>
-                  <td class="py-[24px] pr-[14px] font-mono text-[11px] text-tinta">{{ cobro.idTransaccion ?? '—' }}</td>
                   <td class="py-[16px] pr-4 text-center">
                     <Boton
                       v-if="puedeReintentar(cobro)"
@@ -230,14 +242,38 @@ onUnmounted(() => {
             </table>
           </div>
 
-          <div class="flex items-center justify-between border-t border-borde bg-[#f6f3f2] px-4 py-4">
-            <span class="flex items-center gap-1 text-[11px] text-tinta-suave">
-              <IconoMaterial nombre="sync" class="h-[18px] w-[18px]" />
-              Mostrando {{ cobrosFiltrados.length }} transacciones sincronizadas con Core Asegurador
-            </span>
-            <span class="text-[11px] text-tinta-suave">
-              Total procesado: <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
-            </span>
+          <div class="flex flex-wrap items-center justify-between gap-4 border-t border-borde bg-[#f6f3f2] px-4 py-3">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="rounded border border-borde bg-white px-3 py-1 text-[12px] font-medium text-tinta hover:bg-fondo disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="paginaActual <= 1"
+                @click="paginaActual--"
+              >
+                Anterior
+              </button>
+              <span class="text-[12px] text-tinta-suave">
+                Página <strong class="font-semibold text-tinta">{{ paginaActual }}</strong> de
+                <strong class="font-semibold text-tinta">{{ totalPaginas }}</strong>
+              </span>
+              <button
+                type="button"
+                class="rounded border border-borde bg-white px-3 py-1 text-[12px] font-medium text-tinta hover:bg-fondo disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="paginaActual >= totalPaginas"
+                @click="paginaActual++"
+              >
+                Siguiente
+              </button>
+            </div>
+            <div class="flex items-center gap-4 text-[11px] text-tinta-suave">
+              <span class="flex items-center gap-1">
+                <IconoMaterial nombre="sync" class="h-[18px] w-[18px]" />
+                Mostrando {{ cobrosPaginados.length }} de {{ cobrosFiltrados.length }} transacciones
+              </span>
+              <span>
+                Total procesado: <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
+              </span>
+            </div>
           </div>
         </div>
 

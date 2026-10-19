@@ -278,11 +278,16 @@ export const handlers = [
       }),
   ),
 
-  bff.query<{ cobros: Cobro[] }, QueryCobrosArgs>('cobros', ({ variables }) =>
-    HttpResponse.json({
-      data: { cobros: variables.estado ? cobros.filter((c) => c.estado === variables.estado) : cobros },
-    }),
-  ),
+  bff.query<{ cobros: Cobro[] }, QueryCobrosArgs>('cobros', ({ variables }) => {
+    let filtrados = variables.estado ? cobros.filter((c) => c.estado === variables.estado) : cobros
+    if (variables.pagina && variables.tamano && variables.pagina > 0 && variables.tamano > 0) {
+      const inicio = (variables.pagina - 1) * variables.tamano
+      filtrados = filtrados.slice(inicio, inicio + variables.tamano)
+    }
+    return HttpResponse.json({
+      data: { cobros: filtrados },
+    })
+  }),
 
   bff.mutation<{ reintentarCobro: Cobro }, MutationReintentarCobroArgs>('reintentarCobro', ({ variables }) => {
     // Igual que el BFF (contrato v0.6): un RECHAZADO con reintentos se vuelve a cobrar (aquí siempre queda

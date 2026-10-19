@@ -6,8 +6,8 @@ import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 
-const COBROS = `query cobros($estado: EstadoCobro) {
-  cobros(estado: $estado) {
+const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
+  cobros(estado: $estado, pagina: $pagina, tamano: $tamano) {
     id
     cliente { id nombre }
     polizaId
@@ -73,7 +73,10 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
    * `silencioso`: recarga en segundo plano (la tabla se refresca sola). No muestra "Cargando…", no borra la
    * tabla ni muestra un error si falla (se conserva lo que ya hay y se reintenta en el próximo ciclo).
    */
-  async function cargarCobros(filtro?: EstadoCobro, opciones: { silencioso?: boolean } = {}) {
+  async function cargarCobros(
+    filtro?: EstadoCobro,
+    opciones: { silencioso?: boolean; pagina?: number; tamano?: number } = {},
+  ) {
     const silencioso = opciones.silencioso === true
     if (silencioso && estado.reintentando !== null) return
     const generacionAlEmpezar = generacion
@@ -82,7 +85,12 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       estado.error = null
     }
     try {
-      const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, { estado: filtro }, fetchFn)
+      const variables: Record<string, unknown> = {}
+      if (filtro !== undefined) variables.estado = filtro
+      if (opciones.pagina !== undefined) variables.pagina = opciones.pagina
+      if (opciones.tamano !== undefined) variables.tamano = opciones.tamano
+
+      const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, variables, fetchFn)
       if (silencioso && (generacion !== generacionAlEmpezar || estado.reintentando !== null)) return
       estado.cobros = r.cobros
     } catch {
