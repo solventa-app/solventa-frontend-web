@@ -252,7 +252,9 @@ export type Query = {
 
 export type QueryCobrosArgs = {
   estado?: InputMaybe<EstadoCobro>;
+  pagina?: InputMaybe<Scalars['Int']['input']>;
   polizaId?: InputMaybe<Scalars['ID']['input']>;
+  tamano?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
