@@ -11,13 +11,18 @@
   el foco de teclado quedaba completamente invisible (viola WCAG 2.4.7) — se agrega un anillo de
   foco en el contenedor vía `focus-within`, mismo patrón que ya usa CampoFormulario.vue.
 -->
+<script lang="ts">
+export const MONEDAS_SOPORTADAS = ['COP', 'MXN', 'BRL', 'CLP', 'PEN', 'USD', 'EUR'] as const
+export type MonedaSoportada = (typeof MONEDAS_SOPORTADAS)[number]
+</script>
+
 <script setup lang="ts">
 import { useId } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
 
 withDefaults(defineProps<{ modelValue?: string; opciones?: string[]; disabled?: boolean }>(), {
   modelValue: 'COP',
-  opciones: () => ['COP'],
+  opciones: () => [...MONEDAS_SOPORTADAS],
   disabled: false,
 })
 defineEmits<{ 'update:modelValue': [valor: string] }>()

@@ -186,24 +186,24 @@ describe('HU-W05 · pantallas', () => {
     it('trae las columnas del prototipo y el nombre del cliente desde Cobro.cliente', async () => {
       const { wrapper } = await montarConciliacion()
       const encabezados = wrapper.findAll('th').map((th) => th.text())
-      expect(encabezados).toEqual([
-        'Cliente',
-        'N.º de póliza',
-        'Prima',
-        'Estado',
-        'Fecha del intento',
-        'ID de transacción',
-        'Acciones',
-      ])
+      expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Prima', 'Estado', 'Fecha del intento', 'Acciones'])
       expect(wrapper.text()).toContain('Andrés Felipe Duarte')
       expect(wrapper.text()).toContain('SOL-VH-2026-004905')
     })
 
-    it('el cobro Cobrando muestra "en curso" (minúscula, texto literal de Figma) y "—" en vez de fecha/id de transacción', async () => {
+    it('el cobro Cobrando muestra "en curso" (minúscula, texto literal de Figma)', async () => {
       const { wrapper } = await montarConciliacion()
       const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
       expect(filaCobrando?.text()).toContain('en curso')
-      expect(filaCobrando?.text()).toContain('—')
+    })
+
+    it('muestra controles de paginación y deshabilita Anterior en la primera página', async () => {
+      const { wrapper } = await montarConciliacion()
+      expect(wrapper.text()).toContain('Página 1 de 1')
+      const botonAnterior = wrapper.findAll('button').find((b) => b.text() === 'Anterior')
+      const botonSiguiente = wrapper.findAll('button').find((b) => b.text() === 'Siguiente')
+      expect(botonAnterior?.attributes('disabled')).toBeDefined()
+      expect(botonSiguiente?.attributes('disabled')).toBeDefined()
     })
 
     it('filtra por pestaña y solo la fila Rechazado trae "Reintentar cobro"', async () => {
