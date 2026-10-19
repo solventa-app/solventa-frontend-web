@@ -75,6 +75,12 @@ describe('formatearMonto', () => {
   it('redondea a 0 decimales', () => {
     expect(formatearMonto({ valor: '198000.00', moneda: 'COP' })).toBe('$\u00A0198.000')
   })
+
+  it('formatea montos en otras monedas respetando la localizacion (USD, EUR, CLP)', () => {
+    expect(formatearMonto({ valor: '1500', moneda: 'USD' })).toContain('1.500')
+    expect(formatearMonto({ valor: '1500', moneda: 'EUR' })).toContain('1.500')
+    expect(formatearMonto({ valor: '500000', moneda: 'CLP' })).toContain('500.000')
+  })
 })
 
 describe('formatearMonto con montos grandes', () => {
