@@ -19,8 +19,19 @@ interface EstadoSesion {
   token: string | null
   rol: Rol | null
   nombre: string
+  /** Alias con que inició sesión (claim `usuario`); no es un dato personal. */
+  usuario: string
   /** Vencimiento del token (claim `exp`) en milisegundos. */
   expiraEn: number
+  /** Cuándo se inició la sesión, en milisegundos (se muestra en el modal de cerrar sesión, G-04). */
+  iniciadaEn: number
+}
+
+/** Cómo se llama cada rol en pantalla (chips de G-01, perfil y modal de cierre). */
+export const ETIQUETA_ROL: Record<RolUsuario, string> = {
+  CLIENTE: 'Cliente',
+  ASESOR: 'Asesor comercial',
+  BACKOFFICE: 'Operador',
 }
 
 export const RUTA_INICIO: Record<Rol, string> = {
@@ -67,14 +78,29 @@ export function leerClaims(token: string): ClaimsSesion | null {
 
 /** Dónde se guarda el token para que la sesión sobreviva a recargar la página. */
 export const CLAVE_TOKEN = 'solventa.token'
+/** Cuándo empezó la sesión: sin datos personales, solo una marca de tiempo. */
+export const CLAVE_INICIO = 'solventa.sesionIniciadaEn'
 
 // `sessionStorage` puede no existir o fallar (modo privado, cuota): la sesión sigue funcionando en memoria.
-function guardarToken(token: string | null): void {
+function guardarToken(token: string | null, iniciadaEn = 0): void {
   try {
-    if (token) sessionStorage.setItem(CLAVE_TOKEN, token)
-    else sessionStorage.removeItem(CLAVE_TOKEN)
+    if (token) {
+      sessionStorage.setItem(CLAVE_TOKEN, token)
+      sessionStorage.setItem(CLAVE_INICIO, String(iniciadaEn))
+    } else {
+      sessionStorage.removeItem(CLAVE_TOKEN)
+      sessionStorage.removeItem(CLAVE_INICIO)
+    }
   } catch {
     /* sin almacenamiento disponible: solo en memoria */
+  }
+}
+
+function leerInicioGuardado(): number {
+  try {
+    return Number(sessionStorage.getItem(CLAVE_INICIO)) || Date.now()
+  } catch {
+    return Date.now()
   }
 }
 
@@ -86,7 +112,14 @@ function leerTokenGuardado(): string | null {
   }
 }
 
-const estado = reactive<EstadoSesion>({ token: null, rol: null, nombre: '', expiraEn: 0 })
+const estado = reactive<EstadoSesion>({
+  token: null,
+  rol: null,
+  nombre: '',
+  usuario: '',
+  expiraEn: 0,
+  iniciadaEn: 0,
+})
 
 function sesionActiva(): boolean {
   return !!estado.token && estado.expiraEn > Date.now()
@@ -96,15 +129,17 @@ function rutaInicio(): string {
   return estado.rol ? RUTA_INICIO[estado.rol] : '/login'
 }
 
-function abrirSesion(token: string, nombre?: string | null): boolean {
+function abrirSesion(token: string, nombre?: string | null, iniciadaEn = Date.now()): boolean {
   const claims = leerClaims(token)
   if (!claims) return false
   estado.token = token
   estado.rol = claims.rol
   estado.nombre = nombre?.trim() || claims.usuario
+  estado.usuario = claims.usuario
   estado.expiraEn = claims.exp * 1000
+  estado.iniciadaEn = iniciadaEn
   usarToken(token)
-  guardarToken(token)
+  guardarToken(token, iniciadaEn)
   return true
 }
 
@@ -112,7 +147,9 @@ function cerrarSesion(): void {
   estado.token = null
   estado.rol = null
   estado.nombre = ''
+  estado.usuario = ''
   estado.expiraEn = 0
+  estado.iniciadaEn = 0
   usarToken(null)
   guardarToken(null)
 }
@@ -133,7 +170,7 @@ async function cargarNombre(fetchFn: typeof fetch = fetch): Promise<void> {
 export function restaurarSesion(): void {
   const token = leerTokenGuardado()
   if (!token) return
-  if (!abrirSesion(token) || !sesionActiva()) cerrarSesion()
+  if (!abrirSesion(token, null, leerInicioGuardado()) || !sesionActiva()) cerrarSesion()
   else void cargarNombre()
 }
 

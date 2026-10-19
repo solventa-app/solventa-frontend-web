@@ -1,5 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { CLAVE_TOKEN, leerClaims, restaurarSesion, RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import {
+  CLAVE_INICIO,
+  CLAVE_TOKEN,
+  leerClaims,
+  restaurarSesion,
+  RUTA_INICIO,
+  useSesion,
+} from '../src/composables/useSesion'
 import { tokenDeDemo } from '../src/mocks/handlers'
 import { servidor } from '../src/mocks/node'
 
@@ -130,7 +137,9 @@ describe('nombre del usuario al restaurar la sesión (yo)', () => {
     await useSesion(fetchPrueba).iniciarSesion('maria.restrepo', 'x')
     const guardado = sessionStorage.getItem(CLAVE_TOKEN) ?? ''
     expect(guardado).not.toContain('Maria')
-    expect(sessionStorage.length).toBe(1)
+    // Solo el token y la marca de tiempo del inicio de sesión (sin datos personales).
+    expect(sessionStorage.length).toBe(2)
+    expect(Number(sessionStorage.getItem(CLAVE_INICIO))).toBeGreaterThan(0)
   })
 })
 
@@ -139,15 +148,18 @@ describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
 
   afterEach(() => sessionStorage.clear())
 
-  it('iniciarSesion guarda solo el token y cerrarSesion lo borra', async () => {
+  it('iniciarSesion guarda el token y la hora de inicio, y cerrarSesion los borra', async () => {
     const { iniciarSesion, cerrarSesion, estado } = useSesion(fetchPrueba)
     await iniciarSesion('asesor.pena', 'secreta123')
 
-    expect(sessionStorage.length).toBe(1)
+    expect(sessionStorage.length).toBe(2)
     expect(sessionStorage.getItem(CLAVE_TOKEN)).toBe(estado.token)
+    expect(Number(sessionStorage.getItem(CLAVE_INICIO))).toBe(estado.iniciadaEn)
+    expect(estado.usuario).toBe('asesor.pena')
 
     cerrarSesion()
     expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
+    expect(sessionStorage.getItem(CLAVE_INICIO)).toBeNull()
   })
 
   it('al recargar, un token vigente reabre la sesión con su rol', () => {

@@ -662,7 +662,39 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
       .trigger('click')
     await flushPromises()
 
+    // G-04: primero confirma, mostrando el nombre real; Cancelar no cierra nada.
+    const modal = wrapper.get('[role="dialog"]')
+    expect(modal.text()).toContain('¿Deseas cerrar tu sesión?')
+    expect(modal.get('[data-dato="nombre"]').text()).toBe('Maria Restrepo')
+    expect(router.currentRoute.value.path).toBe('/inicio')
+    await modal
+      .findAll('button')
+      .find((b) => b.text().includes('Cerrar sesión'))!
+      .trigger('click')
+    await flushPromises()
+
     expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('G-04: "Cancelar" cierra el modal sin cerrar la sesión', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('maria.restrepo', 'secreta123')
+    const router = crearRouterDePrueba()
+    router.push('/inicio')
+    await router.isReady()
+    const wrapper = montar(HomeCliente, router)
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Cerrar sesión'))!
+      .trigger('click')
+    await wrapper
+      .get('[role="dialog"]')
+      .findAll('button')
+      .find((b) => b.text() === 'Cancelar')!
+      .trigger('click')
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(useSesion().sesionActiva()).toBe(true)
   })
 
   it('G-02a (home asesor): copy distinto al del cliente, mismo destino /cotizacion', async () => {

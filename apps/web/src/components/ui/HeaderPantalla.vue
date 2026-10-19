@@ -12,6 +12,7 @@
   usada en el resto del código es siempre flex-wrap, nunca prefijos sm:/md:/lg:).
 -->
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import AvatarPerfil from './AvatarPerfil.vue'
 import SelectorIdioma from './SelectorIdioma.vue'
 import SelectorMoneda from './SelectorMoneda.vue'
@@ -27,11 +28,18 @@ withDefaults(
   { titulo: undefined, idioma: 'ES', moneda: 'COP', sinPerfil: false },
 )
 
-defineEmits<{
+const emit = defineEmits<{
   'update:idioma': [valor: 'ES' | 'EN']
   'update:moneda': [valor: string]
   perfil: []
 }>()
+
+// El avatar lleva a "Mi perfil" (G-05). Sin router (p. ej. en el índice de componentes) solo emite.
+const router = useRouter()
+function abrirPerfil() {
+  emit('perfil')
+  router?.push('/perfil')
+}
 </script>
 
 <template>
@@ -46,7 +54,7 @@ defineEmits<{
     <div class="flex shrink-0 items-center gap-3">
       <SelectorIdioma :model-value="idioma" @update:model-value="$emit('update:idioma', $event)" />
       <SelectorMoneda :model-value="moneda" @update:model-value="$emit('update:moneda', $event)" />
-      <AvatarPerfil v-if="!sinPerfil" @click="$emit('perfil')" />
+      <AvatarPerfil v-if="!sinPerfil" @click="abrirPerfil" />
     </div>
   </header>
 </template>

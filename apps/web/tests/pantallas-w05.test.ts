@@ -86,6 +86,11 @@ describe('HU-W05 · pantallas', () => {
       const boton = wrapper.findAll('button').find((b) => b.text().includes('Cerrar sesión'))
       expect(boton).toBeDefined()
       await boton!.trigger('click')
+      await wrapper
+        .get('[role="dialog"]')
+        .findAll('button')
+        .find((b) => b.text().includes('Cerrar sesión'))!
+        .trigger('click')
       await flushPromises()
       expect(router.currentRoute.value.path).toBe('/login')
       expect(estado.rol).toBeNull()
