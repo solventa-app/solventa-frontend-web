@@ -586,8 +586,43 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/login')
-    expect(wrapper.get('[role="alert"]').text()).toBe('Tu usuario no corresponde al rol seleccionado.')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Tu rol es Cliente. Selecciónalo e ingresa de nuevo.')
     expect(useSesion().sesionActiva()).toBe(false)
+    // Queda preseleccionado su rol y la clave se borra.
+    expect(
+      wrapper
+        .findAll('[role="radio"]')
+        .find((b) => b.text() === 'Cliente')!
+        .attributes('aria-checked'),
+    ).toBe('true')
+    expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('G-01 el botón del ojo muestra y oculta la contraseña', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+    const boton = wrapper.get('button[aria-label="Mostrar contraseña"]')
+
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await boton.trigger('click')
+    expect(wrapper.find('input[type="password"]').exists()).toBe(false)
+    expect(boton.attributes('aria-label')).toBe('Ocultar contraseña')
+    expect(boton.attributes('aria-pressed')).toBe('true')
+
+    await boton.trigger('click')
+    expect(wrapper.find('input[type="password"]').exists()).toBe(true)
+  })
+
+  it('G-01 no muestra el avatar de perfil en el header (todavía no hay sesión)', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    expect(wrapper.find('header').exists()).toBe(true)
+    expect(wrapper.find('header').html()).not.toMatch(/[Pp]erfil/)
   })
 
   it('G-01 muestra el mensaje genérico del BFF con credenciales incorrectas', async () => {
@@ -627,7 +662,39 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
       .trigger('click')
     await flushPromises()
 
+    // G-04: primero confirma, mostrando el nombre real; Cancelar no cierra nada.
+    const modal = wrapper.get('[role="dialog"]')
+    expect(modal.text()).toContain('¿Deseas cerrar tu sesión?')
+    expect(modal.get('[data-dato="nombre"]').text()).toBe('Maria Restrepo')
+    expect(router.currentRoute.value.path).toBe('/inicio')
+    await modal
+      .findAll('button')
+      .find((b) => b.text().includes('Cerrar sesión'))!
+      .trigger('click')
+    await flushPromises()
+
     expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('G-04: "Cancelar" cierra el modal sin cerrar la sesión', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('maria.restrepo', 'secreta123')
+    const router = crearRouterDePrueba()
+    router.push('/inicio')
+    await router.isReady()
+    const wrapper = montar(HomeCliente, router)
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Cerrar sesión'))!
+      .trigger('click')
+    await wrapper
+      .get('[role="dialog"]')
+      .findAll('button')
+      .find((b) => b.text() === 'Cancelar')!
+      .trigger('click')
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+    expect(useSesion().sesionActiva()).toBe(true)
   })
 
   it('G-02a (home asesor): copy distinto al del cliente, mismo destino /cotizacion', async () => {
