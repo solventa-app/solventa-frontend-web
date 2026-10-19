@@ -586,8 +586,43 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/login')
-    expect(wrapper.get('[role="alert"]').text()).toBe('Tu usuario no corresponde al rol seleccionado.')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Tu rol es Cliente. Selecciónalo e ingresa de nuevo.')
     expect(useSesion().sesionActiva()).toBe(false)
+    // Queda preseleccionado su rol y la clave se borra.
+    expect(
+      wrapper
+        .findAll('[role="radio"]')
+        .find((b) => b.text() === 'Cliente')!
+        .attributes('aria-checked'),
+    ).toBe('true')
+    expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('G-01 el botón del ojo muestra y oculta la contraseña', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+    const boton = wrapper.get('button[aria-label="Mostrar contraseña"]')
+
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await boton.trigger('click')
+    expect(wrapper.find('input[type="password"]').exists()).toBe(false)
+    expect(boton.attributes('aria-label')).toBe('Ocultar contraseña')
+    expect(boton.attributes('aria-pressed')).toBe('true')
+
+    await boton.trigger('click')
+    expect(wrapper.find('input[type="password"]').exists()).toBe(true)
+  })
+
+  it('G-01 no muestra el avatar de perfil en el header (todavía no hay sesión)', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+
+    expect(wrapper.find('header').exists()).toBe(true)
+    expect(wrapper.find('header').html()).not.toMatch(/[Pp]erfil/)
   })
 
   it('G-01 muestra el mensaje genérico del BFF con credenciales incorrectas', async () => {

@@ -21,8 +21,10 @@ withDefaults(
     titulo?: string
     idioma?: 'ES' | 'EN'
     moneda?: string
+    /** Sin avatar de perfil: en el login todavía no hay nadie con perfil (pedido de felipe, 2026-10-19). */
+    sinPerfil?: boolean
   }>(),
-  { titulo: undefined, idioma: 'ES', moneda: 'COP' },
+  { titulo: undefined, idioma: 'ES', moneda: 'COP', sinPerfil: false },
 )
 
 defineEmits<{
@@ -44,7 +46,7 @@ defineEmits<{
     <div class="flex shrink-0 items-center gap-3">
       <SelectorIdioma :model-value="idioma" @update:model-value="$emit('update:idioma', $event)" />
       <SelectorMoneda :model-value="moneda" @update:model-value="$emit('update:moneda', $event)" />
-      <AvatarPerfil @click="$emit('perfil')" />
+      <AvatarPerfil v-if="!sinPerfil" @click="$emit('perfil')" />
     </div>
   </header>
 </template>

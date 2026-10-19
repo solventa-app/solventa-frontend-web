@@ -5,7 +5,8 @@
   Desviaciones del prototipo:
   - El campo es "Usuario", no "Correo electrónico": el backend prohíbe que el alias sea un correo.
   - Los chips de rol se conservan, pero si el rol del token no coincide con el elegido se rechaza el
-    ingreso con un mensaje, en vez de entrar con un rol distinto al que la persona escogió.
+    ingreso con «Tu rol es X» y se preselecciona su rol, en vez de entrar con otro rol.
+  - Sin avatar de perfil en el header (todavía no hay sesión) y con botón para ver la contraseña.
   - "Portal de socios" apunta a HU-W07 (Sprint 2): se muestra sin navegación.
   Pendiente: el `role="radiogroup"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
 -->
@@ -37,8 +38,16 @@ async function ingresar() {
   ingresando.value = false
   if (error.value) return
   if (estado.rol !== rol.value) {
+    // La clave ya fue correcta, así que decirle su rol no revela nada a un tercero. Se preselecciona el
+    // chip correcto para que vuelva a ingresar con un clic, y la sesión no queda abierta con otro rol.
+    const rolReal = estado.rol
     cerrarSesion()
-    error.value = 'Tu usuario no corresponde al rol seleccionado.'
+    const chip = CHIPS.find((c) => c.rol === rolReal)
+    error.value = chip
+      ? `Tu rol es ${chip.etiqueta}. Selecciónalo e ingresa de nuevo.`
+      : 'Tu usuario no tiene un rol habilitado en esta web.'
+    if (chip) rol.value = chip.rol
+    clave.value = ''
     return
   }
   router.push(rutaInicio())
@@ -47,7 +56,7 @@ async function ingresar() {
 
 <template>
   <div data-pantalla="G-01" class="flex h-screen flex-col overflow-hidden">
-    <HeaderPantalla titulo="Iniciar sesión" />
+    <HeaderPantalla titulo="Iniciar sesión" sin-perfil />
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[464px] flex-col gap-5">
         <Divisor />
