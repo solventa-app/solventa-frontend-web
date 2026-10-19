@@ -99,3 +99,12 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
 - Afecta al frontend: sí (`useCotizacion` envía los campos de titular/canal en `registrarConsentimiento` y reacciona a
   `motivo = CONSENTIMIENTO_NO_VIGENTE`). Requiere el PR gemelo en `solventa-frontend-web`.
 
+## v0.9 — 2026-10-18
+
+- KAN-28 (Bloque I - Jurisdicciones): se define el catálogo canónico de jurisdicciones en `contrato/jurisdicciones.json`
+  (copia idéntica de `solventa-backend/contracts/jurisdicciones.json`) para 7 países: CO (COP, CC), MX (MXN, CURP),
+  BR (BRL, CPF), CL (CLP, RUT), PE (PEN, DNI), US (USD, SSN) y ES (EUR, DNI_NIE).
+- Incluye parámetros regulatorios, límites de montos, plazos, DTI máximo y régimen de finanzas abiertas.
+- Afecta al frontend: sí (catálogo compartido y reglas de validación de documentos por jurisdicción).
+
+
