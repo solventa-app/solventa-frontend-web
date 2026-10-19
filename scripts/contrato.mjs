@@ -47,10 +47,8 @@ const esperado = normalizar(texto)
 
 if (modo === 'sincronizar') {
   await writeFile(copia, esperado, 'utf8')
-  try {
-    const jurContenido = await readFile(copiaJur, 'utf8')
-    await writeFile(copiaJurWeb, normalizar(jurContenido), 'utf8')
-  } catch {}
+  // El despliegue de Vercel solo sube apps/web: la web importa su propia copia del catálogo.
+  await writeFile(copiaJurWeb, normalizar(await readFile(copiaJur, 'utf8')), 'utf8')
   console.log(`Contrato sincronizado desde ${origen}.\nAhora corre: npm run codegen --prefix apps/web`)
 } else {
   const actual = normalizar(await readFile(copia, 'utf8'))
@@ -58,13 +56,11 @@ if (modo === 'sincronizar') {
     console.error(`El contrato local difiere del backend (${origen}).\nCorre: npm run contrato:sincronizar`)
     process.exit(1)
   }
-  try {
-    const jurRoot = normalizar(await readFile(copiaJur, 'utf8'))
-    const jurWeb = normalizar(await readFile(copiaJurWeb, 'utf8'))
-    if (jurRoot !== jurWeb) {
-      console.error('El catalogo de jurisdicciones en apps/web difiere del root.\nCorre: npm run contrato:sincronizar')
-      process.exit(1)
-    }
-  } catch {}
+  const jurRaiz = normalizar(await readFile(copiaJur, 'utf8'))
+  const jurWeb = await readFile(copiaJurWeb, 'utf8').then(normalizar, () => null)
+  if (jurRaiz !== jurWeb) {
+    console.error('El catálogo de jurisdicciones de apps/web falta o difiere del de la raíz.\nCorre: npm run contrato:sincronizar')
+    process.exit(1)
+  }
   console.log(`Contrato al día con ${origen}.`)
 }
