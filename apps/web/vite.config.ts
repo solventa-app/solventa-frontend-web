@@ -8,14 +8,22 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
     server: {
       port: 5173,
-      // El BFF expone /graphql/web (web) y /graphql/app (móvil): ver contrato/README.md.
+      // El gateway Envoy local (:8080) y el BFF (:8000) exponen /graphql/web y /graphql/app: ver contrato/README.md.
       proxy: {
-        '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8000', changeOrigin: true },
+        '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
       },
     },
     test: {
       environment: 'jsdom',
       include: ['tests/**/*.test.ts'],
+      // Solo se mide con `npm run test:cobertura` (lo usa el análisis de Sonar). `include` hace que los
+      // archivos que ninguna prueba carga aparezcan al 0 %, en vez de quedar fuera del porcentaje.
+      coverage: {
+        provider: 'v8',
+        reporter: ['lcov', 'text-summary'],
+        include: ['src/**/*.{ts,vue}'],
+        exclude: ['src/graphql/tipos.ts', 'src/**/*.d.ts'],
+      },
     },
   }
 })

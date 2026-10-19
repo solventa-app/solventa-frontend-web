@@ -4,10 +4,10 @@
   explícito porque la raíz es un <div> y el atributo no llegaría al <input>.
 -->
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     modelValue: string
     label: string
@@ -34,6 +34,11 @@ withDefaults(
 
 defineEmits<{ 'update:modelValue': [valor: string] }>()
 
+// Una contraseña lleva un botón para verla u ocultarla en vez del ícono decorativo.
+const esClave = computed(() => props.type === 'password')
+const claveVisible = ref(false)
+const tipoEfectivo = computed(() => (esClave.value && claveVisible.value ? 'text' : props.type || 'text'))
+
 const idCampo = useId()
 const idError = useId()
 const idHint = useId()
@@ -52,12 +57,12 @@ const idHint = useId()
           : error
             ? 'border-error bg-white'
             : 'border-borde bg-white focus-within:border-enlace',
-        icono ? 'pr-9' : '',
+        icono || esClave ? 'pr-9' : '',
       ]"
     >
       <input
         :id="idCampo"
-        :type="type"
+        :type="tipoEfectivo"
         :value="modelValue"
         :placeholder="placeholder"
         :required="required"
@@ -67,8 +72,20 @@ const idHint = useId()
         class="w-full bg-transparent text-cuerpo text-tinta outline-none placeholder:text-tinta-suave disabled:cursor-not-allowed disabled:text-tinta-suave"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
+      <button
+        v-if="esClave"
+        type="button"
+        class="absolute right-2 flex h-7 w-7 items-center justify-center rounded text-tinta-suave hover:text-tinta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
+        :aria-label="claveVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        :aria-pressed="claveVisible"
+        :aria-controls="idCampo"
+        :disabled="disabled"
+        @click="claveVisible = !claveVisible"
+      >
+        <IconoMaterial :nombre="claveVisible ? 'visibility_off' : 'visibility'" class="h-5 w-5" />
+      </button>
       <IconoMaterial
-        v-if="icono"
+        v-else-if="icono"
         :nombre="icono"
         class="pointer-events-none absolute right-3 h-5 w-5 text-tinta-suave"
       />

@@ -30,6 +30,9 @@ export async function ejecutar<T>(
     headers: cabeceras,
     body: JSON.stringify({ query: consulta, variables }),
   })
+  if (respuesta.status === 502 || respuesta.status === 503 || respuesta.status === 504) {
+    throw new ErrorGraphQL('El servicio tardó más de lo esperado. Intenta nuevamente.')
+  }
   if (!respuesta.ok) throw new ErrorGraphQL(`El BFF respondió ${respuesta.status}`)
 
   const cuerpo = (await respuesta.json()) as { data?: T; errors?: { message: string }[] }

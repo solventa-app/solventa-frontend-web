@@ -46,16 +46,22 @@ export type ConfirmacionContacto = {
 };
 
 export type Consentimiento = {
+  estado: EstadoConsentimiento;
   finalidad: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   otorgadoEn: Scalars['DateTime']['output'];
   revocadoEn?: Maybe<Scalars['DateTime']['output']>;
+  venceEn: Scalars['DateTime']['output'];
   versionTexto: Scalars['String']['output'];
   vigente: Scalars['Boolean']['output'];
 };
 
 export type ConsentimientoInput = {
+  canal?: InputMaybe<Scalars['String']['input']>;
+  documentoIdentidad?: InputMaybe<Scalars['String']['input']>;
   finalidad: Scalars['String']['input'];
+  fuenteDatos?: InputMaybe<Scalars['String']['input']>;
+  tipoDato?: InputMaybe<Scalars['String']['input']>;
   versionTexto: Scalars['String']['input'];
 };
 
@@ -89,6 +95,7 @@ export type ErrorCobro = {
 
 export type ErrorOferta = {
   mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorOferta>;
   puedeReintentar: Scalars['Boolean']['output'];
 };
 
@@ -101,6 +108,11 @@ export type EstadoCobro =
   | 'COBRANDO'
   | 'PENDIENTE'
   | 'RECHAZADO';
+
+export type EstadoConsentimiento =
+  | 'REVOCADO'
+  | 'VENCIDO'
+  | 'VIGENTE';
 
 export type EstadoFuente =
   | 'CACHE'
@@ -133,6 +145,11 @@ export type MontoInput = {
   moneda: Scalars['String']['input'];
   valor: Scalars['String']['input'];
 };
+
+export type MotivoErrorOferta =
+  | 'CONSENTIMIENTO_NO_VIGENTE'
+  | 'DATOS_INSUFICIENTES'
+  | 'FUENTES_NO_DISPONIBLES';
 
 export type Mutation = {
   cambiarRolUsuario: ResultadoUsuario;
@@ -199,11 +216,17 @@ export type MutationSuspenderUsuarioArgs = {
   id: Scalars['ID']['input'];
 };
 
+export type NivelRiesgo =
+  | 'ALTO'
+  | 'BAJO'
+  | 'MEDIO';
+
 export type Oferta = {
   cobertura: Monto;
   desgloseScore: Array<FactorScore>;
   fuentes: Array<FuenteConsultada>;
   id: Scalars['ID']['output'];
+  perfilRiesgo?: Maybe<PerfilRiesgo>;
   prima?: Maybe<Monto>;
   rangoPrima?: Maybe<RangoPrima>;
   tipo: TipoOferta;
@@ -212,6 +235,12 @@ export type Oferta = {
 export type OrigenFuente =
   | 'OPEN_DATA'
   | 'OPEN_FINANCE';
+
+export type PerfilRiesgo = {
+  fechaVigencia: Scalars['DateTime']['output'];
+  nivelRiesgo: NivelRiesgo;
+  score: Scalars['Int']['output'];
+};
 
 export type Query = {
   cobros: Array<Cobro>;
@@ -223,7 +252,9 @@ export type Query = {
 
 export type QueryCobrosArgs = {
   estado?: InputMaybe<EstadoCobro>;
+  pagina?: InputMaybe<Scalars['Int']['input']>;
   polizaId?: InputMaybe<Scalars['ID']['input']>;
+  tamano?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -276,6 +307,7 @@ export type Usuario = {
   creadoEn: Scalars['DateTime']['output'];
   estado: EstadoUsuario;
   id: Scalars['ID']['output'];
+  nombre?: Maybe<Scalars['String']['output']>;
   rol: RolUsuario;
   usuario: Scalars['String']['output'];
 };

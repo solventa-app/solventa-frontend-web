@@ -145,4 +145,70 @@ describe('useConciliacion', () => {
     await reintentarCobro(rechazado!.id)
     expect(estado.errorReintento).toBeNull()
   })
+
+  describe('recarga silenciosa (la tabla se refresca sola)', () => {
+    it('no muestra "Cargando…" ni toca el error, y trae los datos nuevos', async () => {
+      const { estado, cargarCobros } = useConciliacion(fetchPrueba)
+      estado.cobros.splice(0, 1) // la tabla quedó vieja: le falta un cobro
+
+      const recarga = cargarCobros(undefined, { silencioso: true })
+
+      expect(estado.cargando).toBe(false)
+      await recarga
+      expect(estado.cobros).toHaveLength(4)
+      expect(estado.cargando).toBe(false)
+      expect(estado.error).toBeNull()
+    })
+
+    it('si falla conserva la tabla y no muestra ningún error', async () => {
+      const { estado, cargarCobros } = useConciliacion(fetchPrueba)
+      servidor.use(http.post('http://localhost/graphql/web', () => new HttpResponse(null, { status: 502 })))
+
+      await cargarCobros(undefined, { silencioso: true })
+
+      expect(estado.cobros).toHaveLength(4)
+      expect(estado.error).toBeNull()
+    })
+
+    it('no recarga mientras hay un reintento en curso', async () => {
+      let consultas = 0
+      const fetchQueCuenta: typeof fetch = (url, init) => {
+        consultas++
+        return fetchPrueba(url, init)
+      }
+      const { estado, cargarCobros } = useConciliacion(fetchQueCuenta)
+      estado.reintentando = 'cobro-3'
+
+      await cargarCobros(undefined, { silencioso: true })
+      estado.reintentando = null
+
+      expect(consultas).toBe(0)
+    })
+
+    it('descarta una recarga que se cruzó con un reintento (no devuelve el cobro a su estado anterior)', async () => {
+      const { estado, reintentarCobro } = useConciliacion(fetchPrueba)
+      const rechazado = estado.cobros.find((c) => c.estado === 'RECHAZADO')!
+      const copiaAntigua = JSON.parse(JSON.stringify(estado.cobros)) as typeof estado.cobros
+
+      // La recarga sale antes del reintento pero su respuesta llega después, con datos de antes.
+      let soltar: () => void = () => {}
+      const compuerta = new Promise<void>((resolver) => (soltar = resolver))
+      const fetchLento: typeof fetch = async (url, init) => {
+        const cuerpo = JSON.parse(String(init?.body)) as { query: string }
+        if (cuerpo.query.includes('reintentarCobro(')) return fetchPrueba(url, init)
+        await compuerta
+        return new Response(JSON.stringify({ data: { cobros: copiaAntigua } }), {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      const lento = useConciliacion(fetchLento)
+
+      const recarga = lento.cargarCobros(undefined, { silencioso: true })
+      await reintentarCobro(rechazado.id)
+      soltar()
+      await recarga
+
+      expect(estado.cobros.find((c) => c.id === rechazado.id)?.estado).toBe('COBRADO')
+    })
+  })
 })

@@ -5,18 +5,13 @@
   nombre de la sesión (useSesion.ts). "Mis pólizas" lleva a /polizas, aún pendiente (G-06).
 -->
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import { Divisor, FooterPantalla, HeaderPantalla, ModalCerrarSesion, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { useCierreDeSesion } from '../composables/useCierreDeSesion'
 import { useSesion } from '../composables/useSesion'
 
-const router = useRouter()
-const { estado, cerrarSesion } = useSesion()
-
-function alCerrarSesion() {
-  cerrarSesion()
-  router.push('/login')
-}
+const { estado } = useSesion()
+const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierreDeSesion()
 </script>
 
 <template>
@@ -31,7 +26,7 @@ function alCerrarSesion() {
       <button
         type="button"
         class="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[13px] font-medium text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
-        @click="alCerrarSesion"
+        @click="pedirCierre"
       >
         Cerrar sesión
         <IconoMaterial nombre="logout" class="h-5 w-5" />
@@ -86,5 +81,7 @@ function alCerrarSesion() {
     </main>
 
     <FooterPantalla />
+
+    <ModalCerrarSesion :abierto="modalAbierto" @cancelar="cancelarCierre" @confirmar="confirmarCierre" />
   </div>
 </template>

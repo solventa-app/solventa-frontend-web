@@ -205,6 +205,18 @@ describe('SelectorMoneda', () => {
     expect(selector.get('select').attributes('aria-label')).toContain('COP')
   })
 
+  it('incluye las monedas soportadas por defecto (multijurisdiccion)', () => {
+    const selector = mount(SelectorMoneda)
+    const opciones = selector.findAll('option').map((opt) => opt.text())
+    expect(opciones).toEqual(['COP', 'MXN', 'BRL', 'CLP', 'PEN', 'USD', 'EUR'])
+  })
+
+  it('emite update:modelValue al cambiar la moneda seleccionada', async () => {
+    const selector = mount(SelectorMoneda)
+    await selector.get('select').setValue('USD')
+    expect(selector.emitted('update:modelValue')).toEqual([['USD']])
+  })
+
   it('propaga disabled al <select> real (hallazgo QA: antes quedaba en el <div> envolvente)', () => {
     const selector = mount(SelectorMoneda, { props: { disabled: true } })
     expect(selector.get('select').attributes('disabled')).toBeDefined()

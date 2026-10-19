@@ -1,0 +1,43 @@
+name: Sonar
+
+# Análisis de calidad en SonarQube Cloud (organización y proyecto en sonar-project.properties), con la
+# cobertura de Vitest. Automático solo en push a develop (la rama principal del repo y del proyecto en Sonar)
+# cuando cambia la web; a mano desde Actions → Run workflow, sobre la rama que se elija (Sonar la registra
+# como análisis de esa rama). Necesita el secreto SONAR_TOKEN.
+on:
+  push:
+    branches: [develop]
+    paths: ['apps/web/**', 'e2e/**', 'sonar-project.properties', '.github/workflows/sonar.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Historial completo: con un clon superficial Sonar no puede atribuir el código nuevo.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Cobertura (Vitest)
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run test:cobertura
+      # Vitest escribe las rutas relativas a apps/web; Sonar las resuelve desde la raíz del repo.
+      - name: Rutas del lcov desde la raíz del repo
+        run: sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
+      - uses: SonarSource/sonarqube-scan-action@v6

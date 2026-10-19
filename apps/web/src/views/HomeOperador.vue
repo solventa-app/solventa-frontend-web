@@ -5,18 +5,13 @@
   2001:799). Las tarjetas usan la insignia circular de los otros homes por consistencia.
 -->
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import { Divisor, FooterPantalla, HeaderPantalla, ModalCerrarSesion, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { useCierreDeSesion } from '../composables/useCierreDeSesion'
 import { useSesion } from '../composables/useSesion'
 
-const router = useRouter()
-const { cerrarSesion } = useSesion()
-
-function alCerrarSesion() {
-  cerrarSesion()
-  router.push('/login')
-}
+const { estado } = useSesion()
+const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierreDeSesion()
 </script>
 
 <template>
@@ -27,7 +22,7 @@ function alCerrarSesion() {
       <button
         type="button"
         class="flex w-full items-center justify-end gap-2 rounded-md bg-fondo px-[14px] py-[10px] text-[13px] font-normal text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
-        @click="alCerrarSesion"
+        @click="pedirCierre"
       >
         Cerrar sesión
         <IconoMaterial nombre="logout" class="h-[18px] w-[18px]" />
@@ -37,6 +32,7 @@ function alCerrarSesion() {
 
       <section class="flex w-full flex-col gap-5">
         <TituloPantalla>Home / Dashboard — Operador</TituloPantalla>
+        <p class="text-[16px] text-tinta" data-dato="saludo">Hola, {{ estado.nombre }}</p>
 
         <div class="flex flex-wrap items-stretch gap-5">
           <!--
@@ -75,5 +71,7 @@ function alCerrarSesion() {
     </main>
 
     <FooterPantalla />
+
+    <ModalCerrarSesion :abierto="modalAbierto" @cancelar="cancelarCierre" @confirmar="confirmarCierre" />
   </div>
 </template>

@@ -15,6 +15,8 @@ describe('G-02b · Home del Operador (pantalla aislada)', () => {
     cy.get('[data-pantalla="G-02b"]').within(() => {
       cy.contains('button', 'Cerrar sesión').click()
     })
+    // G-04: se confirma en el modal, que muestra el nombre de quien cierra.
+    cy.get('[role="dialog"]').contains('button', 'Cerrar sesión').click()
     cy.location('pathname').should('eq', '/login')
   })
 })

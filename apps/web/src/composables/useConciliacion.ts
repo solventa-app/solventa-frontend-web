@@ -6,8 +6,8 @@ import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 
-const COBROS = `query cobros($estado: EstadoCobro) {
-  cobros(estado: $estado) {
+const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
+  cobros(estado: $estado, pagina: $pagina, tamano: $tamano) {
     id
     cliente { id nombre }
     polizaId
@@ -64,24 +64,47 @@ function mensajeParaUsuario(error: unknown, generico: string): string {
   return deResolutor && error.message !== 'Unexpected error.' ? error.message : generico
 }
 
+// Cuenta los reintentos manuales (empezados y terminados): una recarga silenciosa que se cruza con uno
+// trae datos de antes del reintento y se descarta, para no devolver el cobro a su estado anterior.
+let generacion = 0
+
 export function useConciliacion(fetchFn: typeof fetch = fetch) {
-  async function cargarCobros(filtro?: EstadoCobro) {
-    estado.cargando = true
-    estado.error = null
+  /**
+   * `silencioso`: recarga en segundo plano (la tabla se refresca sola). No muestra "Cargando…", no borra la
+   * tabla ni muestra un error si falla (se conserva lo que ya hay y se reintenta en el próximo ciclo).
+   */
+  async function cargarCobros(
+    filtro?: EstadoCobro,
+    opciones: { silencioso?: boolean; pagina?: number; tamano?: number } = {},
+  ) {
+    const silencioso = opciones.silencioso === true
+    if (silencioso && estado.reintentando !== null) return
+    const generacionAlEmpezar = generacion
+    if (!silencioso) {
+      estado.cargando = true
+      estado.error = null
+    }
     try {
-      const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, { estado: filtro }, fetchFn)
+      const variables: Record<string, unknown> = {}
+      if (filtro !== undefined) variables.estado = filtro
+      if (opciones.pagina !== undefined) variables.pagina = opciones.pagina
+      if (opciones.tamano !== undefined) variables.tamano = opciones.tamano
+
+      const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, variables, fetchFn)
+      if (silencioso && (generacion !== generacionAlEmpezar || estado.reintentando !== null)) return
       estado.cobros = r.cobros
     } catch {
       // Nunca se muestra el error técnico/5xx crudo al usuario (CLAUDE.md regla 5).
-      estado.error = 'No pudimos cargar la conciliación de pagos en este momento.'
+      if (!silencioso) estado.error = 'No pudimos cargar la conciliación de pagos en este momento.'
     } finally {
-      estado.cargando = false
+      if (!silencioso) estado.cargando = false
     }
   }
 
   async function reintentarCobro(cobroId: string) {
     estado.reintentando = cobroId
     estado.errorReintento = null
+    generacion++
     try {
       const r = await ejecutar<{ reintentarCobro: Cobro }>(REINTENTAR_COBRO, { cobroId }, fetchFn)
       const indice = estado.cobros.findIndex((c) => c.id === cobroId)
@@ -90,6 +113,7 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       estado.errorReintento = mensajeParaUsuario(error, 'No pudimos reintentar el cobro en este momento.')
     } finally {
       estado.reintentando = null
+      generacion++
     }
   }
 

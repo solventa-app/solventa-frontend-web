@@ -63,7 +63,7 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
 
 - Código integrado a `develop` por PR con revisión de al menos otro integrante.
 - Pruebas unitarias del código nuevo en verde en el pipeline (Vitest en web, `flutter_test` en móvil).
-- Quality gate de SonarQube aprobado y Dependabot sin vulnerabilidades críticas abiertas.
+- Quality gate de SonarCloud aprobado y Dependabot sin vulnerabilidades críticas abiertas. En `ci-web.yml` corre además `npm audit --audit-level=high` en modo **informativo** (`continue-on-error: true`): no bloquea el check `web` mientras queden avisos en dependencias transitivas de desarrollo, y pasa a ser obligatorio (quitando `continue-on-error`) una vez resueltos esos hallazgos.
 - Flujo E2E de la historia en verde en staging (Cypress en web, `integration_test` en móvil).
 - Sin datos personales en logs ni en la consola.
 - Pantalla fiel al prototipo de Figma y accesible por teclado; estados de carga, vacío y error cubiertos.

@@ -59,6 +59,16 @@ export const pantallas: Pantalla[] = [
     criterios: ['CA-W05-01'],
     componente: () => import('../views/HomeOperador.vue'),
   },
+  {
+    id: 'G-05',
+    ruta: '/perfil',
+    nombre: 'Mi perfil',
+    historia: 'Global',
+    sprint: 1,
+    roles: ['CLIENTE', 'ASESOR', 'BACKOFFICE'],
+    criterios: [],
+    componente: () => import('../views/MiPerfil.vue'),
+  },
   // G-06 no tiene pantalla propia todavía (ninguna HU de este sprint cubre consultar pólizas
   // emitidas): se registra solo como destino honesto de las tarjetas "Mis pólizas"/"Pólizas
   // emitidas" de los homes (G-02/G-02a), que sin esto no tenían a dónde llevar al hacer clic.

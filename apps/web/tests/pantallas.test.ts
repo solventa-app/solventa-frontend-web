@@ -27,7 +27,8 @@ const SPRINT_1 = [
 // como destino honesto de las tarjetas "Mis pólizas"/"Pólizas emitidas" de los homes (G-02/G-02a),
 // que de otro modo no tenían a dónde llevar al hacer clic (cae en PantallaPendiente, no un enlace
 // roto). Se cuenta aparte en vez de inflar el catálogo de 12 pantallas del Sprint 1.
-const RUTAS_FUERA_DE_SPRINT_1 = ['G-06']
+// G-05 (Mi perfil) llegó antes del Sprint 2 por pedido de felipe (2026-10-19).
+const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06']
 
 describe('catálogo de pantallas', () => {
   it('cubre exactamente las 12 pantallas del Sprint 1 (más las rutas honestas fuera de sprint)', () => {
