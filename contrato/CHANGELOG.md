@@ -106,4 +106,13 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
 - Cambio aditivo y compatible hacia atrás: clientes que no envíen estos parámetros reciben la primera página de 10 elementos.
 - Afecta al frontend: sí (la tabla de W05 implementa paginación y controles de avance/retroceso). Requiere PR gemelo en `solventa-backend`.
 
+## v0.10 — 2026-10-18
+
+- KAN-28 (Bloque I - Jurisdicciones): se define el catálogo canónico de jurisdicciones en `contrato/jurisdicciones.json`
+  (copia idéntica de `solventa-backend/contracts/jurisdicciones.json`) para 7 países: CO (COP, CC), MX (MXN, CURP),
+  BR (BRL, CPF), CL (CLP, RUT), PE (PEN, DNI), US (USD, SSN) y ES (EUR, DNI_NIE).
+- Incluye parámetros regulatorios, límites de montos, plazos, DTI máximo y régimen de finanzas abiertas.
+- Afecta al frontend: sí (catálogo compartido y reglas de validación de documentos por jurisdicción).
+
+
 
