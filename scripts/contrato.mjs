@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url'
 const aqui = dirname(fileURLToPath(import.meta.url))
 const copia = resolve(aqui, '../contrato/schema.graphql')
 const hermano = resolve(aqui, '../../solventa-backend/contracts/graphql/schema.graphql')
+const copiaJur = resolve(aqui, '../contrato/jurisdicciones.json')
+const copiaJurWeb = resolve(aqui, '../apps/web/src/contrato/jurisdicciones.json')
 
 const normalizar = (texto) => texto.replace(/\r\n/g, '\n').trimEnd() + '\n'
 
@@ -45,6 +47,10 @@ const esperado = normalizar(texto)
 
 if (modo === 'sincronizar') {
   await writeFile(copia, esperado, 'utf8')
+  try {
+    const jurContenido = await readFile(copiaJur, 'utf8')
+    await writeFile(copiaJurWeb, normalizar(jurContenido), 'utf8')
+  } catch {}
   console.log(`Contrato sincronizado desde ${origen}.\nAhora corre: npm run codegen --prefix apps/web`)
 } else {
   const actual = normalizar(await readFile(copia, 'utf8'))
@@ -52,5 +58,13 @@ if (modo === 'sincronizar') {
     console.error(`El contrato local difiere del backend (${origen}).\nCorre: npm run contrato:sincronizar`)
     process.exit(1)
   }
+  try {
+    const jurRoot = normalizar(await readFile(copiaJur, 'utf8'))
+    const jurWeb = normalizar(await readFile(copiaJurWeb, 'utf8'))
+    if (jurRoot !== jurWeb) {
+      console.error('El catalogo de jurisdicciones en apps/web difiere del root.\nCorre: npm run contrato:sincronizar')
+      process.exit(1)
+    }
+  } catch {}
   console.log(`Contrato al día con ${origen}.`)
 }
