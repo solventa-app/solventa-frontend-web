@@ -1,4 +1,4 @@
-import catalogoJson from '../../../../contrato/jurisdicciones.json'
+import catalogoJson from '../contrato/jurisdicciones.json'
 
 export interface Jurisdiccion {
   codigo: string

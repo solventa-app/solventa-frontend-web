@@ -123,7 +123,7 @@ describe('useCotizacion', () => {
     expect(cotizacion.estado.contacto).toBeNull()
   })
 
-  it('pide al BFF todos los campos del consentimiento que muestran las pantallas y envía titular/canal', async () => {
+  it('pide al BFF solo los campos del consentimiento del contrato desplegado (hotfix hasta el #184 del backend)', async () => {
     // A diferencia de MSW, el BFF real solo devuelve los campos pedidos. Este handler ejecuta la
     // consulta contra el contrato (contrato/schema.graphql), igual que el BFF: si la mutación no
     // pide `otorgadoEn`, la pantalla W01-04 (DetalleDeFuentes.vue) no tendría fecha que mostrar.
@@ -157,16 +157,20 @@ describe('useCotizacion', () => {
 
     const recibido = await cotizacion.registrarConsentimiento()
 
-    expect(recibido).toEqual(completo)
+    // `venceEn` y `estado` no existen en el BFF desplegado: no se piden (llegan con el #184 del backend).
+    expect(recibido).toEqual({
+      id: completo.id,
+      finalidad: completo.finalidad,
+      versionTexto: completo.versionTexto,
+      otorgadoEn: completo.otorgadoEn,
+      revocadoEn: completo.revocadoEn,
+      vigente: completo.vigente,
+    })
     expect(cotizacion.estado.consentimiento?.otorgadoEn).toBe('2026-10-17T12:00:00+00:00')
     expect(variablesRecibidas).toEqual({
       entrada: {
         finalidad: 'perfilamiento',
         versionTexto: 'v1',
-        documentoIdentidad: '1020304050',
-        tipoDato: 'FINANCIEROS_Y_ABIERTOS',
-        fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
-        canal: 'WEB',
       },
     })
   })

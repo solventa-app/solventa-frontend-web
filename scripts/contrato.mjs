@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url'
 const aqui = dirname(fileURLToPath(import.meta.url))
 const copia = resolve(aqui, '../contrato/schema.graphql')
 const hermano = resolve(aqui, '../../solventa-backend/contracts/graphql/schema.graphql')
+const copiaJur = resolve(aqui, '../contrato/jurisdicciones.json')
+const copiaJurWeb = resolve(aqui, '../apps/web/src/contrato/jurisdicciones.json')
 
 const normalizar = (texto) => texto.replace(/\r\n/g, '\n').trimEnd() + '\n'
 
@@ -45,11 +47,19 @@ const esperado = normalizar(texto)
 
 if (modo === 'sincronizar') {
   await writeFile(copia, esperado, 'utf8')
+  // El despliegue de Vercel solo sube apps/web: la web importa su propia copia del catálogo.
+  await writeFile(copiaJurWeb, normalizar(await readFile(copiaJur, 'utf8')), 'utf8')
   console.log(`Contrato sincronizado desde ${origen}.\nAhora corre: npm run codegen --prefix apps/web`)
 } else {
   const actual = normalizar(await readFile(copia, 'utf8'))
   if (actual !== esperado) {
     console.error(`El contrato local difiere del backend (${origen}).\nCorre: npm run contrato:sincronizar`)
+    process.exit(1)
+  }
+  const jurRaiz = normalizar(await readFile(copiaJur, 'utf8'))
+  const jurWeb = await readFile(copiaJurWeb, 'utf8').then(normalizar, () => null)
+  if (jurRaiz !== jurWeb) {
+    console.error('El catálogo de jurisdicciones de apps/web falta o difiere del de la raíz.\nCorre: npm run contrato:sincronizar')
     process.exit(1)
   }
   console.log(`Contrato al día con ${origen}.`)
