@@ -82,7 +82,7 @@ router usa history).
    (cualquier clave sirve); con `false` (o sin la variable) llama al BFF real a través del gateway. Es una variable de **construcción**: cambiarla
    no afecta a lo ya desplegado, solo al siguiente despliegue.
 4. `apps/web/vercel.json` reescribe `/graphql/*` al **API Gateway** de staging en Cloud Run
-   (`https://gateway-f5egaxcn6q-uc.a.run.app`, que corta a 700 ms delante del BFF), antes del rewrite a `index.html`: el cliente llama a `/graphql/web` en el mismo
+   (`https://solventa-gateway-btxoyawl.uc.gateway.dev`, que corta a 700 ms delante del BFF), antes del rewrite a `index.html`: el cliente llama a `/graphql/web` en el mismo
    origen y Vercel hace de proxy (sin CORS). Si el gateway cambia de URL tras un despliegue del backend, se actualiza ahí. El proxy de Vite solo existe en desarrollo.
 
 ## Documentación
