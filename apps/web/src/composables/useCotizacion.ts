@@ -52,9 +52,6 @@ export function esOferta(resultado: ResultadoOferta | null | undefined): resulta
 
 // Se piden todos los campos que usa alguna pantalla: el BFF real solo devuelve lo que se pide y los
 // mocks devuelven el objeto completo, así que una omisión solo se nota contra el BFF.
-// Hotfix: solo campos del contrato DESPLEGADO del BFF. `venceEn`, `estado`, `perfilRiesgo`, `motivo` y
-// las entradas `documentoIdentidad`/`tipoDato`/`fuenteDatos`/`canal` del consentimiento llegan con el
-// PR #184 del backend; se vuelven a pedir cuando ese contrato esté desplegado.
 const MUTACION_REGISTRAR_CONSENTIMIENTO = `
   mutation registrarConsentimiento($entrada: ConsentimientoInput!) {
     registrarConsentimiento(entrada: $entrada) {
@@ -63,7 +60,9 @@ const MUTACION_REGISTRAR_CONSENTIMIENTO = `
       versionTexto
       otorgadoEn
       revocadoEn
+      venceEn
       vigente
+      estado
     }
   }
 `
@@ -79,10 +78,12 @@ const MUTACION_SOLICITAR_OFERTA = `
         cobertura { valor moneda }
         desgloseScore { nombre peso }
         fuentes { id nombre origen estado capturadoEn }
+        perfilRiesgo { score nivelRiesgo fechaVigencia }
       }
       ... on ErrorOferta {
         mensaje
         puedeReintentar
+        motivo
       }
     }
   }
@@ -110,6 +111,10 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         entrada: {
           finalidad: 'perfilamiento',
           versionTexto: 'v1',
+          documentoIdentidad: estado.captura.documentoIdentidad,
+          tipoDato: 'FINANCIEROS_Y_ABIERTOS',
+          fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
+          canal: 'WEB',
         },
       },
       fetchFn,
