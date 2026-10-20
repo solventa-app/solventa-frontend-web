@@ -5,7 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/graphql/:path*", "destination": "https://bff-f5egaxcn6q-uc.a.run.app/graphql/:path*" },
+    { "source": "/graphql/:path*", "destination": "https://solventa-gateway-btxoyawl.uc.gateway.dev/graphql/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
