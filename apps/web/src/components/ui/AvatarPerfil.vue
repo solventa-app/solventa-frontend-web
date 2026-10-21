@@ -6,15 +6,16 @@
 -->
 <script setup lang="ts">
 import IconoMaterial from './IconoMaterial.vue'
+import { t } from '../../i18n'
 
-withDefaults(defineProps<{ etiqueta?: string }>(), { etiqueta: 'Mi perfil' })
+defineProps<{ etiqueta?: string }>()
 defineEmits<{ click: [] }>()
 </script>
 
 <template>
   <button
     type="button"
-    :aria-label="etiqueta"
+    :aria-label="etiqueta ?? t('perfil.avatar')"
     class="flex h-8 w-8 items-center justify-center rounded-full bg-primario text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
     @click="$emit('click')"
   >

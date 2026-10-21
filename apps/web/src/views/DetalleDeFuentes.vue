@@ -13,6 +13,7 @@ import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../c
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
+import { t } from '../i18n'
 import { formatearFecha } from '../utils/formato'
 import { nombreFuente } from '../utils/nombres'
 
@@ -30,11 +31,11 @@ function rutaVolver() {
 
 <template>
   <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-04">
-    <HeaderPantalla titulo="Detalle de fuentes" />
-    <MigasDePan seccion="Detalle de fuentes" :a-inicio="rutaInicio()" />
+    <HeaderPantalla :titulo="t('fuentes.titulo')" />
+    <MigasDePan :seccion="t('fuentes.titulo')" :a-inicio="rutaInicio()" />
     <main v-if="oferta" class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-6">
       <div class="flex w-full max-w-[880px] flex-col gap-5 rounded-lg border border-borde bg-white p-5">
-        <TituloPantalla class="border-b border-borde pb-4">Fuentes consultadas para tu oferta</TituloPantalla>
+        <TituloPantalla class="border-b border-borde pb-4">{{ t('fuentes.encabezado') }}</TituloPantalla>
 
         <section v-if="openFinance.length" class="flex flex-col gap-2">
           <h2 class="flex items-center gap-2 text-[16px] font-semibold uppercase tracking-[0.8px] text-primario">
@@ -63,10 +64,10 @@ function rutaVolver() {
                   />
                   {{
                     fuente.estado === 'OK'
-                      ? 'Consultado en línea'
+                      ? t('fuentes.enLinea')
                       : fuente.estado === 'CACHE'
-                        ? 'Usando último valor cacheado'
-                        : 'No disponible'
+                        ? t('fuentes.cache')
+                        : t('fuentes.noDisponible')
                   }}
                 </span>
                 <span v-if="fuente.capturadoEn" class="text-[11px] text-tinta-suave">{{
@@ -104,10 +105,10 @@ function rutaVolver() {
                   />
                   {{
                     fuente.estado === 'OK'
-                      ? 'Consultado en línea'
+                      ? t('fuentes.enLinea')
                       : fuente.estado === 'CACHE'
-                        ? 'Usando último valor cacheado'
-                        : 'No disponible'
+                        ? t('fuentes.cache')
+                        : t('fuentes.noDisponible')
                   }}
                 </span>
                 <span v-if="fuente.capturadoEn" class="text-[11px] text-tinta-suave">{{
@@ -122,7 +123,7 @@ function rutaVolver() {
           <p class="flex items-center gap-1 text-[11px] text-tinta-suave">
             <IconoMaterial nombre="lock" class="h-3.5 w-3.5" />
             <template v-if="estado.consentimiento">
-              Consentimiento vigente desde {{ formatearFecha(estado.consentimiento.otorgadoEn) }} · Ley 1581 Habeas Data
+              {{ t('fuentes.consentimiento', { fecha: formatearFecha(estado.consentimiento.otorgadoEn) }) }}
             </template>
           </p>
           <RouterLink
@@ -130,7 +131,7 @@ function rutaVolver() {
             class="flex items-center gap-2 rounded-sm border border-borde bg-white px-5 py-2.5 text-[13px] font-semibold text-primario hover:bg-fondo"
           >
             <IconoMaterial nombre="arrow_back" class="h-5 w-5" />
-            Volver a la oferta
+            {{ t('fuentes.volver') }}
           </RouterLink>
         </div>
       </div>
@@ -139,10 +140,10 @@ function rutaVolver() {
       v-else
       class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center"
     >
-      <p class="text-[13px] text-tinta-suave">No hay fuentes para mostrar: aún no se ha consultado ninguna oferta.</p>
-      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline"
-        >Ir a la solicitud</RouterLink
-      >
+      <p class="text-[13px] text-tinta-suave">{{ t('fuentes.vacio') }}</p>
+      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">{{
+        t('comun.irSolicitud')
+      }}</RouterLink>
     </main>
     <FooterPantalla />
   </div>

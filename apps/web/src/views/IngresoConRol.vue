@@ -14,7 +14,8 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
-import { useSesion, type Rol } from '../composables/useSesion'
+import { etiquetaRol, useSesion, type Rol } from '../composables/useSesion'
+import { t } from '../i18n'
 
 const router = useRouter()
 const { estado, iniciarSesion, cerrarSesion, rutaInicio } = useSesion()
@@ -25,11 +26,7 @@ const rol = ref<Rol>('CLIENTE')
 const error = ref<string | null>(null)
 const ingresando = ref(false)
 
-const CHIPS: { rol: Rol; etiqueta: string }[] = [
-  { rol: 'CLIENTE', etiqueta: 'Cliente' },
-  { rol: 'ASESOR', etiqueta: 'Asesor comercial' },
-  { rol: 'BACKOFFICE', etiqueta: 'Operador' },
-]
+const CHIPS: Rol[] = ['CLIENTE', 'ASESOR', 'BACKOFFICE']
 
 async function ingresar() {
   if (!usuario.value.trim() || !clave.value || ingresando.value) return
@@ -42,11 +39,9 @@ async function ingresar() {
     // chip correcto para que vuelva a ingresar con un clic, y la sesión no queda abierta con otro rol.
     const rolReal = estado.rol
     cerrarSesion()
-    const chip = CHIPS.find((c) => c.rol === rolReal)
-    error.value = chip
-      ? `Tu rol es ${chip.etiqueta}. Selecciónalo e ingresa de nuevo.`
-      : 'Tu usuario no tiene un rol habilitado en esta web.'
-    if (chip) rol.value = chip.rol
+    const chip = CHIPS.find((c) => c === rolReal)
+    error.value = chip ? t('ingreso.otroRol', { rol: etiquetaRol(chip) }) : t('ingreso.sinRol')
+    if (chip) rol.value = chip
     clave.value = ''
     return
   }
@@ -56,41 +51,46 @@ async function ingresar() {
 
 <template>
   <div data-pantalla="G-01" class="flex h-screen flex-col overflow-hidden">
-    <HeaderPantalla titulo="Iniciar sesión" sin-perfil />
+    <HeaderPantalla :titulo="t('ingreso.titulo')" sin-perfil />
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[464px] flex-col gap-5">
         <Divisor />
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
-          <TituloPantalla class="mb-6">Iniciar sesión</TituloPantalla>
+          <TituloPantalla class="mb-6">{{ t('ingreso.titulo') }}</TituloPantalla>
           <form class="flex w-full flex-col gap-5" novalidate @submit.prevent="ingresar">
-            <CampoFormulario v-model="usuario" label="Usuario" placeholder="tu.usuario" required />
+            <CampoFormulario
+              v-model="usuario"
+              :label="t('ingreso.usuario')"
+              :placeholder="t('ingreso.usuarioEjemplo')"
+              required
+            />
             <CampoFormulario
               v-model="clave"
               type="password"
-              label="Contraseña"
+              :label="t('ingreso.clave')"
               placeholder="••••••••"
               icono="lock"
               required
             />
 
             <div class="flex flex-col gap-2">
-              <span class="text-[13px] text-tinta">Ingresas como</span>
-              <div role="radiogroup" aria-label="Ingresas como" class="flex flex-wrap items-center gap-2">
+              <span class="text-[13px] text-tinta">{{ t('ingreso.ingresasComo') }}</span>
+              <div role="radiogroup" :aria-label="t('ingreso.ingresasComo')" class="flex flex-wrap items-center gap-2">
                 <button
                   v-for="chip in CHIPS"
-                  :key="chip.rol"
+                  :key="chip"
                   type="button"
                   role="radio"
-                  :aria-checked="rol === chip.rol"
+                  :aria-checked="rol === chip"
                   class="flex h-[44px] items-center justify-center rounded-xl px-4 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
                   :class="
-                    rol === chip.rol
+                    rol === chip
                       ? 'bg-primario text-white'
                       : 'border border-borde bg-white text-tinta-suave hover:bg-fondo'
                   "
-                  @click="rol = chip.rol"
+                  @click="rol = chip"
                 >
-                  {{ chip.etiqueta }}
+                  {{ etiquetaRol(chip) }}
                 </button>
               </div>
             </div>
@@ -103,20 +103,15 @@ async function ingresar() {
               class="w-full"
               @click="ingresar"
             >
-              Ingresar
+              {{ t('ingreso.ingresar') }}
             </Boton>
 
             <p class="text-[11px] leading-[14px] text-tinta-suave">
-              Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de cotización,
-              con distinto encabezado según quién entra.
+              {{ t('ingreso.nota') }}
             </p>
 
-            <p
-              class="text-[13px] text-enlace"
-              aria-disabled="true"
-              title="Disponible próximamente (HU-W07, fuera de este sprint)"
-            >
-              ¿Eres un socio de distribución? Ingresa al portal de socios API
+            <p class="text-[13px] text-enlace" aria-disabled="true" :title="t('ingreso.socioTitulo')">
+              {{ t('ingreso.socio') }}
             </p>
           </form>
         </div>

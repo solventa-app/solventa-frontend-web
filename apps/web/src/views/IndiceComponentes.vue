@@ -20,9 +20,9 @@ import {
   SelectorMoneda,
   TituloPantalla,
 } from '../components/ui'
+import { idioma } from '../i18n'
 
 const documento = ref('')
-const idioma = ref<'ES' | 'EN'>('ES')
 const moneda = ref('COP')
 const filtroActivo = ref('Todos')
 </script>
@@ -36,7 +36,7 @@ const filtroActivo = ref('Todos')
 
     <section style="margin-top: 2rem">
       <h2>Header de pantalla</h2>
-      <HeaderPantalla v-model:idioma="idioma" v-model:moneda="moneda" titulo="Home del Cliente" />
+      <HeaderPantalla v-model:moneda="moneda" titulo="Home del Cliente" />
     </section>
 
     <section style="margin-top: 1.5rem">

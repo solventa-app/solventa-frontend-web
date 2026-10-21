@@ -3,6 +3,7 @@
 // (regla 7) y se pierde al recargar.
 import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
+import { t } from '../i18n'
 import type {
   CanalContacto,
   ConfirmacionContacto,
@@ -152,7 +153,7 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         estado.consentimiento = null
         estado.captura.consentimiento = false
         estado.resultado = {
-          mensaje: 'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',
+          mensaje: t('solicitud.consentimientoVencido'),
           puedeReintentar: false,
           motivo: 'CONSENTIMIENTO_NO_VIGENTE',
         }
@@ -164,9 +165,9 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
       // con mensaje seguro (regla 5), así W01-02 y W01-03c la muestran por el mismo camino que un
       // error de negocio.
       const mensajeGateway =
-        error instanceof ErrorGraphQL && error.message === 'El servicio tardó más de lo esperado. Intenta nuevamente.'
+        error instanceof ErrorGraphQL && error.message === t('comun.servicioLento')
           ? error.message
-          : 'No pudimos completar tu consulta. Intenta nuevamente o habla con un asesor.'
+          : t('solicitud.fallaConsulta')
       estado.resultado = {
         mensaje: mensajeGateway,
         puedeReintentar: true,
