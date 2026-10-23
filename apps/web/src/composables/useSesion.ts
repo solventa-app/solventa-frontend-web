@@ -12,6 +12,7 @@
 import { reactive } from 'vue'
 import { ejecutar, usarToken } from '../graphql/cliente'
 import type { ResultadoSesion, RolUsuario } from '../graphql/tipos'
+import { t } from '../i18n'
 
 export type Rol = RolUsuario
 
@@ -27,11 +28,9 @@ interface EstadoSesion {
   iniciadaEn: number
 }
 
-/** Cómo se llama cada rol en pantalla (chips de G-01, perfil y modal de cierre). */
-export const ETIQUETA_ROL: Record<RolUsuario, string> = {
-  CLIENTE: 'Cliente',
-  ASESOR: 'Asesor comercial',
-  BACKOFFICE: 'Operador',
+/** Cómo se llama cada rol en pantalla (chips de G-01, perfil y modal de cierre), en el idioma activo. */
+export function etiquetaRol(rol: RolUsuario): string {
+  return t(`rol.${rol}`)
 }
 
 export const RUTA_INICIO: Record<Rol, string> = {
@@ -39,8 +38,6 @@ export const RUTA_INICIO: Record<Rol, string> = {
   ASESOR: '/asesor',
   BACKOFFICE: '/operador',
 }
-
-const MENSAJE_FALLA = 'No pudimos iniciar sesión en este momento. Intenta de nuevo.'
 
 const MUTACION_INICIAR_SESION = `
   mutation iniciarSesion($entrada: CredencialesInput!) {
@@ -187,9 +184,9 @@ export function useSesion(fetchFn: typeof fetch = fetch) {
       )
       const resultado = datos.iniciarSesion
       if ('mensaje' in resultado) return resultado.mensaje
-      return abrirSesion(resultado.token, resultado.usuario.nombre) ? null : MENSAJE_FALLA
+      return abrirSesion(resultado.token, resultado.usuario.nombre) ? null : t('ingreso.falla')
     } catch {
-      return MENSAJE_FALLA
+      return t('ingreso.falla')
     }
   }
 

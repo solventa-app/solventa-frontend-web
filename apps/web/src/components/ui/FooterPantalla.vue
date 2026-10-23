@@ -7,6 +7,7 @@
 -->
 <script setup lang="ts">
 import IconoMaterial from './IconoMaterial.vue'
+import { t } from '../../i18n'
 
 const anio = new Date().getFullYear()
 </script>
@@ -15,14 +16,14 @@ const anio = new Date().getFullYear()
   <footer
     class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-borde bg-white px-10 pb-5 pt-[21px] text-[11px] leading-[18px] text-tinta-suave"
   >
-    <p>© {{ anio }} Solventa Tecnologías S.A.S. Todos los derechos reservados.</p>
+    <p>{{ t('pie.derechos', { anio }) }}</p>
     <p class="flex flex-wrap items-center gap-2">
       <span class="flex items-center gap-1">
         <IconoMaterial nombre="lock" class="h-[14px] w-[14px]" />
-        Conexión segura TLS 1.3
+        {{ t('pie.tls') }}
       </span>
       <span aria-hidden="true">•</span>
-      <span>Vigilado por la Superintendencia Financiera de Colombia</span>
+      <span>{{ t('pie.vigilado') }}</span>
     </p>
   </footer>
 </template>

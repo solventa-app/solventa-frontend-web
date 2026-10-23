@@ -13,6 +13,7 @@ import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } fro
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esErrorOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
+import { t } from '../i18n'
 
 const router = useRouter()
 const { estado } = useCotizacion()
@@ -26,8 +27,8 @@ function reintentar() {
 
 <template>
   <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-03c">
-    <HeaderPantalla titulo="Nueva cotización" />
-    <MigasDePan seccion="Nueva cotización" :a-inicio="rutaInicio()" />
+    <HeaderPantalla :titulo="t('comun.nuevaCotizacion')" />
+    <MigasDePan :seccion="t('comun.nuevaCotizacion')" :a-inicio="rutaInicio()" />
     <main
       v-if="error"
       class="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto bg-fondo px-10 py-16"
@@ -42,27 +43,27 @@ function reintentar() {
             />
           </svg>
         </div>
-        <TituloPantalla class="text-center">No pudimos completar tu consulta</TituloPantalla>
+        <TituloPantalla class="text-center">{{ t('errorOferta.titulo') }}</TituloPantalla>
         <p class="max-w-[448px] text-center text-[13px] leading-[18px] text-tinta-suave">
           {{ error.mensaje }}
         </p>
         <div class="flex flex-col items-center gap-4">
           <Boton v-if="error.puedeReintentar" class="w-full" @click="reintentar">
             <template #icono><IconoMaterial nombre="refresh" class="h-4 w-4" /></template>
-            Reintentar
+            {{ t('errorOferta.reintentar') }}
           </Boton>
           <RouterLink
             to="/cotizacion/asesor"
             class="flex items-center gap-1.5 text-[13px] font-semibold leading-[18px] text-primario"
           >
             <IconoMaterial nombre="headset_mic" class="h-[18px] w-[18px]" />
-            Hablar con un asesor
+            {{ t('errorOferta.asesor') }}
           </RouterLink>
         </div>
         <div class="flex w-full items-center justify-center border-t border-borde pt-4">
           <div class="flex items-center gap-1">
             <IconoMaterial nombre="shield" class="h-[18px] w-[18px] text-tinta-suave" />
-            <span class="text-[11px] leading-[14px] text-tinta-suave">Validación segura B2B2C</span>
+            <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('errorOferta.validacion') }}</span>
           </div>
         </div>
       </div>
@@ -71,10 +72,10 @@ function reintentar() {
       v-else
       class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center"
     >
-      <p class="text-[13px] text-tinta-suave">No hay un error activo en memoria todavía.</p>
-      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline"
-        >Ir a la solicitud</RouterLink
-      >
+      <p class="text-[13px] text-tinta-suave">{{ t('errorOferta.vacio') }}</p>
+      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">{{
+        t('comun.irSolicitud')
+      }}</RouterLink>
     </main>
     <FooterPantalla />
   </div>

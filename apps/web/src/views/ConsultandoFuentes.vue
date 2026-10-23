@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router'
 import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import { esErrorOferta, esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
+import { t } from '../i18n'
 
 const router = useRouter()
 const { estado, captura, solicitarOferta } = useCotizacion()
@@ -37,9 +38,9 @@ onMounted(async () => {
 
 <template>
   <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-02">
-    <HeaderPantalla titulo="Consultando fuentes" />
-    <TituloPantalla class="sr-only">Consultando fuentes</TituloPantalla>
-    <MigasDePan seccion="Nueva cotización" :a-inicio="rutaInicio()" />
+    <HeaderPantalla :titulo="t('consulta.titulo')" />
+    <TituloPantalla class="sr-only">{{ t('consulta.titulo') }}</TituloPantalla>
+    <MigasDePan :seccion="t('comun.nuevaCotizacion')" :a-inicio="rutaInicio()" />
     <main
       v-if="!sinDatosCapturados"
       class="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto bg-fondo px-10 py-16"
@@ -57,13 +58,13 @@ onMounted(async () => {
         />
       </svg>
       <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">
-        Verificando tus fuentes de Open Finance / Open Data
+        {{ t('consulta.verificando') }}
       </h2>
       <div class="h-[6px] w-[400px] max-w-full overflow-hidden rounded-full bg-info-fondo">
         <div class="h-full w-2/3 animate-pulse rounded-full bg-enlace" />
       </div>
       <p class="text-center text-[11px] leading-[14px] text-tinta-suave">
-        (avanza automáticamente según la respuesta del ACL — no tiene botón manual)
+        {{ t('consulta.nota') }}
       </p>
     </main>
     <main
@@ -72,10 +73,10 @@ onMounted(async () => {
       role="status"
       aria-live="polite"
     >
-      <p class="text-[13px] text-tinta-suave">No hay una solicitud en curso para consultar.</p>
-      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline"
-        >Ir a la solicitud</RouterLink
-      >
+      <p class="text-[13px] text-tinta-suave">{{ t('consulta.sinSolicitud') }}</p>
+      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">{{
+        t('comun.irSolicitud')
+      }}</RouterLink>
     </main>
     <FooterPantalla />
   </div>

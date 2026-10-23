@@ -19,6 +19,7 @@ export type MonedaSoportada = (typeof MONEDAS_SOPORTADAS)[number]
 <script setup lang="ts">
 import { useId } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
+import { t } from '../../i18n'
 
 withDefaults(defineProps<{ modelValue?: string; opciones?: string[]; disabled?: boolean }>(), {
   modelValue: 'COP',
@@ -35,12 +36,12 @@ const idSelector = useId()
     class="inline-flex h-7 items-center gap-1 rounded-full border border-borde bg-fondo pl-[13px] pr-[11px] focus-within:ring-2 focus-within:ring-enlace focus-within:ring-offset-2"
     :class="{ 'cursor-not-allowed opacity-60': disabled }"
   >
-    <label :for="idSelector" class="sr-only">Moneda</label>
+    <label :for="idSelector" class="sr-only">{{ t('moneda.etiqueta') }}</label>
     <select
       :id="idSelector"
       :value="modelValue"
       :disabled="disabled"
-      :aria-label="`Cambiar moneda. Moneda actual: ${modelValue}`"
+      :aria-label="t('moneda.cambiar', { moneda: modelValue })"
       class="appearance-none bg-transparent text-[11px] font-semibold leading-[11px] text-tinta outline-none disabled:cursor-not-allowed"
       @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
     >
