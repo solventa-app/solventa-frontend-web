@@ -42,8 +42,8 @@ function validar(): boolean {
     nuevosErrores.valorCredito = 'Ingresa un monto válido, mayor a cero.'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 360) {
-    nuevosErrores.plazoMeses = 'Ingresa un plazo válido en meses, mayor a cero.'
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 60) {
+    nuevosErrores.plazoMeses = 'Ingresa un plazo válido, entre 1 y 60 meses.'
   }
   if (!captura.direccionInmueble.trim()) {
     nuevosErrores.direccionInmueble = 'Ingresa la dirección del inmueble a asegurar.'
@@ -68,7 +68,7 @@ function enviar() {
 function simular(sufijo: '999' | '000') {
   captura.documentoIdentidad = `CC10203040${sufijo === '999' ? '999' : '000'}`
   captura.valorCredito = captura.valorCredito || '185000000'
-  captura.plazoMeses = captura.plazoMeses || '180'
+  captura.plazoMeses = captura.plazoMeses || '60'
   captura.direccionInmueble = captura.direccionInmueble || 'Cra 45 # 22-18, Bogotá D.C.'
   captura.consentimiento = true
   irAConsultar()
@@ -106,7 +106,7 @@ function simular(sufijo: '999' | '000') {
             v-model="captura.plazoMeses"
             label="Plazo (meses)"
             type="number"
-            placeholder="Ej: 180"
+            placeholder="Ej: 60"
             :error="intentoEnvio ? errores.plazoMeses : undefined"
             required
           />
