@@ -5,6 +5,7 @@
 import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
+import { t } from '../i18n'
 
 const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
   cobros(estado: $estado, pagina: $pagina, tamano: $tamano) {
@@ -95,7 +96,7 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       estado.cobros = r.cobros
     } catch {
       // Nunca se muestra el error técnico/5xx crudo al usuario (CLAUDE.md regla 5).
-      if (!silencioso) estado.error = 'No pudimos cargar la conciliación de pagos en este momento.'
+      if (!silencioso) estado.error = t('conciliacion.errorCarga')
     } finally {
       if (!silencioso) estado.cargando = false
     }
@@ -110,7 +111,7 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       const indice = estado.cobros.findIndex((c) => c.id === cobroId)
       if (indice !== -1) estado.cobros.splice(indice, 1, r.reintentarCobro)
     } catch (error) {
-      estado.errorReintento = mensajeParaUsuario(error, 'No pudimos reintentar el cobro en este momento.')
+      estado.errorReintento = mensajeParaUsuario(error, t('conciliacion.errorReintento'))
     } finally {
       estado.reintentando = null
       generacion++

@@ -33,6 +33,10 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
+- **Idioma ES/EN (KAN-209):** el selector del header cambia el idioma de toda la web (`src/i18n`: `t('clave')`, catálogos
+  `es.ts`/`en.ts` con las mismas claves, exigido por TypeScript). Se recuerda en `localStorage` (`solventa.idioma`, no es
+  dato personal) y viaja al BFF como `Accept-Language`, que devuelve sus mensajes en ese idioma. Un texto nuevo de
+  pantalla va al catálogo, nunca quemado en la plantilla.
 - Calidad: typecheck, ESLint, Prettier, Vitest, `vite build` y `npm audit` informativo en el CI.
 - D-F1 cerrada: componentes propios en `src/components/ui/` y Twind para los estilos (`docs/plan-frontend.md`).
 - La app móvil se construye en otro repositorio.

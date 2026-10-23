@@ -12,6 +12,7 @@ import { computed } from 'vue'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
+import { t } from '../i18n'
 import { formatearMonto, formatearPorcentaje } from '../utils/formato'
 import { nombreFuente } from '../utils/nombres'
 
@@ -22,9 +23,9 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
 
 <template>
   <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-03a">
-    <HeaderPantalla titulo="Oferta lista" />
-    <TituloPantalla class="sr-only">Oferta lista</TituloPantalla>
-    <MigasDePan seccion="Nueva cotización" :a-inicio="rutaInicio()" />
+    <HeaderPantalla :titulo="t('oferta.titulo')" />
+    <TituloPantalla class="sr-only">{{ t('oferta.titulo') }}</TituloPantalla>
+    <MigasDePan :seccion="t('comun.nuevaCotizacion')" :a-inicio="rutaInicio()" />
     <main
       v-if="oferta && oferta.prima"
       class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-12"
@@ -37,15 +38,21 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
             />
           </svg>
         </div>
-        <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">Tu oferta está lista</h2>
+        <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">{{ t('oferta.lista') }}</h2>
         <div class="flex w-full flex-col items-center gap-1.5 rounded-md border border-borde p-4">
-          <p class="text-[22px] font-bold leading-normal text-primario">{{ formatearMonto(oferta.prima!) }} / mes</p>
-          <p class="text-[13px] leading-[18px] text-tinta">Cobertura: {{ formatearMonto(oferta.cobertura) }}</p>
+          <p class="text-[22px] font-bold leading-normal text-primario">
+            {{ t('comun.porMes', { monto: formatearMonto(oferta.prima!) }) }}
+          </p>
+          <p class="text-[13px] leading-[18px] text-tinta">
+            {{ t('comun.cobertura', { monto: formatearMonto(oferta.cobertura) }) }}
+          </p>
         </div>
         <div class="flex w-full flex-col gap-2 border-y border-borde py-4">
           <div class="flex items-center justify-between px-1">
-            <span class="text-[13px] text-tinta-suave">Plazo:</span>
-            <span class="text-[13px] font-semibold text-tinta">{{ captura.plazoMeses }} meses</span>
+            <span class="text-[13px] text-tinta-suave">{{ t('comun.plazo') }}</span>
+            <span class="text-[13px] font-semibold text-tinta">{{
+              t('comun.meses', { meses: captura.plazoMeses })
+            }}</span>
           </div>
           <div
             v-for="factor in oferta.desgloseScore"
@@ -53,19 +60,21 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
             class="flex items-center justify-between px-1"
           >
             <span class="text-[13px] text-tinta-suave">{{ nombreFuente(factor.nombre) }}:</span>
-            <span class="text-[13px] font-semibold text-tinta">{{ formatearPorcentaje(factor.peso) }} del score</span>
+            <span class="text-[13px] font-semibold text-tinta">{{
+              t('comun.delScore', { porcentaje: formatearPorcentaje(factor.peso) })
+            }}</span>
           </div>
         </div>
-        <Boton disabled class="w-full">Continuar a suscripción</Boton>
-        <p class="-mt-3 text-center text-[11px] text-tinta-suave">(HU-W03, fuera de este sprint)</p>
+        <Boton disabled class="w-full">{{ t('oferta.continuar') }}</Boton>
+        <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('comun.fueraSprint') }}</p>
         <RouterLink
           to="/cotizacion/fuentes"
           class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"
         >
-          Ver detalle de fuentes consultadas
+          {{ t('comun.verFuentes') }}
         </RouterLink>
         <p class="text-center text-[12px] font-semibold leading-normal text-tinta-suave">
-          Continuar no genera ningún cobro: podrás revisar todas las condiciones antes de firmar.
+          {{ t('oferta.sinCobro') }}
         </p>
       </div>
     </main>
@@ -73,10 +82,10 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
       v-else
       class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center"
     >
-      <p class="text-[13px] text-tinta-suave">No hay una oferta activa en memoria todavía.</p>
-      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline"
-        >Ir a la solicitud</RouterLink
-      >
+      <p class="text-[13px] text-tinta-suave">{{ t('oferta.vacia') }}</p>
+      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">{{
+        t('comun.irSolicitud')
+      }}</RouterLink>
     </main>
     <FooterPantalla />
   </div>

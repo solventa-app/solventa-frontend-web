@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
+import { t } from '../../i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -76,7 +77,7 @@ const idHint = useId()
         v-if="esClave"
         type="button"
         class="absolute right-2 flex h-7 w-7 items-center justify-center rounded text-tinta-suave hover:text-tinta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
-        :aria-label="claveVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        :aria-label="claveVisible ? t('clave.ocultar') : t('clave.mostrar')"
         :aria-pressed="claveVisible"
         :aria-controls="idCampo"
         :disabled="disabled"
