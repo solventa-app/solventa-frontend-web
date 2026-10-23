@@ -44,7 +44,7 @@ function validar(): boolean {
     nuevosErrores.valorCredito = 'solicitud.errorMonto'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 360) {
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 60) {
     nuevosErrores.plazoMeses = 'solicitud.errorPlazo'
   }
   if (!captura.direccionInmueble.trim()) {
@@ -70,7 +70,7 @@ function enviar() {
 function simular(sufijo: '999' | '000') {
   captura.documentoIdentidad = `CC10203040${sufijo === '999' ? '999' : '000'}`
   captura.valorCredito = captura.valorCredito || '185000000'
-  captura.plazoMeses = captura.plazoMeses || '180'
+  captura.plazoMeses = captura.plazoMeses || '60'
   captura.direccionInmueble = captura.direccionInmueble || 'Cra 45 # 22-18, Bogotá D.C.'
   captura.consentimiento = true
   irAConsultar()

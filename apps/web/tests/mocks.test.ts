@@ -15,7 +15,7 @@ const entrada = (documentoIdentidad: string) => ({
     consentimientoId: 'consentimiento-1',
     documentoIdentidad,
     valorCredito: '250000000',
-    plazoMeses: 240,
+    plazoMeses: 60,
     direccionInmueble: 'Calle 1 # 2-3',
   },
 })

@@ -18,7 +18,7 @@ describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
       cy.contains('button', 'Consultar oferta').click()
       cy.contains('[role="alert"]', 'Ingresa tu documento de identidad.').should('exist')
       cy.contains('[role="alert"]', 'Ingresa un monto válido, mayor a cero.').should('exist')
-      cy.contains('[role="alert"]', 'Ingresa un plazo válido en meses, mayor a cero.').should('exist')
+      cy.contains('[role="alert"]', 'Ingresa un plazo válido, entre 1 y 60 meses.').should('exist')
       cy.contains('[role="alert"]', 'Ingresa la dirección del inmueble a asegurar.').should('exist')
     })
     cy.location('pathname').should('eq', '/cotizacion')
@@ -34,7 +34,7 @@ describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
     cy.get('[data-pantalla="W01-01"]').within(() => {
       cy.contains('label', 'Documento de identidad').parent().find('input').type('1020304050')
       cy.contains('label', 'Monto del crédito hipotecario').parent().find('input').type('185000000')
-      cy.contains('label', 'Plazo (meses)').parent().find('input').type('180')
+      cy.contains('label', 'Plazo (meses)').parent().find('input').type('60')
       cy.contains('label', 'Dirección del inmueble a asegurar').parent().find('input').type('Cra 45 # 22-18, Bogotá D.C.')
       cy.get('input[type="checkbox"]').check()
       cy.contains('button', 'Consultar oferta').click()
