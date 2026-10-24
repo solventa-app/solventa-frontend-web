@@ -18,16 +18,25 @@ export function usarToken(nuevo: string | null): void {
   token = nuevo
 }
 
+export interface OpcionesEjecucion {
+  /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa '/graphql/siniestros'. */
+  endpoint?: string
+  /** Si se manda el JWT de la sesión. `false` para servicios públicos (el dummy de siniestros). */
+  conToken?: boolean
+}
+
 export async function ejecutar<T>(
   consulta: string,
   variables: Record<string, unknown> = {},
   fetchFn: typeof fetch = fetch,
+  opciones: OpcionesEjecucion = {},
 ): Promise<T> {
+  const { endpoint = '/graphql/web', conToken = true } = opciones
   // Accept-Language: el BFF devuelve sus mensajes (errores, avisos) en el idioma del selector del header.
   const cabeceras: Record<string, string> = { 'Content-Type': 'application/json', 'Accept-Language': cabeceraIdioma() }
-  if (token) cabeceras.Authorization = `Bearer ${token}`
+  if (conToken && token) cabeceras.Authorization = `Bearer ${token}`
 
-  const respuesta = await fetchFn('/graphql/web', {
+  const respuesta = await fetchFn(endpoint, {
     method: 'POST',
     headers: cabeceras,
     body: JSON.stringify({ query: consulta, variables }),

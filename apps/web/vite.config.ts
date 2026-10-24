@@ -9,7 +9,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       // El gateway Envoy local (:8080) y el BFF (:8000) exponen /graphql/web y /graphql/app: ver contrato/README.md.
+      // '/graphql/siniestros' va antes que '/graphql': el dummy de siniestros (HU-W04) es otro servicio (:8105).
       proxy: {
+        '/graphql/siniestros': { target: env.VITE_SINIESTROS_URL || 'http://localhost:8105', changeOrigin: true },
         '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
       },
     },
@@ -22,7 +24,7 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['lcov', 'text-summary'],
         include: ['src/**/*.{ts,vue}'],
-        exclude: ['src/graphql/tipos.ts', 'src/**/*.d.ts'],
+        exclude: ['src/graphql/tipos.ts', 'src/graphql/tipos-siniestros.ts', 'src/**/*.d.ts'],
       },
     },
   }
