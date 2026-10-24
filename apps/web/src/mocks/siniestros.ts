@@ -1,5 +1,5 @@
 // Mocks del dummy de siniestros (contrato/siniestros.graphql, HU-W04) SOLO para Vitest: se registran en
-// mocks/node.ts. En `dev:mock` el navegador no los usa: siniestros va al dummy real (proxy de Vite a :8105).
+// mocks/node.ts. En `dev:mock` el navegador no los usa: siniestros va al dummy real (proxy de Vite a :8107).
 // Datos reducidos (4 siniestros: los 4 estados y uno ya derivado a perito) con las mismas reglas de negocio
 // y los mismos mensajes que stubs/siniestros/app/repositorio.py del backend.
 import { HttpResponse } from 'msw'
