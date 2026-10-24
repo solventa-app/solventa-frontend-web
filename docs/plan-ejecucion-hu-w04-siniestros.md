@@ -46,12 +46,12 @@ Un PR por bloque.
 ## Esquema de dos agentes (ejecución)
 Nuevos en `.claude/agents/`, con el formato de `web-builder.md` (frontmatter y secciones en español):
 
-**`dev-front-senior.md`** (`model: opus`)
+**`dev-front-senior.md`** (`model: opus`, esfuerzo bajo)
 - Herramientas: Read, Write, Edit, Bash, Glob, Grep y las de lectura de Figma (`get_design_context`, `get_screenshot`, `get_metadata`).
 - Implementa cada bloque del front contra Figma, la guía SG-01 y el dummy.
 - Cuando tiene una duda de negocio o visual, la devuelve como lista ("Dudas para el diseñador") en vez de inventar.
 
-**`disenador-web.md`** (`model: sonnet`)
+**`disenador-web.md`** (`model: opus`, esfuerzo bajo)
 - Herramientas: Read, Glob, Grep y las de lectura de Figma. No escribe código.
 - Al empezar cada bloque entrega la especificación visual: textos literales, tokens, estados y qué componentes reutilizar.
 - Responde las dudas del dev y revisa la fidelidad contra el frame.
