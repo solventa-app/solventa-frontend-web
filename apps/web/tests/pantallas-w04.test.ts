@@ -90,6 +90,9 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
       'En revisión',
     ])
     expect(chips[0].attributes('aria-pressed')).toBe('true')
+    // El número visible no se lee: solo el sr-only "(n siniestros)".
+    expect(chips[0].get('span[aria-hidden="true"]').text()).toBe('4')
+    expect(chips[0].get('.sr-only').text()).toBe('(4 siniestros)')
 
     await chip(wrapper, 'Pendiente').trigger('click')
     expect(chip(wrapper, 'Pendiente').attributes('aria-pressed')).toBe('true')

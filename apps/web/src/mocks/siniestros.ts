@@ -57,7 +57,7 @@ function siniestroBase(n: number, estado: Siniestro['estado']): Siniestro {
     asegurado: { nombre: `Asegurado de prueba ${n}`, documento: `C.C. 79.845.21${n}` },
     poliza: {
       id: `pol-0${n}`,
-      numero: `4821${n}`,
+      numero: `SOL-2026-04821${n}`,
       estado: 'EMITIDA',
       vigenciaDesde: '2026-02-10T05:00:00Z',
       vigenciaHasta: '2027-02-10T05:00:00Z',
@@ -125,6 +125,11 @@ function siniestrosIniciales(): Siniestro[] {
     plazoDispersion: '1 a 3 días hábiles',
   }
   const rechazado = siniestroBase(4, 'RECHAZADO')
+  // Como sin-09 del dummy: una verificación SFC que no cumple.
+  rechazado.verificaciones = [
+    ...rechazado.verificaciones,
+    { descripcion: 'Relato consistente con la evidencia aportada', cumple: false },
+  ]
   rechazado.resolucion = {
     tipo: 'RECHAZO',
     resueltaEn: '2026-10-15T15:00:00Z',
