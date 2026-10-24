@@ -4,7 +4,7 @@
   role="alert" e ícono, hint debajo. Usa un <select> nativo: teclado y lectores de pantalla sin trabajo extra.
 -->
 <script setup lang="ts">
-import { useId } from 'vue'
+import { ref, useId } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
 
 export interface OpcionSeleccion {
@@ -34,6 +34,10 @@ defineEmits<{ 'update:modelValue': [valor: string] }>()
 const idCampo = useId()
 const idError = useId()
 const idHint = useId()
+
+// El modal de rechazo (bloque 5) y W04-02b enfocan el <select> al abrir o tras un error.
+const select = ref<HTMLSelectElement | null>(null)
+defineExpose({ focus: () => select.value?.focus() })
 </script>
 
 <template>
@@ -59,6 +63,7 @@ const idHint = useId()
       />
       <select
         :id="idCampo"
+        ref="select"
         :value="modelValue"
         :required="required"
         :disabled="disabled"

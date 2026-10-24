@@ -164,7 +164,7 @@ export const pantallas: Pantalla[] = [
     componente: () => import('../views/ConciliacionDePagos.vue'),
   },
   // HU-W04 · Mesa de siniestros (KAN-27). Criterios CA-W04 propuestos en docs/plan-ejecucion-hu-w04-siniestros.md.
-  // W04-01 (bloque 2) y W04-02 (bloque 3) ya tienen vista; las demás llegan en los bloques 4 y 5.
+  // W04-01 (bloque 2), W04-02 (bloque 3), W04-02b y W04-03c (bloque 4) ya tienen vista; las demás llegan en el bloque 5.
   {
     id: 'W04-01',
     ruta: '/operador/siniestros',
@@ -204,7 +204,8 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W04',
     sprint: 2,
     roles: ['BACKOFFICE'],
-    criterios: ['CA-W04-04'],
+    criterios: ['CA-W04-17', 'CA-W04-18', 'CA-W04-19', 'CA-W04-20', 'CA-W04-21', 'CA-W04-22'],
+    componente: () => import('../views/DerivarSiniestro.vue'),
   },
   {
     id: 'W04-03a',
@@ -234,6 +235,7 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W04',
     sprint: 2,
     roles: ['BACKOFFICE'],
-    criterios: ['CA-W04-04'],
+    criterios: ['CA-W04-23', 'CA-W04-29'],
+    componente: () => import('../views/ConfirmacionDerivacion.vue'),
   },
 ]
