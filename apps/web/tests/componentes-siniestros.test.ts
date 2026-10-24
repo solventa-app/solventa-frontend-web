@@ -55,6 +55,12 @@ describe('EstadoOperador', () => {
     expect(p.get('span[aria-hidden="true"]').text()).toBe('')
     expect(p.attributes('role')).toBeUndefined()
   })
+
+  it('reproduce la pastilla de Figma: blanca con borde gris y punto verde', () => {
+    const p = mount(EstadoOperador)
+    expect(p.classes()).toEqual(expect.arrayContaining(['bg-white', 'border', 'border-borde', 'text-tinta-suave']))
+    expect(p.get('span[aria-hidden="true"]').classes()).toEqual(expect.arrayContaining(['bg-exito', 'h-2', 'w-2']))
+  })
 })
 
 describe('CampoSeleccion', () => {

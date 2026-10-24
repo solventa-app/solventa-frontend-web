@@ -114,208 +114,216 @@ const claseBotonBlanco =
 </script>
 
 <template>
-  <div data-pantalla="W04-02b" class="flex min-h-screen flex-col bg-fondo">
+  <div data-pantalla="W04-02b" class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla :titulo="t('siniestros.derivar.tituloHeader')" />
     <MigasDePan :niveles="migas" a-inicio="/operador">
       <template #derecha><EstadoOperador /></template>
     </MigasDePan>
 
-    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-10 py-8">
-      <p v-if="estado.cargandoDetalle" role="status" class="text-[13px] text-tinta-suave">
-        {{ t('siniestros.detalle.cargando') }}
-      </p>
+    <main class="min-h-0 flex-1 overflow-y-auto">
+      <div class="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 py-8 sm:px-10">
+        <p v-if="estado.cargandoDetalle" role="status" class="text-[13px] text-tinta-suave">
+          {{ t('siniestros.detalle.cargando') }}
+        </p>
 
-      <div
-        v-else-if="estado.errorDetalle"
-        role="alert"
-        class="flex flex-wrap items-center gap-3 rounded border border-error bg-error-fondo px-4 py-3 text-[13px] text-error"
-      >
-        <IconoMaterial nombre="cancel" class="h-[18px] w-[18px] shrink-0" />
-        <span class="flex-1">{{ estado.errorDetalle }}</span>
-        <Boton variante="secundario" @click="cargarSiniestro(id)">{{ t('siniestros.bandeja.reintentar') }}</Boton>
-      </div>
-
-      <div v-else-if="!s" class="flex flex-col items-center gap-2 py-12 text-center">
-        <IconoMaterial nombre="inbox" class="h-8 w-8 text-tinta-suave" />
-        <p class="text-[13px] font-semibold text-tinta">{{ t('siniestros.detalle.noEncontrado') }}</p>
-        <p class="text-[13px] text-tinta-suave">{{ t('siniestros.detalle.noEncontradoDetalle') }}</p>
-        <RouterLink
-          to="/operador/siniestros"
-          class="mt-2 inline-flex h-11 items-center rounded border border-primario bg-white px-5 text-[13px] font-semibold text-primario hover:bg-fondo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+        <div
+          v-else-if="estado.errorDetalle"
+          role="alert"
+          class="flex flex-wrap items-center gap-3 rounded border border-error bg-error-fondo px-4 py-3 text-[13px] text-error"
         >
-          {{ t('siniestros.detalle.volverBandeja') }}
-        </RouterLink>
-      </div>
-
-      <section v-else class="flex flex-col gap-5 rounded-lg border border-borde bg-white p-4">
-        <div class="border-b border-borde pb-4">
-          <div class="flex flex-wrap items-start justify-between gap-2">
-            <h1
-              ref="h1"
-              tabindex="-1"
-              class="text-[22px] font-bold leading-7 tracking-[-0.55px] text-tinta focus:outline-none"
-            >
-              {{ t('siniestros.derivar.titulo', { radicado: s.radicado }) }}
-            </h1>
-            <Badge v-if="s.estado === 'PENDIENTE'" tipo="alerta">{{
-              t('siniestros.estado.pendienteValoracion')
-            }}</Badge>
-            <Badge v-else-if="s.estado === 'EN_REVISION'" tipo="enCurso">{{
-              t('siniestros.estado.EN_REVISION')
-            }}</Badge>
-          </div>
-          <p class="mt-1 text-[13px] leading-[18px] text-tinta-suave">{{ t('siniestros.derivar.descripcion') }}</p>
+          <IconoMaterial nombre="cancel" class="h-[18px] w-[18px] shrink-0" />
+          <span class="flex-1">{{ estado.errorDetalle }}</span>
+          <Boton variante="secundario" @click="cargarSiniestro(id)">{{ t('siniestros.bandeja.reintentar') }}</Boton>
         </div>
 
-        <dl
-          data-prueba="metadatos"
-          class="grid grid-cols-1 gap-5 rounded border border-borde bg-fondo p-4 sm:grid-cols-3"
-        >
-          <div>
-            <dt class="text-[11px] leading-[14px] text-tinta-suave">{{ t('siniestros.derivar.aseguradoTitular') }}</dt>
-            <dd class="text-[13px] font-semibold text-tinta">{{ s.asegurado.nombre }}</dd>
-            <dd class="text-[11px] text-tinta-suave">{{ s.asegurado.documento }}</dd>
-          </div>
-          <div>
-            <dt class="text-[11px] leading-[14px] text-tinta-suave">{{ t('siniestros.derivar.polizaRamo') }}</dt>
-            <dd class="text-[13px] font-semibold text-tinta">{{ s.poliza.numero }}</dd>
-            <dd class="text-[11px] text-tinta-suave">{{ s.poliza.ramo }}</dd>
-          </div>
-          <div>
-            <dt class="text-[11px] leading-[14px] text-tinta-suave">{{ t('siniestros.derivar.fechaNotificacion') }}</dt>
-            <dd class="text-[13px] font-semibold text-tinta">{{ formatearFecha(s.notificadoEn) }}</dd>
-            <dd class="text-[11px] text-tinta-suave">{{ t('siniestros.derivar.horaColombia') }}</dd>
-          </div>
-        </dl>
-
-        <!-- Ya derivado o ya resuelto: sin formulario -->
-        <div
-          v-if="noAdmite"
-          data-prueba="no-admite"
-          class="flex flex-col items-start gap-3 rounded-lg border border-borde bg-info-fondo p-4"
-        >
-          <div class="flex gap-2 text-[13px] text-tinta">
-            <IconoMaterial nombre="info" class="h-6 w-6 shrink-0 text-enlace" />
-            <div>
-              <p class="font-semibold">{{ t('siniestros.derivar.noAdmite') }}</p>
-              <p>{{ noAdmite }}</p>
-            </div>
-          </div>
-          <RouterLink :to="`/operador/siniestros/${s.id}`" :class="claseBotonBlanco">
-            {{ t('siniestros.derivar.verDetalle') }}
+        <div v-else-if="!s" class="flex flex-col items-center gap-2 py-12 text-center">
+          <IconoMaterial nombre="inbox" class="h-8 w-8 text-tinta-suave" />
+          <p class="text-[13px] font-semibold text-tinta">{{ t('siniestros.detalle.noEncontrado') }}</p>
+          <p class="text-[13px] text-tinta-suave">{{ t('siniestros.detalle.noEncontradoDetalle') }}</p>
+          <RouterLink
+            to="/operador/siniestros"
+            class="mt-2 inline-flex h-11 items-center rounded border border-primario bg-white px-5 text-[13px] font-semibold text-primario hover:bg-fondo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          >
+            {{ t('siniestros.detalle.volverBandeja') }}
           </RouterLink>
         </div>
 
-        <form
-          v-else
-          novalidate
-          class="flex flex-col gap-5"
-          :aria-busy="estado.enviando ? 'true' : undefined"
-          @submit.prevent="confirmar"
-        >
-          <div class="flex flex-col gap-2">
-            <CampoSeleccion
-              v-model="peritoId"
-              data-prueba="perito"
-              :label="t('siniestros.campo.perito')"
-              required
-              icono="engineering"
-              :placeholder="
-                estado.cargandoPeritos
-                  ? t('siniestros.derivar.cargandoPeritos')
-                  : t('siniestros.campo.peritoPlaceholder')
-              "
-              :opciones="opciones"
-              :hint="hintPerito"
-              :disabled="selectorDeshabilitado"
+        <section v-else class="flex flex-col gap-5 rounded-lg border border-borde bg-white p-4">
+          <div class="border-b border-borde pb-4">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <h1
+                ref="h1"
+                tabindex="-1"
+                class="text-[22px] font-bold leading-7 tracking-[-0.55px] text-tinta focus:outline-none"
+              >
+                {{ t('siniestros.derivar.titulo', { radicado: s.radicado }) }}
+              </h1>
+              <Badge v-if="s.estado === 'PENDIENTE'" tipo="alerta">{{
+                t('siniestros.estado.pendienteValoracion')
+              }}</Badge>
+              <Badge v-else-if="s.estado === 'EN_REVISION'" tipo="enCurso">{{
+                t('siniestros.estado.EN_REVISION')
+              }}</Badge>
+            </div>
+            <p class="mt-1 text-[13px] leading-[18px] text-tinta-suave">{{ t('siniestros.derivar.descripcion') }}</p>
+          </div>
+
+          <dl
+            data-prueba="metadatos"
+            class="grid grid-cols-1 gap-5 rounded border border-borde bg-fondo p-4 sm:grid-cols-3"
+          >
+            <div>
+              <dt class="text-[11px] leading-[14px] text-tinta-suave">
+                {{ t('siniestros.derivar.aseguradoTitular') }}
+              </dt>
+              <dd class="text-[13px] font-semibold text-tinta">{{ s.asegurado.nombre }}</dd>
+              <dd class="text-[11px] text-tinta-suave">{{ s.asegurado.documento }}</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] leading-[14px] text-tinta-suave">{{ t('siniestros.derivar.polizaRamo') }}</dt>
+              <dd class="text-[13px] font-semibold text-tinta">{{ s.poliza.numero }}</dd>
+              <dd class="text-[11px] text-tinta-suave">{{ s.poliza.ramo }}</dd>
+            </div>
+            <div>
+              <dt class="text-[11px] leading-[14px] text-tinta-suave">
+                {{ t('siniestros.derivar.fechaNotificacion') }}
+              </dt>
+              <dd class="text-[13px] font-semibold text-tinta">{{ formatearFecha(s.notificadoEn) }}</dd>
+              <dd class="text-[11px] text-tinta-suave">{{ t('siniestros.derivar.horaColombia') }}</dd>
+            </div>
+          </dl>
+
+          <!-- Ya derivado o ya resuelto: sin formulario -->
+          <div
+            v-if="noAdmite"
+            data-prueba="no-admite"
+            class="flex flex-col items-start gap-3 rounded-lg border border-borde bg-info-fondo p-4"
+          >
+            <div class="flex gap-2 text-[13px] text-tinta">
+              <IconoMaterial nombre="info" class="h-6 w-6 shrink-0 text-enlace" />
+              <div>
+                <p class="font-semibold">{{ t('siniestros.derivar.noAdmite') }}</p>
+                <p>{{ noAdmite }}</p>
+              </div>
+            </div>
+            <RouterLink :to="`/operador/siniestros/${s.id}`" :class="claseBotonBlanco">
+              {{ t('siniestros.derivar.verDetalle') }}
+            </RouterLink>
+          </div>
+
+          <form
+            v-else
+            novalidate
+            class="flex flex-col gap-5"
+            :aria-busy="estado.enviando ? 'true' : undefined"
+            @submit.prevent="confirmar"
+          >
+            <div class="flex flex-col gap-2">
+              <CampoSeleccion
+                v-model="peritoId"
+                data-prueba="perito"
+                :label="t('siniestros.campo.perito')"
+                required
+                icono="engineering"
+                :placeholder="
+                  estado.cargandoPeritos
+                    ? t('siniestros.derivar.cargandoPeritos')
+                    : t('siniestros.campo.peritoPlaceholder')
+                "
+                :opciones="opciones"
+                :hint="hintPerito"
+                :disabled="selectorDeshabilitado"
+              />
+              <div
+                v-if="estado.errorPeritos"
+                role="alert"
+                data-prueba="error-peritos"
+                class="flex flex-wrap items-center gap-3 rounded border border-error bg-error-fondo px-4 py-3 text-[13px] text-error"
+              >
+                <IconoMaterial nombre="cancel" class="h-[18px] w-[18px] shrink-0" />
+                <span class="flex-1">{{ t('siniestros.derivar.errorPeritos') }}</span>
+                <Boton variante="secundario" @click="cargarPeritos(id)">{{ t('siniestros.bandeja.reintentar') }}</Boton>
+              </div>
+            </div>
+
+            <CampoAreaTexto
+              v-model="instrucciones"
+              data-prueba="instrucciones"
+              :label="t('siniestros.campo.instrucciones')"
+              :placeholder="t('siniestros.campo.instruccionesPlaceholder')"
+              :maxlength="500"
+              :filas="3"
+              :disabled="estado.enviando"
             />
+
             <div
-              v-if="estado.errorPeritos"
+              data-prueba="tiempo"
+              class="flex flex-wrap items-center gap-2 rounded border border-borde bg-fondo p-4"
+              aria-live="polite"
+            >
+              <IconoMaterial nombre="schedule" class="h-6 w-6 shrink-0 text-enlace" />
+              <template v-if="perito">
+                <p class="text-[13px] font-semibold text-tinta">
+                  {{ t('siniestros.derivar.tiempoRespuesta', { n: perito.tiempoRespuestaDias }) }}
+                </p>
+                <template v-if="perito.vencimientoInforme">
+                  <span aria-hidden="true" class="text-borde">|</span>
+                  <p class="text-[11px] text-tinta-suave">
+                    {{
+                      t('siniestros.derivar.vencimientoInforme', { fecha: formatearFecha(perito.vencimientoInforme) })
+                    }}
+                  </p>
+                </template>
+              </template>
+              <p v-else class="text-[13px] text-tinta-suave">{{ t('siniestros.derivar.sinPerito') }}</p>
+            </div>
+
+            <div
+              v-if="errorDerivar"
+              ref="banner"
               role="alert"
-              data-prueba="error-peritos"
-              class="flex flex-wrap items-center gap-3 rounded border border-error bg-error-fondo px-4 py-3 text-[13px] text-error"
+              tabindex="-1"
+              data-prueba="error-derivar"
+              class="flex items-center gap-2 rounded border border-error bg-error-fondo px-4 py-3 text-[13px] text-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
             >
               <IconoMaterial nombre="cancel" class="h-[18px] w-[18px] shrink-0" />
-              <span class="flex-1">{{ t('siniestros.derivar.errorPeritos') }}</span>
-              <Boton variante="secundario" @click="cargarPeritos(id)">{{ t('siniestros.bandeja.reintentar') }}</Boton>
+              {{ errorDerivar }}
             </div>
-          </div>
 
-          <CampoAreaTexto
-            v-model="instrucciones"
-            data-prueba="instrucciones"
-            :label="t('siniestros.campo.instrucciones')"
-            :placeholder="t('siniestros.campo.instruccionesPlaceholder')"
-            :maxlength="500"
-            :filas="3"
-            :disabled="estado.enviando"
-          />
-
-          <div
-            data-prueba="tiempo"
-            class="flex flex-wrap items-center gap-2 rounded border border-borde bg-fondo p-4"
-            aria-live="polite"
-          >
-            <IconoMaterial nombre="schedule" class="h-6 w-6 shrink-0 text-enlace" />
-            <template v-if="perito">
-              <p class="text-[13px] font-semibold text-tinta">
-                {{ t('siniestros.derivar.tiempoRespuesta', { n: perito.tiempoRespuestaDias }) }}
+            <div class="flex flex-col-reverse gap-2 border-t border-borde pt-4 sm:flex-row sm:flex-wrap sm:justify-end">
+              <p v-if="!perito" id="aviso-elegir-perito" class="self-center text-[11px] text-tinta-suave sm:mr-auto">
+                {{ t('siniestros.derivar.elegirPerito') }}
               </p>
-              <template v-if="perito.vencimientoInforme">
-                <span aria-hidden="true" class="text-borde">|</span>
-                <p class="text-[11px] text-tinta-suave">
-                  {{ t('siniestros.derivar.vencimientoInforme', { fecha: formatearFecha(perito.vencimientoInforme) }) }}
-                </p>
-              </template>
-            </template>
-            <p v-else class="text-[13px] text-tinta-suave">{{ t('siniestros.derivar.sinPerito') }}</p>
-          </div>
-
-          <div
-            v-if="errorDerivar"
-            ref="banner"
-            role="alert"
-            tabindex="-1"
-            data-prueba="error-derivar"
-            class="flex items-center gap-2 rounded border border-error bg-error-fondo px-4 py-3 text-[13px] text-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
-          >
-            <IconoMaterial nombre="cancel" class="h-[18px] w-[18px] shrink-0" />
-            {{ errorDerivar }}
-          </div>
-
-          <div class="flex flex-col-reverse gap-2 border-t border-borde pt-4 sm:flex-row sm:flex-wrap sm:justify-end">
-            <p v-if="!perito" id="aviso-elegir-perito" class="self-center text-[11px] text-tinta-suave sm:mr-auto">
-              {{ t('siniestros.derivar.elegirPerito') }}
-            </p>
-            <RouterLink
-              :to="`/operador/siniestros/${s.id}`"
-              data-prueba="cancelar"
-              :class="[claseBotonBlanco, { 'pointer-events-none opacity-60': estado.enviando }]"
-              :aria-disabled="estado.enviando ? 'true' : undefined"
-              :tabindex="estado.enviando ? -1 : undefined"
-            >
-              {{ t('siniestros.derivar.cancelar') }}
-            </RouterLink>
-            <Boton
-              variante="primario"
-              type="submit"
-              data-prueba="confirmar"
-              class="w-full text-[13px] sm:w-auto"
-              :disabled="!puedeConfirmar"
-              :aria-describedby="!perito ? 'aviso-elegir-perito' : undefined"
-            >
-              <template #icono>
-                <IconoMaterial
-                  :nombre="estado.enviando ? 'progress_activity' : 'send'"
-                  class="h-6 w-6"
-                  :class="{ 'animate-spin': estado.enviando }"
-                />
-              </template>
-              {{ estado.enviando ? t('siniestros.derivar.derivando') : t('siniestros.derivar.confirmar') }}
-            </Boton>
-          </div>
-        </form>
-      </section>
+              <RouterLink
+                :to="`/operador/siniestros/${s.id}`"
+                data-prueba="cancelar"
+                :class="[claseBotonBlanco, { 'pointer-events-none opacity-60': estado.enviando }]"
+                :aria-disabled="estado.enviando ? 'true' : undefined"
+                :tabindex="estado.enviando ? -1 : undefined"
+              >
+                {{ t('siniestros.derivar.cancelar') }}
+              </RouterLink>
+              <Boton
+                variante="primario"
+                type="submit"
+                data-prueba="confirmar"
+                class="w-full text-[13px] sm:w-auto"
+                :disabled="!puedeConfirmar"
+                :aria-describedby="!perito ? 'aviso-elegir-perito' : undefined"
+              >
+                <template #icono>
+                  <IconoMaterial
+                    :nombre="estado.enviando ? 'progress_activity' : 'send'"
+                    class="h-6 w-6"
+                    :class="{ 'animate-spin': estado.enviando }"
+                  />
+                </template>
+                {{ estado.enviando ? t('siniestros.derivar.derivando') : t('siniestros.derivar.confirmar') }}
+              </Boton>
+            </div>
+          </form>
+        </section>
+      </div>
     </main>
 
     <FooterPantalla />

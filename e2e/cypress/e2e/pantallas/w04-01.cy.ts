@@ -3,7 +3,7 @@ import { visitarComo } from "../../support/sesion";
 
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
 // Los datos salen del dummy real de siniestros (:8107, proxy de Vite en dev:mock): 10 siniestros, 4
-// pendientes, 3 en revisión, 1 aprobado y 2 rechazados. Se reinicia antes de cada prueba.
+// pendientes, 3 en revisión, 2 aprobados y 1 rechazado. Se reinicia antes de cada prueba.
 describeConMocks("W04-01 · Bandeja de siniestros (pantalla aislada)", () => {
   beforeEach(() => {
     cy.request("POST", "/graphql/siniestros/control/reiniciar");
@@ -37,6 +37,12 @@ describeConMocks("W04-01 · Bandeja de siniestros (pantalla aislada)", () => {
       cy.contains("button[aria-pressed]", "En revisión").click();
       cy.get("table tbody tr").should("have.length", 3);
       cy.contains("Mostrando 3 de 10").should("exist");
+      cy.contains("button[aria-pressed]", "Aprobado").click();
+      cy.get("table tbody tr").should("have.length", 2);
+      cy.contains("Mostrando 2 de 10").should("exist");
+      cy.contains("button[aria-pressed]", "Rechazado").click();
+      cy.get("table tbody tr").should("have.length", 1);
+      cy.contains("Mostrando 1 de 10").should("exist");
     });
   });
 

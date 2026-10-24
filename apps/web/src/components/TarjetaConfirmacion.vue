@@ -38,53 +38,55 @@ const claseVolver =
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-fondo">
+  <div class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla :titulo="tituloHeader" />
     <MigasDePan :niveles="niveles" a-inicio="/operador">
       <template #derecha><EstadoOperador /></template>
     </MigasDePan>
 
-    <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 px-10 py-8">
-      <section
-        v-if="conResultado"
-        data-prueba="confirmacion"
-        class="flex flex-col items-center gap-2 rounded-lg border border-borde bg-white px-4 py-6 text-center sm:px-[111px]"
-      >
-        <span class="mb-2 flex h-14 w-14 items-center justify-center rounded-lg" :class="claseMosaico">
-          <IconoMaterial :nombre="icono" class="h-6 w-6" />
-        </span>
-        <Badge :tipo="insignia.tipo">{{ insignia.texto }}</Badge>
-        <h1
-          ref="h1"
-          tabindex="-1"
-          class="text-[22px] font-bold leading-7 tracking-[-0.55px] text-tinta focus:outline-none"
+    <main class="min-h-0 flex-1 overflow-y-auto">
+      <div class="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 py-8 sm:px-10">
+        <section
+          v-if="conResultado"
+          data-prueba="confirmacion"
+          class="flex flex-col items-center gap-2 rounded-lg border border-borde bg-white px-4 py-6 text-center sm:px-[111px]"
         >
-          {{ titulo }}
-        </h1>
-        <slot />
-        <RouterLink to="/operador/siniestros" :class="claseVolver">
-          <IconoMaterial nombre="arrow_back" class="h-4 w-4" />
-          {{ t('siniestros.detalle.volverBandeja') }}
-        </RouterLink>
-      </section>
-
-      <section v-else data-prueba="sin-resultado" class="rounded-lg border border-borde bg-white px-4 py-6">
-        <div class="flex flex-col items-center gap-2 py-12 text-center">
-          <IconoMaterial nombre="inbox" class="h-8 w-8 text-tinta-suave" />
+          <span class="mb-2 flex h-14 w-14 items-center justify-center rounded-lg" :class="claseMosaico">
+            <IconoMaterial :nombre="icono" class="h-6 w-6" />
+          </span>
+          <Badge :tipo="insignia.tipo">{{ insignia.texto }}</Badge>
           <h1
             ref="h1"
             tabindex="-1"
             class="text-[22px] font-bold leading-7 tracking-[-0.55px] text-tinta focus:outline-none"
           >
-            {{ t('siniestros.confirmacion.vacioTitulo') }}
+            {{ titulo }}
           </h1>
-          <p class="text-[13px] text-tinta-suave">{{ t('siniestros.confirmacion.vacioTexto') }}</p>
+          <slot />
           <RouterLink to="/operador/siniestros" :class="claseVolver">
             <IconoMaterial nombre="arrow_back" class="h-4 w-4" />
             {{ t('siniestros.detalle.volverBandeja') }}
           </RouterLink>
-        </div>
-      </section>
+        </section>
+
+        <section v-else data-prueba="sin-resultado" class="rounded-lg border border-borde bg-white px-4 py-6">
+          <div class="flex flex-col items-center gap-2 py-12 text-center">
+            <IconoMaterial nombre="inbox" class="h-8 w-8 text-tinta-suave" />
+            <h1
+              ref="h1"
+              tabindex="-1"
+              class="text-[22px] font-bold leading-7 tracking-[-0.55px] text-tinta focus:outline-none"
+            >
+              {{ t('siniestros.confirmacion.vacioTitulo') }}
+            </h1>
+            <p class="text-[13px] text-tinta-suave">{{ t('siniestros.confirmacion.vacioTexto') }}</p>
+            <RouterLink to="/operador/siniestros" :class="claseVolver">
+              <IconoMaterial nombre="arrow_back" class="h-4 w-4" />
+              {{ t('siniestros.detalle.volverBandeja') }}
+            </RouterLink>
+          </div>
+        </section>
+      </div>
     </main>
 
     <FooterPantalla />
