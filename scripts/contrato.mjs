@@ -8,6 +8,11 @@
 //   1. BACKEND_SCHEMA_PATH  (ruta local; el CI usa un checkout de solventa-backend)
 //   2. BACKEND_SCHEMA_URL   (URL "raw" del archivo; para repos privados agregar BACKEND_SCHEMA_TOKEN)
 //   3. ../solventa-backend/contracts/graphql/schema.graphql  (repo hermano en tu máquina)
+//
+// También copia el contrato del dummy de siniestros (HU-W04): contracts/graphql/siniestros.graphql →
+// contrato/siniestros.graphql, desde BACKEND_CONTRATOS_DIR (directorio contracts/graphql de otro checkout o
+// worktree del backend) o, si no está, desde el repo hermano. Solo afecta a siniestros: el esquema del BFF
+// sigue las variables de arriba.
 
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
@@ -16,6 +21,11 @@ import { fileURLToPath } from 'node:url'
 const aqui = dirname(fileURLToPath(import.meta.url))
 const copia = resolve(aqui, '../contrato/schema.graphql')
 const hermano = resolve(aqui, '../../solventa-backend/contracts/graphql/schema.graphql')
+const dirContratos = process.env.BACKEND_CONTRATOS_DIR
+  ? resolve(process.env.BACKEND_CONTRATOS_DIR)
+  : resolve(aqui, '../../solventa-backend/contracts/graphql')
+const copiaSiniestros = resolve(aqui, '../contrato/siniestros.graphql')
+const origenSiniestros = resolve(dirContratos, 'siniestros.graphql')
 const copiaJur = resolve(aqui, '../contrato/jurisdicciones.json')
 const copiaJurWeb = resolve(aqui, '../apps/web/src/contrato/jurisdicciones.json')
 
@@ -44,16 +54,23 @@ if (!['verificar', 'sincronizar'].includes(modo)) {
 
 const { texto, origen } = await leerOrigen()
 const esperado = normalizar(texto)
+const esperadoSiniestros = normalizar(await readFile(origenSiniestros, 'utf8'))
 
 if (modo === 'sincronizar') {
   await writeFile(copia, esperado, 'utf8')
+  await writeFile(copiaSiniestros, esperadoSiniestros, 'utf8')
   // El despliegue de Vercel solo sube apps/web: la web importa su propia copia del catálogo.
   await writeFile(copiaJurWeb, normalizar(await readFile(copiaJur, 'utf8')), 'utf8')
-  console.log(`Contrato sincronizado desde ${origen}.\nAhora corre: npm run codegen --prefix apps/web`)
+  console.log(`Contrato sincronizado desde ${origen} (siniestros: ${origenSiniestros}).\nAhora corre: npm run codegen --prefix apps/web`)
 } else {
   const actual = normalizar(await readFile(copia, 'utf8'))
   if (actual !== esperado) {
     console.error(`El contrato local difiere del backend (${origen}).\nCorre: npm run contrato:sincronizar`)
+    process.exit(1)
+  }
+  const actualSiniestros = await readFile(copiaSiniestros, 'utf8').then(normalizar, () => null)
+  if (actualSiniestros !== esperadoSiniestros) {
+    console.error(`El contrato de siniestros falta o difiere de ${origenSiniestros}.\nCorre: npm run contrato:sincronizar`)
     process.exit(1)
   }
   const jurRaiz = normalizar(await readFile(copiaJur, 'utf8'))

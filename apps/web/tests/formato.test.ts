@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { formatearFecha, formatearMonto } from '../src/utils/formato'
+import { formatearFecha, formatearFechaCorta, formatearMonto } from '../src/utils/formato'
+import { cambiarIdioma } from '../src/i18n'
 
 // Hallazgo de QA (MEDIA-ALTA): `formatearFecha`/`formatearMonto` no tenían ninguna prueba unitaria
 // dedicada, solo se verificaban indirectamente a través de las pantallas que las usan. Esta
@@ -86,5 +87,25 @@ describe('formatearMonto', () => {
 describe('formatearMonto con montos grandes', () => {
   it('no pierde precisión más allá de Number.MAX_SAFE_INTEGER', () => {
     expect(formatearMonto({ valor: '12345678901234567890', moneda: 'COP' })).toBe('$ 12.345.678.901.234.567.890')
+  })
+})
+
+describe('formatearFechaCorta', () => {
+  it('muestra solo la fecha con el día a dos dígitos y el mes sin punto', () => {
+    expect(formatearFechaCorta('2026-09-12T15:45:00Z')).toBe('12 sep 2026')
+    expect(formatearFechaCorta('2026-01-05T17:00:00Z')).toBe('05 ene 2026')
+  })
+
+  it('usa la fecha de Bogotá aunque en UTC ya sea el día siguiente', () => {
+    expect(formatearFechaCorta('2026-09-13T03:00:00Z')).toBe('12 sep 2026')
+  })
+
+  it('en inglés usa el orden "Sep 12, 2026"', () => {
+    cambiarIdioma('EN')
+    try {
+      expect(formatearFechaCorta('2026-09-12T15:45:00Z')).toBe('Sep 12, 2026')
+    } finally {
+      cambiarIdioma('ES')
+    }
   })
 })

@@ -10,9 +10,12 @@ import {
   Badge,
   BarraDeCerrarSesion,
   Boton,
+  CampoAreaTexto,
   CampoFormulario,
+  CampoSeleccion,
   Chip,
   Divisor,
+  EstadoOperador,
   FooterPantalla,
   HeaderPantalla,
   MigasDePan,
@@ -20,11 +23,17 @@ import {
   SelectorMoneda,
   TituloPantalla,
 } from '../components/ui'
-import { idioma } from '../i18n'
+import { idioma, t } from '../i18n'
 
 const documento = ref('')
 const moneda = ref('COP')
 const filtroActivo = ref('Todos')
+const perito = ref('')
+const instrucciones = ref('')
+const peritos = [
+  { valor: 'per-01', texto: 'Peritajes Andes Ltda. · Bogotá' },
+  { valor: 'per-02', texto: 'Avalúos del Caribe S.A.S. · Barranquilla' },
+]
 </script>
 
 <template>
@@ -42,6 +51,16 @@ const filtroActivo = ref('Todos')
     <section style="margin-top: 1.5rem">
       <h2>Migas de pan</h2>
       <MigasDePan seccion="Nueva cotización" a-inicio="/_pantallas" />
+      <div style="height: 0.75rem"></div>
+      <MigasDePan
+        a-inicio="/_pantallas"
+        :niveles="[
+          { texto: t('siniestros.migas.siniestros'), to: '/_pantallas' },
+          { texto: t('siniestros.migas.detalle', { radicado: 'SIN-2026-0141' }) },
+        ]"
+      >
+        <template #derecha><EstadoOperador /></template>
+      </MigasDePan>
     </section>
 
     <section style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center">
@@ -65,6 +84,43 @@ const filtroActivo = ref('Todos')
       <CampoFormulario model-value="1.024.578.113" label="Número de documento" disabled />
     </section>
 
+    <section style="margin-top: 1.5rem; max-width: 26.875rem">
+      <h2>Campo de selección y área de texto (HU-W04)</h2>
+      <CampoSeleccion
+        v-model="perito"
+        :label="t('siniestros.campo.perito')"
+        :placeholder="t('siniestros.campo.peritoPlaceholder')"
+        :hint="t('siniestros.campo.peritoHint')"
+        :opciones="peritos"
+        icono="engineering"
+      />
+      <div style="height: 0.75rem"></div>
+      <CampoSeleccion
+        model-value=""
+        label="Motivo del rechazo"
+        placeholder="Selecciona un motivo"
+        :opciones="[]"
+        error="Selecciona un motivo"
+      />
+      <div style="height: 0.75rem"></div>
+      <CampoSeleccion model-value="per-01" :label="t('siniestros.campo.perito')" :opciones="peritos" disabled />
+      <div style="height: 0.75rem"></div>
+      <CampoAreaTexto
+        v-model="instrucciones"
+        :label="t('siniestros.campo.instrucciones')"
+        :placeholder="t('siniestros.campo.instruccionesPlaceholder')"
+      />
+      <div style="height: 0.75rem"></div>
+      <CampoAreaTexto :model-value="'x'.repeat(20)" :maxlength="20" label="Comentario (opcional)" />
+      <div style="height: 0.75rem"></div>
+      <CampoAreaTexto model-value="" label="Comentario (opcional)" disabled />
+    </section>
+
+    <section style="margin-top: 1.5rem">
+      <h2>Estado del operador (HU-W04)</h2>
+      <EstadoOperador />
+    </section>
+
     <section style="margin-top: 1.5rem">
       <h2>Badges</h2>
       <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
@@ -72,6 +128,12 @@ const filtroActivo = ref('Todos')
         <Badge tipo="alerta">Pendiente</Badge>
         <Badge tipo="error">Rechazado</Badge>
         <Badge tipo="enCurso">En revisión</Badge>
+      </div>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem">
+        <Badge tipo="alerta">{{ t('siniestros.estado.PENDIENTE') }}</Badge>
+        <Badge tipo="enCurso">{{ t('siniestros.estado.EN_REVISION') }}</Badge>
+        <Badge tipo="exito">{{ t('siniestros.estado.APROBADO') }}</Badge>
+        <Badge tipo="error">{{ t('siniestros.estado.RECHAZADO') }}</Badge>
       </div>
     </section>
 
