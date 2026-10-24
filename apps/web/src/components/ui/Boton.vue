@@ -15,8 +15,10 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    /** primario: una por pantalla. secundario: acción alterna, siempre junto a una primaria. destructivo: acción irreversible. */
-    variante?: 'primario' | 'secundario' | 'destructivo'
+    /** primario: una por pantalla. secundario: acción alterna, siempre junto a una primaria. destructivo: acción irreversible.
+     * peligroBorde: acción de riesgo que abre un paso de confirmación (p. ej. "Rechazar" de W04-02, Figma 2001:2679):
+     * borde y texto de error sobre fondo error-fondo, sin el relleno sólido del destructivo. */
+    variante?: 'primario' | 'secundario' | 'destructivo' | 'peligroBorde'
     disabled?: boolean
   }>(),
   { variante: 'primario', disabled: false },
@@ -32,6 +34,7 @@ withDefaults(
       'bg-primario text-white': variante === 'primario',
       'border border-primario bg-white text-primario': variante === 'secundario',
       'bg-error text-white': variante === 'destructivo',
+      'border border-error bg-error-fondo text-error': variante === 'peligroBorde',
     }"
   >
     <!-- Ícono líder opcional (p. ej. Figma 2001:1359 "Reintentar", con glifo refresh): el botón base
