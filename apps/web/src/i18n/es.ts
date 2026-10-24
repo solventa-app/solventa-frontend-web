@@ -242,6 +242,32 @@ export const es = {
     'permiten hasta un máximo de tres reintentos operativos antes de suspender la vigencia provisional según la Circular Básica Jurídica de la Superintendencia Financiera de Colombia. Todos los eventos de cobro generan registro inmutable de auditoría.',
   'conciliacion.errorCarga': 'No pudimos cargar la conciliación de pagos en este momento.',
   'conciliacion.errorReintento': 'No pudimos reintentar el cobro en este momento.',
+  // HU-W04 · Mesa de siniestros (bloque 1: componentes base y estados)
+  'siniestros.operadorActivo': 'Operador de back-office activo',
+  'siniestros.migas.siniestros': 'Siniestros',
+  'siniestros.migas.detalle': 'Detalle #{radicado}',
+  'siniestros.migas.derivar': 'Derivar',
+  'siniestros.migas.aprobacion': 'Aprobación',
+  'siniestros.migas.resolucion': 'Resolución #{radicado}',
+  'siniestros.migas.derivacion': 'Derivación',
+  'siniestros.estado.PENDIENTE': 'Pendiente',
+  'siniestros.estado.EN_REVISION': 'En revisión',
+  'siniestros.estado.APROBADO': 'Aprobado',
+  'siniestros.estado.RECHAZADO': 'Rechazado',
+  'siniestros.estado.pendienteDictamen': 'Pendiente de dictamen',
+  'siniestros.estado.pendienteValoracion': 'Pendiente de valoración',
+  'siniestros.campo.perito': 'Perito / firma de peritaje asignada',
+  'siniestros.campo.peritoHint': 'Registro Único Nacional de Peritos y Liquidadores de Seguros vigente ante la SFC.',
+  'siniestros.campo.peritoPlaceholder': 'Selecciona un perito',
+  'siniestros.campo.instrucciones': 'Instrucciones para el perito (opcional)',
+  'siniestros.campo.instruccionesPlaceholder':
+    'Indique puntos críticos a inspeccionar en chasis, motor o cotización del taller autorizado. Detalle si requiere verificación de telemetría previa al impacto...',
+  'siniestros.campo.contador': '{n} / {max} caracteres',
+  'siniestros.campo.limite': 'Límite alcanzado',
+  'siniestros.errorCarga': 'No pudimos cargar los siniestros en este momento.',
+  'siniestros.errorDetalle': 'No pudimos cargar el siniestro en este momento.',
+  'siniestros.errorPeritos': 'No pudimos cargar los peritos disponibles en este momento.',
+  'siniestros.errorAccion': 'No pudimos registrar la decisión en este momento. Intenta nuevamente.',
 }
 
 export type Clave = keyof typeof es

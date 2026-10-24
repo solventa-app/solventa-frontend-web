@@ -30,9 +30,12 @@ const SPRINT_1 = [
 // G-05 (Mi perfil) llegó antes del Sprint 2 por pedido de felipe (2026-10-19).
 const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06']
 
+// HU-W04 (Sprint 2, KAN-27): registradas en el bloque 1; sus vistas llegan en los bloques 2 a 5.
+const HU_W04 = ['W04-01', 'W04-02', 'W04-02b', 'W04-03a', 'W04-03b', 'W04-03c']
+
 describe('catálogo de pantallas', () => {
-  it('cubre exactamente las 12 pantallas del Sprint 1 (más las rutas honestas fuera de sprint)', () => {
-    const idsEsperados = [...SPRINT_1, ...RUTAS_FUERA_DE_SPRINT_1].sort()
+  it('cubre las 12 pantallas del Sprint 1, las rutas honestas fuera de sprint y las de HU-W04', () => {
+    const idsEsperados = [...SPRINT_1, ...RUTAS_FUERA_DE_SPRINT_1, ...HU_W04].sort()
     expect(pantallas.map((p) => p.id).sort()).toEqual(idsEsperados)
   })
 
@@ -40,12 +43,20 @@ describe('catálogo de pantallas', () => {
     expect(new Set(pantallas.map((p) => p.id)).size).toBe(pantallas.length)
     expect(new Set(pantallas.map((p) => p.ruta)).size).toBe(pantallas.length)
   })
+
+  it('las de HU-W04 son solo para BACKOFFICE y las rutas con :id traen rutaEjemplo', () => {
+    for (const p of pantallas.filter((x) => x.historia === 'HU-W04')) {
+      expect(p.roles).toEqual(['BACKOFFICE'])
+      expect(p.ruta.startsWith('/operador/siniestros')).toBe(true)
+      if (p.ruta.includes(':')) expect(p.rutaEjemplo).toMatch(/^\/operador\/siniestros\/[^:]+/)
+    }
+  })
 })
 
 describe('router', () => {
   it.each(pantallas)('renderiza $id en $ruta', async (pantalla) => {
     const router = createRouter({ history: createMemoryHistory(), routes: crearRutas() })
-    router.push(pantalla.ruta)
+    router.push(pantalla.rutaEjemplo ?? pantalla.ruta)
     await router.isReady()
 
     const app = mount(App, { global: { plugins: [router] } })
