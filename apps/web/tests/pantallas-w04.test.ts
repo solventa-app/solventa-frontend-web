@@ -81,13 +81,15 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
     expect(primera.text()).toContain('Rechazado')
   })
 
-  it('"Todos" lleva el contador total; Pendiente y En revisión filtran sin contador; no hay "Derivado"', async () => {
+  it('"Todos" lleva el contador total; un chip por estado filtra sin contador; no hay "Derivado"', async () => {
     const { wrapper } = await montarBandeja()
     const chips = wrapper.findAll('[aria-label="Filtrar por estado"] [aria-pressed]')
     expect(chips.map((c) => c.text().replace(/\s+/g, ' '))).toEqual([
       'Todos 4(4 siniestros)',
       'Pendiente',
       'En revisión',
+      'Aprobado',
+      'Rechazado',
     ])
     expect(chips[0].attributes('aria-pressed')).toBe('true')
     // El número visible no se lee: solo el sr-only "(n siniestros)".
@@ -105,6 +107,14 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
     expect(wrapper.get('[data-prueba="mostrando"]').text()).toBe(
       'Mostrando 1 de 4 siniestros asignados a la mesa de control operativo',
     )
+
+    await chip(wrapper, 'Aprobado').trigger('click')
+    expect(chip(wrapper, 'Aprobado').attributes('aria-pressed')).toBe('true')
+    expect(filas(wrapper).every((f) => f.text().includes('Aprobado'))).toBe(true)
+
+    await chip(wrapper, 'Rechazado').trigger('click')
+    expect(filas(wrapper).length).toBeGreaterThan(0)
+    expect(filas(wrapper).every((f) => f.text().includes('Rechazado'))).toBe(true)
   })
 
   it('"Total en cola" cuenta solo los abiertos (PENDIENTE y EN_REVISION)', async () => {

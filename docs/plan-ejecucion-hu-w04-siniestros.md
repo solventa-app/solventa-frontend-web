@@ -191,7 +191,7 @@ Rama del backend. Título del PR: `feat(stubs): KAN-27 dummy de siniestros para 
 Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de carga, vacío, error y "no encontrado" (regla 5).
 
 **Bloque 2 · W04-01 `BandejaSiniestros.vue`** (patrón de `ConciliacionDePagos.vue`):
-- Chips de filtro Todos, Pendiente y En revisión. "Todos" lleva el contador. El chip **"Derivado"** de Figma **se omite**, porque derivado y en revisión son el mismo estado. Las filas Aprobado y Rechazado solo aparecen en "Todos".
+- Chips de filtro Todos, Pendiente, En revisión, Aprobado y Rechazado (en ese orden): uno por cada estado de la tabla. "Todos" lleva el contador. El chip **"Derivado"** de Figma **se omite**, porque derivado y en revisión son el mismo estado.
 - "Total en cola", tabla de cliente con radicado, fecha, estado y "Abrir →", y pie "Mostrando X de Y".
 
 **Bloque 3 · W04-02 `DetalleSiniestro.vue`:**
