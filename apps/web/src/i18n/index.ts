@@ -64,3 +64,26 @@ export function cabeceraIdioma(): string {
 export function useIdioma() {
   return { idioma, cambiarIdioma, t }
 }
+
+export interface PiezaTexto {
+  texto: string
+  /** Nombre del parámetro que produjo la pieza (p. ej. `radicado`), para darle estilo propio en la plantilla. */
+  parametro?: string
+}
+
+/**
+ * Como `t`, pero devuelve el texto en piezas para resaltar parámetros (p. ej. el radicado en negrita) sin
+ * concatenar frases sueltas ni usar `v-html`: la frase completa sigue siendo una sola clave del catálogo.
+ */
+export function tPiezas(clave: Clave, parametros: Record<string, string | number>): PiezaTexto[] {
+  const texto = CATALOGOS[idioma.value][clave] ?? es[clave]
+  return texto
+    .split(/(\{\w+\})/)
+    .filter(Boolean)
+    .map((trozo) => {
+      const nombre = /^\{(\w+)\}$/.exec(trozo)?.[1]
+      return nombre && nombre in parametros
+        ? { texto: String(parametros[nombre]), parametro: nombre }
+        : { texto: trozo }
+    })
+}
