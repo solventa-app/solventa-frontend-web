@@ -36,12 +36,10 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
         <p class="text-[16px] text-tinta" data-dato="saludo">{{ t('home.hola', { nombre: estado.nombre }) }}</p>
 
         <div class="flex flex-wrap items-stretch gap-5">
-          <!--
-            "Siniestros": HU-W04 (Siniestros asistidos y peritaje) existe en el prototipo completo
-            pero no está en el alcance de este sprint (sin pantalla ni campo de contrato propio),
-            así que la tarjeta se muestra fiel al mockup pero sin navegación real.
-          -->
-          <div class="flex w-full max-w-[272px] gap-3 rounded-md border border-borde bg-white p-5" aria-disabled="true">
+          <RouterLink
+            to="/operador/siniestros"
+            class="flex w-full max-w-[272px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          >
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
               <IconoMaterial nombre="assignment" class="h-6 w-6 text-primario" />
             </span>
@@ -49,7 +47,7 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
               <span class="text-[15px] font-bold text-tinta">{{ t('homeOperador.siniestros') }}</span>
               <span class="text-[12px] text-tinta-suave">{{ t('homeOperador.siniestrosTexto') }}</span>
             </span>
-          </div>
+          </RouterLink>
 
           <RouterLink
             to="/operador/conciliacion"

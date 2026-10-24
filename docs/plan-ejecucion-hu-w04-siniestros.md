@@ -46,12 +46,12 @@ Un PR por bloque.
 ## Esquema de dos agentes (ejecución)
 Nuevos en `.claude/agents/`, con el formato de `web-builder.md` (frontmatter y secciones en español):
 
-**`dev-front-senior.md`** (`model: opus`)
+**`dev-front-senior.md`** (`model: opus`, esfuerzo bajo)
 - Herramientas: Read, Write, Edit, Bash, Glob, Grep y las de lectura de Figma (`get_design_context`, `get_screenshot`, `get_metadata`).
 - Implementa cada bloque del front contra Figma, la guía SG-01 y el dummy.
 - Cuando tiene una duda de negocio o visual, la devuelve como lista ("Dudas para el diseñador") en vez de inventar.
 
-**`disenador-web.md`** (`model: sonnet`)
+**`disenador-web.md`** (`model: opus`, esfuerzo bajo)
 - Herramientas: Read, Glob, Grep y las de lectura de Figma. No escribe código.
 - Al empezar cada bloque entrega la especificación visual: textos literales, tokens, estados y qué componentes reutilizar.
 - Responde las dudas del dev y revisa la fidelidad contra el frame.
@@ -73,7 +73,7 @@ Rama del backend. Título del PR: `feat(stubs): KAN-27 dummy de siniestros para 
 
 **Patrón a copiar:** `stubs/firma/`.
 - `app/main.py` con `create_app()`, `GET /health`, `observabilidad.py` copiado y `Instrumentator` para `/metrics`.
-- Dockerfile `python:3.14-slim` fijado por digest, puerto 8105.
+- Dockerfile `python:3.14-slim` fijado por digest, puerto 8107.
 - `requirements.in` con versiones `==`, y `.txt` generado con `scripts/compilar-requirements.sh`.
 - Pruebas con `TestClient`, ruff y README con el mismo formato.
 
@@ -131,8 +131,8 @@ Rama del backend. Título del PR: `feat(stubs): KAN-27 dummy de siniestros para 
 - Entrada nueva en `contracts/CHANGELOG.md`, marcada como dummy (afecta al frontend: sí).
 
 **Registro del servicio:**
-- `docker-compose.yml`: `stub-siniestros` con `<<: *servicio` y puerto `8105:8105`.
-- `.github/servicios.json`: `{ "nombre":"stub-siniestros", "ruta":"stubs/siniestros", "puerto":8105, "dummy":true, "entorno":{"TRAZAS_GCP":"true"} }`, **sin** `publico`.
+- `docker-compose.yml`: `stub-siniestros` con `<<: *servicio` y puerto `8107:8107`.
+- `.github/servicios.json`: `{ "nombre":"stub-siniestros", "ruta":"stubs/siniestros", "puerto":8107, "dummy":true, "entorno":{"TRAZAS_GCP":"true"} }`, **sin** `publico`.
   - Es obligatorio: `validar_servicios.py` exige que todo `stubs/*` con Dockerfile esté en el manifiesto.
 - `scripts/validar_servicios.py`: un servicio con `"dummy": true` queda exento de la regla "nadie lo llama" (líneas 65-69), con su prueba. La regla de `publico` no se toca.
 - `scripts/seleccionar_servicios.py`: excluye los servicios `dummy` del despliegue a staging mientras siga diferido, con su prueba.
@@ -155,7 +155,7 @@ Rama del backend. Título del PR: `feat(stubs): KAN-27 dummy de siniestros para 
 - Siniestros llama con `{ endpoint: '/graphql/siniestros', conToken: false }`: no se envía el JWT a un servicio público.
 
 **Proxy y entorno:**
-- `vite.config.ts`: una entrada `'/graphql/siniestros'` con `target: env.VITE_SINIESTROS_URL || 'http://localhost:8105'`, **antes** de la de `'/graphql'`.
+- `vite.config.ts`: una entrada `'/graphql/siniestros'` con `target: env.VITE_SINIESTROS_URL || 'http://localhost:8107'`, **antes** de la de `'/graphql'`.
 - `env.d.ts` y `.env.example`, con la variable nueva.
 
 **Mocks para Vitest:**

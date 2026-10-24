@@ -489,7 +489,7 @@ describe('DetalleDeFuentes (W01-04)', () => {
     expect(secciones[1].text()).toContain('Open Data')
     expect(secciones[0].findAll('li')).toHaveLength(2)
     expect(secciones[1].findAll('li')).toHaveLength(3)
-    expect(wrapper.findAll('li')).toHaveLength(5)
+    expect(wrapper.findAll('section li')).toHaveLength(5)
 
     expect(wrapper.text()).toContain('Cuentas y saldos')
     expect(wrapper.text()).toContain('Historial crediticio')
