@@ -52,3 +52,19 @@ export function formatearFecha(iso: string): string {
 export function formatearPorcentaje(peso: number): string {
   return new Intl.NumberFormat(localeIntl(), { style: 'percent', maximumFractionDigits: 0 }).format(peso)
 }
+
+// Solo la fecha, como la columna "Fecha" de W04-01 (Figma 2001:2402): "12 sep 2026" / "Sep 12, 2026", en hora
+// de Bogotá y con el día a dos dígitos. Reusa las abreviaturas de `formatearFecha` (sin el punto de es-CO).
+export function formatearFechaCorta(iso: string): string {
+  const partes = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    day: '2-digit',
+    month: 'numeric',
+    year: 'numeric',
+  }).formatToParts(new Date(iso))
+  const obtener = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? ''
+  const dia = obtener('day').padStart(2, '0')
+  const mes = Number(obtener('month')) - 1
+  if (idioma.value === 'EN') return `${MESES_EN[mes]} ${dia}, ${obtener('year')}`
+  return `${dia} ${MESES[mes]} ${obtener('year')}`
+}

@@ -12,8 +12,10 @@
 withDefaults(
   defineProps<{
     activo?: boolean
+    /** `filtro`: chip de 44 px de alto para las barras de filtro de pantalla (W04-01, Figma 2001:2373). */
+    tamano?: 'normal' | 'filtro'
   }>(),
-  { activo: false },
+  { activo: false, tamano: 'normal' },
 )
 
 defineEmits<{ click: [MouseEvent] }>()
@@ -22,10 +24,11 @@ defineEmits<{ click: [MouseEvent] }>()
 <template>
   <button
     type="button"
-    class="rounded-full px-[14px] py-[6px] text-[11px] font-medium leading-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-1"
-    :class="
-      activo ? 'bg-primario text-white' : 'border border-borde bg-white text-tinta-suave hover:border-tinta-suave'
-    "
+    class="inline-flex items-center rounded-full font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-1"
+    :class="[
+      tamano === 'filtro' ? 'h-11 px-4 text-[13px] leading-[19.5px]' : 'px-[14px] py-[6px] text-[11px] leading-[14px]',
+      activo ? 'bg-primario text-white' : 'border border-borde bg-white text-tinta-suave hover:border-tinta-suave',
+    ]"
     :aria-pressed="activo"
     @click="$emit('click', $event)"
   >
