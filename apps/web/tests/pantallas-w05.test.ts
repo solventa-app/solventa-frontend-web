@@ -17,6 +17,7 @@ function crearRouterDePrueba(): Router {
       { path: '/login', component: { template: '<div data-pantalla="G-01" />' } },
       { path: '/operador', component: HomeOperador },
       { path: '/operador/conciliacion', component: ConciliacionDePagos },
+      { path: '/operador/siniestros', component: { template: '<div data-pantalla="W04-01" />' } },
     ],
   })
 }
@@ -42,7 +43,7 @@ describe('HU-W05 · pantallas', () => {
   afterAll(() => servidor.close())
 
   describe('G-02b · Home del Operador', () => {
-    it('marca la pantalla y la tarjeta de Siniestros no es un enlace (sin ruta en el Sprint 1)', async () => {
+    it('marca la pantalla y la tarjeta de Siniestros enlaza a la bandeja (HU-W04)', async () => {
       const router = crearRouterDePrueba()
       router.push('/operador')
       await router.isReady()
@@ -50,7 +51,8 @@ describe('HU-W05 · pantallas', () => {
 
       expect(wrapper.find('[data-pantalla="G-02b"]').exists()).toBe(true)
       expect(wrapper.text()).toContain('Siniestros')
-      expect(wrapper.findAll('a').some((a) => a.text().includes('Siniestros'))).toBe(false)
+      const enlace = wrapper.findAll('a').find((a) => a.text().includes('Siniestros'))
+      expect(enlace?.attributes('href')).toBe('/operador/siniestros')
     })
 
     it('tiene exactamente un <h1>', async () => {
