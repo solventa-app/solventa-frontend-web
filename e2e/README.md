@@ -23,6 +23,11 @@ Este segundo nivel es **adicional** al primero, no lo reemplaza: ambos se mantie
 
 **HU-W05 (conciliación de pagos).** Los specs `w05-conciliacion.cy.ts` y `pantallas/w05-01.cy.ts` cuentan los 4 cobros fijos de los mocks, así que **se saltan solos contra staging** (`support/entorno.ts` decide por la `baseUrl`: localhost = mocks). Contra staging corre `w05-staging.cy.ts`, que no cuenta filas ni nombres: entra como operador, comprueba la tabla, el filtro por estado y el reintento de un rechazado (confirmación o explicación del BFF, nunca un error técnico). Antes: staging encendido (*Costos staging → encender*) y cobros sembrados con `python3 scripts/sembrar_cobros.py` del backend. Reintentar gasta uno de los 3 reintentos reales de ese cobro. Evidencia: [`../docs/evidencias/FC-10-web-plantilla.md`](../docs/evidencias/FC-10-web-plantilla.md).
 
+**HU-W04 (siniestros).** Specs por pantalla `pantallas/w04-01`, `w04-02`, `w04-02b`, `w04-03a`, `w04-03b`, `w04-03c`, el de
+tamaños `pantallas/w04-responsive.cy.ts` y el de historia `w04-siniestros.cy.ts` (bandeja → detalle → derivar, aprobar y
+rechazar). **Requieren el dummy `stub-siniestros` en `:8107`** (ver el README raíz) y reinician sus datos en cada prueba;
+solo corren en local (staging diferido). Evidencia: [`../docs/evidencias/W04-2026-10-25.md`](../docs/evidencias/W04-2026-10-25.md).
+
 Registro de evidencia de FC-01 (HU-W01): ver [`../docs/evidencias/FC-01-2026-10-18.md`](../docs/evidencias/FC-01-2026-10-18.md).
 
 **Si Cypress no arranca** con `bad option: --no-sandbox` (pasa al lanzarlo desde la terminal de VS Code o de otra app Electron), ejecuta `unset ELECTRON_RUN_AS_NODE` antes de `npm run correr`.
