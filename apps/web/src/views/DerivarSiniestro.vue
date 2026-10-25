@@ -164,6 +164,8 @@ const claseBotonBlanco =
               <Badge v-else-if="s.estado === 'EN_REVISION'" tipo="enCurso">{{
                 t('siniestros.estado.EN_REVISION')
               }}</Badge>
+              <Badge v-else-if="s.estado === 'APROBADO'" tipo="exito">{{ t('siniestros.estado.APROBADO') }}</Badge>
+              <Badge v-else-if="s.estado === 'RECHAZADO'" tipo="error">{{ t('siniestros.estado.RECHAZADO') }}</Badge>
             </div>
             <p class="mt-1 text-[13px] leading-[18px] text-tinta-suave">{{ t('siniestros.derivar.descripcion') }}</p>
           </div>

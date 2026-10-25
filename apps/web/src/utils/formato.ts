@@ -68,3 +68,11 @@ export function formatearFechaCorta(iso: string): string {
   if (idioma.value === 'EN') return `${MESES_EN[mes]} ${dia}, ${obtener('year')}`
   return `${dia} ${MESES[mes]} ${obtener('year')}`
 }
+
+/**
+ * Quita el punto final (y espacios) de un dato que va al final de una frase del catálogo, para no pintar
+ * "S.A.S.." cuando la frase ya cierra con punto (decisión del diseñador, HU-W04).
+ */
+export function sinPuntoFinal(texto: string): string {
+  return texto.trim().replace(/\.+$/, '')
+}

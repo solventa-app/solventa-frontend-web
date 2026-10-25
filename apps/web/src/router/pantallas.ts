@@ -164,7 +164,8 @@ export const pantallas: Pantalla[] = [
     componente: () => import('../views/ConciliacionDePagos.vue'),
   },
   // HU-W04 · Mesa de siniestros (KAN-27). Criterios CA-W04 propuestos en docs/plan-ejecucion-hu-w04-siniestros.md.
-  // W04-01 (bloque 2), W04-02 (bloque 3), W04-02b y W04-03c (bloque 4) ya tienen vista; las demás llegan en el bloque 5.
+  // W04-01 (bloque 2), W04-02 (bloque 3), W04-02b y W04-03c (bloque 4), W04-03a y W04-03b (bloque 5). El modal de
+  // rechazo (components/ModalRechazo.vue) vive dentro de W04-02 y se traza a CA-W04-24, CA-W04-25 y CA-W04-26.
   {
     id: 'W04-01',
     ruta: '/operador/siniestros',
@@ -215,7 +216,8 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W04',
     sprint: 2,
     roles: ['BACKOFFICE'],
-    criterios: ['CA-W04-03'],
+    criterios: ['CA-W04-28', 'CA-W04-29'],
+    componente: () => import('../views/ConfirmacionAprobacion.vue'),
   },
   {
     id: 'W04-03b',
@@ -225,7 +227,8 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W04',
     sprint: 2,
     roles: ['BACKOFFICE'],
-    criterios: ['CA-W04-03'],
+    criterios: ['CA-W04-27', 'CA-W04-29'],
+    componente: () => import('../views/ConfirmacionRechazo.vue'),
   },
   {
     id: 'W04-03c',

@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import TarjetaConfirmacion from '../components/TarjetaConfirmacion.vue'
 import { useResultadoReciente } from '../composables/useResultadoReciente'
 import { t, tPiezas } from '../i18n'
-import { formatearFecha } from '../utils/formato'
+import { formatearFecha, sinPuntoFinal } from '../utils/formato'
 
 const resultado = useResultadoReciente('DERIVACION')
 const derivacion = computed(() => resultado.value?.resolucion ?? null)
@@ -19,7 +19,7 @@ const subtitulo = computed(() =>
   resultado.value && perito.value
     ? tPiezas('siniestros.confirmacion.subtituloDerivado', {
         radicado: `#${resultado.value.radicado}`,
-        perito: perito.value.nombre,
+        perito: sinPuntoFinal(perito.value.nombre),
         n: perito.value.tiempoRespuestaDias,
       })
     : [],
