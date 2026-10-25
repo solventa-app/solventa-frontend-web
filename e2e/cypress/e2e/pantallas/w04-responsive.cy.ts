@@ -59,6 +59,33 @@ describeConMocks("HU-W04 · Responsive", () => {
         cy.get('[data-prueba="confirmacion"]').should("exist");
         comprobar("W04-03c", `w04-03c-${ancho}`);
       });
+
+      it("W04-03a confirmación de aprobación (sin-01)", () => {
+        visitarComo("BACKOFFICE", "/operador/siniestros/sin-01");
+        cy.get('[data-prueba="aprobar"]').click();
+        cy.get('[data-prueba="panel"]').should("exist");
+        comprobar("W04-03a", `w04-03a-${ancho}`);
+      });
+
+      it("modal de rechazo y W04-03b confirmación (sin-06)", () => {
+        visitarComo("BACKOFFICE", "/operador/siniestros/sin-06");
+        cy.get('[data-prueba="rechazar"]').click();
+        cy.get('[data-componente="modal-rechazo"]').should("be.visible");
+        cy.get('[data-componente="modal-rechazo"]').then(($caja) => {
+          const caja = $caja[0].getBoundingClientRect();
+          cy.window().then((win) => {
+            expect(caja.left).to.be.at.least(0);
+            expect(caja.right).to.be.at.most(win.innerWidth);
+          });
+        });
+        cy.screenshot(`modal-rechazo-${ancho}`, { capture: "viewport" });
+        cy.get('[data-componente="modal-rechazo"]').within(() => {
+          cy.get("select").select("FUERA_DE_COBERTURA");
+          cy.get('[data-prueba="confirmar-rechazo"]').click();
+        });
+        cy.get('[data-prueba="panel"]').should("exist");
+        comprobar("W04-03b", `w04-03b-${ancho}`);
+      });
     });
   });
 });

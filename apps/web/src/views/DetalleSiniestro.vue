@@ -9,22 +9,23 @@
   - Rechazar con borde y texto de error (Boton `peligroBorde`), Derivar con borde gris, sin sombras.
   - Móvil: el aside (datos) va antes de la galería y "Aprobar" encabeza la barra de acciones.
 
-  Rechazar: el modal es del bloque 5. Aquí solo queda el punto de enganche: `modalRechazoAbierto` y la ref del
-  botón (`botonRechazar`, para devolverle el foco al cerrar el modal).
+  Rechazar abre ModalRechazo (bloque 5, CA-W04-24 a CA-W04-26); al cancelar, el foco vuelve a `botonRechazar`.
+  Aprobar y rechazar navegan con `router.replace` a su confirmación (W04-03a / W04-03b), como derivar.
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Badge, Boton, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
-import { useSiniestros } from '../composables/useSiniestros'
-import type { EstadoSiniestro, Evidencia } from '../graphql/tipos-siniestros'
+import ModalRechazo from '../components/ModalRechazo.vue'
+import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
+import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos-siniestros'
 import { t } from '../i18n'
 import { formatearFecha, formatearMonto } from '../utils/formato'
 
 const route = useRoute()
 const router = useRouter()
-const { estado, cargarSiniestro, aprobar } = useSiniestros()
+const { estado, cargarSiniestro, aprobar, rechazar } = useSiniestros()
 
 const id = computed(() => String(route.params.id))
 const s = computed(() => estado.detalle)
@@ -83,15 +84,43 @@ const modalRechazoAbierto = ref(false)
 const botonRechazar = ref<InstanceType<typeof Boton> | null>(null)
 const bannerAccion = ref<HTMLElement | null>(null)
 
+const errorRechazo = ref<string | null>(null)
+/** Qué acción está en curso: "Aprobando…" solo se muestra al aprobar, no mientras el modal rechaza. */
+const accion = ref<'aprobar' | 'rechazar' | null>(null)
+
 function abrirRechazo() {
-  // Enganche del modal de rechazo (bloque 5): hoy solo marca el estado, sin UI.
+  estado.errorAccion = null
+  errorRechazo.value = null
   modalRechazoAbierto.value = true
 }
 
-async function aprobarSiniestro() {
-  const resultado = await aprobar(id.value)
+async function cerrarRechazo() {
+  modalRechazoAbierto.value = false
+  errorRechazo.value = null
+  await nextTick()
+  botonRechazar.value?.$el?.focus()
+}
+
+async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: string | null }) {
+  accion.value = 'rechazar'
+  errorRechazo.value = null
+  const resultado = await rechazar(id.value, datos.motivo, datos.comentario ?? undefined)
+  accion.value = null
   if (resultado) {
-    await router.push(`/operador/siniestros/${id.value}/aprobado`)
+    await router.replace(`/operador/siniestros/${id.value}/rechazado`)
+    return
+  }
+  // El error se muestra dentro del modal (con los valores conservados), no en el banner de la página.
+  errorRechazo.value = esErrorSiniestro(estado.resultado) ? estado.resultado.mensaje : t('siniestros.rechazo.error')
+  estado.errorAccion = null
+}
+
+async function aprobarSiniestro() {
+  accion.value = 'aprobar'
+  const resultado = await aprobar(id.value)
+  accion.value = null
+  if (resultado) {
+    await router.replace(`/operador/siniestros/${id.value}/aprobado`)
     return
   }
   await nextTick()
@@ -483,6 +512,7 @@ watch(
                 <Boton
                   ref="botonRechazar"
                   variante="peligroBorde"
+                  aria-haspopup="dialog"
                   data-prueba="rechazar"
                   class="w-full text-[13px] sm:w-auto"
                   :disabled="estado.enviando"
@@ -501,12 +531,12 @@ watch(
                 >
                   <template #icono>
                     <IconoMaterial
-                      :nombre="estado.enviando ? 'progress_activity' : 'check'"
+                      :nombre="accion === 'aprobar' ? 'progress_activity' : 'check'"
                       class="h-6 w-6"
-                      :class="{ 'animate-spin': estado.enviando }"
+                      :class="{ 'animate-spin': accion === 'aprobar' }"
                     />
                   </template>
-                  {{ estado.enviando ? t('siniestros.detalle.aprobando') : t('siniestros.detalle.aprobar') }}
+                  {{ accion === 'aprobar' ? t('siniestros.detalle.aprobando') : t('siniestros.detalle.aprobar') }}
                 </Boton>
               </div>
             </div>
@@ -516,5 +546,15 @@ watch(
     </main>
 
     <FooterPantalla />
+
+    <ModalRechazo
+      v-if="s"
+      :abierto="modalRechazoAbierto"
+      :radicado="s.radicado"
+      :enviando="estado.enviando"
+      :error="errorRechazo"
+      @cancelar="cerrarRechazo"
+      @confirmar="confirmarRechazo"
+    />
   </div>
 </template>

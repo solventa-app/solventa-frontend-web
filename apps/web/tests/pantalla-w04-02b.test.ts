@@ -128,7 +128,7 @@ describe('HU-W04 · W04-02b Derivar a perito y W04-03c Confirmación', () => {
     expect(document.activeElement).toBe(h1.element)
     expect(wrapper.text()).toContain('→Trámite derivado')
     expect(wrapper.get('[data-prueba="subtitulo"]').text()).toBe(
-      'Siniestro #SIN-2026-0141 derivado a peritaje. Perito asignado: Avalúos del Caribe S.A.S.. Tiempo estimado: 5 días hábiles.',
+      'Siniestro #SIN-2026-0141 derivado a peritaje. Perito asignado: Avalúos del Caribe S.A.S. Tiempo estimado: 5 días hábiles.',
     )
     expect(wrapper.get('[data-prueba="subtitulo"] .font-semibold').text()).toBe('#SIN-2026-0141')
     const panel = wrapper.get('[data-prueba="panel"]').text()
