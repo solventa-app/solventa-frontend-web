@@ -226,6 +226,20 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
 - `README.md`: cómo levantar el dummy.
 - Evidencia: `docs/evidencias/W04-<fecha>.md`.
 
+## Estado de ejecución (2026-10-25)
+
+- **Completados:** bloque 0 (dummy `stubs/siniestros` en el backend), 1 (fundaciones del front), 2 a 5 (W04-01, W04-02,
+  W04-02b, W04-03c, modal de rechazo, W04-03a y W04-03b, más ajustes de bandeja y responsive) y 6 (E2E de la historia
+  `w04-siniestros.cy.ts`, criterios propuestos en `plan-frontend.md`, CLAUDE.md, README y evidencia
+  `docs/evidencias/W04-2026-10-25.md`).
+- **Desvíos relevantes:**
+  - El dummy corre en el puerto **8107** (proxy de Vite `/graphql/siniestros`, `VITE_SINIESTROS_URL`).
+  - Los filtros de la bandeja son Todos + **4 estados** (Pendiente, En revisión, Aprobado, Rechazado); sin chip "Derivado"
+    (derivado = `EN_REVISION`).
+  - Las fotos de evidencia del dummy son **solo de Wikimedia Commons**.
+  - Terraform y el informe de servicios del backend **excluyen los dummies** (no se despliegan; ver "Diferido").
+- **Pendiente:** staging (sección siguiente) y validar los CA-W04 contra Jira.
+
 ## Diferido: despliegue a staging (se hará después, no ahora)
 - Backend:
   - En `servicios.json` agregar `"publico": true` al dummy.

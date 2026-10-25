@@ -43,7 +43,7 @@ Observaciones:
 
 ## Sprint 3 (9 – 29 nov)
 
-- **Web:** HU-W04 (bandeja y detalle de siniestros, asignar perito, confirmaciones con motivo de rechazo) y bienvenida/autorización de datos (M01-01 y M01-02).
+- **Web:** HU-W04 (bandeja y detalle de siniestros, asignar perito, confirmaciones con motivo de rechazo) **ya construida en la web** (adelantada, ver "HU-W04" abajo) contra el dummy `stub-siniestros` del backend, solo en local; falta el servicio real y staging. Bienvenida/autorización de datos (M01-01 y M01-02).
 - **Móvil:** HU-M01 (captura de documento, prueba de vida, verificación y resultado, activación de biometría) y HU-M04 (siniestro paramétrico: notificación push y pantalla de celebración). HU-M06 (geolocalización, 8 pantallas) es condicional.
 - Regresión E2E web y móvil, documentación final, video y entrega.
 
@@ -53,3 +53,52 @@ Observaciones:
 |---|---|---|
 | D-02 | Read-your-writes RISK → RATING | Ninguno directo: el backend garantiza que la oferta usa el perfil recién escrito |
 | D-03 | Cobro antes o después de emitir (Sprint 2) | Decide si existe la pantalla de resultado del pago antes de emitir (W03) |
+
+## HU-W04 — mesa de siniestros (KAN-27): 6 pantallas y un modal
+
+Construida contra Figma `Solventa-web-Final` (sección HU-W04) y el dummy `stub-siniestros` del backend (`/graphql/siniestros`,
+puerto 8107 en local). Plan y desvíos: [`plan-ejecucion-hu-w04-siniestros.md`](plan-ejecucion-hu-w04-siniestros.md). Rol: `BACKOFFICE`.
+
+| Pantalla | Ruta | Qué se construye | Criterios |
+|---|---|---|---|
+| W04-01 | `/operador/siniestros` | Bandeja: tabla (cliente y radicado, fecha, estado con insignia, "Abrir"), chips Todos + 4 estados, total en cola de abiertos, pie "Mostrando X de Y", estados de carga, error con reintento y vacío | CA-W04-01 a 07 |
+| W04-02 | `/operador/siniestros/:id` | Detalle: galería de evidencia (con degradado si una imagen no carga), datos del asegurado y del crédito, verificaciones SFC, plazo restante, acciones según el estado (aprobar, rechazar, derivar; perito asignado si está en revisión; solo lectura si está resuelto) y no encontrado | CA-W04-08 a 16 |
+| Modal de rechazo | (dentro de W04-02) | Motivo obligatorio y comentario opcional con contador; accesible (foco atrapado, Escape, foco de regreso). No existe en Figma: especificación del diseñador | CA-W04-24 a 26 |
+| W04-02b | `/operador/siniestros/:id/derivar` | Elegir perito (sin preselección), tiempo estimado, instrucciones con contador, confirmar/cancelar; sin formulario si ya está derivado o resuelto | CA-W04-17 a 22 |
+| W04-03a | `/operador/siniestros/:id/aprobado` | Confirmación de aprobación: indemnización en es-CO, método y plazo; estado vacío por URL directa | CA-W04-28, 29 |
+| W04-03b | `/operador/siniestros/:id/rechazado` | Confirmación de rechazo: motivo, comentario, fecha y vía de recurso; estado vacío por URL directa | CA-W04-27, 29 |
+| W04-03c | `/operador/siniestros/:id/derivado` | Confirmación de derivación: radicado, perito con ciudad, tiempo con fecha límite y notificación; estado vacío por URL directa | CA-W04-23, 29 |
+
+### Criterios CA-W04 (propuestos)
+
+**Propuestos:** derivados de Figma y de lo construido; falta validarlos contra Jira (KAN-27).
+
+- CA-W04-01: la bandeja lista los siniestros asignados a la mesa con cliente, radicado, fecha de notificación y estado.
+- CA-W04-02: el estado se muestra con insignia (ícono y texto), nunca solo con color.
+- CA-W04-03: los chips filtran por Todos, Pendiente, En revisión, Aprobado y Rechazado, y el chip activo se anuncia (`aria-pressed`).
+- CA-W04-04: "Total en cola" cuenta solo los casos abiertos (pendientes y en revisión).
+- CA-W04-05: el pie indica cuántos siniestros se muestran del total según el filtro.
+- CA-W04-06: "Abrir" lleva al detalle del siniestro por su identificador.
+- CA-W04-07: hay estados de carga, error con reintento (sin errores técnicos ni 5xx), vacío y vacío por filtro.
+- CA-W04-08: el detalle muestra la galería de evidencia con su etiqueta y la marca "Geoetiquetada" cuando aplica.
+- CA-W04-09: si una imagen no carga, se muestra un estado degradado en lugar de la imagen rota.
+- CA-W04-10: el detalle muestra los datos del asegurado, del crédito y la suma asegurada en es-CO.
+- CA-W04-11: el detalle muestra las verificaciones SFC con su resultado en texto e ícono ("Cumple" / "No cumple").
+- CA-W04-12: el detalle muestra el tiempo restante del plazo de respuesta.
+- CA-W04-13: un siniestro pendiente ofrece Aprobar (único botón primario), Rechazar y Derivar a perito.
+- CA-W04-14: un siniestro en revisión derivado muestra el perito asignado.
+- CA-W04-15: un siniestro resuelto (aprobado o rechazado) se muestra en solo lectura con su resolución.
+- CA-W04-16: un identificador inexistente muestra "no encontrado" con regreso a la bandeja.
+- CA-W04-17: derivar exige elegir un perito; no hay preselección y Confirmar está deshabilitado hasta elegirlo.
+- CA-W04-18: al elegir perito se muestra su tiempo estimado de respuesta.
+- CA-W04-19: las instrucciones al perito son opcionales, con contador de caracteres (máximo 500).
+- CA-W04-20: Cancelar vuelve al detalle sin cambios.
+- CA-W04-21: un siniestro ya derivado o resuelto no admite una nueva derivación (sin formulario, con explicación).
+- CA-W04-22: los peritos tienen estados de carga, vacío y error.
+- CA-W04-23: tras derivar se confirma con radicado, perito y ciudad, tiempo con fecha límite y notificación; el caso queda en revisión.
+- CA-W04-24: Rechazar abre un modal que exige el motivo; el botón de confirmar está deshabilitado sin motivo.
+- CA-W04-25: el modal admite un comentario opcional con contador de caracteres.
+- CA-W04-26: el modal es accesible por teclado (foco inicial, trampa de foco, Escape) y devuelve el foco a Rechazar al cerrarse.
+- CA-W04-27: tras rechazar se confirma con el motivo, el comentario, la fecha y la vía de recurso; el caso queda rechazado.
+- CA-W04-28: tras aprobar se confirma con la indemnización en es-CO, el método de transferencia y el plazo; el caso queda aprobado.
+- CA-W04-29: las confirmaciones solo existen tras la acción en la misma sesión; por URL directa muestran un estado vacío con "Volver a la bandeja".
