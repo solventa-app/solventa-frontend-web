@@ -1,0 +1,160 @@
+# BORRADOR LOCAL de la v0.17 del contrato (HU-W03 bloque 9 y W05-A5). NO es una copia del backend.
+#
+# Existe solo para construir el front con mocks mientras el backend no publique la v0.17 (decisión D-1 de
+# docs/plan-front-w03-y-ajustes-w01-w05.md). Extiende la v0.16 de schema.graphql; codegen lo combina con ella en
+# apps/web/src/graphql/tipos-borrador.ts. Los nombres de las operaciones salen del bloque 9 de
+# solventa-backend/docs/plan-completar-hu-w03.md; los tipos de resultado los propone este borrador y se avisan al
+# backend. Cuando se publique la v0.17: se borra este archivo, se regenera tipos.ts y se cambian los import.
+#
+# `aceptarOferta(ofertaId, contacto: ContactoTitularInput)` suma un argumento opcional que no se puede declarar con
+# `extend`: el front tipa esa variable a mano (useSuscripcion.ts).
+
+# ---------- Asesor: contacto, código y emisión (W03-19 a W03-22, W03-25) ----------
+
+input ContactoTitularInput {
+  nombre: String! # 2 a 100 caracteres
+  correo: String! # se guarda en minúsculas
+}
+
+extend enum EstadoPropuesta {
+  IDENTIDAD_VERIFICADA # el asesor digitó el código válido
+  EN_FIRMA # UNDER aprobó y se envió el enlace de firma
+  FIRMADA # el titular firmó; falta pagar
+  CANCELADA # el consentimiento venció o se revocó antes de emitir
+}
+
+enum MotivoErrorCodigo {
+  CODIGO_INVALIDO
+  CODIGO_VENCIDO
+  INTENTOS_AGOTADOS
+  PROPUESTA_NO_VALIDA
+}
+
+type CodigoEnviado {
+  propuestaId: ID!
+  correoEnmascarado: String! # p. ej. c•••@correo.com; nunca el correo completo
+  venceEn: DateTime!
+}
+
+type ErrorCodigo {
+  mensaje: String!
+  puedeReintentar: Boolean!
+  motivo: MotivoErrorCodigo
+  intentosRestantes: Int
+}
+
+union ResultadoEnvioCodigo = CodigoEnviado | ErrorCodigo
+union ResultadoVerificacion = Propuesta | ErrorCodigo
+
+type EnlaceEnviado {
+  propuesta: Propuesta!
+  correoEnmascarado: String!
+  venceEn: DateTime! # 30 min (W03-22); la URL nunca vuelve al asesor (W07-17)
+}
+
+type ErrorEmision {
+  mensaje: String!
+  puedeReintentar: Boolean!
+}
+
+# EnlaceEnviado si UNDER aprueba; Propuesta (EN_REVISION o NO_EMITIDA, con mensajeEstado) si no.
+union ResultadoEmision = EnlaceEnviado | Propuesta | ErrorEmision
+
+# ---------- Página del enlace, sin sesión: token en la cabecera X-Enlace-Firma (W03-23) ----------
+
+enum ModoFirma {
+  TRAZO
+  IMAGEN
+  NOMBRE
+}
+
+extend enum MotivoErrorFirma {
+  ENLACE_VENCIDO
+  IMAGEN_INVALIDA
+}
+
+type EnlaceFirma {
+  vigente: Boolean!
+  venceEn: DateTime!
+  propuesta: Propuesta!
+  documento: DocumentoFirma # lo que se firma; presente mientras se puede firmar
+  documentoUrl: String # PDF del contrato a firmar (borrador)
+  firma: FirmaRegistrada # presente desde FIRMADA
+  poliza: Poliza # presente en EMITIDA
+}
+
+input FirmarPorEnlaceInput {
+  versionDocumento: String!
+  aceptaTerminos: Boolean!
+  autorizaCobro: Boolean!
+  modo: ModoFirma!
+  firma: String! # PNG en base64 (TRAZO o IMAGEN) o el nombre (NOMBRE)
+}
+
+type SesionPago {
+  sesionId: ID!
+  urlPago: String! # página de la pasarela, fuera de Solventa (W03-28)
+  venceEn: DateTime! # 10 min
+}
+
+enum MotivoErrorPago {
+  PAGO_RECHAZADO
+  FONDOS_INSUFICIENTES
+  TARJETA_VENCIDA
+  PASARELA_NO_DISPONIBLE # reintentar concilia antes de cobrar (W03-30)
+  REQUIERE_OTRA_TARJETA # 3.er fallo seguido
+  SESION_VENCIDA
+  ENLACE_VENCIDO
+}
+
+type ErrorPago {
+  mensaje: String!
+  puedeReintentar: Boolean!
+  motivo: MotivoErrorPago
+  fallosSeguidos: Int
+}
+
+union ResultadoInicioPago = SesionPago | ErrorPago
+union ResultadoPago = Poliza | ErrorPago
+
+# ---------- W05-A5: origen y medio del cobro ----------
+
+enum OrigenCobro {
+  INTERACTIVO # lo pagó el cliente en la pasarela
+  RECURRENTE
+}
+
+enum TipoMedioPago {
+  CREDITO
+  DEBITO
+}
+
+type MedioPago {
+  marca: String!
+  tipo: TipoMedioPago! # nunca el número ni los últimos dígitos
+}
+
+extend type Cobro {
+  origen: OrigenCobro
+  medio: MedioPago
+}
+
+extend input CrearUsuarioInput {
+  documentoIdentidad: String = null # obligatorio para un CLIENTE (W03-27)
+}
+
+# ---------- Operaciones ----------
+
+extend type Query {
+  firmaPorEnlace: EnlaceFirma # null si el token no existe
+}
+
+extend type Mutation {
+  enviarCodigoVerificacion(propuestaId: ID!, correo: String): ResultadoEnvioCodigo!
+  verificarCodigo(propuestaId: ID!, codigo: String!): ResultadoVerificacion!
+  emitirPropuesta(propuestaId: ID!): ResultadoEmision!
+  reenviarEnlaceFirma(propuestaId: ID!): ResultadoEmision!
+  firmarPorEnlace(entrada: FirmarPorEnlaceInput!): ResultadoFirma!
+  iniciarPago: ResultadoInicioPago!
+  confirmarPago(sesionId: ID!): ResultadoPago!
+}

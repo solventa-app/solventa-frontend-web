@@ -19,6 +19,13 @@ Origen del esquema del backend: repo hermano `../solventa-backend` (por defecto)
 3. Los **mocks** (`apps/web/src/mocks/handlers.ts`) deben seguir el esquema: el typecheck lo comprueba, porque usan los tipos generados.
 4. Hasta que el BFF real esté desplegado se trabaja con `npm run web:dev:mock`.
 
+## Borrador local de la v0.17 (temporal)
+
+`borrador-v0.17.graphql` **no es una copia del backend**: extiende la v0.16 con lo que HU-W03 (bloque 9) y W05-A5
+necesitan y el backend aún no publica, para construir el front con mocks (D-1 de
+`docs/plan-front-w03-y-ajustes-w01-w05.md`). Sus tipos van a `apps/web/src/graphql/tipos-borrador.ts`. Cuando el backend
+publique la v0.17: se borra el borrador y `tipos-borrador.ts`, se sincroniza, se regenera y se cambian los `import`.
+
 ## Convenciones de los mocks (no son del backend real)
 
 | Si el documento de identidad termina en… | El mock devuelve |

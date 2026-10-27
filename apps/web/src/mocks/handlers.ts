@@ -1,8 +1,8 @@
 import { HttpResponse } from 'msw'
 import { graphql } from 'msw/graphql'
 import { leerClaims } from '../composables/useSesion'
+import type { Cobro } from '../graphql/tipos-borrador'
 import type {
-  Cobro,
   ConfirmacionContacto,
   Consentimiento,
   FuenteConsultada,
@@ -53,7 +53,8 @@ const fuentes = (degradada: boolean): FuenteConsultada[] => [
 
 const enTreintaDias = () => new Date(Date.now() + 30 * 86_400_000).toISOString()
 
-const oferta = (tipo: Oferta['tipo']): Oferta => ({
+/** También lo usa el mock de suscripción (HU-W03) para `oferta(id)` y la prima de la propuesta. */
+export const ofertaDeDemo = (tipo: Oferta['tipo']): Oferta => ({
   id: `oferta-${tipo.toLowerCase()}`,
   tipo,
   prima: tipo === 'COMPLETA' ? { valor: '94680.00', moneda: 'COP' } : null,
@@ -92,11 +93,15 @@ const consentimiento = (revocado: boolean): Consentimiento => ({
 // Figma, con la forma del BFF (contrato v0.6): `idTransaccion` (null mientras no hay cobro hecho) y
 // `reintentosRestantes` (un RECHAZADO se reintenta a mano hasta 3 veces). `cobros` es mutable (reintentarCobro lo actualiza en el sitio) para que el estado persista
 // durante una demo; las pruebas lo reinician con restablecerCobrosDePrueba.
+// W05-A5 (borrador de la v0.17): cada cobro trae su `origen` y la marca y el tipo del `medio` (nunca dígitos). El
+// pendiente es «En línea»: se concilia, no se reintenta.
 const cobrosIniciales = (): Cobro[] => [
   {
     id: 'cobro-1',
     cliente: { id: 'cliente-1', nombre: 'Andrés Felipe Duarte' },
     polizaId: 'SOL-VH-2026-004905',
+    origen: 'RECURRENTE',
+    medio: null,
     estado: 'COBRANDO',
     monto: { valor: '198000.00', moneda: 'COP' },
     actualizadoEn: '2026-09-05T15:00:00Z',
@@ -108,6 +113,8 @@ const cobrosIniciales = (): Cobro[] => [
     id: 'cobro-2',
     cliente: { id: 'cliente-2', nombre: 'Laura Gómez Rico' },
     polizaId: 'SOL-VH-2026-004821',
+    origen: 'INTERACTIVO',
+    medio: { marca: 'Visa', tipo: 'CREDITO' },
     estado: 'COBRADO',
     monto: { valor: '185000.00', moneda: 'COP' },
     actualizadoEn: '2026-09-05T14:14:00Z',
@@ -119,6 +126,8 @@ const cobrosIniciales = (): Cobro[] => [
     id: 'cobro-3',
     cliente: { id: 'cliente-3', nombre: 'Julián Torres Mesa' },
     polizaId: 'SOL-VH-2026-004798',
+    origen: 'RECURRENTE',
+    medio: { marca: 'Mastercard', tipo: 'DEBITO' },
     estado: 'RECHAZADO',
     monto: { valor: '142500.00', moneda: 'COP' },
     actualizadoEn: '2026-09-04T23:02:00Z',
@@ -130,6 +139,8 @@ const cobrosIniciales = (): Cobro[] => [
     id: 'cobro-4',
     cliente: { id: 'cliente-4', nombre: 'Carlos Andrés Peña' },
     polizaId: 'SOL-VH-2026-004790',
+    origen: 'INTERACTIVO',
+    medio: { marca: 'Visa', tipo: 'CREDITO' },
     estado: 'PENDIENTE',
     monto: { valor: '210000.00', moneda: 'COP' },
     actualizadoEn: '2026-09-04T16:47:00Z',
@@ -177,6 +188,21 @@ export function tokenDeDemo(usuario: string, rol: RolUsuario = rolDeDemo(usuario
   return `${base64url(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${base64url(JSON.stringify(claims))}.demo`
 }
 
+// Forma de `Usuario` que devuelven `iniciarSesion` y `yo` (contrato v0.16: idioma, moneda y tieneContacto).
+function usuarioDeDemo(usuario: string, rol: RolUsuario): Usuario {
+  return {
+    id: `usuario-${usuario}`,
+    usuario,
+    rol,
+    estado: 'ACTIVO',
+    creadoEn: ahora(),
+    nombre: nombreDeDemo(usuario),
+    idioma: 'ES',
+    moneda: 'COP',
+    tieneContacto: rol === 'CLIENTE',
+  }
+}
+
 const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
   LLAMAR: 'llamada',
   CHAT: 'chat',
@@ -199,14 +225,7 @@ export const handlers = [
         iniciarSesion: {
           token: tokenDeDemo(usuario, rol),
           expiraEn: new Date(Date.now() + 3600_000).toISOString(),
-          usuario: {
-            id: `usuario-${usuario}`,
-            usuario,
-            rol,
-            estado: 'ACTIVO',
-            creadoEn: ahora(),
-            nombre: nombreDeDemo(usuario),
-          },
+          usuario: usuarioDeDemo(usuario, rol),
         },
       },
     })
@@ -217,16 +236,7 @@ export const handlers = [
     const claims = token ? leerClaims(token) : null
     if (!claims) return HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.' }] })
     return HttpResponse.json({
-      data: {
-        yo: {
-          id: `usuario-${claims.usuario}`,
-          usuario: claims.usuario,
-          rol: claims.rol,
-          estado: 'ACTIVO',
-          creadoEn: ahora(),
-          nombre: nombreDeDemo(claims.usuario),
-        },
-      },
+      data: { yo: usuarioDeDemo(claims.usuario, claims.rol) },
     })
   }),
 
@@ -259,7 +269,7 @@ export const handlers = [
                 puedeReintentar: true,
                 motivo: 'DATOS_INSUFICIENTES',
               }
-            : oferta(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
+            : ofertaDeDemo(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
     },
   ),

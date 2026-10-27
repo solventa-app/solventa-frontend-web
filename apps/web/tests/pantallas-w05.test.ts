@@ -117,6 +117,60 @@ describe('HU-W05 · pantallas', () => {
       return { wrapper, router }
     }
 
+    // W05-A5 (borrador de la v0.17): medio de pago y acciones según el origen del cobro.
+    describe('medio de pago y origen del cobro', () => {
+      const fila = (wrapper: VueWrapper, cliente: string) =>
+        wrapper.findAll('tbody tr').find((tr) => tr.text().includes(cliente))!
+
+      it('muestra marca y tipo con el origen, «—» sin medio y nunca dígitos de la tarjeta', async () => {
+        const { wrapper } = await montarConciliacion()
+        const medio = (cliente: string) => fila(wrapper, cliente).get('[data-prueba="medio-pago"]').text()
+
+        expect(medio('Laura Gómez Rico')).toContain('Visa · Crédito')
+        expect(medio('Laura Gómez Rico')).toContain('En línea')
+        expect(medio('Julián Torres Mesa')).toContain('Mastercard · Débito')
+        expect(medio('Julián Torres Mesa')).toContain('Recurrente')
+        expect(medio('Andrés Felipe Duarte')).toContain('—')
+        expect(wrapper.text()).not.toMatch(/\d{4}\s?\d{4}|•{2,}\d{4}/)
+      })
+
+      it('un pendiente en línea «Se concilia» y un rechazado recurrente se sigue reintentando', async () => {
+        const { wrapper } = await montarConciliacion()
+        expect(fila(wrapper, 'Carlos Andrés Peña').text()).toContain('Se concilia')
+        expect(fila(wrapper, 'Julián Torres Mesa').text()).toContain('Reintentar cobro')
+      })
+
+      it('un rechazado en línea no se reintenta: «Lo resuelve el cliente»', async () => {
+        servidor.use(
+          http.post('*/graphql/web', () =>
+            HttpResponse.json({
+              data: {
+                cobros: [
+                  {
+                    id: 'cobro-9',
+                    cliente: { id: 'cliente-9', nombre: 'Mariana Ruiz' },
+                    polizaId: 'SOL-2026-004899',
+                    estado: 'RECHAZADO',
+                    monto: { valor: '94680.00', moneda: 'COP' },
+                    actualizadoEn: '2026-10-27T10:00:00Z',
+                    idTransaccion: null,
+                    motivo: 'fondos_insuficientes',
+                    reintentosRestantes: 3,
+                    origen: 'INTERACTIVO',
+                    medio: { marca: 'Visa', tipo: 'CREDITO' },
+                  },
+                ],
+              },
+            }),
+          ),
+        )
+        const { wrapper } = await montarConciliacion()
+        const rechazada = fila(wrapper, 'Mariana Ruiz')
+        expect(rechazada.text()).toContain('Lo resuelve el cliente')
+        expect(rechazada.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
+      })
+    })
+
     describe('recarga automática', () => {
       afterEach(() => vi.useRealTimers())
 
@@ -136,7 +190,8 @@ describe('HU-W05 · pantallas', () => {
         router.push('/operador/conciliacion')
         await router.isReady()
         const segunda = montar(ConciliacionDePagos, { global: { plugins: [router] } })
-        await flushPromises()
+        // Se espera la carga inicial (llega por MSW, no basta con flushPromises) antes de empezar a contar.
+        await vi.waitFor(() => expect(llamadas.length).toBeGreaterThan(0))
         llamadas.length = 0
 
         vi.advanceTimersByTime(29_000)
@@ -188,7 +243,15 @@ describe('HU-W05 · pantallas', () => {
     it('trae las columnas del prototipo y el nombre del cliente desde Cobro.cliente', async () => {
       const { wrapper } = await montarConciliacion()
       const encabezados = wrapper.findAll('th').map((th) => th.text())
-      expect(encabezados).toEqual(['Cliente', 'N.º de póliza', 'Prima', 'Estado', 'Fecha del intento', 'Acciones'])
+      expect(encabezados).toEqual([
+        'Cliente',
+        'N.º de póliza',
+        'Prima',
+        'Medio de pago',
+        'Estado',
+        'Fecha del intento',
+        'Acciones',
+      ])
       expect(wrapper.text()).toContain('Andrés Felipe Duarte')
       expect(wrapper.text()).toContain('SOL-VH-2026-004905')
     })

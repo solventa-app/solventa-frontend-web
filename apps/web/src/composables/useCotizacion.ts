@@ -4,6 +4,7 @@
 import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import { t } from '../i18n'
+import { alCerrarSesion } from './useSesion'
 import type {
   CanalContacto,
   ConfirmacionContacto,
@@ -19,6 +20,9 @@ export interface CapturaCotizacion {
   plazoMeses: string
   direccionInmueble: string
   consentimiento: boolean
+  // Solo los pide un ASESOR (W01-A1). Cotizar no los envía: viajan en `aceptarOferta` (W03-01).
+  nombreCliente: string
+  correoCliente: string
 }
 
 interface EstadoCotizacion {
@@ -31,7 +35,15 @@ interface EstadoCotizacion {
 }
 
 function capturaVacia(): CapturaCotizacion {
-  return { documentoIdentidad: '', valorCredito: '', plazoMeses: '', direccionInmueble: '', consentimiento: false }
+  return {
+    documentoIdentidad: '',
+    valorCredito: '',
+    plazoMeses: '',
+    direccionInmueble: '',
+    consentimiento: false,
+    nombreCliente: '',
+    correoCliente: '',
+  }
 }
 
 const estado = reactive<EstadoCotizacion>({
@@ -149,14 +161,7 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
       )
       const resultado = datos.solicitarOferta
       if (esErrorOferta(resultado) && resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE') {
-        estado.consentimientoId = null
-        estado.consentimiento = null
-        estado.captura.consentimiento = false
-        estado.resultado = {
-          mensaje: t('solicitud.consentimientoVencido'),
-          puedeReintentar: false,
-          motivo: 'CONSENTIMIENTO_NO_VIGENTE',
-        }
+        exigirNuevoConsentimiento()
       } else {
         estado.resultado = resultado
       }
@@ -192,15 +197,6 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
     return datos.contactarAsesor
   }
 
-  /** Vuelve a W01-01 con la captura en blanco: se usa desde "reintentar" cuando no se puede reintentar la misma oferta. */
-  function reiniciar(): void {
-    Object.assign(estado.captura, capturaVacia())
-    estado.consentimientoId = null
-    estado.consentimiento = null
-    estado.resultado = null
-    estado.contacto = null
-  }
-
   return {
     estado,
     captura: estado.captura,
@@ -209,4 +205,50 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
     contactarAsesor,
     reiniciar,
   }
+}
+
+/** Vuelve a W01-01 con la captura en blanco: se usa desde "reintentar" cuando no se puede reintentar la misma oferta. */
+function reiniciar(): void {
+  Object.assign(estado.captura, capturaVacia())
+  estado.consentimientoId = null
+  estado.consentimiento = null
+  estado.resultado = null
+  estado.contacto = null
+}
+
+/**
+ * El consentimiento venció o fue revocado (al cotizar o al aceptar la oferta en W03-01): se descarta, se desmarca el
+ * checkbox y W01-01 muestra el aviso de re-autorización (bloque 4 de W01).
+ */
+export function exigirNuevoConsentimiento(): void {
+  estado.consentimientoId = null
+  estado.consentimiento = null
+  estado.captura.consentimiento = false
+  // El contacto del cliente sigue al consentimiento (W03-26): vencido, se vuelve a pedir.
+  estado.captura.nombreCliente = ''
+  estado.captura.correoCliente = ''
+  estado.resultado = {
+    mensaje: t('solicitud.consentimientoVencido'),
+    puedeReintentar: false,
+    motivo: 'CONSENTIMIENTO_NO_VIGENTE',
+  }
+}
+
+// Al cerrar sesión se borra todo lo capturado, incluido el contacto del cliente (regla 7).
+alCerrarSesion(reiniciar)
+
+/** Reglas de W01-A1 (las mismas de `crearUsuario` en el backend): nombre de 2 a 100 caracteres, correo con forma. */
+export function nombreClienteValido(nombre: string): boolean {
+  const limpio = nombre.trim()
+  return limpio.length >= 2 && limpio.length <= 100
+}
+export function correoClienteValido(correo: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())
+}
+
+/** El contacto que capturó el ASESOR, listo para `aceptarOferta`; null si no hay (un CLIENTE no lo da). */
+export function contactoCapturado(): { nombre: string; correo: string } | null {
+  const { nombreCliente, correoCliente } = estado.captura
+  if (!nombreClienteValido(nombreCliente) || !correoClienteValido(correoCliente)) return null
+  return { nombre: nombreCliente.trim(), correo: correoCliente.trim().toLowerCase() }
 }

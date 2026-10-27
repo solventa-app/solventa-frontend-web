@@ -49,6 +49,12 @@ export function formatearFecha(iso: string): string {
   return `${dia} ${mes} ${anio}, ${obtener('hour')}:${obtener('minute')} ${periodo}`
 }
 
+/** Solo la hora, en hora de Bogotá, con el formato de `formatearFecha`: "10:45 a. m." / "10:45 AM" (HU-W03). */
+export function formatearHora(iso: string): string {
+  const completa = formatearFecha(iso)
+  return completa.slice(completa.lastIndexOf(', ') + 2)
+}
+
 export function formatearPorcentaje(peso: number): string {
   return new Intl.NumberFormat(localeIntl(), { style: 'percent', maximumFractionDigits: 0 }).format(peso)
 }
