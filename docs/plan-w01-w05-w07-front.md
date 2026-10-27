@@ -59,7 +59,7 @@ REST nuevo, `contracts/openapi/socios-v1.yaml`.
 Mientras el backend no publique una versión, se trabaja con mocks (regla 2).
 
 Para los tipos del contrato REST se propone **`openapi-typescript`** (dependencia de desarrollo), con la misma
-justificación que `graphql-codegen`: tipos generados y no escritos a mano (Propuesta).
+justificación que `graphql-codegen`: tipos generados y no escritos a mano (**decidido el 2026-10-27**).
 
 ## 3. HU-W01 · W01-01 Solicitud y consentimiento (ajuste)
 
@@ -120,14 +120,14 @@ Se conserva lo implementado.
 - un encabezado propio en W07-02, distinto del resto de la web.
 
 Se toma de Figma la **estructura** (login técnico, tres tarjetas de resumen, documentación con pestañas) y se
-construye con las convenciones de la sección 1. Las partes sin diseño se marcan **«sin Figma»**: según la regla 3, Felipe
-debe aprobarlas, y se propone construirlas solo con componentes de `src/components/ui/`.
+construye con las convenciones de la sección 1. Las partes sin diseño se marcan **«sin Figma»**. **Felipe las aprobó el
+2026-10-27** (regla 3) y se construyen solo con componentes de `src/components/ui/`.
 
 ### 5.1 Piezas comunes
 
 | # | Qué implementar | Detalle |
 |---|---|---|
-| 1 | Sesión del socio | Composable nuevo **`useSesionSocio.ts`**, separado de `useSesion`, porque el socio no es un usuario con rol. Pide el token con `POST /v1/token` (ID de socio y clave) y recibe un JWT de 15 min. Lo guarda en `sessionStorage` (`solventa.tokenSocio`), con la misma excepción de la regla 7 que el JWT de usuario (Propuesta). Al vencer, vuelve al login con el aviso «Tu sesión técnica venció» |
+| 1 | Sesión del socio | Composable nuevo **`useSesionSocio.ts`**, separado de `useSesion`, porque el socio no es un usuario con rol. Pide el token con `POST /v1/token` (ID de socio y clave) y recibe un JWT de 15 min. Lo guarda en `sessionStorage` (`solventa.tokenSocio`), con la misma excepción de la regla 7 que el JWT de usuario (**decidido el 2026-10-27**). Al vencer, vuelve al login con el aviso «Tu sesión técnica venció» |
 | 2 | Cliente REST | `src/api/socios.ts`: `fetch` con `Authorization: Bearer`, `Accept-Language` y los tipos de `socios-v1.yaml`. Los 502, 503 y 504 del gateway se traducen como en `graphql/cliente.ts`. Un 429 muestra «Presupuesto agotado» |
 | 3 | Rutas | En `router/pantallas.ts`, `historia` suma `'HU-W07'`. El portal **no** usa `roles`: lleva `socio: true` y el guardia del router lo manda a `/socios/ingreso` si no hay sesión de socio. Las rutas son `/socios/ingreso`, `/socios/panel` y `/socios/documentacion` |
 | 4 | Encabezado | `HeaderPantalla` con `sinPerfil`, porque el socio no tiene perfil. Debajo, `BarraDeCerrarSesion` con «‹nombre del socio› · Socio de distribución» y «Cerrar sesión», como en G-02a. Así se reemplaza el encabezado propio de Figma W07-02 |
@@ -143,7 +143,7 @@ debe aprobarlas, y se propone construirlas solo con componentes de `src/componen
 | «ID de socio» y «Clave de acceso» con el ícono a la izquierda | `CampoFormulario` con `*`, el ícono a la derecha (`badge`) y la clave con el ojo de G-01. Ayuda de la clave: «Tu clave de producción» (W07-3) |
 | «Ingresar →» activo | `Boton` primario a todo el ancho, **gris hasta llenar los dos campos**. Mientras espera, «Ingresando…» |
 | — | Error genérico **«ID de socio o clave incorrectos»** (AUTH responde un 401 genérico) y mensaje de **bloqueo por intentos**, con el estilo de error de G-01 |
-| «¿Problemas con su llave API o acceso?» | Texto de ayuda en la nota, sin enlace, porque no hay destino de soporte definido (Propuesta). Si Felipe da un correo, pasa a `mailto:` |
+| «¿Problemas con su llave API o acceso?» | **Solo texto**, en la nota y sin enlace (decidido el 2026-10-27) |
 | «‹ Volver al inicio de sesión de Solventa» | Enlace a `/login` |
 | «Conexión cifrada…» y «Canal restringido…» | Nota en letra pequeña, como la de G-01 |
 
@@ -168,7 +168,7 @@ Disposición, de arriba abajo:
 | **Consumo** | «Cuota consumida 842 / 1.000 llamadas este mes», barra, % y «Renovación del ciclo» | **«Cotizaciones: 842 / 1.000»**, porque solo las cotizaciones descuentan (W07-9), con la barra, «84 % utilizado» y «158 disponibles». «Renovación del ciclo» se reemplaza por **«Lo recarga Solventa»**, porque no hay ciclo. Agotado: la tarjeta pasa a alerta con «Presupuesto agotado: las cotizaciones responden 429» |
 | **Estado** | Caja verde «Operativo», «Latencia media 48 ms · Disponibilidad 99,98 %» y «Última verificación» | Una **barra de salud general en %** con su color (verde ≥ 90, amarillo ≥ 70, rojo < 70) y el texto «Operativo», «Degradado» o «Con fallas». Debajo: **disponibilidad y latencia media consolidadas**; **Cotización** y **Emisión**, cada una con su `Badge` de color; selector de **ventana** con `Chip` pequeños (15 min, 1 h, 24 h, 7 d; 1 h por defecto); y «Última verificación». Sin tráfico, muestra «Sin tráfico en la ventana» y no un 100 % (bloque 3b). **Sin nombres de micros internos** (W07-14) |
 
-5. **Debajo de las tarjetas, dos secciones sin Figma** (Propuesta), con el estilo de la tabla de W05-01:
+5. **Debajo de las tarjetas, dos secciones sin Figma** (aprobadas el 2026-10-27), con el estilo de la tabla de W05-01:
 
 | Sección | Contenido |
 |---|---|
@@ -225,14 +225,14 @@ Ninguno muestra un 5xx (regla 5).
 Antes de reportar cada paso: `npm run typecheck`, `lint`, `formato:verificar`, `test` y `build` en `apps/web`, y verla
 en el navegador con `dev:mock`.
 
-## 7. Pendiente de Felipe
+## 7. Decisiones de Felipe (2026-10-27)
 
-1. **Aprobar las partes sin Figma** (regla 3):
-   - el selector de entorno;
-   - las secciones «Consumo por API» y «Ventas y comisiones»;
-   - la pantalla «Estado del sistema»;
-   - el modal para confirmar «Regenerar».
-2. Confirmar los **íconos y textos** de los campos nuevos de W01-01 y la columna «Medio de pago» de W05-01.
-3. **El destino de «¿Problemas con tu llave API?»** (un correo de soporte o nada).
-4. Guardar el token del socio en `sessionStorage`, igual que el de usuario, o solo en memoria, como decía la v2.
-5. Usar `openapi-typescript` para los tipos del contrato REST.
+| # | Tema | Decisión |
+|---|---|---|
+| 1 | Partes sin Figma (regla 3) | **Aprobadas** y construidas solo con componentes de `src/components/ui/`: <br>• el selector de entorno; <br>• las secciones «Consumo por API» y «Ventas y comisiones»; <br>• la pantalla «Estado del sistema»; <br>• la confirmación antes de regenerar una clave |
+| 2 | «¿Problemas con tu llave API?» | **Solo texto**, sin enlace |
+| 3 | Token del socio | En **`sessionStorage`** (`solventa.tokenSocio`), como el JWT de usuario |
+| 4 | Tipos del contrato REST | **`openapi-typescript`** como dependencia de desarrollo |
+
+**Sigue abierto:** confirmar los íconos y textos de los campos nuevos de W01-01 (`person` y `mail`) y de la columna
+«Medio de pago» de W05-01. No bloquea: se ajustan al revisarlos en el navegador.
