@@ -74,7 +74,7 @@ tocar** W01-01, W03, W05-01 o el portal de socios.
 - **W01-01 suma nombre y correo del cliente solo para el ASESOR,** que se envían al aceptar la oferta. Un CLIENTE no los ve: POLICY lee su contacto de AUTH y el contrato no lo devuelve.
 - **El registro de CLIENTE exige cédula y correo.**
 - **El token del enlace va en el fragmento** (`#t=…`) y viaja en `X-Enlace-Firma` (regla 7).
-- **W07:** el portal sigue la v2 del plan de W07. El cliente final del socio usa las mismas pantallas del enlace.
+- **W07: solo se arman pantallas** con los componentes, tipografía (Inter), colores (`styles/twind.ts`) e íconos (`IconoMaterial.vue`) del repo. La única pieza nueva es `Pestanas.vue`. El login del socio se guía por el del prototipo y por G-01. El panel lleva un botón a «Documentación de la API», con tres pestañas: «Guía de integración» (PDF embebido, que se hace al final con capturas de las pantallas terminadas), «Pruebas (sandbox)» y «Producción» (Swagger embebido). El cliente final del socio usa las mismas pantallas del enlace de W03.
 
 **Contrato:** v0.17 para W01, W03 y W05, y v0.18 más `socios-v1.yaml` para W07. Ninguno está publicado todavía, así
 que se trabaja con mocks.
