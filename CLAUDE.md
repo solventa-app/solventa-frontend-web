@@ -47,6 +47,38 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 - La app móvil se construye en otro repositorio.
 - GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git).
 
+## Rediseño de firma y pago (W03) y HU-W07: decisiones del 2026-10-27 (en borrador, sin código)
+
+Plan del front: [`docs/plan-w03-w07-front.md`](docs/plan-w03-w07-front.md). El plan completo, con el backend:
+[`../solventa-backend/docs/plan-hu-w07-y-ajustes.md`](../solventa-backend/docs/plan-hu-w07-y-ajustes.md). **Léelos antes de
+tocar** W01-01, W03, W05-01 o el portal de socios.
+
+**Flujo nuevo:**
+
+1. El **ASESOR** digita en un **modal nuevo** el código que llegó al correo del cliente y pulsa «Emitir».
+2. El cliente recibe un **enlace de un solo uso, vigente 30 min**, a una página pública sin perfil ni migas (W03-02):
+   - ve el contrato en **PDF**;
+   - firma con trazo, imagen PNG o JPG validada, o su nombre estilizado.
+3. Pasa por W03-02b y W03-03, donde «Ir al inicio» pasa a ser **«Pagar»**.
+4. «Pagar» lleva a la **página de la pasarela**: `stubs/pasarela` del backend, que **no es Solventa**. Allí paga con
+   tarjeta de crédito o débito, **sin PSE**.
+5. La pasarela vuelve a `/pago/retorno`. La web confirma con `confirmarPago` y muestra **W03-04**, ya emitida.
+6. En W03-04, «Descargar documento» abre el PDF en una pestaña nueva y no hay «Ir al inicio».
+
+**Lo que no se construye:** W03-05.
+
+**Otras reglas:**
+
+- **La web nunca captura ni ve un dato de tarjeta.**
+- **Fallos del pago:** reintentar y, al 3.er fallo seguido o con un rechazo, otra tarjeta.
+- **W01-01 suma nombre y correo,** que se envían al aceptar la oferta.
+- **El registro de CLIENTE exige cédula y correo.**
+- **El token del enlace va en el fragmento** (`#t=…`) y viaja en `X-Enlace-Firma` (regla 7).
+- **W07:** el portal sigue la v2 del plan de W07. El cliente final del socio usa las mismas pantallas del enlace.
+
+**Contrato:** v0.17 para W01, W03 y W05, y v0.18 más `socios-v1.yaml` para W07. Ninguno está publicado todavía, así
+que se trabaja con mocks.
+
 ## Plan y decisiones cerradas de HU-W01 (2026-10-18)
 
 Plan del front: [`docs/plan-completar-hu-w01.md`](docs/plan-completar-hu-w01.md) (qué cambia por bloque, despliegue,
