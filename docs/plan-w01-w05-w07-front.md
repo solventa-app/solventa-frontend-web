@@ -364,7 +364,7 @@ en el navegador con `dev:mock`.
 | 6 | Login del socio | Se guía por el login del prototipo y por el G-01 implementado, del que reutiliza estructura, componentes y comportamiento |
 | 7 | Documentación | Una pantalla aparte, a la que se llega con un botón del panel. Conserva el estilo y la navegación del prototipo, con **tres pestañas**: la guía en PDF embebido y los Swagger de pruebas y de producción embebidos |
 | 8 | Guía en PDF | Plantilla con la apariencia de la web y del prototipo, con texto, imágenes y capturas, **hecha después de terminar las pantallas finales** |
-| 9 | Nombres de las pestañas | Propuestos con criterios de UX (5.4): «Guía de integración», «Pruebas (sandbox)» y «Producción», en ese orden y con la guía por defecto. **Por confirmar** |
+| 9 | Nombres de las pestañas | Propuestos con criterios de UX (5.4): «Guía de integración», «Pruebas (sandbox)» y «Producción», en ese orden y con la guía por defecto. **Confirmados por Felipe el 2026-10-27** |
 
 **Sigue abierto:** confirmar los íconos y textos de los campos nuevos de W01-01 (`person` y `mail`) y de la columna
 «Medio de pago» de W05-01. No bloquea: se ajustan al revisarlos en el navegador.
