@@ -49,7 +49,7 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 
 ## Rediseño de firma y pago (W03) y HU-W07: decisiones del 2026-10-27 (en borrador, sin código)
 
-Plan del front: [`docs/plan-w03-w07-front.md`](docs/plan-w03-w07-front.md). El plan completo, con el backend:
+Plan del front: [`docs/plan-w01-w05-w07-front.md`](docs/plan-w01-w05-w07-front.md). El plan completo, con el backend:
 [`../solventa-backend/docs/plan-hu-w07-y-ajustes.md`](../solventa-backend/docs/plan-hu-w07-y-ajustes.md). **Léelos antes de
 tocar** W01-01, W03, W05-01 o el portal de socios.
 
@@ -71,7 +71,7 @@ tocar** W01-01, W03, W05-01 o el portal de socios.
 
 - **La web nunca captura ni ve un dato de tarjeta.**
 - **Fallos del pago:** reintentar y, al 3.er fallo seguido o con un rechazo, otra tarjeta.
-- **W01-01 suma nombre y correo,** que se envían al aceptar la oferta.
+- **W01-01 suma nombre y correo del cliente solo para el ASESOR,** que se envían al aceptar la oferta. Un CLIENTE no los ve: POLICY lee su contacto de AUTH y el contrato no lo devuelve.
 - **El registro de CLIENTE exige cédula y correo.**
 - **El token del enlace va en el fragmento** (`#t=…`) y viaja en `X-Enlace-Firma` (regla 7).
 - **W07:** el portal sigue la v2 del plan de W07. El cliente final del socio usa las mismas pantallas del enlace.
