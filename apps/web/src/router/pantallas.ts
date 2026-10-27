@@ -9,7 +9,7 @@ export interface Pantalla {
   id: string
   ruta: string
   nombre: string
-  historia: 'HU-W01' | 'HU-W04' | 'HU-W05' | 'Global'
+  historia: 'HU-W01' | 'HU-W03' | 'HU-W04' | 'HU-W05' | 'Global'
   sprint: 1 | 2 | 3
   /** Criterios de aceptación que cubre (CA-*), ver docs/plan-frontend.md. */
   criterios: string[]
@@ -162,6 +162,65 @@ export const pantallas: Pantalla[] = [
     roles: ['BACKOFFICE'],
     criterios: ['CA-W05-01', 'CA-W05-02'],
     componente: () => import('../views/ConciliacionDePagos.vue'),
+  },
+  // HU-W03 · Suscripción, firma y pago con el asesor (KAN-26, bloque 9 del backend; docs/plan-front-w03-y-ajustes-w01-w05.md).
+  // W03-01 es del ASESOR (W03-19). Las del enlace son públicas: las autoriza el token del enlace, no una sesión.
+  // W03-05 (Documento de póliza) no se construye (W03-31): el PDF se abre en una pestaña nueva desde W03-04.
+  {
+    id: 'W03-01',
+    ruta: '/suscripcion/:ofertaId',
+    rutaEjemplo: '/suscripcion/oferta-completa',
+    nombre: 'Revisar oferta aceptada',
+    historia: 'HU-W03',
+    sprint: 2,
+    roles: ['ASESOR'],
+    criterios: ['CA-W03-01', 'CA-W03-11', 'CA-W03-12'],
+    componente: () => import('../views/RevisarOfertaAceptada.vue'),
+  },
+  {
+    id: 'W03-02',
+    ruta: '/firma',
+    nombre: 'Firma electrónica',
+    historia: 'HU-W03',
+    sprint: 2,
+    criterios: ['CA-W03-02', 'CA-W03-12'],
+    componente: () => import('../views/FirmaElectronica.vue'),
+  },
+  {
+    id: 'W03-02b',
+    ruta: '/firma/confirmar',
+    nombre: 'Confirmar firma y autorización de cobro',
+    historia: 'HU-W03',
+    sprint: 2,
+    criterios: ['CA-W03-02', 'CA-W03-03', 'CA-W03-05'],
+    componente: () => import('../views/ConfirmarFirma.vue'),
+  },
+  {
+    id: 'W03-03',
+    ruta: '/firma/confirmada',
+    nombre: 'Firma confirmada',
+    historia: 'HU-W03',
+    sprint: 2,
+    criterios: ['CA-W03-03', 'CA-W03-13'],
+    componente: () => import('../views/FirmaConfirmada.vue'),
+  },
+  {
+    id: 'W03-R',
+    ruta: '/pago/retorno',
+    nombre: 'Retorno de la pasarela',
+    historia: 'HU-W03',
+    sprint: 2,
+    criterios: ['CA-W03-04', 'CA-W03-05', 'CA-W03-06', 'CA-W03-07', 'CA-W03-13'],
+    componente: () => import('../views/RetornoPago.vue'),
+  },
+  {
+    id: 'W03-04',
+    ruta: '/firma/poliza',
+    nombre: 'Póliza emitida',
+    historia: 'HU-W03',
+    sprint: 2,
+    criterios: ['CA-W03-07', 'CA-W03-08'],
+    componente: () => import('../views/PolizaEmitida.vue'),
   },
   // HU-W04 · Mesa de siniestros (KAN-27). Criterios CA-W04 propuestos en docs/plan-ejecucion-hu-w04-siniestros.md.
   // W04-01 (bloque 2), W04-02 (bloque 3), W04-02b y W04-03c (bloque 4), W04-03a y W04-03b (bloque 5). El modal de

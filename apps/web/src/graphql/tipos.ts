@@ -17,6 +17,10 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
 };
 
+export type AccionSugerida =
+  | 'CONTACTAR_ASESOR'
+  | 'ESPERAR';
+
 export type CanalContacto =
   | 'AGENDAR'
   | 'CHAT'
@@ -65,6 +69,11 @@ export type ConsentimientoInput = {
   versionTexto: Scalars['String']['input'];
 };
 
+export type ContactoInput = {
+  correo?: InputMaybe<Scalars['String']['input']>;
+  telefono?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type CrearCobroInput = {
   clienteId?: InputMaybe<Scalars['ID']['input']>;
   idIntentoCobro: Scalars['ID']['input'];
@@ -75,8 +84,10 @@ export type CrearCobroInput = {
 
 export type CrearUsuarioInput = {
   clave: Scalars['String']['input'];
+  correo?: InputMaybe<Scalars['String']['input']>;
   nombre?: InputMaybe<Scalars['String']['input']>;
   rol: RolUsuario;
+  telefono?: InputMaybe<Scalars['String']['input']>;
   usuario: Scalars['String']['input'];
 };
 
@@ -85,12 +96,33 @@ export type CredencialesInput = {
   usuario: Scalars['String']['input'];
 };
 
+export type DocumentoFirma = {
+  formaCobro: Scalars['String']['output'];
+  meses: Scalars['Int']['output'];
+  montoMensual: Monto;
+  propuestaId: Scalars['ID']['output'];
+  resumen: Scalars['String']['output'];
+  version: Scalars['String']['output'];
+};
+
+export type ErrorAceptacion = {
+  mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorAceptacion>;
+  puedeReintentar: Scalars['Boolean']['output'];
+};
+
 export type ErrorAutenticacion = {
   mensaje: Scalars['String']['output'];
 };
 
 export type ErrorCobro = {
   mensaje: Scalars['String']['output'];
+};
+
+export type ErrorFirma = {
+  mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorFirma>;
+  puedeReintentar: Scalars['Boolean']['output'];
 };
 
 export type ErrorOferta = {
@@ -119,6 +151,18 @@ export type EstadoFuente =
   | 'FALLO'
   | 'OK';
 
+export type EstadoPoliza =
+  | 'EMITIDA';
+
+export type EstadoPropuesta =
+  | 'ACEPTADA'
+  | 'EMITIDA'
+  | 'EN_EMISION'
+  | 'EN_REVISION'
+  | 'NO_EMITIDA'
+  | 'PAGO_RECHAZADO'
+  | 'PENDIENTE_PAGO';
+
 export type EstadoUsuario =
   | 'ACTIVO'
   | 'SUSPENDIDO';
@@ -126,6 +170,19 @@ export type EstadoUsuario =
 export type FactorScore = {
   nombre: Scalars['String']['output'];
   peso: Scalars['Float']['output'];
+};
+
+export type FirmaRegistrada = {
+  estado: EstadoPropuesta;
+  firmadaEn: Scalars['DateTime']['output'];
+  propuestaId: Scalars['ID']['output'];
+  referencia: Scalars['String']['output'];
+};
+
+export type FirmarPropuestaInput = {
+  autorizaCobro: Scalars['Boolean']['input'];
+  propuestaId: Scalars['ID']['input'];
+  versionDocumento: Scalars['String']['input'];
 };
 
 export type FuenteConsultada = {
@@ -146,22 +203,60 @@ export type MontoInput = {
   valor: Scalars['String']['input'];
 };
 
+export type MotivoErrorAceptacion =
+  | 'CONSENTIMIENTO_NO_VIGENTE'
+  | 'OFERTA_NO_ENCONTRADA'
+  | 'OFERTA_PRELIMINAR'
+  | 'OFERTA_VENCIDA';
+
+export type MotivoErrorFirma =
+  | 'COBRO_NO_AUTORIZADO'
+  | 'PROPUESTA_NO_FIRMABLE'
+  | 'SERVICIO_FIRMA_NO_DISPONIBLE'
+  | 'VERSION_DOCUMENTO_DESACTUALIZADA';
+
 export type MotivoErrorOferta =
   | 'CONSENTIMIENTO_NO_VIGENTE'
   | 'DATOS_INSUFICIENTES'
   | 'FUENTES_NO_DISPONIBLES';
 
+export type MotivoEstadoPropuesta =
+  | 'NO_APROBADA'
+  | 'PAGO_EN_PROCESO'
+  | 'PAGO_FONDOS_INSUFICIENTES'
+  | 'PAGO_RECHAZADO'
+  | 'REVISION_MANUAL';
+
 export type Mutation = {
+  aceptarOferta: ResultadoAceptacion;
+  actualizarContacto: ResultadoUsuario;
+  actualizarPreferencias: ResultadoUsuario;
   cambiarRolUsuario: ResultadoUsuario;
   contactarAsesor: ConfirmacionContacto;
   crearCobro: ResultadoCobro;
   crearUsuario: ResultadoUsuario;
+  firmarPropuesta: ResultadoFirma;
   iniciarSesion: ResultadoSesion;
   registrarConsentimiento: Consentimiento;
   reintentarCobro: Cobro;
   revocarConsentimiento: Consentimiento;
   solicitarOferta: ResultadoOferta;
   suspenderUsuario: ResultadoUsuario;
+};
+
+
+export type MutationAceptarOfertaArgs = {
+  ofertaId: Scalars['ID']['input'];
+};
+
+
+export type MutationActualizarContactoArgs = {
+  entrada: ContactoInput;
+};
+
+
+export type MutationActualizarPreferenciasArgs = {
+  entrada: PreferenciasInput;
 };
 
 
@@ -184,6 +279,11 @@ export type MutationCrearCobroArgs = {
 
 export type MutationCrearUsuarioArgs = {
   entrada: CrearUsuarioInput;
+};
+
+
+export type MutationFirmarPropuestaArgs = {
+  entrada: FirmarPropuestaInput;
 };
 
 
@@ -242,9 +342,43 @@ export type PerfilRiesgo = {
   score: Scalars['Int']['output'];
 };
 
+export type Poliza = {
+  cobertura: Monto;
+  documentoUrl: Scalars['String']['output'];
+  estado: EstadoPoliza;
+  id: Scalars['ID']['output'];
+  numero: Scalars['String']['output'];
+  prima: Monto;
+  vigenciaDesde: Scalars['DateTime']['output'];
+  vigenciaHasta: Scalars['DateTime']['output'];
+};
+
+export type PreferenciasInput = {
+  idioma: Scalars['String']['input'];
+  moneda: Scalars['String']['input'];
+};
+
+export type Propuesta = {
+  accionSugerida?: Maybe<AccionSugerida>;
+  actualizadoEn: Scalars['DateTime']['output'];
+  cobertura: Monto;
+  estado: EstadoPropuesta;
+  id: Scalars['ID']['output'];
+  mensajeEstado?: Maybe<Scalars['String']['output']>;
+  motivoEstado?: Maybe<MotivoEstadoPropuesta>;
+  ofertaId: Scalars['ID']['output'];
+  plazoMeses: Scalars['Int']['output'];
+  polizaId?: Maybe<Scalars['ID']['output']>;
+  prima: Monto;
+};
+
 export type Query = {
   cobros: Array<Cobro>;
+  convertirMontos: Array<Monto>;
+  documentoFirma?: Maybe<DocumentoFirma>;
   oferta?: Maybe<Oferta>;
+  poliza?: Maybe<Poliza>;
+  propuesta?: Maybe<Propuesta>;
   usuarios: Array<Usuario>;
   yo?: Maybe<Usuario>;
 };
@@ -258,7 +392,28 @@ export type QueryCobrosArgs = {
 };
 
 
+export type QueryConvertirMontosArgs = {
+  moneda: Scalars['String']['input'];
+  montos: Array<MontoInput>;
+};
+
+
+export type QueryDocumentoFirmaArgs = {
+  propuestaId: Scalars['ID']['input'];
+};
+
+
 export type QueryOfertaArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPolizaArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPropuestaArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -272,7 +427,11 @@ export type RangoPrima = {
   minima: Monto;
 };
 
+export type ResultadoAceptacion = ErrorAceptacion | Propuesta;
+
 export type ResultadoCobro = Cobro | ErrorCobro;
+
+export type ResultadoFirma = ErrorFirma | FirmaRegistrada;
 
 export type ResultadoOferta = ErrorOferta | Oferta;
 
@@ -307,7 +466,10 @@ export type Usuario = {
   creadoEn: Scalars['DateTime']['output'];
   estado: EstadoUsuario;
   id: Scalars['ID']['output'];
+  idioma: Scalars['String']['output'];
+  moneda: Scalars['String']['output'];
   nombre?: Maybe<Scalars['String']['output']>;
   rol: RolUsuario;
+  tieneContacto: Scalars['Boolean']['output'];
   usuario: Scalars['String']['output'];
 };

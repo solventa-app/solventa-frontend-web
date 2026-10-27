@@ -9,7 +9,8 @@
 
   assignment/schedule/swap_horiz/gavel vienen de HU-W05 (ConciliacionDePagos.vue: registro de cobro,
   pendiente, reintentar, disputa) y se agregan al conjunto que ya traía develop tras el merge de
-  componentes-globales: ningún otro glifo se tocó. Los de HU-W04 (siniestros) llevan su uso al lado.
+  componentes-globales: ningún otro glifo se tocó. Los de HU-W04 (siniestros) y HU-W03 (suscripción) llevan su
+  uso al lado.
 -->
 <script setup lang="ts">
 const RUTAS = {
@@ -92,6 +93,42 @@ const RUTAS = {
   // Evidencia cuya imagen no carga en la galería del detalle (W04-02, estado degradado "Imagen no disponible").
   broken_image:
     'M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h600q24 0 42 18t18 42v600q0 24-18 42t-42 18H180Zm43-314 172-172 170 170 171-171 44 44v-217H180v303l43 43Zm-43 254h600v-298l-44-44-171 171-170-170-172 172-43-43v212Zm0 0v-298 60-362 600Z',
+  // Correo del cliente (W01-01 con un ASESOR) y del modal del asesor (HU-W03).
+  mail: 'M140-160q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H140Zm340-302L140-685v465h680v-465L480-462Zm0-60 336-218H145l335 218ZM140-685v-55 520-465Z',
+  // Documento de la oferta y del contrato (W03-01 y W03-02, Figma 2001:1704 y 2001:1832).
+  description:
+    'M319-250h322v-60H319v60Zm0-170h322v-60H319v60ZM220-80q-24 0-42-18t-18-42v-680q0-24 18-42t42-18h361l219 219v521q0 24-18 42t-42 18H220Zm331-554v-186H220v680h520v-494H551ZM220-820v186-186 680-680Z',
+  // Fuentes consultadas desde W03-01.
+  account_balance:
+    'M212-241v-339h60v339h-60Zm242 0v-339h60v339h-60ZM80-121v-60h800v60H80Zm608-120v-339h60v339h-60ZM80-640v-53l400-228 400 228v53H80Zm134-60h532-532Zm0 0h532L480-852 214-700Z',
+  // Score de riesgo verificado (W03-01).
+  leaderboard:
+    'M140-180h187v-360H140v360Zm247 0h186v-600H387v600Zm246 0h187v-280H633v280ZM80-120v-480h247v-240h306v320h247v400H80Z',
+  // Fecha de cotización (W03-01).
+  event_available:
+    'M433-228 295-365l42-42 96 94 184-184 42 43-226 226ZM180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Zm0-490h600v-130H180v130Zm0 0v-130 130Z',
+  // «Firmar» y modo de firma por trazo (W03-02).
+  draw: 'M160-120v-128l571-571q11-11 22.5-16t24.5-5q12 0 23.5 5t22.5 16l35 35q11 10 16 21.5t5 24.5q0 12-5 24t-16 23L288-120H160Zm60-60h44l446-446-22-22-22-22-446 446v44Zm601-557-44-44 44 44Zm-133 89-22-22 44 44-22-22ZM560-120q78 0 139-36.5T760-260q0-40-29.5-73.5T638-386l-47 47q50 12 79.5 34t29.5 45q0 32-40.5 56T560-180q-12 0-21 8.5t-9 21.5q0 12 9 21t21 9ZM240-414l48-48q-54-13-81-27.5T180-520q0-16 21.5-30.5T290-590q83-31 111.5-59.5T430-719q0-56-41-88.5T280-840q-42 0-76 14.5T153-789q-8 9-7.5 21t11.5 20q10 8 22.5 6.5T200-751q15-15 34-22t46-7q46 0 68 18t22 43q0 20-19 35t-85 39q-94 34-120 62t-26 63q0 32 28 62t92 44Z',
+  // Modo de firma con imagen PNG o JPG (W03-02).
+  upload:
+    'M450-313v-371L330-564l-43-43 193-193 193 193-43 43-120-120v371h-60ZM220-160q-24 0-42-18t-18-42v-143h60v143h520v-143h60v143q0 24-18 42t-42 18H220Z',
+  // Modo de firma con el nombre escrito (W03-02).
+  text_fields: 'M290-160v-540H80v-100h520v100H390v540H290Zm360 0v-340H520v-100h360v100H750v340H650Z',
+  // «Pagar» la primera prima (W03-03) y otra tarjeta (retorno de la pasarela).
+  credit_card:
+    'M880-740v520q0 24-18 42t-42 18H140q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42ZM140-631h680v-109H140v109Zm0 129v282h680v-282H140Zm0 282v-520 520Z',
+  // Póliza emitida (W03-04, Figma 2001:2057).
+  verified:
+    'm346-60-76-130-151-31 17-147-96-112 96-111-17-147 151-31 76-131 134 62 134-62 77 131 150 31-17 147 96 111-96 112 17 147-150 31-77 130-134-62-134 62Zm27-79 107-45 110 45 67-100 117-30-12-119 81-92-81-94 12-119-117-28-69-100-108 45-110-45-67 100-117 28 12 119-81 94 81 92-12 121 117 28 70 100Zm107-341Zm-43 133 227-225-45-41-182 180-95-99-46 45 141 140Z',
+  // «Descargar documento» de la póliza (W03-04).
+  download:
+    'M480-313 287-506l43-43 120 120v-371h60v371l120-120 43 43-193 193ZM220-160q-24 0-42-18t-18-42v-143h60v143h520v-143h60v143q0 24-18 42t-42 18H220Z',
+  // El PDF de la póliza se abre en una pestaña nueva (W03-04).
+  open_in_new:
+    'M180-120q-24 0-42-18t-18-42v-600q0-24 18-42t42-18h279v60H180v600h600v-279h60v279q0 24-18 42t-42 18H180Zm202-219-42-43 398-398H519v-60h321v321h-60v-218L382-339Z',
+  // Enlace de firma vencido o inexistente (estado vacío de la página del enlace, HU-W03).
+  link_off:
+    'm750-291-49-49q51-10 85-48t34-89q0-58-41-99t-99-41H525v-60h155q83 0 141.5 58.5T880-477q0 62-36 112t-94 74ZM594-447l-60-60h101v60h-41ZM814-56 63-807l43-43L857-99l-43 43ZM450-280H280q-83 0-141.5-58.5T80-480q0-72 44.5-127T238-676l56 56h-14q-58 0-99 41t-41 99q0 58 41 99t99 41h170v60ZM325-450v-60h79l60 60H325Z',
 } as const
 
 defineProps<{ nombre: keyof typeof RUTAS }>()

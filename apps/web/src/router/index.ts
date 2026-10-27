@@ -23,6 +23,12 @@ export function crearRutas(): RouteRecordRaw[] {
     rutas.push({ path: '/_componentes', component: () => import('../views/IndiceComponentes.vue') })
   }
 
+  // Correo y pasarela simulados de HU-W03, solo con los mocks (decisión D-5): no entran al build de producción.
+  if (import.meta.env.MODE === 'mock') {
+    rutas.push({ path: '/dev/correo', component: () => import('../views/dev/BuzonSimulado.vue') })
+    rutas.push({ path: '/dev/pasarela/:sesion', component: () => import('../views/dev/PasarelaSimulada.vue') })
+  }
+
   rutas.push({ path: '/', redirect: '/login' })
   return rutas
 }

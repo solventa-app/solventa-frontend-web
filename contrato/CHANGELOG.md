@@ -114,5 +114,9 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
 - Incluye parámetros regulatorios, límites de montos, plazos, DTI máximo y régimen de finanzas abiertas.
 - Afecta al frontend: sí (catálogo compartido y reglas de validación de documentos por jurisdicción).
 
+## v0.11 a v0.16 — sincronizado el 2026-10-27
 
-
+- Copia de `solventa-backend/develop` (v0.16): idioma y moneda del usuario (v0.11), suscripción, firma y póliza de
+  HU-W03 (v0.12 a v0.15) y contacto del cliente con `tieneContacto` (v0.16). El detalle está en el CHANGELOG del backend.
+- Afecta al frontend: los mocks de `iniciarSesion` y `yo` devuelven `idioma`, `moneda` y `tieneContacto`. Las pantallas
+  de W03 usan además el borrador local de la v0.17 (`borrador-v0.17.graphql`, ver README).
