@@ -240,16 +240,55 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
   - Terraform y el informe de servicios del backend **excluyen los dummies** (no se despliegan; ver "Diferido").
 - **Pendiente:** staging (sección siguiente) y validar los CA-W04 contra Jira.
 
-## Diferido: despliegue a staging (se hará después, no ahora)
-- Backend:
-  - En `servicios.json` agregar `"publico": true` al dummy.
-  - En `validar_servicios.py`, permitir `publico` solo a los servicios `dummy`.
-  - Quitar la exclusión del despliegue en `seleccionar_servicios.py`.
-  - Terraform ya da `allUsers` a los públicos (`infra/servicios.tf:281-289`).
-- Front:
-  - En `apps/web/vercel.json`, el rewrite `/graphql/siniestros/:path*` hacia la URL de Cloud Run, **antes** de `/graphql/:path*`.
-  - El spec `w04-staging.cy.ts`.
-  - La evidencia contra staging.
+## Diferido: despliegue a staging (obsoleto)
+> **Ya no aplica** (2026-10-28). El hotfix #331 del backend desplegó el dummy en staging de otra forma:
+> Cloud Run privado detrás del API Gateway, sin `publico` y sin un rewrite nuevo (el `/graphql/:path*` de Vercel ya
+> lo cubre). Y la web va a pasar al backend real (sección siguiente), así que el dummy deja de ser el camino.
+
+## Conexión al backend real (pendiente de ejecutar en este repo)
+
+> Decidido el 2026-10-28 con el plan del backend `../solventa-backend/docs/plan-completar-hu-w04.md`. El backend real
+> ya está construido en la rama `feat/KAN-27-backend-siniestros` del backend: el servicio `claims` (MongoDB), las
+> evidencias en el almacenamiento, la orden de pago en PAYMENTS y las operaciones en el BFF. **Aquí solo queda
+> documentado; el código del front se cambia después**, cuando ese backend llegue a `develop`.
+
+**Lo que ya está listo y no cambia:**
+- las 7 pantallas, el modal de rechazo y las confirmaciones;
+- las consultas y mutaciones: los mismos nombres, argumentos y campos (contrato principal **v0.19**);
+- la union `ResultadoResolucion`, que se distingue por la forma (`'mensaje' in r` / `'estado' in r`);
+- los mensajes de negocio del backend, que son los mismos del dummy y se muestran tal cual (también en inglés);
+- el router, que ya exige BACKOFFICE, y `ejecutar()`, que ya manda el JWT y traduce 502, 503 y 504;
+- `<img :src="e.url">`, que acepta la URL firmada absoluta.
+
+**Ajustes:**
+
+| # | Qué | Dónde |
+|---|---|---|
+| 1 | `SINIESTROS = { endpoint: '/v1/graphql/web', conToken: true }` (hoy `'/graphql/siniestros'` sin token). El backend exige token de BACKOFFICE en todas las operaciones | `apps/web/src/composables/useSiniestros.ts:17` |
+| 2 | Proxy `'/v1'` hacia el gateway (`VITE_BFF_URL` o `:8080`); quitar `'/graphql/siniestros'` y `VITE_SINIESTROS_URL` | `apps/web/vite.config.ts`, `src/env.d.ts`, `.env.example` |
+| 3 | Rewrite `/v1/:path*` hacia el gateway de staging, antes de la regla SPA | `apps/web/vercel.json` |
+| 4 | Importar los tipos de `graphql/tipos.ts` (contrato principal) en vez de `tipos-siniestros.ts`, en 6 archivos: `useSiniestros.ts`, `useResultadoReciente.ts`, `ModalRechazo.vue`, `DetalleSiniestro.vue`, `BandejaSiniestros.vue` y `mocks/siniestros.ts` | `src/` |
+| 5 | Sincronizar el contrato principal v0.19 (`contract-consumer`). Quitar `siniestros.graphql` de `scripts/contrato.mjs`, el segundo `generates` de `codegen.ts`, la exclusión de cobertura y el `git diff` de `ci-web.yml`; borrar `contrato/siniestros.graphql` y `src/graphql/tipos-siniestros.ts`. El backend conserva su copia del dummy, así que `verificar` no falla mientras tanto | front |
+| 6 | La bandeja pide solo `id radicado estado asegurado { nombre } notificadoEn`: hoy pide `CAMPOS_SINIESTRO` completo, y con el backend real eso pediría la póliza y firmaría las URLs de todas las evidencias en cada carga | `useSiniestros.ts` (`CONSULTA_SINIESTROS`) |
+| 7 | Mocks en `*/v1/graphql/web`, registrados también en `mocks/browser.ts`, para que `dev:mock` funcione sin backend (regla 2; hoy depende del dummy) | `src/mocks/` |
+| 8 | Las 8 specs que reinician con `cy.request('POST', '/graphql/siniestros/control/reiniciar')` pasan a `POST http://localhost:8011/_demo/reiniciar` (solo local, `DEMO_REINICIAR=true`). Antes de correrlas: `docker compose run --rm sembrar-siniestros` en el backend | `e2e/cypress/e2e/w04-siniestros.cy.ts` y `pantallas/w04-*` |
+| 9 | La geoetiqueta (ver abajo) | — |
+
+**Datos que cambian frente al dummy** (por si alguna prueba los tenía fijos):
+- `Poliza.numero` sale de POLICY: `SOL-2026-000001` a `SOL-2026-000010`, no los números del dummy.
+- Las fechas llegan en UTC (`…+00:00`), no en `-05:00`. La web ya las formatea con `Intl`, así que no cambia lo que
+  se ve.
+- `peritos(siniestroId)` llega ordenado por nombre.
+- Los radicados, los ids (`sin-01`…), los peritos, los textos y los estados son los del dummy: la semilla los
+  reutiliza.
+- `Evidencia.url` es una URL firmada que vence a los 5 minutos: si el detalle queda abierto más tiempo, abrir una
+  imagen falla hasta recargar.
+
+**Geoetiqueta desde el EXIF (W04-14, pendiente; no se trabaja ahora).** La etiqueta «Geoetiquetada» de las fotos
+debe salir de los metadatos de la foto: si la foto trae la ubicación donde se tomó, se muestra; si no, no. Hoy el
+backend devuelve `geoetiquetada` fijado por la semilla, porque las fotos del dummy no traen EXIF. Cuando el móvil
+suba las fotos (HU-M04), el backend extraerá el GPS del EXIF al recibirlas. En la web la condición ya es
+`v-if="e.geoetiquetada"` y no cambia; queda por revisar el criterio CA-W04-08 en Jira.
 
 ## Verificación de cada bloque del front
 - En `apps/web`: `npm run typecheck`, `lint`, `formato:verificar`, `test` y `build`.
