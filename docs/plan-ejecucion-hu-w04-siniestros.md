@@ -254,7 +254,7 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
 
 **Lo que ya está listo y no cambia:**
 - las 7 pantallas, el modal de rechazo y las confirmaciones;
-- las consultas y mutaciones: los mismos nombres, argumentos y campos (contrato principal **v0.19**);
+- las consultas y mutaciones: los mismos nombres, argumentos y campos (contrato principal **v0.21**);
 - la union `ResultadoResolucion`, que se distingue por la forma (`'mensaje' in r` / `'estado' in r`);
 - los mensajes de negocio del backend, que son los mismos del dummy y se muestran tal cual (también en inglés);
 - el router, que ya exige BACKOFFICE, y `ejecutar()`, que ya manda el JWT y traduce 502, 503 y 504;
@@ -268,10 +268,10 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
 | 2 | Proxy `'/v1'` hacia el gateway (`VITE_BFF_URL` o `:8080`); quitar `'/graphql/siniestros'` y `VITE_SINIESTROS_URL` | `apps/web/vite.config.ts`, `src/env.d.ts`, `.env.example` |
 | 3 | Rewrite `/v1/:path*` hacia el gateway de staging, antes de la regla SPA | `apps/web/vercel.json` |
 | 4 | Importar los tipos de `graphql/tipos.ts` (contrato principal) en vez de `tipos-siniestros.ts`, en 6 archivos: `useSiniestros.ts`, `useResultadoReciente.ts`, `ModalRechazo.vue`, `DetalleSiniestro.vue`, `BandejaSiniestros.vue` y `mocks/siniestros.ts` | `src/` |
-| 5 | Sincronizar el contrato principal v0.19 (`contract-consumer`). Quitar `siniestros.graphql` de `scripts/contrato.mjs`, el segundo `generates` de `codegen.ts`, la exclusión de cobertura y el `git diff` de `ci-web.yml`; borrar `contrato/siniestros.graphql` y `src/graphql/tipos-siniestros.ts`. El backend conserva su copia del dummy, así que `verificar` no falla mientras tanto | front |
+| 5 | Sincronizar el contrato principal v0.21 (`contract-consumer`). Quitar `siniestros.graphql` de `scripts/contrato.mjs`, el segundo `generates` de `codegen.ts`, la exclusión de cobertura y el `git diff` de `ci-web.yml`; borrar `contrato/siniestros.graphql` y `src/graphql/tipos-siniestros.ts`. El backend conserva su copia del dummy, así que `verificar` no falla mientras tanto | front |
 | 6 | La bandeja pide solo `id radicado estado asegurado { nombre } notificadoEn`: hoy pide `CAMPOS_SINIESTRO` completo, y con el backend real eso pediría la póliza y firmaría las URLs de todas las evidencias en cada carga | `useSiniestros.ts` (`CONSULTA_SINIESTROS`) |
 | 7 | Mocks en `*/v1/graphql/web`, registrados también en `mocks/browser.ts`, para que `dev:mock` funcione sin backend (regla 2; hoy depende del dummy) | `src/mocks/` |
-| 8 | Las 8 specs que reinician con `cy.request('POST', '/graphql/siniestros/control/reiniciar')` pasan a `POST http://localhost:8011/_demo/reiniciar` (solo local, `DEMO_REINICIAR=true`). Antes de correrlas: `docker compose run --rm sembrar-siniestros` en el backend | `e2e/cypress/e2e/w04-siniestros.cy.ts` y `pantallas/w04-*` |
+| 8 | Las 8 specs que reinician con `cy.request('POST', '/graphql/siniestros/control/reiniciar')` pasan a `POST http://localhost:8012/_demo/reiniciar` (solo local, `DEMO_REINICIAR=true`). Antes de correrlas: `docker compose run --rm sembrar-siniestros` en el backend | `e2e/cypress/e2e/w04-siniestros.cy.ts` y `pantallas/w04-*` |
 | 9 | La geoetiqueta (ver abajo) | — |
 
 **Datos que cambian frente al dummy** (por si alguna prueba los tenía fijos):
