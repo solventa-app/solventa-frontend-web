@@ -14,7 +14,7 @@ import { servidor } from '../src/mocks/node'
 import { cambiarIdioma } from '../src/i18n'
 import { sinPuntoFinal } from '../src/utils/formato'
 
-const dummy = graphql.link('*/graphql/siniestros')
+const bff = graphql.link('*/v1/graphql/web')
 
 function crearRouterDePrueba(): Router {
   const vacio = (id: string) => ({ template: `<div data-pantalla="${id}" />` })
@@ -133,7 +133,7 @@ describe('HU-W04 · Modal de rechazo (CA-W04-24/25/26)', () => {
     let liberar: () => void = () => {}
     const espera = new Promise<void>((r) => (liberar = r))
     servidor.use(
-      dummy.mutation('rechazarSiniestro', async () => {
+      bff.mutation('rechazarSiniestro', async () => {
         await espera
         return undefined
       }),
@@ -160,7 +160,7 @@ describe('HU-W04 · Modal de rechazo (CA-W04-24/25/26)', () => {
 
   it('error: queda abierto, conserva motivo y comentario y enfoca el banner', async () => {
     servidor.use(
-      dummy.mutation('rechazarSiniestro', () =>
+      bff.mutation('rechazarSiniestro', () =>
         HttpResponse.json({
           data: { rechazarSiniestro: { __typename: 'ErrorSiniestro', mensaje: 'El siniestro ya fue resuelto.' } },
         }),
@@ -180,7 +180,7 @@ describe('HU-W04 · Modal de rechazo (CA-W04-24/25/26)', () => {
   })
 
   it('red caída: mensaje genérico sin códigos', async () => {
-    servidor.use(dummy.mutation('rechazarSiniestro', () => new HttpResponse(null, { status: 503 })))
+    servidor.use(bff.mutation('rechazarSiniestro', () => new HttpResponse(null, { status: 503 })))
     const { wrapper } = await abrirModal()
     await modal(wrapper).get('select').setValue('OTRO')
     await confirmarBtn(wrapper).trigger('click')
