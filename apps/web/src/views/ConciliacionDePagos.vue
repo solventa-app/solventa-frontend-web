@@ -14,16 +14,16 @@ import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useConciliacion } from '../composables/useConciliacion'
 import { formatearFecha, formatearMonto } from '../utils/formato'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
+import { t } from '../i18n'
 
 const { estado, cargarCobros, reintentarCobro } = useConciliacion()
 
-const PESTANAS: { etiqueta: string; valor?: EstadoCobro }[] = [
-  { etiqueta: 'Todos' },
-  { etiqueta: 'Cobrando', valor: 'COBRANDO' },
-  { etiqueta: 'Cobrado', valor: 'COBRADO' },
-  { etiqueta: 'Rechazado', valor: 'RECHAZADO' },
-  { etiqueta: 'Pendiente de reintento', valor: 'PENDIENTE' },
-]
+// `undefined` es la pestaña "Todos".
+const PESTANAS: (EstadoCobro | undefined)[] = [undefined, 'COBRANDO', 'COBRADO', 'RECHAZADO', 'PENDIENTE']
+
+function etiquetaPestana(valor?: EstadoCobro): string {
+  return valor ? t(`conciliacion.pestana.${valor}`) : t('conciliacion.todos')
+}
 
 const pestanaActiva = ref<EstadoCobro | undefined>(undefined)
 const paginaActual = ref(1)
@@ -54,12 +54,12 @@ const totalProcesado = computed(() => {
 
 const INSIGNIA: Record<
   EstadoCobro,
-  { etiqueta: string; texto: string; fondo: string; icono: 'check_circle' | 'sync' | 'cancel' | 'schedule' }
+  { texto: string; fondo: string; icono: 'check_circle' | 'sync' | 'cancel' | 'schedule' }
 > = {
-  COBRADO: { etiqueta: 'Cobrado', texto: 'text-exito', fondo: 'bg-exito-fondo', icono: 'check_circle' },
-  COBRANDO: { etiqueta: 'Cobrando', texto: 'text-info', fondo: 'bg-info-fondo', icono: 'sync' },
-  RECHAZADO: { etiqueta: 'Rechazado', texto: 'text-error', fondo: 'bg-error-fondo', icono: 'cancel' },
-  PENDIENTE: { etiqueta: 'Pendiente', texto: 'text-alerta', fondo: 'bg-alerta-fondo', icono: 'schedule' },
+  COBRADO: { texto: 'text-exito', fondo: 'bg-exito-fondo', icono: 'check_circle' },
+  COBRANDO: { texto: 'text-info', fondo: 'bg-info-fondo', icono: 'sync' },
+  RECHAZADO: { texto: 'text-error', fondo: 'bg-error-fondo', icono: 'cancel' },
+  PENDIENTE: { texto: 'text-alerta', fondo: 'bg-alerta-fondo', icono: 'schedule' },
 }
 
 // CA-W05-02 (prototipo W05-01, decisión del 2026-10-17): un RECHAZADO se reintenta a mano hasta 3 veces; el
@@ -69,7 +69,7 @@ function puedeReintentar(cobro: Cobro): boolean {
 }
 
 function fechaDelIntento(cobro: Cobro): string {
-  return cobro.estado === 'COBRANDO' ? 'en curso' : formatearFecha(cobro.actualizadoEn)
+  return cobro.estado === 'COBRANDO' ? t('conciliacion.enCurso') : formatearFecha(cobro.actualizadoEn)
 }
 
 const mostrarToast = ref(false)
@@ -115,12 +115,12 @@ onUnmounted(() => {
 
 <template>
   <div data-pantalla="W05-01" class="flex h-screen flex-col overflow-hidden bg-fondo">
-    <HeaderPantalla titulo="Conciliación de pagos" />
-    <TituloPantalla class="sr-only">Conciliación de pagos</TituloPantalla>
+    <HeaderPantalla :titulo="t('conciliacion.titulo')" />
+    <TituloPantalla class="sr-only">{{ t('conciliacion.titulo') }}</TituloPantalla>
 
     <main class="mx-auto flex w-full max-w-[1100px] flex-1 flex-col gap-5 overflow-y-auto px-10 py-6 min-h-0">
       <RouterLink to="/operador" class="text-[13px] font-normal text-primario hover:underline">
-        ‹ Volver a Inicio
+        {{ t('conciliacion.volver') }}
       </RouterLink>
 
       <div class="flex w-full justify-end">
@@ -128,7 +128,7 @@ onUnmounted(() => {
           class="flex items-center gap-1 rounded-sm border border-borde bg-white px-3 py-1.5 text-[11px] text-tinta-suave"
         >
           <IconoMaterial nombre="info" class="h-[18px] w-[18px]" />
-          Corte contable diario: 18:00 COT • Modo pasarela activa
+          {{ t('conciliacion.corte') }}
         </span>
       </div>
 
@@ -139,10 +139,10 @@ onUnmounted(() => {
         :class="mostrarToast ? 'opacity-100' : 'pointer-events-none opacity-0'"
       >
         <span class="text-[#8cd9a6]" aria-hidden="true">✓</span>
-        Cobro reenviado a la pasarela
+        {{ t('conciliacion.toast') }}
       </div>
 
-      <p v-if="estado.cargando" class="text-[13px] text-tinta-suave">Cargando conciliación de pagos…</p>
+      <p v-if="estado.cargando" class="text-[13px] text-tinta-suave">{{ t('conciliacion.cargando') }}</p>
       <p v-else-if="estado.error" role="alert" class="text-[13px] text-error">{{ estado.error }}</p>
 
       <template v-else>
@@ -154,27 +154,23 @@ onUnmounted(() => {
           {{ estado.errorReintento }}
         </div>
 
-        <div
-          role="tablist"
-          aria-label="Filtros de estado de conciliación"
-          class="flex w-full flex-wrap items-center gap-2"
-        >
+        <div role="tablist" :aria-label="t('conciliacion.filtros')" class="flex w-full flex-wrap items-center gap-2">
           <button
             v-for="pestana in PESTANAS"
-            :key="pestana.etiqueta"
+            :key="pestana ?? 'TODOS'"
             type="button"
             role="tab"
-            :aria-selected="pestanaActiva === pestana.valor"
+            :aria-selected="pestanaActiva === pestana"
             class="flex h-11 items-center gap-1.5 rounded-xl px-[16px] text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
             :class="
-              pestanaActiva === pestana.valor
+              pestanaActiva === pestana
                 ? 'bg-primario text-white'
                 : 'border border-borde bg-white text-tinta-suave hover:bg-fondo'
             "
-            @click="cambiarPestana(pestana.valor)"
+            @click="cambiarPestana(pestana)"
           >
-            {{ pestana.etiqueta }}
-            <span v-if="!pestana.valor" class="rounded-xl bg-white/20 px-1.5 py-0.5 text-[11px]">{{
+            {{ etiquetaPestana(pestana) }}
+            <span v-if="!pestana" class="rounded-xl bg-white/20 px-1.5 py-0.5 text-[11px]">{{
               estado.cobros.length
             }}</span>
           </button>
@@ -185,18 +181,18 @@ onUnmounted(() => {
             <table class="w-full min-w-[800px] border-collapse text-left">
               <thead>
                 <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
-                  <th scope="col" class="py-[25px] pl-4 pr-[14px]">Cliente</th>
-                  <th scope="col" class="py-[25px] pr-[14px]">N.º de póliza</th>
-                  <th scope="col" class="py-[25px] pr-[14px] text-right">Prima</th>
-                  <th scope="col" class="py-[25px] pr-[14px]">Estado</th>
-                  <th scope="col" class="py-[25px] pr-[14px]">Fecha del intento</th>
-                  <th scope="col" class="py-[25px] pr-4 text-center">Acciones</th>
+                  <th scope="col" class="py-[25px] pl-4 pr-[14px]">{{ t('conciliacion.cliente') }}</th>
+                  <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.poliza') }}</th>
+                  <th scope="col" class="py-[25px] pr-[14px] text-right">{{ t('conciliacion.prima') }}</th>
+                  <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.estado') }}</th>
+                  <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.fecha') }}</th>
+                  <th scope="col" class="py-[25px] pr-4 text-center">{{ t('conciliacion.acciones') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="cobrosFiltrados.length === 0">
                   <td colspan="6" class="py-6 text-center text-[13px] text-tinta-suave">
-                    No hay cobros en este estado.
+                    {{ t('conciliacion.vacio') }}
                   </td>
                 </tr>
                 <tr v-for="cobro in cobrosPaginados" :key="cobro.id" class="border-b border-borde last:border-b-0">
@@ -211,7 +207,7 @@ onUnmounted(() => {
                       :class="[INSIGNIA[cobro.estado].fondo, INSIGNIA[cobro.estado].texto]"
                     >
                       <IconoMaterial :nombre="INSIGNIA[cobro.estado].icono" class="h-3.5 w-3.5" />
-                      {{ INSIGNIA[cobro.estado].etiqueta }}
+                      {{ t(`conciliacion.estado.${cobro.estado}`) }}
                     </span>
                   </td>
                   <td
@@ -228,13 +224,15 @@ onUnmounted(() => {
                       :aria-busy="estado.reintentando === cobro.id"
                       @click="alReintentar(cobro.id)"
                     >
-                      {{ estado.reintentando === cobro.id ? 'Reintentando…' : 'Reintentar cobro' }}
+                      {{
+                        estado.reintentando === cobro.id ? t('conciliacion.reintentando') : t('conciliacion.reintentar')
+                      }}
                     </Boton>
                     <span v-else-if="cobro.estado === 'RECHAZADO'" class="text-[11px] text-error">
-                      Requiere otro medio de pago
+                      {{ t('conciliacion.otroMedio') }}
                     </span>
                     <span v-else-if="cobro.estado === 'PENDIENTE'" class="text-[11px] text-tinta-suave">
-                      Reintento automático
+                      {{ t('conciliacion.automatico') }}
                     </span>
                   </td>
                 </tr>
@@ -250,10 +248,11 @@ onUnmounted(() => {
                 :disabled="paginaActual <= 1"
                 @click="paginaActual--"
               >
-                Anterior
+                {{ t('conciliacion.anterior') }}
               </button>
               <span class="text-[12px] text-tinta-suave">
-                Página <strong class="font-semibold text-tinta">{{ paginaActual }}</strong> de
+                {{ t('conciliacion.pagina') }} <strong class="font-semibold text-tinta">{{ paginaActual }}</strong>
+                {{ t('conciliacion.de') }}
                 <strong class="font-semibold text-tinta">{{ totalPaginas }}</strong>
               </span>
               <button
@@ -262,16 +261,16 @@ onUnmounted(() => {
                 :disabled="paginaActual >= totalPaginas"
                 @click="paginaActual++"
               >
-                Siguiente
+                {{ t('conciliacion.siguiente') }}
               </button>
             </div>
             <div class="flex items-center gap-4 text-[11px] text-tinta-suave">
               <span class="flex items-center gap-1">
                 <IconoMaterial nombre="sync" class="h-[18px] w-[18px]" />
-                Mostrando {{ cobrosPaginados.length }} de {{ cobrosFiltrados.length }} transacciones
+                {{ t('conciliacion.mostrando', { visibles: cobrosPaginados.length, total: cobrosFiltrados.length }) }}
               </span>
               <span>
-                Total procesado: <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
+                {{ t('conciliacion.total') }} <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
               </span>
             </div>
           </div>
@@ -281,12 +280,11 @@ onUnmounted(() => {
           <IconoMaterial nombre="gavel" class="mt-0.5 h-6 w-6 shrink-0 text-primario" />
           <div>
             <h2 class="text-[16px] font-semibold leading-[22px] text-tinta">
-              Control de dispersión y reintentos automáticos
+              {{ t('conciliacion.controlTitulo') }}
             </h2>
             <p class="text-[11px] leading-[18px] text-tinta-suave">
-              Las pólizas en estado <em>Rechazado</em> permiten hasta un máximo de tres reintentos operativos antes de
-              suspender la vigencia provisional según la Circular Básica Jurídica de la Superintendencia Financiera de
-              Colombia. Todos los eventos de cobro generan registro inmutable de auditoría.
+              {{ t('conciliacion.controlAntes') }} <em>{{ t('conciliacion.estado.RECHAZADO') }}</em>
+              {{ t('conciliacion.controlDespues') }}
             </p>
           </div>
         </div>

@@ -4,7 +4,7 @@ Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proye
 
 Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-frontend.md). Convenciones: [`docs/convenciones.md`](docs/convenciones.md).
 
-## Estado (2026-10-18)
+## Estado (2026-10-25)
 
 - Sprint 1 (12–25 de octubre de 2026): las 12 pantallas de HU-W01 y HU-W05 están construidas (`src/views/`),
   integradas con el BFF/gateway real y sincronizadas con el **contrato v0.8** (KAN-24). Siguen funcionando con mocks (`dev:mock`).
@@ -30,9 +30,18 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   `e2e/cypress/e2e/w05-staging.cy.ts`; los specs de mocks de W05 se saltan solos ahí (`e2e/cypress/support/entorno.ts`).
   Sin captura de tarjeta ni pantallas de indemnizaciones (Sprint 3). La evidencia de FC-10 desde la web es una
   plantilla sin ejecutar (`docs/evidencias/FC-10-web-plantilla.md`).
+- **HU-W04 (mesa de siniestros, KAN-27):** construidas W04-01, W04-02 (con el modal de rechazo), W04-02b, W04-03a,
+  W04-03b y W04-03c (`docs/plan-ejecucion-hu-w04-siniestros.md`). Consumen el dummy `stub-siniestros` del backend
+  (puerto 8107) por `/graphql/siniestros` (proxy de Vite, `VITE_SINIESTROS_URL`), **sin token** y **solo en local**: staging
+  está diferido. Criterios CA-W04-01 a 29 **propuestos** en `docs/plan-frontend.md`. Pruebas: Vitest 299 en total (toda la web)
+  y Cypress de W04 39 (7 specs por pantalla y responsive más `w04-siniestros.cy.ts`), con el dummy levantado.
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
+- **Idioma ES/EN (KAN-209):** el selector del header cambia el idioma de toda la web (`src/i18n`: `t('clave')`, catálogos
+  `es.ts`/`en.ts` con las mismas claves, exigido por TypeScript). Se recuerda en `localStorage` (`solventa.idioma`, no es
+  dato personal) y viaja al BFF como `Accept-Language`, que devuelve sus mensajes en ese idioma. Un texto nuevo de
+  pantalla va al catálogo, nunca quemado en la plantilla.
 - Calidad: typecheck, ESLint, Prettier, Vitest, `vite build` y `npm audit` informativo en el CI.
 - D-F1 cerrada: componentes propios en `src/components/ui/` y Twind para los estilos (`docs/plan-frontend.md`).
 - La app móvil se construye en otro repositorio.

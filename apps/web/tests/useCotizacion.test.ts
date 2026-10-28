@@ -13,7 +13,7 @@ const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'htt
 function llenarCaptura(cotizacion: ReturnType<typeof useCotizacion>, documentoIdentidad: string) {
   cotizacion.captura.documentoIdentidad = documentoIdentidad
   cotizacion.captura.valorCredito = '185000000'
-  cotizacion.captura.plazoMeses = '180'
+  cotizacion.captura.plazoMeses = '60'
   cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18, Bogotá D.C.'
   cotizacion.captura.consentimiento = true
 }

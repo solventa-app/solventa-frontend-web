@@ -15,6 +15,7 @@ import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, Tit
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esErrorOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
+import { t, type Clave } from '../i18n'
 
 const router = useRouter()
 const { estado, captura } = useCotizacion()
@@ -26,27 +27,28 @@ const avisoConsentimiento = computed(() =>
     : null,
 )
 
-const errores = reactive<Record<string, string>>({})
+// Guarda la clave del texto, no el texto: así el error cambia de idioma junto con el resto de la pantalla.
+const errores = reactive<Record<string, Clave>>({})
 const intentoEnvio = ref(false)
 
 function validar(): boolean {
-  const nuevosErrores: Record<string, string> = {}
+  const nuevosErrores: Record<string, Clave> = {}
   if (!captura.documentoIdentidad.trim()) {
-    nuevosErrores.documentoIdentidad = 'Ingresa tu documento de identidad.'
+    nuevosErrores.documentoIdentidad = 'solicitud.errorDocumentoVacio'
   } else if (captura.documentoIdentidad.replace(/\D/g, '').length < 6) {
     // Solo descarta valores claramente incompletos; el contrato no exige dígito de verificación.
-    nuevosErrores.documentoIdentidad = 'Ingresa un número de documento válido'
+    nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
   }
   const credito = Number(captura.valorCredito)
   if (!captura.valorCredito.trim() || Number.isNaN(credito) || credito <= 0) {
-    nuevosErrores.valorCredito = 'Ingresa un monto válido, mayor a cero.'
+    nuevosErrores.valorCredito = 'solicitud.errorMonto'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 360) {
-    nuevosErrores.plazoMeses = 'Ingresa un plazo válido en meses, mayor a cero.'
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 60) {
+    nuevosErrores.plazoMeses = 'solicitud.errorPlazo'
   }
   if (!captura.direccionInmueble.trim()) {
-    nuevosErrores.direccionInmueble = 'Ingresa la dirección del inmueble a asegurar.'
+    nuevosErrores.direccionInmueble = 'solicitud.errorDireccion'
   }
   for (const clave of Object.keys(errores)) delete errores[clave]
   Object.assign(errores, nuevosErrores)
@@ -68,7 +70,7 @@ function enviar() {
 function simular(sufijo: '999' | '000') {
   captura.documentoIdentidad = `CC10203040${sufijo === '999' ? '999' : '000'}`
   captura.valorCredito = captura.valorCredito || '185000000'
-  captura.plazoMeses = captura.plazoMeses || '180'
+  captura.plazoMeses = captura.plazoMeses || '60'
   captura.direccionInmueble = captura.direccionInmueble || 'Cra 45 # 22-18, Bogotá D.C.'
   captura.consentimiento = true
   irAConsultar()
@@ -77,45 +79,43 @@ function simular(sufijo: '999' | '000') {
 
 <template>
   <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-01">
-    <HeaderPantalla titulo="Solicitud y consentimiento" />
-    <MigasDePan seccion="Nueva cotización" :a-inicio="rutaInicio()" />
+    <HeaderPantalla :titulo="t('solicitud.header')" />
+    <MigasDePan :seccion="t('comun.nuevaCotizacion')" :a-inicio="rutaInicio()" />
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[880px] flex-col items-center gap-6">
-        <TituloPantalla class="text-center">Solicitud de seguro de vida hipotecario</TituloPantalla>
+        <TituloPantalla class="text-center">{{ t('solicitud.titulo') }}</TituloPantalla>
         <form class="flex w-full max-w-[400px] flex-col gap-5" novalidate @submit.prevent="enviar">
           <CampoFormulario
             v-model="captura.documentoIdentidad"
-            label="Documento de identidad"
-            placeholder="Ej: 1020304050"
+            :label="t('solicitud.documento')"
+            :placeholder="t('solicitud.documentoEjemplo')"
             icono="badge"
-            :error="intentoEnvio ? errores.documentoIdentidad : undefined"
+            :error="intentoEnvio && errores.documentoIdentidad ? t(errores.documentoIdentidad) : undefined"
             required
           />
           <CampoFormulario
             v-model="captura.valorCredito"
-            label="Monto del crédito hipotecario"
-            placeholder="Ej: 185000000"
+            :label="t('solicitud.monto')"
+            :placeholder="t('solicitud.montoEjemplo')"
             icono="payments"
-            :hint="
-              intentoEnvio && errores.valorCredito ? undefined : 'Valor en pesos colombianos, sin puntos ni símbolo.'
-            "
-            :error="intentoEnvio ? errores.valorCredito : undefined"
+            :hint="intentoEnvio && errores.valorCredito ? undefined : t('solicitud.montoAyuda')"
+            :error="intentoEnvio && errores.valorCredito ? t(errores.valorCredito) : undefined"
             required
           />
           <CampoFormulario
             v-model="captura.plazoMeses"
-            label="Plazo (meses)"
+            :label="t('solicitud.plazo')"
             type="number"
-            placeholder="Ej: 180"
-            :error="intentoEnvio ? errores.plazoMeses : undefined"
+            :placeholder="t('solicitud.plazoEjemplo')"
+            :error="intentoEnvio && errores.plazoMeses ? t(errores.plazoMeses) : undefined"
             required
           />
           <CampoFormulario
             v-model="captura.direccionInmueble"
-            label="Dirección del inmueble a asegurar"
-            placeholder="Ej: Cra 45 # 22-18, Bogotá D.C."
+            :label="t('solicitud.direccion')"
+            :placeholder="t('solicitud.direccionEjemplo')"
             icono="home"
-            :error="intentoEnvio ? errores.direccionInmueble : undefined"
+            :error="intentoEnvio && errores.direccionInmueble ? t(errores.direccionInmueble) : undefined"
             required
           />
 
@@ -135,20 +135,18 @@ function simular(sufijo: '999' | '000') {
               />
               <IconoMaterial nombre="verified_user" class="mt-[2px] h-4 w-4 shrink-0 text-primario" />
               <span class="text-[13px] leading-[18px] text-tinta">
-                Autorizo el tratamiento de mis datos (Ley 1581 de 2012, Habeas Data) y el acceso consentido a mis
-                fuentes de Open Finance y Open Data.
+                {{ t('solicitud.consentimiento') }}
               </span>
             </label>
             <p class="pl-7 text-[11px] leading-[18px] text-tinta-suave">
-              Open Finance y Open Data son fuentes que ya existen sobre ti (comportamiento de pago, datos públicos del
-              inmueble). Consultarlas evita pedirte ingresos, empleador ni historial.
+              {{ t('solicitud.consentimientoNota') }}
             </p>
           </div>
 
           <div class="flex items-center gap-3 pt-2">
-            <Boton :disabled="!captura.consentimiento" @click="enviar">Consultar oferta</Boton>
+            <Boton :disabled="!captura.consentimiento" @click="enviar">{{ t('solicitud.consultar') }}</Boton>
             <p v-if="!captura.consentimiento" class="text-[11px] italic leading-[16.5px] text-tinta-suave">
-              (deshabilitado hasta marcar el consentimiento)
+              {{ t('solicitud.deshabilitado') }}
             </p>
           </div>
 
@@ -158,14 +156,14 @@ function simular(sufijo: '999' | '000') {
               class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline"
               @click="simular('999')"
             >
-              Simular oferta degradada: timeout de fuentes con valor en caché
+              {{ t('solicitud.simularDegradada') }}
             </button>
             <button
               type="button"
               class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline"
               @click="simular('000')"
             >
-              Simular fallo total de la consulta de fuentes
+              {{ t('solicitud.simularFallo') }}
             </button>
           </div>
         </form>

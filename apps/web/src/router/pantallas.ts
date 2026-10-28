@@ -9,12 +9,14 @@ export interface Pantalla {
   id: string
   ruta: string
   nombre: string
-  historia: 'HU-W01' | 'HU-W05' | 'Global'
+  historia: 'HU-W01' | 'HU-W04' | 'HU-W05' | 'Global'
   sprint: 1 | 2 | 3
   /** Criterios de aceptación que cubre (CA-*), ver docs/plan-frontend.md. */
   criterios: string[]
   /** Roles con acceso (ver router/index.ts). Si se omite, la pantalla es pública. */
   roles?: Rol[]
+  /** Ruta concreta para enlazar o probar una ruta con parámetros (p. ej. `:id`). Si se omite, se usa `ruta`. */
+  rutaEjemplo?: string
   /** Si se omite, se usa `PantallaPendiente`. */
   componente?: () => Promise<unknown>
 }
@@ -160,5 +162,83 @@ export const pantallas: Pantalla[] = [
     roles: ['BACKOFFICE'],
     criterios: ['CA-W05-01', 'CA-W05-02'],
     componente: () => import('../views/ConciliacionDePagos.vue'),
+  },
+  // HU-W04 · Mesa de siniestros (KAN-27). Criterios CA-W04 propuestos en docs/plan-ejecucion-hu-w04-siniestros.md.
+  // W04-01 (bloque 2), W04-02 (bloque 3), W04-02b y W04-03c (bloque 4), W04-03a y W04-03b (bloque 5). El modal de
+  // rechazo (components/ModalRechazo.vue) vive dentro de W04-02 y se traza a CA-W04-24, CA-W04-25 y CA-W04-26.
+  {
+    id: 'W04-01',
+    ruta: '/operador/siniestros',
+    nombre: 'Bandeja de siniestros',
+    historia: 'HU-W04',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W04-01', 'CA-W04-02', 'CA-W04-03', 'CA-W04-04', 'CA-W04-05', 'CA-W04-06', 'CA-W04-07'],
+    componente: () => import('../views/BandejaSiniestros.vue'),
+  },
+  {
+    id: 'W04-02',
+    ruta: '/operador/siniestros/:id',
+    rutaEjemplo: '/operador/siniestros/sin-01',
+    nombre: 'Detalle del siniestro',
+    historia: 'HU-W04',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: [
+      'CA-W04-08',
+      'CA-W04-09',
+      'CA-W04-10',
+      'CA-W04-11',
+      'CA-W04-12',
+      'CA-W04-13',
+      'CA-W04-14',
+      'CA-W04-15',
+      'CA-W04-16',
+    ],
+    componente: () => import('../views/DetalleSiniestro.vue'),
+  },
+  {
+    id: 'W04-02b',
+    ruta: '/operador/siniestros/:id/derivar',
+    rutaEjemplo: '/operador/siniestros/sin-01/derivar',
+    nombre: 'Derivar a perito',
+    historia: 'HU-W04',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W04-17', 'CA-W04-18', 'CA-W04-19', 'CA-W04-20', 'CA-W04-21', 'CA-W04-22'],
+    componente: () => import('../views/DerivarSiniestro.vue'),
+  },
+  {
+    id: 'W04-03a',
+    ruta: '/operador/siniestros/:id/aprobado',
+    rutaEjemplo: '/operador/siniestros/sin-01/aprobado',
+    nombre: 'Confirmación de aprobación',
+    historia: 'HU-W04',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W04-28', 'CA-W04-29'],
+    componente: () => import('../views/ConfirmacionAprobacion.vue'),
+  },
+  {
+    id: 'W04-03b',
+    ruta: '/operador/siniestros/:id/rechazado',
+    rutaEjemplo: '/operador/siniestros/sin-01/rechazado',
+    nombre: 'Confirmación de rechazo',
+    historia: 'HU-W04',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W04-27', 'CA-W04-29'],
+    componente: () => import('../views/ConfirmacionRechazo.vue'),
+  },
+  {
+    id: 'W04-03c',
+    ruta: '/operador/siniestros/:id/derivado',
+    rutaEjemplo: '/operador/siniestros/sin-01/derivado',
+    nombre: 'Confirmación de derivación',
+    historia: 'HU-W04',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W04-23', 'CA-W04-29'],
+    componente: () => import('../views/ConfirmacionDerivacion.vue'),
   },
 ]

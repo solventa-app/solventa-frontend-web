@@ -16,6 +16,7 @@ import {
   TituloPantalla,
 } from '../src/components/ui'
 import IconoMaterial from '../src/components/ui/IconoMaterial.vue'
+import { cambiarIdioma, idioma } from '../src/i18n'
 
 // Stub mínimo: estos componentes no necesitan un router real, solo que RouterLink exista.
 const stubsRouter = { RouterLink: { template: '<a><slot /></a>' } }
@@ -272,10 +273,12 @@ describe('HeaderPantalla', () => {
     expect(header.findComponent(AvatarPerfil).exists()).toBe(true)
   })
 
-  it('propaga los cambios de idioma y moneda al padre', async () => {
+  it('cambia el idioma global y lo propaga al padre', async () => {
     const header = mount(HeaderPantalla)
     await header.findComponent(SelectorIdioma).vm.$emit('update:modelValue', 'EN')
     expect(header.emitted('update:idioma')?.[0]).toEqual(['EN'])
+    expect(idioma.value).toBe('EN')
+    cambiarIdioma('ES')
   })
 })
 

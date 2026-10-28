@@ -1,5 +1,6 @@
 // Cliente GraphQL mínimo contra el BFF (canal web: /graphql/web). Sin librería a propósito: con pocas
 // operaciones no hace falta urql ni Apollo, y MSW intercepta HTTP igual con cualquiera de ellos.
+import { cabeceraIdioma, t } from '../i18n'
 
 export class ErrorGraphQL extends Error {
   constructor(
@@ -17,21 +18,31 @@ export function usarToken(nuevo: string | null): void {
   token = nuevo
 }
 
+export interface OpcionesEjecucion {
+  /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa '/graphql/siniestros'. */
+  endpoint?: string
+  /** Si se manda el JWT de la sesión. `false` para servicios públicos (el dummy de siniestros). */
+  conToken?: boolean
+}
+
 export async function ejecutar<T>(
   consulta: string,
   variables: Record<string, unknown> = {},
   fetchFn: typeof fetch = fetch,
+  opciones: OpcionesEjecucion = {},
 ): Promise<T> {
-  const cabeceras: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (token) cabeceras.Authorization = `Bearer ${token}`
+  const { endpoint = '/graphql/web', conToken = true } = opciones
+  // Accept-Language: el BFF devuelve sus mensajes (errores, avisos) en el idioma del selector del header.
+  const cabeceras: Record<string, string> = { 'Content-Type': 'application/json', 'Accept-Language': cabeceraIdioma() }
+  if (conToken && token) cabeceras.Authorization = `Bearer ${token}`
 
-  const respuesta = await fetchFn('/graphql/web', {
+  const respuesta = await fetchFn(endpoint, {
     method: 'POST',
     headers: cabeceras,
     body: JSON.stringify({ query: consulta, variables }),
   })
   if (respuesta.status === 502 || respuesta.status === 503 || respuesta.status === 504) {
-    throw new ErrorGraphQL('El servicio tardó más de lo esperado. Intenta nuevamente.')
+    throw new ErrorGraphQL(t('comun.servicioLento'))
   }
   if (!respuesta.ok) throw new ErrorGraphQL(`El BFF respondió ${respuesta.status}`)
 

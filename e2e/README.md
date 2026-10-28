@@ -16,12 +16,17 @@ npm run correr         # sin interfaz (CI)
 
 Cada pantalla lleva `data-pantalla="<id>"` en su raíz (Vitest y Cypress la usan para localizarla); en Cypress se localiza siempre por `[data-pantalla="<id>"]` y por roles/etiquetas accesibles — nunca por clases CSS.
 
-1. **Por historia** (`cypress/e2e/<historia>.cy.ts`, p. ej. `w01-oferta.cy.ts`, `w05-conciliacion.cy.ts`): el flujo completo tal como lo recorre una persona real, cruzando varias pantallas (login → home → cotización → oferta → detalle de fuentes, oferta preliminar, fallo total → contacto con asesor y validación de **valores límite** en W01-01: documento `<6` y `=6` dígitos, plazo `0 / 1 / 360 / 361`, monto `0` y dirección vacía).
+1. **Por historia** (`cypress/e2e/<historia>.cy.ts`, p. ej. `w01-oferta.cy.ts`, `w05-conciliacion.cy.ts`): el flujo completo tal como lo recorre una persona real, cruzando varias pantallas (login → home → cotización → oferta → detalle de fuentes, oferta preliminar, fallo total → contacto con asesor y validación de **valores límite** en W01-01: documento `<6` y `=6` dígitos, plazo `0 / 1 / 60 / 61`, monto `0` y dirección vacía).
 2. **Por pantalla individual, aislada** (`cypress/e2e/pantallas/<id>.cy.ts`, uno por `data-pantalla`, p. ej. `w01-04.cy.ts`): visita **una sola ruta** directamente y solo hace aserciones dentro de esa pantalla. Si una acción navega a otra pantalla, se verifica únicamente la ruta resultante (`cy.location`), nunca el contenido de la pantalla de destino (eso ya lo cubre el E2E de su historia). Para las pantallas que normalmente dependen de un estado previo en memoria (p. ej. W01-03a/b/c, W01-04: solo tienen una oferta/error real si se llegó ahí navegando desde W01-01), la prueba aislada cubre el guard/estado vacío real que ve cualquiera que entre por URL directa o refresque la página — el camino feliz con datos reales ya lo cubre el E2E por historia.
 
 Este segundo nivel es **adicional** al primero, no lo reemplaza: ambos se mantienen y se ejecutan juntos (`npm run correr` corre todos los specs de `cypress/e2e/**`).
 
 **HU-W05 (conciliación de pagos).** Los specs `w05-conciliacion.cy.ts` y `pantallas/w05-01.cy.ts` cuentan los 4 cobros fijos de los mocks, así que **se saltan solos contra staging** (`support/entorno.ts` decide por la `baseUrl`: localhost = mocks). Contra staging corre `w05-staging.cy.ts`, que no cuenta filas ni nombres: entra como operador, comprueba la tabla, el filtro por estado y el reintento de un rechazado (confirmación o explicación del BFF, nunca un error técnico). Antes: staging encendido (*Costos staging → encender*) y cobros sembrados con `python3 scripts/sembrar_cobros.py` del backend. Reintentar gasta uno de los 3 reintentos reales de ese cobro. Evidencia: [`../docs/evidencias/FC-10-web-plantilla.md`](../docs/evidencias/FC-10-web-plantilla.md).
+
+**HU-W04 (siniestros).** Specs por pantalla `pantallas/w04-01`, `w04-02`, `w04-02b`, `w04-03a`, `w04-03b`, `w04-03c`, el de
+tamaños `pantallas/w04-responsive.cy.ts` y el de historia `w04-siniestros.cy.ts` (bandeja → detalle → derivar, aprobar y
+rechazar). **Requieren el dummy `stub-siniestros` en `:8107`** (ver el README raíz) y reinician sus datos en cada prueba;
+solo corren en local (staging diferido). Evidencia: [`../docs/evidencias/W04-2026-10-25.md`](../docs/evidencias/W04-2026-10-25.md).
 
 Registro de evidencia de FC-01 (HU-W01): ver [`../docs/evidencias/FC-01-2026-10-18.md`](../docs/evidencias/FC-01-2026-10-18.md).
 

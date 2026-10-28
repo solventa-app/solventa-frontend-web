@@ -126,7 +126,7 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
   // Antes esta aserción vivía (con un nombre que prometía cubrirla) dentro de la prueba de
   // valorCredito, pero el body nunca tocaba el campo de plazo: quedaba sin probar de verdad.
-  it('valida que el plazo sea un entero mayor a cero', async () => {
+  it('valida que el plazo sea un entero entre 1 y 60', async () => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
@@ -139,7 +139,27 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Ingresa un plazo válido en meses, mayor a cero.')
+    expect(wrapper.text()).toContain('Ingresa un plazo válido, entre 1 y 60 meses.')
+  })
+
+  // El máximo es 60 meses, igual que el BFF y la política de RATING.
+  it.each([
+    ['60', false],
+    ['61', true],
+  ])('con plazo de %s meses muestra el error: %s', async (plazo, conError) => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await wrapper.findAll('input')[2].setValue(plazo) // input[2] = Plazo (meses)
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Consultar oferta')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text().includes('Ingresa un plazo válido, entre 1 y 60 meses.')).toBe(conError)
   })
 
   it('valida que la dirección del inmueble no esté vacía', async () => {
@@ -147,7 +167,7 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     cotizacion.reiniciar()
     cotizacion.captura.documentoIdentidad = 'CC102030'
     cotizacion.captura.valorCredito = '185000000'
-    cotizacion.captura.plazoMeses = '180'
+    cotizacion.captura.plazoMeses = '60'
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
 
     await wrapper.find('input[type="checkbox"]').setValue(true)
@@ -201,7 +221,7 @@ describe('ConsultandoFuentes (W01-02)', () => {
     cotizacion.reiniciar()
     cotizacion.captura.documentoIdentidad = '123'
     cotizacion.captura.valorCredito = '185000000'
-    cotizacion.captura.plazoMeses = '180'
+    cotizacion.captura.plazoMeses = '60'
     cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18'
     cotizacion.captura.consentimiento = true
 
@@ -225,7 +245,7 @@ describe('ConsultandoFuentes (W01-02)', () => {
     cotizacion.reiniciar()
     cotizacion.captura.documentoIdentidad = '123'
     cotizacion.captura.valorCredito = '185000000'
-    cotizacion.captura.plazoMeses = '180'
+    cotizacion.captura.plazoMeses = '60'
     cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18'
     cotizacion.captura.consentimiento = true
 
@@ -279,7 +299,7 @@ describe('ConsultandoFuentes (W01-02)', () => {
     cotizacion.reiniciar()
     cotizacion.captura.documentoIdentidad = '1020304998'
     cotizacion.captura.valorCredito = '185000000'
-    cotizacion.captura.plazoMeses = '180'
+    cotizacion.captura.plazoMeses = '60'
     cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18'
     cotizacion.captura.consentimiento = true
 
@@ -305,7 +325,7 @@ describe('Pantallas de resultado de oferta', () => {
   beforeEach(() => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()
-    cotizacion.captura.plazoMeses = '180'
+    cotizacion.captura.plazoMeses = '60'
   })
 
   it('OfertaCompleta (W01-03a) muestra la prima y el desglose real del score, no un número inventado', async () => {
@@ -324,7 +344,7 @@ describe('Pantallas de resultado de oferta', () => {
 
     expect(wrapper.text()).toContain('Tu oferta está lista')
     expect(wrapper.text()).toContain('Ingresos')
-    expect(wrapper.text()).toContain('180 meses')
+    expect(wrapper.text()).toContain('60 meses')
     expect(wrapper.text()).not.toContain('782/850')
   })
 
@@ -351,7 +371,7 @@ describe('Pantallas de resultado de oferta', () => {
     expect(wrapper.text()).toContain('Oferta preliminar')
     expect(wrapper.text()).toContain('Cobertura:')
     expect(wrapper.text()).toContain('Zona del inmueble')
-    expect(wrapper.text()).toContain('180 meses')
+    expect(wrapper.text()).toContain('60 meses')
     expect(wrapper.text()).not.toContain('782/850')
   })
 
@@ -469,7 +489,7 @@ describe('DetalleDeFuentes (W01-04)', () => {
     expect(secciones[1].text()).toContain('Open Data')
     expect(secciones[0].findAll('li')).toHaveLength(2)
     expect(secciones[1].findAll('li')).toHaveLength(3)
-    expect(wrapper.findAll('li')).toHaveLength(5)
+    expect(wrapper.findAll('section li')).toHaveLength(5)
 
     expect(wrapper.text()).toContain('Cuentas y saldos')
     expect(wrapper.text()).toContain('Historial crediticio')

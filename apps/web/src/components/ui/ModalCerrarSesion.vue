@@ -9,7 +9,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useId, watch } from 'vue'
 import IconoMaterial from './IconoMaterial.vue'
-import { ETIQUETA_ROL, useSesion } from '../../composables/useSesion'
+import { etiquetaRol, useSesion } from '../../composables/useSesion'
+import { t } from '../../i18n'
 import { formatearFecha } from '../../utils/formato'
 
 const props = defineProps<{ abierto: boolean }>()
@@ -19,7 +20,7 @@ const { estado } = useSesion()
 const idTitulo = useId()
 const botonCancelar = ref<HTMLButtonElement | null>(null)
 
-const rol = computed(() => (estado.rol ? ETIQUETA_ROL[estado.rol] : ''))
+const rol = computed(() => (estado.rol ? etiquetaRol(estado.rol) : ''))
 const iniciada = computed(() => (estado.iniciadaEn ? formatearFecha(new Date(estado.iniciadaEn).toISOString()) : '—'))
 
 watch(
@@ -53,7 +54,7 @@ watch(
         </span>
         <button
           type="button"
-          aria-label="Cerrar"
+          :aria-label="t('modal.cerrar')"
           class="rounded p-1 text-tinta-suave hover:text-tinta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
           @click="emit('cancelar')"
         >
@@ -61,13 +62,13 @@ watch(
         </button>
       </div>
       <div class="flex flex-col gap-1">
-        <h2 :id="idTitulo" class="text-[20px] font-bold text-tinta">¿Deseas cerrar tu sesión?</h2>
-        <p class="text-[13px] text-tinta-suave">Para volver a ingresar deberás iniciar sesión nuevamente.</p>
+        <h2 :id="idTitulo" class="text-[20px] font-bold text-tinta">{{ t('modal.titulo') }}</h2>
+        <p class="text-[13px] text-tinta-suave">{{ t('modal.texto') }}</p>
       </div>
       <dl class="flex flex-col gap-3 rounded-md border border-borde bg-fondo p-3 text-[13px]">
         <div class="flex flex-wrap items-start justify-between gap-2">
           <dt class="flex items-center gap-1 text-tinta-suave">
-            <IconoMaterial nombre="person" class="h-4 w-4" />Usuario activo
+            <IconoMaterial nombre="person" class="h-4 w-4" />{{ t('modal.usuarioActivo') }}
           </dt>
           <dd class="flex flex-col items-end text-right">
             <span class="font-semibold text-tinta" data-dato="nombre">{{ estado.nombre }}</span>
@@ -76,7 +77,7 @@ watch(
         </div>
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-borde pt-3">
           <dt class="flex items-center gap-1 text-tinta-suave">
-            <IconoMaterial nombre="schedule" class="h-4 w-4" />Sesión iniciada
+            <IconoMaterial nombre="schedule" class="h-4 w-4" />{{ t('modal.sesionIniciada') }}
           </dt>
           <dd class="font-semibold text-tinta" data-dato="iniciada">{{ iniciada }}</dd>
         </div>
@@ -88,19 +89,19 @@ watch(
           class="h-11 min-w-[120px] flex-1 rounded-md border border-borde bg-white text-[13px] font-semibold text-tinta hover:bg-fondo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
           @click="emit('cancelar')"
         >
-          Cancelar
+          {{ t('modal.cancelar') }}
         </button>
         <button
           type="button"
           class="flex h-11 min-w-[120px] flex-1 items-center justify-center gap-2 rounded-md bg-primario text-[13px] font-semibold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
           @click="emit('confirmar')"
         >
-          <IconoMaterial nombre="logout" class="h-4 w-4" />Cerrar sesión
+          <IconoMaterial nombre="logout" class="h-4 w-4" />{{ t('sesion.cerrar') }}
         </button>
       </div>
       <p class="flex items-start gap-1 border-t border-borde pt-3 text-[11px] text-tinta-suave">
         <IconoMaterial nombre="shield" class="h-4 w-4 shrink-0" />
-        Por tu seguridad, la sesión vence sola: tendrás que volver a ingresar.
+        {{ t('modal.seguridad') }}
       </p>
     </div>
   </div>

@@ -8,6 +8,7 @@ import { Divisor, FooterPantalla, HeaderPantalla, ModalCerrarSesion, TituloPanta
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useCierreDeSesion } from '../composables/useCierreDeSesion'
 import { useSesion } from '../composables/useSesion'
+import { t } from '../i18n'
 
 const { estado } = useSesion()
 const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierreDeSesion()
@@ -15,19 +16,19 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
 
 <template>
   <div data-pantalla="G-02a" class="flex h-screen flex-col overflow-hidden bg-fondo">
-    <HeaderPantalla titulo="Home del Asesor comercial" />
+    <HeaderPantalla :titulo="t('homeAsesor.titulo')" />
 
     <div class="flex w-full items-center justify-between border-b border-borde bg-fondo px-4 py-2 text-[11px]">
       <span class="flex items-center gap-1 text-tinta-suave">
         <IconoMaterial nombre="badge" class="h-5 w-5" />
-        Portal Asesor Comercial
+        {{ t('homeAsesor.portal') }}
       </span>
       <button
         type="button"
         class="flex items-center gap-1 rounded-sm px-1 py-0.5 text-[13px] font-medium text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
         @click="pedirCierre"
       >
-        Cerrar sesión
+        {{ t('sesion.cerrar') }}
         <IconoMaterial nombre="logout" class="h-5 w-5" />
       </button>
     </div>
@@ -35,7 +36,7 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
     <Divisor />
 
     <main class="mx-auto flex w-full max-w-[880px] flex-1 flex-col gap-5 overflow-y-auto px-10 py-10 min-h-0">
-      <TituloPantalla>Hola, {{ estado.nombre }}</TituloPantalla>
+      <TituloPantalla>{{ t('home.hola', { nombre: estado.nombre }) }}</TituloPantalla>
 
       <div class="flex flex-wrap items-stretch gap-5">
         <RouterLink
@@ -46,8 +47,8 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
           </span>
           <span class="flex flex-col gap-1">
-            <span class="text-[16px] font-semibold text-tinta">Nueva cotización para un cliente</span>
-            <span class="text-[13px] text-tinta-suave">Cotiza en nombre de un tercero</span>
+            <span class="text-[16px] font-semibold text-tinta">{{ t('homeAsesor.cotizar') }}</span>
+            <span class="text-[13px] text-tinta-suave">{{ t('homeAsesor.cotizarTexto') }}</span>
           </span>
         </RouterLink>
         <RouterLink
@@ -58,8 +59,8 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
           </span>
           <span class="flex flex-col gap-1">
-            <span class="text-[16px] font-semibold text-tinta">Pólizas emitidas</span>
-            <span class="text-[13px] text-tinta-suave">Consulta la póliza vigente del cliente y su documento</span>
+            <span class="text-[16px] font-semibold text-tinta">{{ t('homeAsesor.polizas') }}</span>
+            <span class="text-[13px] text-tinta-suave">{{ t('homeAsesor.polizasTexto') }}</span>
           </span>
         </RouterLink>
         <RouterLink
@@ -70,13 +71,13 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
             <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
           </span>
           <span class="flex flex-col gap-1">
-            <span class="text-[16px] font-semibold text-tinta">Fuentes consultadas</span>
-            <span class="text-[13px] text-tinta-suave">Revisa qué fuentes se usaron para perfilar al cliente</span>
+            <span class="text-[16px] font-semibold text-tinta">{{ t('home.fuentes') }}</span>
+            <span class="text-[13px] text-tinta-suave">{{ t('homeAsesor.fuentesTexto') }}</span>
           </span>
         </RouterLink>
       </div>
 
-      <p class="text-[11px] text-tinta-suave">El asesor actúa en nombre de un cliente, no cotizando para sí mismo.</p>
+      <p class="text-[11px] text-tinta-suave">{{ t('homeAsesor.nota') }}</p>
     </main>
 
     <FooterPantalla />

@@ -9,6 +9,8 @@
   sesión) — quien use este componente decide qué pasa (emite `cerrar-sesion`).
 -->
 <script setup lang="ts">
+import { t } from '../../i18n'
+
 defineProps<{
   nombre: string
   rol: string
@@ -25,7 +27,7 @@ defineEmits<{ 'cerrar-sesion': [] }>()
       class="font-medium text-enlace hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-1"
       @click="$emit('cerrar-sesion')"
     >
-      Cerrar sesión
+      {{ t('sesion.cerrar') }}
     </button>
   </div>
 </template>
