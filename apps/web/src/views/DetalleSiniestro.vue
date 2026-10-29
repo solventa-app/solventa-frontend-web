@@ -19,7 +19,7 @@ import { Badge, Boton, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePa
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
-import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos-siniestros'
+import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearFecha, formatearMonto } from '../utils/formato'
 

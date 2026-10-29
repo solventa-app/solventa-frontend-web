@@ -193,6 +193,7 @@ function emitirPoliza(registro: PropuestaMock): Poliza {
     prima: registro.propuesta.prima,
     cobertura: registro.propuesta.cobertura,
     documentoUrl: `/mock/polizas/${id}/documento.pdf`,
+    ramo: 'Vida grupo deudor con amparo de daños al bien financiado',
   }
   // El enlace sigue sirviendo con la póliza emitida: cubre también la descarga del PDF (W03-22).
   cambiarEstado(registro, 'EMITIDA', { polizaId: id })

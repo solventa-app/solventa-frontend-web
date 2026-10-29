@@ -252,12 +252,10 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
 > evidencias en el almacenamiento, la orden de pago en PAYMENTS y las operaciones en el BFF. Ese backend ya está en
 > `develop` (PR backend #378).
 >
-> **Ejecutado (rama `feat/KAN-247-mesa-siniestros-backend-real`):** ajustes 1, 2, 3, 6, 7 y 8. Los ajustes 4 y 5
-> (tipos del contrato principal) **se difieren** al PR que sincronice el contrato v0.21 junto con la migración de
-> HU-W03 del borrador v0.17 a la v0.18: copiar el contrato principal arrastra la v0.18, que duplica los 20 tipos del
-> borrador de W03. Mientras tanto W04 se tipa con `contrato/siniestros.graphql`, idéntico a la parte de siniestros de
-> la v0.21. El 9 (geoetiqueta) y el 10 (renovar la URL firmada) siguen pendientes. Verificación: typecheck, lint, Prettier, Vitest (344) y build; los 39
-> E2E de W04 contra el backend local con la semilla, y `dev:mock` sin backend.
+> **Ejecutado:** ajustes 1, 2, 3, 6, 7 y 8 en el PR #91 (KAN-247); 4 y 5 en la rama `feat/KAN-27-contrato-v021-siniestros`,
+> después de que HU-W03 pasara a la v0.18 (PR #92): el contrato principal de la web está en la v0.21 y ya no existe el
+> contrato aparte del dummy. El 9 (geoetiqueta) y el 10 (renovar la URL firmada) siguen pendientes. Verificación del #91:
+> los 39 E2E de W04 contra el backend local con la semilla, y `dev:mock` sin backend.
 >
 > **Corte de 700 ms en local:** con el compose completo, el gateway Envoy a veces responde 504 en el detalle o en
 > derivar (la máquina está cargada; en caliente el detalle tarda 100–150 ms en el BFF). La web muestra el error con
@@ -279,8 +277,8 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
 | 1 ✅ | `SINIESTROS = { endpoint: '/v1/graphql/web', conToken: true }` (hoy `'/graphql/siniestros'` sin token). El backend exige token de BACKOFFICE en todas las operaciones | `apps/web/src/composables/useSiniestros.ts:17` |
 | 2 ✅ | Proxy `'/v1'` hacia el gateway (`VITE_BFF_URL` o `:8080`); quitar `'/graphql/siniestros'` y `VITE_SINIESTROS_URL` | `apps/web/vite.config.ts`, `src/env.d.ts`, `.env.example` |
 | 3 ✅ | Rewrite `/v1/:path*` hacia el gateway de staging, antes de la regla SPA | `apps/web/vercel.json` |
-| 4 (diferido) | Importar los tipos de `graphql/tipos.ts` (contrato principal) en vez de `tipos-siniestros.ts`, en 6 archivos: `useSiniestros.ts`, `useResultadoReciente.ts`, `ModalRechazo.vue`, `DetalleSiniestro.vue`, `BandejaSiniestros.vue` y `mocks/siniestros.ts` | `src/` |
-| 5 (diferido) | Sincronizar el contrato principal v0.21 (`contract-consumer`). Quitar `siniestros.graphql` de `scripts/contrato.mjs`, el segundo `generates` de `codegen.ts`, la exclusión de cobertura y el `git diff` de `ci-web.yml`; borrar `contrato/siniestros.graphql` y `src/graphql/tipos-siniestros.ts`. El backend conserva su copia del dummy, así que `verificar` no falla mientras tanto | front |
+| 4 ✅ | Importar los tipos de `graphql/tipos.ts` (contrato principal) en vez de `tipos-siniestros.ts`, en 6 archivos: `useSiniestros.ts`, `useResultadoReciente.ts`, `ModalRechazo.vue`, `DetalleSiniestro.vue`, `BandejaSiniestros.vue` y `mocks/siniestros.ts` | `src/` |
+| 5 ✅ | Sincronizar el contrato principal v0.21 (`contract-consumer`). Quitar `siniestros.graphql` de `scripts/contrato.mjs`, el segundo `generates` de `codegen.ts`, la exclusión de cobertura y el `git diff` de `ci-web.yml`; borrar `contrato/siniestros.graphql` y `src/graphql/tipos-siniestros.ts`. El backend conserva su copia del dummy, así que `verificar` no falla mientras tanto | front |
 | 6 ✅ | La bandeja pide solo `id radicado estado asegurado { nombre } notificadoEn`: hoy pide `CAMPOS_SINIESTRO` completo, y con el backend real eso pediría la póliza y firmaría las URLs de todas las evidencias en cada carga | `useSiniestros.ts` (`CONSULTA_SINIESTROS`) |
 | 7 ✅ | Mocks en `*/v1/graphql/web`, registrados también en `mocks/browser.ts`, para que `dev:mock` funcione sin backend (regla 2; hoy depende del dummy) | `src/mocks/` |
 | 8 ✅ | Las 8 specs que reinician con `cy.request('POST', '/graphql/siniestros/control/reiniciar')` pasan a `POST http://localhost:8012/_demo/reiniciar` (solo local, `DEMO_REINICIAR=true`). Antes de correrlas: `docker compose run --rm sembrar-siniestros` en el backend | `e2e/cypress/e2e/w04-siniestros.cy.ts` y `pantallas/w04-*` |

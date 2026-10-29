@@ -1,8 +1,7 @@
 // Estado compartido de la mesa de siniestros (HU-W04): singleton a nivel de módulo, como useConciliacion.ts,
 // para que bandeja, detalle, derivación y confirmaciones (W04-01 … W04-03c) compartan datos al navegar.
 // Habla con el BFF por '/v1/graphql/web' con el JWT de la sesión: el servicio CLAIMS exige BACKOFFICE en todas las
-// operaciones (contrato v0.21). Los tipos siguen saliendo de contrato/siniestros.graphql, idéntico a la parte de
-// siniestros de la v0.21, hasta que el contrato principal se sincronice (docs/plan-ejecucion-hu-w04-siniestros.md).
+// operaciones (contrato v0.21).
 import { reactive } from 'vue'
 import { ejecutar, type OpcionesEjecucion } from '../graphql/cliente'
 import type {
@@ -13,7 +12,7 @@ import type {
   Perito,
   ResultadoResolucion,
   Siniestro,
-} from '../graphql/tipos-siniestros'
+} from '../graphql/tipos'
 import { t } from '../i18n'
 
 const SINIESTROS: OpcionesEjecucion = { endpoint: '/v1/graphql/web' }

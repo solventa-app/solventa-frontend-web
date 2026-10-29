@@ -2,5 +2,4 @@ dist/
 coverage/
 public/mockServiceWorker.js
 src/graphql/tipos.ts
-src/graphql/tipos-siniestros.ts
 src/contrato/jurisdicciones.json
