@@ -21,8 +21,8 @@ describe('ejecutar · opciones', () => {
   it('acepta otro endpoint y omitir el token', async () => {
     usarToken('jwt')
     const f = fetchFalso()
-    await ejecutar('{ ok }', {}, f as unknown as typeof fetch, { endpoint: '/graphql/siniestros', conToken: false })
-    expect((f.mock.calls[0] as unknown as [string])[0]).toBe('/graphql/siniestros')
+    await ejecutar('{ ok }', {}, f as unknown as typeof fetch, { endpoint: '/v1/graphql/web', conToken: false })
+    expect((f.mock.calls[0] as unknown as [string])[0]).toBe('/v1/graphql/web')
     expect(cabeceras(f).Authorization).toBeUndefined()
     expect(cabeceras(f)['Accept-Language']).toBeTruthy()
   })

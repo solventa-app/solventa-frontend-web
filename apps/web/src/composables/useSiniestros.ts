@@ -1,10 +1,12 @@
 // Estado compartido de la mesa de siniestros (HU-W04): singleton a nivel de módulo, como useConciliacion.ts,
 // para que bandeja, detalle, derivación y confirmaciones (W04-01 … W04-03c) compartan datos al navegar.
-// Habla con el dummy de siniestros (contrato/siniestros.graphql) por '/graphql/siniestros', sin JWT: es un
-// servicio público y no se le manda el token de la sesión.
+// Habla con el BFF por '/v1/graphql/web' con el JWT de la sesión: el servicio CLAIMS exige BACKOFFICE en todas las
+// operaciones (contrato v0.21). Los tipos siguen saliendo de contrato/siniestros.graphql, idéntico a la parte de
+// siniestros de la v0.21, hasta que el contrato principal se sincronice (docs/plan-ejecucion-hu-w04-siniestros.md).
 import { reactive } from 'vue'
 import { ejecutar, type OpcionesEjecucion } from '../graphql/cliente'
 import type {
+  Asegurado,
   ErrorSiniestro,
   EstadoSiniestro,
   MotivoRechazo,
@@ -14,9 +16,14 @@ import type {
 } from '../graphql/tipos-siniestros'
 import { t } from '../i18n'
 
-const SINIESTROS: OpcionesEjecucion = { endpoint: '/graphql/siniestros', conToken: false }
+const SINIESTROS: OpcionesEjecucion = { endpoint: '/v1/graphql/web' }
 
-// Se piden todos los campos que usarán las pantallas: el dummy solo devuelve lo que se pide.
+/** Lo que muestra la bandeja (W04-01). Un Siniestro completo también lo cumple (tras una acción). */
+export type SiniestroBandeja = Pick<Siniestro, 'id' | 'radicado' | 'estado' | 'notificadoEn'> & {
+  asegurado: Pick<Asegurado, 'nombre'>
+}
+
+// El detalle y las acciones piden todos los campos que usan sus pantallas.
 const CAMPOS_PERITO = `id nombre ciudad red registro tiempoRespuestaDias vencimientoInforme`
 const CAMPOS_SINIESTRO = `
   id
@@ -46,8 +53,10 @@ const CAMPOS_SINIESTRO = `
     instrucciones vencimientoInforme
   }`
 
+// La bandeja pide solo lo que muestra: con el backend real, pedir la póliza y las evidencias resolvería POLICY y
+// firmaría las URL de todas las evidencias en cada carga.
 const CONSULTA_SINIESTROS = `query siniestros($estado: EstadoSiniestro) {
-  siniestros(estado: $estado) { ${CAMPOS_SINIESTRO} }
+  siniestros(estado: $estado) { id radicado estado asegurado { nombre } notificadoEn }
 }`
 const CONSULTA_SINIESTRO = `query siniestro($id: ID!) {
   siniestro(id: $id) { ${CAMPOS_SINIESTRO} }
@@ -76,14 +85,14 @@ export function esSiniestro(r: ResultadoResolucion | null | undefined): r is Sin
 
 interface EstadoSiniestros {
   /** Bandeja (W04-01). */
-  siniestros: Siniestro[]
+  siniestros: SiniestroBandeja[]
   cargando: boolean
   error: string | null
   /** Detalle abierto (W04-02 y derivadas). */
   detalle: Siniestro | null
   cargandoDetalle: boolean
   errorDetalle: string | null
-  /** El dummy respondió `null`: el id no existe (estado "no encontrado", distinto de un error). */
+  /** El BFF respondió `null`: el id no existe (estado "no encontrado", distinto de un error). */
   noEncontrado: boolean
   /** Peritos para derivar (W04-02b). */
   peritos: Perito[]
@@ -137,7 +146,7 @@ export function useSiniestros(fetchFn: typeof fetch = fetch) {
     estado.error = null
     try {
       const variables = filtro ? { estado: filtro } : {}
-      const r = await ejecutar<{ siniestros: Siniestro[] }>(CONSULTA_SINIESTROS, variables, fetchFn, SINIESTROS)
+      const r = await ejecutar<{ siniestros: SiniestroBandeja[] }>(CONSULTA_SINIESTROS, variables, fetchFn, SINIESTROS)
       estado.siniestros = r.siniestros
     } catch {
       // Nunca el error técnico ni un 5xx crudo (regla 5).

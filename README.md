@@ -54,11 +54,12 @@ una oferta preliminar, pon el stub de Open Finance en modo lento
 (`curl -X POST localhost:8101/control/modo -H 'Content-Type: application/json' -d '{"modo":"lento"}'`); con un
 documento que no se haya consultado antes, el historial crediticio no llega y sale la pantalla de error.
 
-**HU-W04 (siniestros) en local:** las pantallas de siniestros no usan MSW sino el dummy `stub-siniestros` del backend.
-Desde `solventa-backend`: `docker compose --profile servicios up stub-siniestros --build --wait` (queda en el puerto 8107).
-Luego, en `apps/web`, `npm run dev:mock`: Vite reenvía `/graphql/siniestros` al dummy (otra URL con `VITE_SINIESTROS_URL`).
-Entra con el usuario `admin.solventa` (cualquier clave, rol Operador) y abre la tarjeta "Siniestros". Para volver a los
-datos iniciales: `curl -X POST localhost:8107/control/reiniciar` (o `/graphql/siniestros/control/reiniciar` por el proxy de Vite).
+**HU-W04 (siniestros):** las pantallas llaman a `/v1/graphql/web` del BFF con el JWT de la sesión (servicio CLAIMS,
+solo BACKOFFICE). Con `npm run dev:mock` responden los mocks de MSW (4 siniestros, imágenes de relleno). Contra el
+backend en local (párrafo anterior), siembra los siniestros una vez desde `solventa-backend` con
+`docker compose --profile servicios run --rm sembrar-siniestros`, entra como `admin.solventa` / `admin-local-solventa`
+(rol Operador) y abre la tarjeta "Siniestros". Para volver a los datos de la semilla:
+`curl -X POST localhost:8012/_demo/reiniciar` (solo local).
 
 Con `npm run dev` o `dev:mock`, abre `http://localhost:5173/_pantallas` para ver el índice de las 12 pantallas del prototipo (solo en desarrollo).
 

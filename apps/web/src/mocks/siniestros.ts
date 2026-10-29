@@ -1,8 +1,8 @@
-// Mocks del dummy de siniestros (contrato/siniestros.graphql, HU-W04) SOLO para Vitest: se registran en
-// mocks/node.ts. En `dev:mock` el navegador no los usa: siniestros va al dummy real (proxy de Vite a :8107).
-// Datos reducidos (4 siniestros: los 4 estados y uno ya derivado a perito) con las mismas reglas de negocio
-// y los mismos mensajes que stubs/siniestros/app/repositorio.py del backend.
-import { HttpResponse } from 'msw'
+// Mocks de la mesa de siniestros (HU-W04) en '/v1/graphql/web' del BFF, para Vitest y para `dev:mock` (regla 2).
+// Datos reducidos (4 siniestros: los 4 estados y uno ya derivado a perito) con las mismas reglas de negocio y
+// los mismos mensajes que el servicio CLAIMS del backend. Las evidencias son imágenes SVG generadas aquí: el
+// backend real devuelve URL firmadas del almacenamiento.
+import { http, HttpResponse } from 'msw'
 import { graphql } from 'msw/graphql'
 import type {
   MutationAprobarSiniestroArgs,
@@ -24,7 +24,7 @@ export const MENSAJES_SINIESTROS = {
   textoLargo: `El texto supera los ${MAX_TEXTO} caracteres.`,
 } as const
 
-const MEDIOS = '/graphql/siniestros/medios/'
+const MEDIOS = '/mock/siniestros/medios/'
 const enHoras = (horas: number) => new Date(Date.now() + horas * 3_600_000).toISOString()
 const enDias = (dias: number) => enHoras(dias * 24)
 
@@ -179,28 +179,41 @@ function resultado(campo: string, accion: () => Siniestro) {
   }
 }
 
-const dummy = graphql.link('*/graphql/siniestros')
+const bff = graphql.link('*/v1/graphql/web')
+
+/** Imagen de relleno para una evidencia, con su nombre de archivo (solo existe con los mocks). */
+function imagenDeRelleno(archivo: string): string {
+  const texto = archivo.replace(/[^\w.-]/g, '')
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+  <rect width="640" height="480" fill="#e2e8f0"/>
+  <text x="320" y="240" font-family="sans-serif" font-size="24" fill="#475569" text-anchor="middle">${texto}</text>
+</svg>`
+}
 
 export const handlersSiniestros = [
-  dummy.query<{ siniestros: Siniestro[] }, QuerySiniestrosArgs>('siniestros', ({ variables }) => {
+  http.get(`*${MEDIOS}:archivo`, ({ params }) =>
+    HttpResponse.text(imagenDeRelleno(String(params.archivo)), { headers: { 'Content-Type': 'image/svg+xml' } }),
+  ),
+
+  bff.query<{ siniestros: Siniestro[] }, QuerySiniestrosArgs>('siniestros', ({ variables }) => {
     const lista = siniestros
       .filter((s) => !variables.estado || s.estado === variables.estado)
       .sort((a, b) => b.notificadoEn.localeCompare(a.notificadoEn))
     return HttpResponse.json({ data: { siniestros: lista.map((s) => structuredClone(s)) } })
   }),
 
-  dummy.query<{ siniestro: Siniestro | null }, QuerySiniestroArgs>('siniestro', ({ variables }) => {
+  bff.query<{ siniestro: Siniestro | null }, QuerySiniestroArgs>('siniestro', ({ variables }) => {
     const s = siniestros.find((x) => x.id === variables.id)
     return HttpResponse.json({ data: { siniestro: s ? structuredClone(s) : null } })
   }),
 
-  dummy.query<{ peritos: Perito[] }, QueryPeritosArgs>('peritos', ({ variables }) => {
+  bff.query<{ peritos: Perito[] }, QueryPeritosArgs>('peritos', ({ variables }) => {
     if (!siniestros.some((s) => s.id === variables.siniestroId)) return HttpResponse.json({ data: { peritos: [] } })
     const peritos = peritosBase.map((p) => ({ ...p, vencimientoInforme: enDias(p.tiempoRespuestaDias) }))
     return HttpResponse.json({ data: { peritos } })
   }),
 
-  dummy.mutation<Record<string, object>, MutationAprobarSiniestroArgs>('aprobarSiniestro', ({ variables }) =>
+  bff.mutation<Record<string, object>, MutationAprobarSiniestroArgs>('aprobarSiniestro', ({ variables }) =>
     resultado('aprobarSiniestro', () => {
       const s = abierto(variables.id)
       s.estado = 'APROBADO'
@@ -217,7 +230,7 @@ export const handlersSiniestros = [
     }),
   ),
 
-  dummy.mutation<Record<string, object>, MutationRechazarSiniestroArgs>('rechazarSiniestro', ({ variables }) =>
+  bff.mutation<Record<string, object>, MutationRechazarSiniestroArgs>('rechazarSiniestro', ({ variables }) =>
     resultado('rechazarSiniestro', () => {
       const s = abierto(variables.id)
       const comentario = validarTexto(variables.comentario)
@@ -235,7 +248,7 @@ export const handlersSiniestros = [
     }),
   ),
 
-  dummy.mutation<Record<string, object>, MutationDerivarSiniestroArgs>('derivarSiniestro', ({ variables }) =>
+  bff.mutation<Record<string, object>, MutationDerivarSiniestroArgs>('derivarSiniestro', ({ variables }) =>
     resultado('derivarSiniestro', () => {
       const s = abierto(variables.id)
       if (s.resolucion?.perito) throw new ErrorNegocio(MENSAJES_SINIESTROS.yaDerivado)

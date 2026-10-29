@@ -1,6 +1,7 @@
 import { setupWorker } from 'msw/browser'
 import { handlers } from './handlers'
+import { handlersSiniestros } from './siniestros'
 import { handlersSuscripcion } from './suscripcion'
 
-// HU-W03 no tiene dummy del backend: sus mocks (suscripcion.ts) también corren en `dev:mock`.
-export const worker = setupWorker(...handlersSuscripcion, ...handlers)
+// Los de siniestros van primero: su enlace ('*/v1/graphql/web') es más específico que el '*' del BFF.
+export const worker = setupWorker(...handlersSiniestros, ...handlersSuscripcion, ...handlers)

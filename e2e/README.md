@@ -25,8 +25,12 @@ Este segundo nivel es **adicional** al primero, no lo reemplaza: ambos se mantie
 
 **HU-W04 (siniestros).** Specs por pantalla `pantallas/w04-01`, `w04-02`, `w04-02b`, `w04-03a`, `w04-03b`, `w04-03c`, el de
 tamaños `pantallas/w04-responsive.cy.ts` y el de historia `w04-siniestros.cy.ts` (bandeja → detalle → derivar, aprobar y
-rechazar). **Requieren el dummy `stub-siniestros` en `:8107`** (ver el README raíz) y reinician sus datos en cada prueba;
-solo corren en local (staging diferido). Evidencia: [`../docs/evidencias/W04-2026-10-25.md`](../docs/evidencias/W04-2026-10-25.md).
+rechazar). **Requieren el backend real en local** con la semilla de siniestros y la web con `npm run dev` (sin mocks; ver
+el README raíz), y reinician los datos en cada prueba con `POST localhost:8012/_demo/reiniciar` de CLAIMS
+(`support/siniestros.ts`; otra URL con `CYPRESS_CLAIMS_URL`). La clave del operador local va por entorno:
+`CYPRESS_CLAVE_BACKOFFICE=admin-local-solventa npx cypress run --spec 'cypress/e2e/**/w04-*.cy.ts'`. Solo corren en local.
+Si el gateway local corta alguna petición a los 700 ms (504, con la máquina cargada), corre la web contra el BFF directo:
+`VITE_USE_MOCKS=false VITE_BFF_URL=http://localhost:8000 npx vite`. Evidencia: [`../docs/evidencias/W04-2026-10-25.md`](../docs/evidencias/W04-2026-10-25.md).
 
 Registro de evidencia de FC-01 (HU-W01): ver [`../docs/evidencias/FC-01-2026-10-18.md`](../docs/evidencias/FC-01-2026-10-18.md).
 

@@ -19,9 +19,9 @@ export function usarToken(nuevo: string | null): void {
 }
 
 export interface OpcionesEjecucion {
-  /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa '/graphql/siniestros'. */
+  /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa su versión 1, '/v1/graphql/web'. */
   endpoint?: string
-  /** Si se manda el JWT de la sesión. `false` para servicios públicos (el dummy de siniestros). */
+  /** Si se manda el JWT de la sesión. `false` para operaciones que no deben llevarlo. */
   conToken?: boolean
   /** Cabeceras extra, p. ej. `X-Enlace-Firma` de la página del enlace (HU-W03), que no usa sesión. */
   cabeceras?: Record<string, string>

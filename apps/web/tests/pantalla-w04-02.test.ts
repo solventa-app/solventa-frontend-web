@@ -9,7 +9,7 @@ import { reiniciarEstadoSiniestros, useSiniestros } from '../src/composables/use
 import { restablecerSiniestrosDePrueba } from '../src/mocks/siniestros'
 import { servidor } from '../src/mocks/node'
 
-const dummy = graphql.link('*/graphql/siniestros')
+const bff = graphql.link('*/v1/graphql/web')
 
 function crearRouterDePrueba(): Router {
   const vacio = (id: string) => ({ template: `<div data-pantalla="${id}" />` })
@@ -191,7 +191,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
 
   it('Aprobar con ErrorSiniestro muestra el banner con foco y reactiva los botones', async () => {
     servidor.use(
-      dummy.mutation('aprobarSiniestro', () =>
+      bff.mutation('aprobarSiniestro', () =>
         HttpResponse.json({
           data: { aprobarSiniestro: { __typename: 'ErrorSiniestro', mensaje: 'El siniestro ya fue resuelto.' } },
         }),
@@ -210,7 +210,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
   })
 
   it('Aprobar con 503 muestra un mensaje genérico sin códigos', async () => {
-    servidor.use(dummy.mutation('aprobarSiniestro', () => new HttpResponse(null, { status: 503 })))
+    servidor.use(bff.mutation('aprobarSiniestro', () => new HttpResponse(null, { status: 503 })))
     const { wrapper } = await montar()
     await wrapper.get('[data-prueba="aprobar"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(true))
@@ -225,7 +225,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
   })
 
   it('error de carga con "Reintentar" que vuelve a cargar', async () => {
-    servidor.use(dummy.query('siniestro', () => new HttpResponse(null, { status: 503 }), { once: true }))
+    servidor.use(bff.query('siniestro', () => new HttpResponse(null, { status: 503 }), { once: true }))
     const { wrapper } = await montar()
     const alerta = wrapper.get('[role="alert"]')
     expect(alerta.text()).toContain('No pudimos cargar el siniestro en este momento.')

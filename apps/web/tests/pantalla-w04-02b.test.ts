@@ -10,7 +10,7 @@ import { reiniciarEstadoSiniestros, useSiniestros } from '../src/composables/use
 import { restablecerSiniestrosDePrueba } from '../src/mocks/siniestros'
 import { servidor } from '../src/mocks/node'
 
-const dummy = graphql.link('*/graphql/siniestros')
+const bff = graphql.link('*/v1/graphql/web')
 
 function crearRouterDePrueba(): Router {
   const vacio = (id: string) => ({ template: `<div data-pantalla="${id}" />` })
@@ -141,7 +141,7 @@ describe('HU-W04 · W04-02b Derivar a perito y W04-03c Confirmación', () => {
 
   it('error de negocio: banner con el mensaje, foco y valores conservados', async () => {
     servidor.use(
-      dummy.mutation('derivarSiniestro', () =>
+      bff.mutation('derivarSiniestro', () =>
         HttpResponse.json({
           data: {
             derivarSiniestro: { __typename: 'ErrorSiniestro', mensaje: 'El perito seleccionado no está disponible.' },
@@ -165,7 +165,7 @@ describe('HU-W04 · W04-02b Derivar a perito y W04-03c Confirmación', () => {
   })
 
   it('error de red: mensaje genérico sin códigos y valores conservados', async () => {
-    servidor.use(dummy.mutation('derivarSiniestro', () => new HttpResponse(null, { status: 500 })))
+    servidor.use(bff.mutation('derivarSiniestro', () => new HttpResponse(null, { status: 500 })))
     const { wrapper } = await montarDerivar()
     await elegirPerito(wrapper)
     await wrapper.get('form').trigger('submit')
@@ -202,7 +202,7 @@ describe('HU-W04 · W04-02b Derivar a perito y W04-03c Confirmación', () => {
   })
 
   it('error al cargar peritos: banner con Reintentar y Confirmar deshabilitado; reintentar recupera', async () => {
-    servidor.use(dummy.query('peritos', () => new HttpResponse(null, { status: 500 }), { once: true }))
+    servidor.use(bff.query('peritos', () => new HttpResponse(null, { status: 500 }), { once: true }))
     const { wrapper } = await montarDerivar()
     const banner = wrapper.get('[data-prueba="error-peritos"]')
     expect(banner.text()).toContain('No pudimos cargar los peritos disponibles.')
@@ -215,7 +215,7 @@ describe('HU-W04 · W04-02b Derivar a perito y W04-03c Confirmación', () => {
   })
 
   it('sin peritos: selector deshabilitado con el aviso', async () => {
-    servidor.use(dummy.query('peritos', () => HttpResponse.json({ data: { peritos: [] } })))
+    servidor.use(bff.query('peritos', () => HttpResponse.json({ data: { peritos: [] } })))
     const { wrapper } = await montarDerivar()
     expect(wrapper.get('[data-prueba="perito"] select').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).toContain('No hay peritos disponibles para este siniestro.')
