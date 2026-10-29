@@ -115,7 +115,7 @@ cada pantalla.
 | W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01); CA-W07-01 a 04 | Público |
 | W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones; CA-W07-05 a 10 | Sesión del socio |
 | W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas; CA-W07-11 a 13 | Sesión del socio |
-| W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa | `BACKOFFICE` |
+| W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa; CA-W07-14 y 15 | `BACKOFFICE` |
 
 **Criterios propuestos de HU-W07** (se validan contra Jira, KAN-30):
 
@@ -134,3 +134,5 @@ cada pantalla.
 | CA-W07-11 | W07-03 | La documentación abre en «Guía de integración» (no en la que cuesta) con el PDF en el idioma activo, «Abrir en otra pestaña» y «Descargar»; si el PDF no está o el navegador no lo muestra, se dice; la pestaña activa va en la URL |
 | CA-W07-12 | W07-03 | «Pruebas (sandbox)» muestra el Swagger del contrato con el token de pruebas, el distintivo «Entorno: Sandbox» y los documentos de prueba con el código 000000 |
 | CA-W07-13 | W07-03 | «Producción» muestra el Swagger con el token de producción, el distintivo en alerta y el aviso fijo de que probar cotizaciones descuenta presupuesto real |
+| CA-W07-14 | W07-04 | El operador llega desde la tarjeta «Estado del sistema» de G-02b y ve la caja de estado con la ventana, la tabla por servicio (peso, salud, disponibilidad o «sin tráfico», latencia media, p95 y si responde `/health`) y las APIs externas con su circuito, siempre con texto y no solo color |
+| CA-W07-15 | W07-04 | La pantalla se recarga sola cada 30 s sin «Cargando…»; si una recarga falla conserva los datos, y si falla al entrar muestra el error con reintento, nunca un 5xx |

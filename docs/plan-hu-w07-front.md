@@ -22,9 +22,9 @@ verde.
 | 5.2 W07-01 Login | `feat/KAN-30-ingreso-socio` | Hecho: `IngresoSocio.vue`, enlace de G-01, CA-W07-01 a 04 (propuestos) |
 | 5.3 W07-02 Panel | `feat/KAN-30-panel-socio` | Hecho: `PanelSocio.vue`, CA-W07-05 a 10 (propuestos) |
 | 5.4 W07-03 Documentación | `feat/KAN-30-documentacion-api` | Hecho: `DocumentacionApi.vue`, `ui/Pestanas.vue`, Swagger embebido; CA-W07-11 a 13 (propuestos) |
-| 5.6 W07-04 Estado del sistema | — | Pendiente (con el borrador GraphQL de `estadoSistema`) |
+| 5.6 W07-04 Estado del sistema | `feat/KAN-30-estado-sistema` | Hecho: `EstadoSistema.vue` sobre el contrato v0.22 (sin borrador GraphQL); CA-W07-14 y 15 (propuestos) |
 | 5.5 Guía en PDF | — | Pendiente (al final) |
-| Integración con el backend | — | Pendiente (espera el contrato real) |
+| Integración con el backend | — | Pendiente: el backend publicó `socios-v1.json` en la v0.22; falta cambiar el borrador por el contrato real y probar contra el BFF |
 
 **Decisión del 2026-10-29 (Felipe): el contrato es un borrador local**, como el de W03 (D-1). El backend todavía no
 publica `contracts/openapi/socios-v1.yaml` ni `estadoSistema` (bloque 1 de `plan-completar-hu-w07.md`, rama
@@ -81,6 +81,15 @@ solo publica `apps/web`; una prueba de Vitest exige que sea idéntica al borrado
   PRELIMINAR, otro → COMPLETA, código del titular `000000`. El mock de cotizaciones los sigue.
 Pruebas: `tests/pantalla-w07-03.test.ts` (Swagger simulado para revisar el token por pestaña) y
 `e2e/cypress/e2e/pantallas/w07-03.cy.ts` (recorre las pestañas y hace «Try it out» de una cotización en pruebas).
+
+**Hecho en 5.6:** el backend publicó la **v0.22** (2026-10-29) con `estadoSistema(ventana)` en GraphQL, así que no hizo
+falta un borrador: la web sincronizó la v0.22 (solo GraphQL) y `views/EstadoSistema.vue` (`/operador/estado`, BACKOFFICE)
+la lee con `composables/useEstadoSistema.ts`, que se recarga cada 30 s como W05-01. Reusa `TarjetaEstado` (adapta la
+respuesta a la forma del panel del socio) y suma la tabla por servicio y la de APIs externas (en la v0.22 vienen dentro
+de cada API: la tabla las junta con su API). G-02b suma la tercera tarjeta. Mock en `src/mocks/estadoSistema.ts` con los
+pesos de `contracts/salud.json`. Pruebas: `tests/pantalla-w07-04.test.ts` y `e2e/cypress/e2e/pantallas/w07-04.cy.ts`.
+El BFF de la v0.22 todavía responde `estadoSistema` con un error controlado (esqueleto): contra el backend real la
+pantalla muestra el error con reintento hasta que se implemente.
 
 ## 1. Convenciones visuales que siguen las pantallas nuevas
 

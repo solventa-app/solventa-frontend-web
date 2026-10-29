@@ -23,8 +23,8 @@ Este segundo nivel es **adicional** al primero, no lo reemplaza: ambos se mantie
 
 **HU-W05 (conciliación de pagos).** Los specs `w05-conciliacion.cy.ts` y `pantallas/w05-01.cy.ts` cuentan los 4 cobros fijos de los mocks, así que **se saltan solos contra staging** (`support/entorno.ts` decide por la `baseUrl`: localhost = mocks). Contra staging corre `w05-staging.cy.ts`, que no cuenta filas ni nombres: entra como operador, comprueba la tabla, el filtro por estado y el reintento de un rechazado (confirmación o explicación del BFF, nunca un error técnico). Antes: staging encendido (*Costos staging → encender*) y cobros sembrados con `python3 scripts/sembrar_cobros.py` del backend. Reintentar gasta uno de los 3 reintentos reales de ese cobro. Evidencia: [`../docs/evidencias/FC-10-web-plantilla.md`](../docs/evidencias/FC-10-web-plantilla.md).
 
-**HU-W07 (portal de socios).** `pantallas/w07-01.cy.ts` (ingreso del socio), `w07-02.cy.ts` (panel) y `w07-03.cy.ts` (documentación, con
-«Try it out» de una cotización en pruebas) corren contra los mocks de MSW (`npm run
+**HU-W07 (portal de socios).** `pantallas/w07-01.cy.ts` (ingreso del socio), `w07-02.cy.ts` (panel) , `w07-03.cy.ts` (documentación, con
+«Try it out» de una cotización en pruebas) y `w07-04.cy.ts` (estado del sistema del operador) corren contra los mocks de MSW (`npm run
 dev:mock`): la clave `clave-erronea` y las `sk_test…` son convenciones de demo de `src/mocks/socios.ts`.
 
 **HU-W04 (siniestros).** Specs por pantalla `pantallas/w04-01`, `w04-02`, `w04-02b`, `w04-03a`, `w04-03b`, `w04-03c`, el de

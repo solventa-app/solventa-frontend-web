@@ -140,3 +140,13 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
 - Lo que cambia para la web: `Poliza` suma `ramo: String!` (los mocks lo llenan). La v0.20 (onboarding del móvil) suma
   estados de `EstadoUsuario` y `ErrorAutenticacion.codigo`; la web no cambia: G-01 ya muestra el `mensaje` del BFF
   (`VERIFICACION_PENDIENTE` llega con un texto para el usuario) y ninguna pantalla enumera los estados de usuario.
+
+## v0.22 — sincronizado el 2026-10-29
+
+- KAN-30 (HU-W07): `contrato/schema.graphql` copiado del backend (v0.22). Suma `estadoSistema(ventana)` (solo BACKOFFICE)
+  con `EstadoSistema`, `SaludApi`, `SaludMicro`, `SaludExterna`, `ColorSalud` y `EstadoCircuito`, y `Propuesta.nombreSocio`.
+  La v0.19 ya no se usa (W07 tomó la v0.22).
+- Lo que cambia para la web: W07-04 (estado del sistema del operador) usa `estadoSistema`.
+- **Pendiente:** la v0.22 también publica la API REST de socios en `contracts/openapi/socios-v1.json` (OpenAPI 3.1). El
+  portal (W07-01 a W07-03) sigue con el borrador local `contrato/borrador-socios-v1.yaml` hasta reemplazarlo por ese
+  contrato en un PR propio.

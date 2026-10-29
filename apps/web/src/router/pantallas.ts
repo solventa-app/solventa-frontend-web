@@ -333,4 +333,14 @@ export const pantallas: Pantalla[] = [
     criterios: ['CA-W07-11', 'CA-W07-12', 'CA-W07-13'],
     componente: () => import('../views/DocumentacionApi.vue'),
   },
+  {
+    id: 'W07-04',
+    ruta: '/operador/estado',
+    nombre: 'Estado del sistema',
+    historia: 'HU-W07',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W07-14', 'CA-W07-15'],
+    componente: () => import('../views/EstadoSistema.vue'),
+  },
 ]
