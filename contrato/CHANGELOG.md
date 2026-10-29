@@ -120,3 +120,13 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
   HU-W03 (v0.12 a v0.15) y contacto del cliente con `tieneContacto` (v0.16). El detalle está en el CHANGELOG del backend.
 - Afecta al frontend: los mocks de `iniciarSesion` y `yo` devuelven `idioma`, `moneda` y `tieneContacto`. Las pantallas
   de W03 usan además el borrador local de la v0.17 (`borrador-v0.17.graphql`, ver README).
+
+## v0.17 y v0.18 — sincronizado el 2026-10-28
+
+- F-F1 (KAN-26): `contrato/schema.graphql` copiado del backend (v0.18); se borró `borrador-v0.17.graphql` y los tipos del borrador
+  (`tipos-borrador.ts`) pasaron a `tipos.ts`. El detalle de cada versión está en `solventa-backend/contracts/CHANGELOG.md`.
+- Lo que cambia para la web: `FirmarPorEnlaceInput` ya no lleva `firma` en base64: TRAZO e IMAGEN suben la imagen con
+  `solicitarSubidaFirma` (URL firmada) y firman con `imagenArchivoId`; NOMBRE manda `nombreFirma` (F-F2).
+  `SolicitudOfertaInput.documentoIdentidad` es opcional (un CLIENTE lo toma de su cuenta) y `EnlaceFirma.venceEn` es nulo con
+  sesión de CLIENTE. Siguen pendientes de usar en pantallas: `propuestas`, `ticketAvisos`, `emitirPropuesta` para el CLIENTE,
+  `Usuario.documentoEnmascarado` y `Cobro.origen/medio` reales.

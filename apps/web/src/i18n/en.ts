@@ -550,6 +550,7 @@ export const en: Record<Clave, string> = {
   'firma.imagen.errorTipo': 'The file must be a PNG or JPG image.',
   'firma.imagen.errorPeso': 'The image is larger than 500 KB.',
   'firma.imagen.errorTamano': 'The image is larger than 1200 × 600 px.',
+  'firma.imagen.errorSubida': "We couldn't upload the image. Please try again.",
   'firma.imagen.errorFondo': 'The background must be white or transparent: crop the image around the signature.',
   'firma.nombre.campo': 'Your full name',
   'firma.nombre.ejemplo': 'E.g.: Carlos Restrepo Gómez',

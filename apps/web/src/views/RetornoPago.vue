@@ -15,7 +15,7 @@ import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
 import { esErrorPago, hayToken, irAPasarela, tomarTokenDelPuente, useEnlaceFirma } from '../composables/useEnlaceFirma'
-import type { ErrorPago } from '../graphql/tipos-borrador'
+import type { ErrorPago } from '../graphql/tipos'
 import { t } from '../i18n'
 
 const route = useRoute()

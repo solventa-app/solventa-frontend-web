@@ -1,5 +1,6 @@
-// HU-W03 con mocks (borrador de la v0.17): el lado del asesor (useSuscripcion), la página del enlace (useEnlaceFirma)
+// HU-W03 con mocks (contrato v0.18): el lado del asesor (useSuscripcion), la página del enlace (useEnlaceFirma)
 // y, sobre todo, el cuidado del token del enlace (D-3): memoria primero, sessionStorage solo como puente de la pasarela.
+import { HttpResponse, http } from 'msw'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   CLAVE_PUENTE,
@@ -16,6 +17,7 @@ import { useCotizacion } from '../src/composables/useCotizacion'
 import { useSesion } from '../src/composables/useSesion'
 import { esEnlaceEnviado, useSuscripcion } from '../src/composables/useSuscripcion'
 import { servidor } from '../src/mocks/node'
+import { base64DeBytes } from '../src/utils/firma'
 import {
   CODIGO_DEMO,
   buzonSimulado,
@@ -216,7 +218,7 @@ describe('cuidado del token del enlace (D-3)', () => {
     await enlace.iniciarPago()
 
     const { vence } = JSON.parse(sessionStorage.getItem(CLAVE_PUENTE)!) as { vence: number }
-    expect(vence).toBeLessThanOrEqual(Date.parse(enlace.estado.enlace!.venceEn))
+    expect(vence).toBeLessThanOrEqual(Date.parse(enlace.estado.enlace!.venceEn!))
     expect(vence - Date.now()).toBeLessThanOrEqual(15 * 60_000)
   })
 
@@ -298,5 +300,77 @@ describe('página del enlace: firmar, pagar y emitir', () => {
     const conToken = await fetch(new URL(ruta, 'http://localhost'), { headers: { 'X-Enlace-Firma': 'emitido' } })
     expect(conToken.headers.get('Content-Type')).toBe('application/pdf')
     expect(new TextDecoder().decode(await conToken.arrayBuffer())).toMatch(/^%PDF-1\.4/)
+  })
+})
+
+describe('firma con imagen por el almacenamiento (W03-24)', () => {
+  // Los 8 bytes de una firma PNG y relleno: lo justo para que el tipo real se reconozca.
+  const png = () => base64DeBytes(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]))
+
+  async function enFirma() {
+    const token = await enlaceEnviado()
+    window.history.replaceState(null, '', `/firma#t=${token}`)
+    tomarTokenDelFragmento()
+    const enlace = useEnlaceFirma(fetchPrueba)
+    expect(await enlace.cargar()).toBe('firmar')
+    enlace.estado.aceptaTerminos = true
+    return enlace
+  }
+
+  it.each(['TRAZO', 'IMAGEN'] as const)(
+    '%s: pide la URL, sube con TODOS los encabezados y firma con el id del archivo',
+    async (modo) => {
+      const enlace = await enFirma()
+      enlace.estado.firmaCapturada = { modo, contenido: png() }
+
+      expect(await enlace.firmar()).toMatchObject({ estado: 'FIRMADA' })
+
+      const subida = llamadas.find((l) => l.url.startsWith('https://almacen.mock/subir/'))
+      expect(subida?.cabeceras).toEqual({ 'Content-Type': 'image/png' })
+      const firma = llamadas.find((l) => l.cuerpo.includes('firmarPorEnlace'))
+      const entrada = JSON.parse(firma!.cuerpo).variables.entrada
+      expect(entrada).toMatchObject({ modo, imagenArchivoId: expect.stringMatching(/^arch-mock-/) })
+      expect(entrada).not.toHaveProperty('nombreFirma') // la imagen no viaja por GraphQL
+      expect(JSON.stringify(entrada)).not.toContain('iVBOR') // ni en base64
+    },
+  )
+
+  it('NOMBRE no sube nada: manda el texto', async () => {
+    const enlace = await enFirma()
+    enlace.estado.firmaCapturada = { modo: 'NOMBRE', contenido: 'Carlos Restrepo' }
+
+    expect(await enlace.firmar()).toMatchObject({ estado: 'FIRMADA' })
+
+    expect(llamadas.some((l) => l.url.includes('almacen.mock'))).toBe(false)
+    const firma = llamadas.find((l) => l.cuerpo.includes('firmarPorEnlace'))
+    expect(JSON.parse(firma!.cuerpo).variables.entrada).toMatchObject({
+      modo: 'NOMBRE',
+      nombreFirma: 'Carlos Restrepo',
+    })
+  })
+
+  it('un archivo que no es PNG ni JPG se rechaza sin tocar la red', async () => {
+    const enlace = await enFirma()
+    enlace.estado.firmaCapturada = {
+      modo: 'IMAGEN',
+      contenido: base64DeBytes(new TextEncoder().encode('no soy una imagen')),
+    }
+    const antes = llamadas.length
+
+    expect(await enlace.firmar()).toMatchObject({ motivo: 'IMAGEN_INVALIDA', puedeReintentar: true })
+
+    expect(llamadas.length).toBe(antes)
+  })
+
+  it('si el bucket rechaza el PUT, no se firma y se puede subir otra imagen', async () => {
+    const enlace = await enFirma()
+    servidor.use(http.put('https://almacen.mock/subir/:id', () => new HttpResponse(null, { status: 403 })))
+    enlace.estado.firmaCapturada = { modo: 'IMAGEN', contenido: png() }
+
+    const resultado = await enlace.firmar()
+
+    expect(resultado).toMatchObject({ motivo: 'IMAGEN_INVALIDA', puedeReintentar: true })
+    expect(llamadas.some((l) => l.cuerpo.includes('firmarPorEnlace'))).toBe(false)
+    expect(enlace.estado.firmaCapturada).not.toBeNull() // conserva lo capturado para reintentar
   })
 })

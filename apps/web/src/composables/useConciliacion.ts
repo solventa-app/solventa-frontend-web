@@ -4,7 +4,7 @@
 // y mantiene correcto el contador de "Todos". `cobros` exige un token BACKOFFICE en el BFF.
 import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
-import type { Cobro, EstadoCobro } from '../graphql/tipos-borrador'
+import type { Cobro, EstadoCobro } from '../graphql/tipos'
 import { t } from '../i18n'
 
 // W05-A5 (borrador de la v0.17): origen del cobro y marca y tipo del medio. El BFF desplegado (v0.16) rechazaría

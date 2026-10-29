@@ -51,7 +51,15 @@ export function revisarImagenFirma(ancho: number, alto: number, pixeles: Uint8Cl
   return null
 }
 
-/** Base64 sin el prefijo `data:…;base64,`: así lo espera `FirmarPorEnlaceInput.firma`. */
+/** El inverso de `base64DeBytes`: los bytes de la imagen para el PUT directo al bucket. */
+export function bytesDeBase64(base64: string): Uint8Array {
+  const binario = atob(base64)
+  const bytes = new Uint8Array(binario.length)
+  for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i)
+  return bytes
+}
+
+/** Base64 sin el prefijo `data:…;base64,`: lo que captura el lienzo o el selector. */
 export function base64DeBytes(bytes: Uint8Array): string {
   let binario = ''
   for (let i = 0; i < bytes.length; i += 0x8000) {
