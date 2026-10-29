@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['lcov', 'text-summary'],
         include: ['src/**/*.{ts,vue}'],
-        exclude: ['src/graphql/tipos.ts', 'src/graphql/tipos-siniestros.ts', 'src/**/*.d.ts'],
+        exclude: ['src/graphql/tipos.ts', 'src/**/*.d.ts'],
       },
     },
   }

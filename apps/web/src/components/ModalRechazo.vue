@@ -12,7 +12,7 @@ import { Boton } from './ui'
 import CampoAreaTexto from './ui/CampoAreaTexto.vue'
 import CampoSeleccion from './ui/CampoSeleccion.vue'
 import IconoMaterial from './ui/IconoMaterial.vue'
-import type { MotivoRechazo } from '../graphql/tipos-siniestros'
+import type { MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
 
 const props = defineProps<{ abierto: boolean; radicado: string; enviando: boolean; error: string | null }>()

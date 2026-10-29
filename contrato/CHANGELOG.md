@@ -130,3 +130,13 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
   `SolicitudOfertaInput.documentoIdentidad` es opcional (un CLIENTE lo toma de su cuenta) y `EnlaceFirma.venceEn` es nulo con
   sesión de CLIENTE. Siguen pendientes de usar en pantallas: `propuestas`, `ticketAvisos`, `emitirPropuesta` para el CLIENTE,
   `Usuario.documentoEnmascarado` y `Cobro.origen/medio` reales.
+
+## v0.20 y v0.21 — sincronizado el 2026-10-29
+
+- KAN-27 (HU-W04): `contrato/schema.graphql` copiado del backend (v0.21, la v0.19 está reservada para HU-W07). Los tipos de
+  siniestros pasan al contrato principal con los mismos nombres y campos del dummy: se borraron `contrato/siniestros.graphql`
+  y `src/graphql/tipos-siniestros.ts`, y la mesa de siniestros importa de `tipos.ts`. `scripts/contrato.mjs`, `codegen.ts` y
+  el CI ya no sincronizan ni generan el contrato del dummy.
+- Lo que cambia para la web: `Poliza` suma `ramo: String!` (los mocks lo llenan). La v0.20 (onboarding del móvil) suma
+  estados de `EstadoUsuario` y `ErrorAutenticacion.codigo`; la web no cambia: G-01 ya muestra el `mensaje` del BFF
+  (`VERIFICACION_PENDIENTE` llega con un texto para el usuario) y ninguna pantalla enumera los estados de usuario.

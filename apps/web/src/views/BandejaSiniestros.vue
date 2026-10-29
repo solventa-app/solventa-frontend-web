@@ -13,7 +13,7 @@ import { computed, onMounted, ref } from 'vue'
 import { Badge, Boton, Chip, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useSiniestros } from '../composables/useSiniestros'
-import type { EstadoSiniestro } from '../graphql/tipos-siniestros'
+import type { EstadoSiniestro } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearFecha, formatearFechaCorta } from '../utils/formato'
 

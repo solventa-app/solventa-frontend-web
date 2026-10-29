@@ -3,7 +3,7 @@
 // recarga, id o tipo distinto) la pantalla muestra el estado vacío; no se llama al backend.
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import type { Siniestro, TipoResolucion } from '../graphql/tipos-siniestros'
+import type { Siniestro, TipoResolucion } from '../graphql/tipos'
 import { esSiniestro, useSiniestros } from './useSiniestros'
 
 export function useResultadoReciente(tipo: TipoResolucion) {
