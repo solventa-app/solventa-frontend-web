@@ -1,7 +1,7 @@
 import { describeConMocks } from '../support/entorno'
 import { ingresar } from '../support/sesion'
 
-// E2E de HU-W03 (KAN-26, parte web de KAN-216) contra los mocks de MSW (borrador de la v0.17): el ASESOR cotiza con el
+// E2E de HU-W03 (KAN-26, parte web de KAN-216) contra los mocks de MSW (contrato v0.18): el ASESOR cotiza con el
 // contacto del cliente (W01-A1), acepta la oferta (W03-01), verifica la identidad con el código y emite; el cliente
 // abre el enlace desde el buzón simulado (/dev/correo), firma (W03-02 y W03-02b), paga en la pasarela simulada
 // (/dev/pasarela) y ve su póliza (W03-04). Convenciones de demo en src/mocks/suscripcion.ts (NO son del backend real).

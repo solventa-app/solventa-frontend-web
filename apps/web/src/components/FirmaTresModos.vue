@@ -11,7 +11,7 @@ import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { CampoFormulario, Chip } from './ui'
 import IconoMaterial from './ui/IconoMaterial.vue'
 import type { FirmaCapturada } from '../composables/useEnlaceFirma'
-import type { ModoFirma } from '../graphql/tipos-borrador'
+import type { ModoFirma } from '../graphql/tipos'
 import { t, type Clave } from '../i18n'
 import {
   MAX_ALTO_FIRMA,

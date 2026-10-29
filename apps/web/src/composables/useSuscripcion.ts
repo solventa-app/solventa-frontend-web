@@ -1,6 +1,6 @@
 // Estado del lado del ASESOR en HU-W03 (W03-01 y su modal): aceptar la oferta con el contacto del cliente, enviar y
 // verificar el código, emitir (UNDER decide y se envía el enlace) y reenviar el enlace. Singleton de módulo, como
-// useConciliacion.ts. Usa el BORRADOR de la v0.17 (tipos-borrador.ts) hasta que el backend la publique.
+// useConciliacion.ts. Usa el contrato v0.18 (tipos.ts).
 //
 // Nunca guarda el correo completo: el modal lo muestra enmascarado (`correoEnmascarado`) y el contacto vive en
 // useCotizacion hasta aceptar. Todo se borra al cerrar sesión (regla 7).
@@ -18,7 +18,7 @@ import type {
   ResultadoEmision,
   ResultadoEnvioCodigo,
   ResultadoVerificacion,
-} from '../graphql/tipos-borrador'
+} from '../graphql/tipos'
 import { t } from '../i18n'
 import { contactoCapturado } from './useCotizacion'
 import { alCerrarSesion } from './useSesion'

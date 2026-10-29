@@ -18,7 +18,7 @@ import ModalVerificacionAsesor from '../components/ModalVerificacionAsesor.vue'
 import { esOferta, exigirNuevoConsentimiento, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { useSuscripcion } from '../composables/useSuscripcion'
-import type { EstadoPropuesta } from '../graphql/tipos-borrador'
+import type { EstadoPropuesta } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearHora, formatearMonto } from '../utils/formato'
 

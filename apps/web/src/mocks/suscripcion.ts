@@ -1,5 +1,5 @@
-// Mocks de HU-W03 (suscripción, firma y pago interactivos con el asesor, bloque 9 del backend) sobre el BORRADOR de
-// la v0.17 (contrato/borrador-v0.17.graphql). A diferencia de siniestros, aquí no hay dummy del backend: los usan
+// Mocks de HU-W03 (suscripción, firma y pago interactivos con el asesor, bloque 9 del backend) sobre el contrato
+// v0.18 (contrato/schema.graphql). A diferencia de siniestros, aquí no hay dummy del backend: los usan
 // Vitest y también `dev:mock`. Simulan a POLICY, PAYMENTS y la pasarela en memoria del navegador.
 //
 // Convenciones de demo (NO son del backend real; ver docs/convenciones.md):
@@ -24,6 +24,7 @@ import type {
   MutationEnviarCodigoVerificacionArgs,
   MutationFirmarPorEnlaceArgs,
   MutationReenviarEnlaceFirmaArgs,
+  MutationSolicitarSubidaFirmaArgs,
   MutationVerificarCodigoArgs,
   Oferta,
   Poliza,
@@ -36,9 +37,10 @@ import type {
   ResultadoFirma,
   ResultadoInicioPago,
   ResultadoPago,
+  ResultadoSubidaArchivo,
   ResultadoVerificacion,
   TipoMedioPago,
-} from '../graphql/tipos-borrador'
+} from '../graphql/tipos'
 import { ofertaDeDemo } from './handlers'
 
 export const CODIGO_DEMO = '000000'
@@ -230,6 +232,10 @@ function porToken(request: Request): PropuestaMock | null {
 }
 
 const enlaceVigente = (r: PropuestaMock) => r.enlaceVence > Date.now()
+
+// Archivos de firma que el bucket simulado ya recibió (por id) y el contador de ids.
+const archivosSubidos = new Set<string>()
+let contadorArchivos = 0
 
 function documentoFirma(registro: PropuestaMock): DocumentoFirma {
   return {
@@ -509,12 +515,59 @@ export const handlersSuscripcion = [
       if (entrada.versionDocumento !== 'v1') {
         return error('El contrato se actualizó. Revísalo de nuevo antes de firmar.', 'VERSION_DOCUMENTO_DESACTUALIZADA')
       }
-      if (!entrada.firma.trim()) return error('La firma está vacía.', 'IMAGEN_INVALIDA')
+      // NOMBRE guarda el texto; TRAZO e IMAGEN piden el id de un archivo ya subido con la URL firmada.
+      if (entrada.modo === 'NOMBRE') {
+        if (!entrada.nombreFirma?.trim()) return error('La firma está vacía.', 'IMAGEN_INVALIDA')
+      } else if (!entrada.imagenArchivoId || !archivosSubidos.has(entrada.imagenArchivoId)) {
+        return error('La imagen de la firma no es válida. Sube otra.', 'IMAGEN_INVALIDA', true)
+      }
       registro.firma = firmaRegistrada(registro)
       cambiarEstado(registro, 'FIRMADA')
       return responder(registro.firma)
     },
   ),
+
+  // Imagen de la firma por el almacenamiento (W03-24): la URL firmada y el PUT directo, como el bucket real.
+  bff.mutation<{ solicitarSubidaFirma: ResultadoSubidaArchivo }, MutationSolicitarSubidaFirmaArgs>(
+    'solicitarSubidaFirma',
+    ({ variables, request }) => {
+      const registro = porToken(request)
+      const { tipoContenido, tamanoBytes } = variables
+      const responder = (solicitarSubidaFirma: ResultadoSubidaArchivo) =>
+        HttpResponse.json<{ data: { solicitarSubidaFirma: ResultadoSubidaArchivo } }>({
+          data: { solicitarSubidaFirma },
+        })
+      if (!registro || !enlaceVigente(registro) || registro.propuesta.estado !== 'EN_FIRMA') {
+        return responder({ codigo: 'NO_DISPONIBLE', mensaje: 'No pudimos procesar el archivo. Intenta de nuevo.' })
+      }
+      if (!['image/png', 'image/jpeg'].includes(tipoContenido)) {
+        return responder({ codigo: 'TIPO_NO_PERMITIDO', mensaje: 'El formato del archivo no se admite.' })
+      }
+      if (tamanoBytes > 512_000) {
+        return responder({ codigo: 'TAMANO_EXCEDIDO', mensaje: 'El archivo supera el tamaño permitido.' })
+      }
+      const id = `arch-mock-${++contadorArchivos}`
+      return responder({
+        archivo: {
+          id,
+          tipo: 'firma-imagen',
+          estado: 'PENDIENTE',
+          tipoContenido,
+          tamanoBytes,
+          creadoEn: new Date().toISOString(),
+        },
+        url: `https://almacen.mock/subir/${id}`,
+        metodo: 'PUT',
+        encabezados: [{ nombre: 'Content-Type', valor: tipoContenido }],
+        venceEn: new Date(Date.now() + 15 * 60_000).toISOString(),
+      })
+    },
+  ),
+  // El bucket simulado acepta el PUT y recuerda el id: sin él, `firmarPorEnlace` rechaza la imagen.
+  http.put('https://almacen.mock/subir/:id', ({ params }) => {
+    archivosSubidos.add(String(params.id))
+    return new HttpResponse(null, { status: 200 })
+  }),
 
   bff.mutation<{ iniciarPago: ResultadoInicioPago }>('iniciarPago', ({ request }) => {
     const registro = porToken(request)

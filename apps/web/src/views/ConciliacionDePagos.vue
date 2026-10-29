@@ -16,7 +16,7 @@ import { Boton, FooterPantalla, HeaderPantalla, TituloPantalla } from '../compon
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useConciliacion } from '../composables/useConciliacion'
 import { formatearFecha, formatearMonto } from '../utils/formato'
-import type { Cobro, EstadoCobro } from '../graphql/tipos-borrador'
+import type { Cobro, EstadoCobro } from '../graphql/tipos'
 import { t } from '../i18n'
 
 const { estado, cargarCobros, reintentarCobro } = useConciliacion()

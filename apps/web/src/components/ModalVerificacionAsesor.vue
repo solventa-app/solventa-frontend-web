@@ -12,7 +12,7 @@ import { Boton, CampoFormulario } from './ui'
 import IconoMaterial from './ui/IconoMaterial.vue'
 import { contactoCapturado, correoClienteValido } from '../composables/useCotizacion'
 import { esEnlaceEnviado, esErrorEmision, useSuscripcion } from '../composables/useSuscripcion'
-import type { ErrorCodigo } from '../graphql/tipos-borrador'
+import type { ErrorCodigo } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearHora } from '../utils/formato'
 

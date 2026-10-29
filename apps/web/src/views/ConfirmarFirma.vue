@@ -15,7 +15,7 @@ import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
 import { esErrorFirma, hayToken, useEnlaceFirma } from '../composables/useEnlaceFirma'
-import type { ErrorFirma } from '../graphql/tipos-borrador'
+import type { ErrorFirma } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearMonto } from '../utils/formato'
 

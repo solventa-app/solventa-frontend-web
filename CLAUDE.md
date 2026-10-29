@@ -39,11 +39,12 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 - **HU-W03 (suscripción, firma y pago con el asesor, KAN-26) — solo front, con mocks** (`docs/plan-front-w03-y-ajustes-w01-w05.md`):
   W03-01 (solo ASESOR) con el modal del asesor (código por correo, «Emitir», reenviar enlace), y las páginas públicas del
   enlace `/firma#t=…`: W03-02 (contrato en PDF y firma en tres modos), W03-02b, W03-03 («Pagar»), el retorno de la
-  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.16** más un **borrador
-  local de la v0.17** (`contrato/borrador-v0.17.graphql` → `src/graphql/tipos-borrador.ts`), que se borra al publicarse la
-  v0.17. Mocks en `src/mocks/suscripcion.ts`; correo y pasarela simulados en `/dev/correo` y `/dev/pasarela/:sesion`, solo
+  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.18** (F-F1: el borrador
+  local de la v0.17 se borró y sus tipos salen de `src/graphql/tipos.ts`). La imagen de la firma (TRAZO e IMAGEN) **no viaja
+  por GraphQL** (F-F2): `solicitarSubidaFirma` → PUT directo a la URL firmada con TODOS los encabezados →
+  `firmarPorEnlace` con `imagenArchivoId`; NOMBRE manda `nombreFirma`. Mocks en `src/mocks/suscripcion.ts`; correo y pasarela simulados en `/dev/correo` y `/dev/pasarela/:sesion`, solo
   en `dev:mock` (no entran al build). W01-01 pide nombre y correo del cliente solo al ASESOR (W01-A1) y W05-01 muestra el
-  medio de pago y el origen (W05-A5; esos campos solo se piden con mocks hasta la v0.17). Pruebas: Vitest 344 (toda la web) y Cypress
+  medio de pago y el origen (W05-A5; esos campos solo se piden con mocks hasta la v0.17). Pruebas: Vitest 349 (toda la web) y Cypress
   `w03-suscripcion.cy.ts` (6). Fallan 3 pruebas de Cypress que ya fallaban en `develop` (`w05-01.cy.ts` y `w01-oferta.cy.ts`).
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del

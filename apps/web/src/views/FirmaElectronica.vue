@@ -108,9 +108,9 @@ onBeforeUnmount(() => {
                 </span>
               </div>
             </div>
-            <div class="flex flex-col items-end text-right">
+            <div v-if="estado.enlace?.venceEn" class="flex flex-col items-end text-right">
               <span class="text-[11px] text-tinta-suave">{{ t('firma.enlaceVence') }}</span>
-              <span class="text-[13px] font-semibold text-tinta">{{ formatearHora(estado.enlace!.venceEn) }}</span>
+              <span class="text-[13px] font-semibold text-tinta">{{ formatearHora(estado.enlace.venceEn) }}</span>
             </div>
           </div>
 

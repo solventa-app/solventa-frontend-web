@@ -24,9 +24,11 @@ import type {
   ResultadoFirma,
   ResultadoInicioPago,
   ResultadoPago,
+  ResultadoSubidaArchivo,
   SesionPago,
-} from '../graphql/tipos-borrador'
+} from '../graphql/tipos'
 import { t } from '../i18n'
+import { bytesDeBase64, tipoRealImagen } from '../utils/firma'
 
 export const CLAVE_PUENTE = 'solventa.enlaceFirma'
 const VIDA_MAXIMA_PUENTE_MS = 15 * 60_000
@@ -51,6 +53,13 @@ const MUTACION_FIRMAR = `mutation firmarPorEnlace($entrada: FirmarPorEnlaceInput
     __typename
     ... on FirmaRegistrada { ${CAMPOS_FIRMA} }
     ... on ErrorFirma { mensaje puedeReintentar motivo }
+  }
+}`
+const MUTACION_SUBIDA_FIRMA = `mutation solicitarSubidaFirma($tipoContenido: String!, $tamanoBytes: Int!) {
+  solicitarSubidaFirma(tipoContenido: $tipoContenido, tamanoBytes: $tamanoBytes) {
+    __typename
+    ... on SubidaArchivo { url metodo archivo { id } encabezados { nombre valor } }
+    ... on ErrorArchivo { codigo mensaje }
   }
 }`
 const MUTACION_INICIAR_PAGO = `mutation iniciarPago {
@@ -250,16 +259,54 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     return paso
   }
 
+  /**
+   * Sube la imagen de la firma directo al bucket (W03-24): pide la URL firmada y hace el PUT con TODOS los
+   * encabezados que devuelve (si falta uno, el bucket responde 403). Devuelve el id del archivo, o un `ErrorFirma`
+   * reintentable para que la pantalla deje subir otra imagen.
+   */
+  async function subirImagen(base64: string): Promise<string | ErrorFirma | null> {
+    const bytes = bytesDeBase64(base64)
+    const tipo = tipoRealImagen(bytes)
+    const rechazo = (mensaje: string): ErrorFirma => ({ mensaje, puedeReintentar: true, motivo: 'IMAGEN_INVALIDA' })
+    if (!tipo) return rechazo(t('firma.imagen.errorTipo'))
+    const datos = await operar<{ solicitarSubidaFirma: ResultadoSubidaArchivo }>(MUTACION_SUBIDA_FIRMA, {
+      tipoContenido: tipo,
+      tamanoBytes: bytes.length,
+    })
+    if (!datos) return null
+    const subida = datos.solicitarSubidaFirma
+    if (!('url' in subida)) return rechazo(subida.mensaje)
+    try {
+      const respuesta = await fetchFn(subida.url, {
+        method: subida.metodo,
+        headers: Object.fromEntries(subida.encabezados.map((e) => [e.nombre, e.valor])),
+        body: bytes as BodyInit,
+      })
+      if (!respuesta.ok) return rechazo(t('firma.imagen.errorSubida'))
+    } catch {
+      return rechazo(t('firma.imagen.errorSubida'))
+    }
+    return subida.archivo.id
+  }
+
   async function firmar(): Promise<FirmaRegistrada | ErrorFirma | null> {
     const documento = estado.enlace?.documento
-    if (!documento || !estado.firmaCapturada) return null
+    const capturada = estado.firmaCapturada
+    if (!documento || !capturada) return null
+    // NOMBRE guarda el texto; TRAZO e IMAGEN suben primero la imagen y firman con el id del archivo.
+    let imagenArchivoId: string | undefined
+    if (capturada.modo !== 'NOMBRE') {
+      const subida = await subirImagen(capturada.contenido)
+      if (subida === null || typeof subida !== 'string') return subida
+      imagenArchivoId = subida
+    }
     const datos = await operar<{ firmarPorEnlace: ResultadoFirma }>(MUTACION_FIRMAR, {
       entrada: {
         versionDocumento: documento.version,
         aceptaTerminos: estado.aceptaTerminos,
         autorizaCobro: true,
-        modo: estado.firmaCapturada.modo,
-        firma: estado.firmaCapturada.contenido,
+        modo: capturada.modo,
+        ...(imagenArchivoId ? { imagenArchivoId } : { nombreFirma: capturada.contenido }),
       },
     })
     if (!datos) return null

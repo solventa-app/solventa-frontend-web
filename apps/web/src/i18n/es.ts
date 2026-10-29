@@ -550,6 +550,7 @@ export const es = {
   'firma.imagen.errorTipo': 'El archivo debe ser una imagen PNG o JPG.',
   'firma.imagen.errorPeso': 'La imagen pesa más de 500 KB.',
   'firma.imagen.errorTamano': 'La imagen mide más de 1200 × 600 px.',
+  'firma.imagen.errorSubida': 'No pudimos subir la imagen. Intenta de nuevo.',
   'firma.imagen.errorFondo': 'El fondo debe ser blanco o transparente: recorta la imagen alrededor de la firma.',
   'firma.nombre.campo': 'Tu nombre completo',
   'firma.nombre.ejemplo': 'Ej: Carlos Restrepo Gómez',

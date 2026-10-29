@@ -1,7 +1,7 @@
 import { HttpResponse } from 'msw'
 import { graphql } from 'msw/graphql'
 import { leerClaims } from '../composables/useSesion'
-import type { Cobro } from '../graphql/tipos-borrador'
+import type { Cobro } from '../graphql/tipos'
 import type {
   ConfirmacionContacto,
   Consentimiento,
@@ -253,7 +253,8 @@ export const handlers = [
   bff.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
     'solicitarOferta',
     ({ variables }) => {
-      const { consentimientoId, documentoIdentidad: documento } = variables.entrada
+      const { consentimientoId, documentoIdentidad } = variables.entrada
+      const documento = documentoIdentidad ?? ''
       const resultado: ResultadoOferta =
         consentimientoId === 'con-vencido' || documento.endsWith('998')
           ? {
