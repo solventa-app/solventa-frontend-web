@@ -19,7 +19,7 @@ verde.
 | Paso | PR / rama | Estado |
 |---|---|---|
 | 5.1 Piezas comunes | `feat/KAN-30-portal-socios-base` | Hecho (ver abajo) |
-| 5.2 W07-01 Login | — | Pendiente |
+| 5.2 W07-01 Login | `feat/KAN-30-ingreso-socio` | Hecho: `IngresoSocio.vue`, enlace de G-01, CA-W07-01 a 04 (propuestos) |
 | 5.3 W07-02 Panel | — | Pendiente |
 | 5.4 W07-03 Documentación | — | Pendiente |
 | 5.6 W07-04 Estado del sistema | — | Pendiente (con el borrador GraphQL de `estadoSistema`) |
@@ -51,6 +51,10 @@ regeneran los tipos. El borrador GraphQL de `estadoSistema` (v0.19) llega con W0
   `clave-erronea` → 401; ID que empieza por `bloqueado` → 423; ID que empieza por `agotado` → presupuesto agotado;
   clave `sk_test…` → token de PRUEBAS; ventana de 15 min → sin tráfico.
 - El enlace de G-01 y los textos de cada pantalla llegan con su PR (5.2 en adelante).
+
+**Hecho en 5.2:** `views/IngresoSocio.vue` contra Figma `2001:3340` con la plantilla de G-01, el aviso de sesión
+vencida y el enlace de G-01 habilitado (se quitó `ingreso.socioTitulo`). Pruebas: `tests/pantalla-w07-01.test.ts` y
+`e2e/cypress/e2e/pantallas/w07-01.cy.ts` (camino feliz, errores y responsive a 1280 y 390 px).
 
 ## 1. Convenciones visuales que siguen las pantallas nuevas
 

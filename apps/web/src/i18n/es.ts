@@ -55,7 +55,6 @@ export const es = {
   'ingreso.ingresar': 'Ingresar',
   'ingreso.nota':
     'Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de cotización, con distinto encabezado según quién entra.',
-  'ingreso.socioTitulo': 'Disponible próximamente (HU-W07, fuera de este sprint)',
   'ingreso.socio': '¿Eres un socio de distribución? Ingresa al portal de socios API',
   'ingreso.otroRol': 'Tu rol es {rol}. Selecciónalo e ingresa de nuevo.',
   'ingreso.sinRol': 'Tu usuario no tiene un rol habilitado en esta web.',
@@ -604,6 +603,21 @@ export const es = {
   'socios.error.presupuesto': 'Presupuesto agotado: las cotizaciones responden 429 hasta que Solventa lo recargue.',
   'socios.sesion.vencida': 'Tu sesión técnica venció. Ingresa de nuevo.',
   'socios.sesion.soloProduccion': 'Ingresa al portal con la clave de producción.',
+  'socios.ingreso.titulo': 'Acceso técnico',
+  'socios.ingreso.etiqueta': 'Autenticación API y portal',
+  'socios.ingreso.tarjetaTitulo': 'Portal de socios',
+  'socios.ingreso.subtitulo': 'Acceso técnico con las credenciales de tu empresa, no de un cliente final.',
+  'socios.ingreso.socioId': 'ID de socio',
+  'socios.ingreso.socioIdEjemplo': 'Ej: retail-fintech-042',
+  'socios.ingreso.clave': 'Clave de acceso',
+  'socios.ingreso.claveAyuda': 'Tu clave de producción',
+  'socios.ingreso.ingresar': 'Ingresar',
+  'socios.ingreso.ingresando': 'Ingresando…',
+  'socios.ingreso.problemas': '¿Problemas con tu clave API o tu acceso? Comunícate con tu contacto en Solventa.',
+  'socios.ingreso.cifrado': 'Conexión cifrada con estándar TLS 1.3 bancario',
+  'socios.ingreso.volver': '‹ Volver al inicio de sesión de Solventa',
+  'socios.ingreso.auditoria':
+    'Canal restringido para aliados autorizados. Toda solicitud queda registrada con fines de auditoría técnica.',
 }
 
 export type Clave = keyof typeof es

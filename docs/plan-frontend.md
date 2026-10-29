@@ -112,7 +112,16 @@ cada pantalla.
 
 | Pantalla | Ruta | Qué se construye | Acceso |
 |---|---|---|---|
-| W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01) | Público |
+| W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01); CA-W07-01 a 04 | Público |
 | W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones | Sesión del socio |
 | W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas | Sesión del socio |
 | W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa | `BACKOFFICE` |
+
+**Criterios propuestos de HU-W07** (se validan contra Jira, KAN-30):
+
+| Criterio | Pantalla | Qué se cumple |
+|---|---|---|
+| CA-W07-01 | W07-01 | «Ingresar» queda deshabilitado hasta llenar el ID de socio y la clave; con la clave de producción entra al panel |
+| CA-W07-02 | W07-01 | Con credenciales incorrectas se ve un mensaje genérico (no dice cuál falló) y se limpia la clave; el bloqueo por intentos muestra su propio mensaje |
+| CA-W07-03 | W07-01 | Con la clave de pruebas no se entra al portal y se explica que se usa la de producción (W07-3) |
+| CA-W07-04 | W07-01 | Si la sesión técnica vence, el portal vuelve al ingreso con el aviso «Tu sesión técnica venció»; el token se borra al cerrar sesión |

@@ -310,7 +310,8 @@ export const pantallas: Pantalla[] = [
     nombre: 'Ingreso al portal de socios',
     historia: 'HU-W07',
     sprint: 2,
-    criterios: [],
+    criterios: ['CA-W07-01', 'CA-W07-02', 'CA-W07-03', 'CA-W07-04'],
+    componente: () => import('../views/IngresoSocio.vue'),
   },
   {
     id: 'W07-02',

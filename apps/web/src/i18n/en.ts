@@ -56,7 +56,6 @@ export const en: Record<Clave, string> = {
   'ingreso.ingresar': 'Sign in',
   'ingreso.nota':
     'Each of the 3 roles has its own home — Customer and Sales advisor reach the same quote form, with a different header depending on who signs in.',
-  'ingreso.socioTitulo': 'Coming soon (HU-W07, outside this sprint)',
   'ingreso.socio': 'Are you a distribution partner? Go to the API partner portal',
   'ingreso.otroRol': 'Your role is {rol}. Select it and sign in again.',
   'ingreso.sinRol': 'Your user does not have a role enabled on this site.',
@@ -604,4 +603,19 @@ export const en: Record<Clave, string> = {
   'socios.error.presupuesto': 'Budget exhausted: quotes return 429 until Solventa tops it up.',
   'socios.sesion.vencida': 'Your technical session expired. Please sign in again.',
   'socios.sesion.soloProduccion': 'Sign in to the portal with your production key.',
+  'socios.ingreso.titulo': 'Technical access',
+  'socios.ingreso.etiqueta': 'API and portal authentication',
+  'socios.ingreso.tarjetaTitulo': 'Partner portal',
+  'socios.ingreso.subtitulo': "Technical access with your company's credentials, not an end customer's.",
+  'socios.ingreso.socioId': 'Partner ID',
+  'socios.ingreso.socioIdEjemplo': 'E.g. retail-fintech-042',
+  'socios.ingreso.clave': 'Access key',
+  'socios.ingreso.claveAyuda': 'Your production key',
+  'socios.ingreso.ingresar': 'Sign in',
+  'socios.ingreso.ingresando': 'Signing in…',
+  'socios.ingreso.problemas': 'Trouble with your API key or access? Reach out to your contact at Solventa.',
+  'socios.ingreso.cifrado': 'Encrypted connection with banking-grade TLS 1.3',
+  'socios.ingreso.volver': '‹ Back to Solventa sign-in',
+  'socios.ingreso.auditoria':
+    'Restricted channel for authorized partners. Every request is logged for technical audit.',
 }
