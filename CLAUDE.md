@@ -48,7 +48,7 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 - **HU-W07 (portal de socios, KAN-30), en curso, solo front con mocks** (`docs/plan-hu-w07-front.md`, un PR por paso):
   hechas las piezas comunes (5.1): cliente REST `src/api/socios.ts`, sesión técnica `useSesionSocio.ts` (JWT de 15 min
   en `sessionStorage` `solventa.tokenSocio`, misma excepción de la regla 7), guardia `socio: true` y rutas W07-01 a 03; W07-01 (ingreso del socio, enlace
-  desde G-01) construida.
+  desde G-01) y W07-02 (panel: credenciales, consumo, estado, consumo por API y ventas) construidas.
   Contrato: **borrador local** `contrato/borrador-socios-v1.yaml` → `src/api/tipos-socios.ts` (`openapi-typescript`,
   `npm run codegen`) hasta que el backend publique `socios-v1.yaml`. Mocks en `src/mocks/socios.ts`.
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en

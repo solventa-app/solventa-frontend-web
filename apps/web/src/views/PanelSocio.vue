@@ -1,0 +1,277 @@
+<!--
+  W07-02 · Panel del socio (Figma "Solventa-web-Final", nodo 2001:3562; plan-hu-w07-front.md 5.3).
+
+  De arriba abajo: el encabezado común del portal (HeaderPantalla sin perfil y la barra «nombre · Socio de
+  distribución» con «Cerrar sesión», en vez del encabezado propio de Figma), la descripción con «Documentación de la
+  API» (navega a W07-03), el selector de entorno (sin Figma, aprobado), las tres tarjetas de Figma (credenciales,
+  consumo y estado) y dos secciones sin Figma aprobadas: consumo por API (gráfico y tabla) y ventas y comisiones.
+  Cada sección carga por separado y tiene sus estados de carga, error con reintento y vacío (regla 5).
+-->
+<script setup lang="ts">
+import { computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import GraficoCotizaciones from '../components/socios/GraficoCotizaciones.vue'
+import TarjetaConsumo from '../components/socios/TarjetaConsumo.vue'
+import TarjetaCredenciales from '../components/socios/TarjetaCredenciales.vue'
+import TarjetaEstado from '../components/socios/TarjetaEstado.vue'
+import { BarraDeCerrarSesion, Boton, FooterPantalla, HeaderPantalla } from '../components/ui'
+import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import type { Entorno } from '../api/socios'
+import { usePanelSocio } from '../composables/usePanelSocio'
+import { useSesionSocio } from '../composables/useSesionSocio'
+import { localeIntl, t } from '../i18n'
+import { formatearMonto, formatearNumero, formatearPorcentaje } from '../utils/formato'
+
+const router = useRouter()
+const sesion = useSesionSocio()
+const { estado, cargarTodo, cambiarEntorno, cambiarVentana, cargarEstado, cargarConsumo, cargarVentas } =
+  usePanelSocio()
+
+const ENTORNOS: Entorno[] = ['PRODUCCION', 'PRUEBAS']
+const ESTADOS_CONOCIDOS = [
+  'ACEPTADA',
+  'EN_FIRMA',
+  'FIRMADA',
+  'PENDIENTE_PAGO',
+  'EMITIDA',
+  'NO_EMITIDA',
+  'PAGO_RECHAZADO',
+]
+
+const nombre = computed(() => sesion.estado.nombre || sesion.estado.socioId)
+const ventas = computed(() => estado.ventas)
+const totalPropuestas = computed(() => ventas.value?.propuestasPorEstado.reduce((s, p) => s + p.cantidad, 0) ?? 0)
+
+function etiquetaEstado(codigo: string): string {
+  return ESTADOS_CONOCIDOS.includes(codigo) ? t(`socios.ventas.estado.${codigo as 'EMITIDA'}`) : codigo
+}
+
+function etiquetaMes(mes: string): string {
+  const [anio, numero] = mes.split('-').map(Number)
+  const texto = new Intl.DateTimeFormat(localeIntl(), { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(anio, numero - 1, 15)),
+  )
+  // «octubre de 2026» → «Octubre de 2026»: solo la primera letra (la clase `capitalize` subiría también el «de»).
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
+function cerrarSesion() {
+  sesion.cerrarSesion()
+  router.push('/socios/ingreso')
+}
+
+// Un 401 con la sesión abierta: el token venció. La sesión técnica ya quedó cerrada con el aviso.
+watch(
+  () => estado.sesionVencida,
+  (vencida) => {
+    if (vencida) router.replace('/socios/ingreso')
+  },
+)
+
+onMounted(() => {
+  estado.sesionVencida = false
+  cargarTodo()
+})
+</script>
+
+<template>
+  <div data-pantalla="W07-02" class="flex h-screen flex-col overflow-hidden">
+    <HeaderPantalla :titulo="t('socios.panel.titulo')" sin-perfil />
+    <BarraDeCerrarSesion :nombre="nombre" :rol="t('socios.panel.rol')" @cerrar-sesion="cerrarSesion" />
+
+    <main class="min-h-0 flex-1 overflow-y-auto bg-fondo">
+      <div class="mx-auto flex w-full max-w-[1020px] flex-col gap-5 px-4 py-8 sm:px-10">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-[13px] leading-[18px] text-tinta-suave">{{ t('socios.panel.descripcion') }}</p>
+          <Boton variante="secundario" @click="router.push('/socios/documentacion')">
+            <template #icono><IconoMaterial nombre="menu_book" class="h-6 w-6" /></template>
+            {{ t('socios.panel.documentacion') }}
+          </Boton>
+        </div>
+
+        <div role="tablist" :aria-label="t('socios.panel.entorno')" class="flex flex-wrap items-center gap-2">
+          <button
+            v-for="opcion in ENTORNOS"
+            :key="opcion"
+            type="button"
+            role="tab"
+            :aria-selected="estado.entorno === opcion"
+            class="flex h-11 items-center gap-1.5 rounded-xl px-[16px] text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+            :class="
+              estado.entorno === opcion
+                ? 'bg-primario text-white'
+                : 'border border-borde bg-white text-tinta-suave hover:bg-fondo'
+            "
+            @click="cambiarEntorno(opcion)"
+          >
+            <IconoMaterial :nombre="opcion === 'PRODUCCION' ? 'rocket_launch' : 'science'" class="h-[18px] w-[18px]" />
+            {{ t(`socios.panel.entornoOpcion.${opcion}`) }}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <TarjetaCredenciales />
+          <TarjetaConsumo />
+          <TarjetaEstado
+            :salud="estado.salud"
+            :ventana="estado.ventana"
+            :cargando="estado.cargando.estado"
+            :error="estado.error.estado"
+            @update:ventana="cambiarVentana"
+            @reintentar="cargarEstado()"
+          />
+        </div>
+
+        <section class="flex flex-col gap-3" :aria-labelledby="'titulo-consumo-api'">
+          <h2 id="titulo-consumo-api" class="text-[16px] font-semibold text-tinta">
+            {{ t('socios.consumoApi.titulo') }}
+          </h2>
+          <div class="flex flex-col gap-4 rounded-[8px] border border-borde bg-white p-[17px]">
+            <p v-if="estado.cargando.consumo && !estado.consumo" class="text-[13px] text-tinta-suave">
+              {{ t('socios.panel.cargando') }}
+            </p>
+            <div
+              v-else-if="estado.error.consumo && !estado.consumo"
+              role="alert"
+              class="flex flex-col items-start gap-2"
+            >
+              <p class="text-[13px] text-error">{{ estado.error.consumo }}</p>
+              <Boton variante="secundario" @click="cargarConsumo()">{{ t('socios.panel.reintentar') }}</Boton>
+            </div>
+            <template v-else-if="estado.consumo">
+              <GraficoCotizaciones
+                v-if="estado.consumo.cotizacionesPorDia.length"
+                :datos="estado.consumo.cotizacionesPorDia"
+              />
+              <div class="w-full overflow-x-auto">
+                <table class="w-full min-w-[560px] border-collapse text-left" data-prueba="tabla-consumo">
+                  <caption class="sr-only">
+                    {{
+                      t('socios.consumoApi.titulo')
+                    }}
+                  </caption>
+                  <thead>
+                    <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
+                      <th scope="col" class="py-4 pl-4 pr-3">{{ t('socios.consumoApi.api') }}</th>
+                      <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.consumoApi.llamadas') }}</th>
+                      <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.consumoApi.exitosas') }}</th>
+                      <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.consumoApi.conError') }}</th>
+                      <th scope="col" class="py-4 pr-4 text-right">{{ t('socios.consumoApi.latencia') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="!estado.consumo.porApi.length">
+                      <td colspan="5" class="py-6 text-center text-[13px] text-tinta-suave">
+                        {{ t('socios.consumoApi.vacio') }}
+                      </td>
+                    </tr>
+                    <tr
+                      v-for="fila in estado.consumo.porApi"
+                      :key="fila.api"
+                      class="border-b border-borde text-[13px] text-tinta last:border-b-0"
+                    >
+                      <td class="py-4 pl-4 pr-3 font-mono">/v1/{{ fila.api }}</td>
+                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.llamadas) }}</td>
+                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.exitosas) }}</td>
+                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.conError) }}</td>
+                      <td class="py-4 pr-4 text-right">
+                        {{ fila.latenciaMediaMs == null ? '—' : `${formatearNumero(fila.latenciaMediaMs)} ms` }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+          </div>
+        </section>
+
+        <section class="flex flex-col gap-3" :aria-labelledby="'titulo-ventas'">
+          <h2 id="titulo-ventas" class="flex flex-wrap items-center gap-2 text-[16px] font-semibold text-tinta">
+            {{ t('socios.ventas.titulo') }}
+            <span
+              v-if="ventas?.simulado"
+              class="flex items-center gap-1 rounded-full bg-info-fondo px-2 py-[2px] text-[11px] font-semibold text-info"
+            >
+              <IconoMaterial nombre="science" class="h-4 w-4" />
+              {{ t('socios.ventas.simulado') }}
+            </span>
+          </h2>
+
+          <p v-if="estado.cargando.ventas && !ventas" class="text-[13px] text-tinta-suave">
+            {{ t('socios.panel.cargando') }}
+          </p>
+          <div v-else-if="estado.error.ventas && !ventas" role="alert" class="flex flex-col items-start gap-2">
+            <p class="text-[13px] text-error">{{ estado.error.ventas }}</p>
+            <Boton variante="secundario" @click="cargarVentas()">{{ t('socios.panel.reintentar') }}</Boton>
+          </div>
+
+          <template v-else-if="ventas">
+            <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5" data-prueba="indicadores">
+              <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
+                <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.propuestas') }}</span>
+                <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(totalPropuestas) }}</strong>
+                <ul class="flex flex-col text-[11px] leading-[14px] text-tinta-suave">
+                  <li v-for="p in ventas.propuestasPorEstado" :key="p.estado">
+                    {{ etiquetaEstado(p.estado) }}: {{ formatearNumero(p.cantidad) }}
+                  </li>
+                </ul>
+              </li>
+              <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
+                <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.polizas') }}</span>
+                <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(ventas.polizasEmitidas) }}</strong>
+              </li>
+              <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
+                <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.conversion') }}</span>
+                <strong class="text-[22px] font-bold text-tinta">{{ formatearPorcentaje(ventas.conversion) }}</strong>
+              </li>
+              <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
+                <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.primas') }}</span>
+                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.primasCobradas) }}</strong>
+              </li>
+              <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
+                <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.comision') }}</span>
+                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.comisionCausada) }}</strong>
+              </li>
+            </ul>
+
+            <div class="w-full overflow-x-auto rounded-[8px] border border-borde bg-white">
+              <table class="w-full min-w-[560px] border-collapse text-left" data-prueba="tabla-ventas">
+                <caption class="sr-only">
+                  {{
+                    t('socios.ventas.porMes')
+                  }}
+                </caption>
+                <thead>
+                  <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
+                    <th scope="col" class="py-4 pl-4 pr-3">{{ t('socios.ventas.mes') }}</th>
+                    <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.polizas') }}</th>
+                    <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.primas') }}</th>
+                    <th scope="col" class="py-4 pr-4 text-right">{{ t('socios.ventas.comision') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="!ventas.porMes.length">
+                    <td colspan="4" class="py-6 text-center text-[13px] text-tinta-suave">
+                      {{ t('socios.ventas.vacio') }}
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="fila in ventas.porMes"
+                    :key="fila.mes"
+                    class="border-b border-borde text-[13px] text-tinta last:border-b-0"
+                  >
+                    <td class="py-4 pl-4 pr-3">{{ etiquetaMes(fila.mes) }}</td>
+                    <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.polizasEmitidas) }}</td>
+                    <td class="py-4 pr-3 text-right">{{ formatearMonto(fila.primasCobradas) }}</td>
+                    <td class="py-4 pr-4 text-right">{{ formatearMonto(fila.comisionCausada) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+        </section>
+      </div>
+    </main>
+    <FooterPantalla />
+  </div>
+</template>

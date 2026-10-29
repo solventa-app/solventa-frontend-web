@@ -320,7 +320,8 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W07',
     sprint: 2,
     socio: true,
-    criterios: [],
+    criterios: ['CA-W07-05', 'CA-W07-06', 'CA-W07-07', 'CA-W07-08', 'CA-W07-09', 'CA-W07-10'],
+    componente: () => import('../views/PanelSocio.vue'),
   },
   {
     id: 'W07-03',

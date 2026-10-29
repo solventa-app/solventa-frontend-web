@@ -113,7 +113,7 @@ cada pantalla.
 | Pantalla | Ruta | Qué se construye | Acceso |
 |---|---|---|---|
 | W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01); CA-W07-01 a 04 | Público |
-| W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones | Sesión del socio |
+| W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones; CA-W07-05 a 10 | Sesión del socio |
 | W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas | Sesión del socio |
 | W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa | `BACKOFFICE` |
 
@@ -125,3 +125,9 @@ cada pantalla.
 | CA-W07-02 | W07-01 | Con credenciales incorrectas se ve un mensaje genérico (no dice cuál falló) y se limpia la clave; el bloqueo por intentos muestra su propio mensaje |
 | CA-W07-03 | W07-01 | Con la clave de pruebas no se entra al portal y se explica que se usa la de producción (W07-3) |
 | CA-W07-04 | W07-01 | Si la sesión técnica vence, el portal vuelve al ingreso con el aviso «Tu sesión técnica venció»; el token se borra al cerrar sesión |
+| CA-W07-05 | W07-02 | Las credenciales son las del entorno elegido: el ID de socio y la clave enmascarada, con «Mostrar» y «Copiar» |
+| CA-W07-06 | W07-02 | «Regenerar» pide confirmación con el aviso de que la clave actual deja de funcionar; al confirmar, la clave nueva se muestra con «Copiar» |
+| CA-W07-07 | W07-02 | «Generar token» muestra el token de 15 minutos con su cuenta regresiva y, al vencer, pide generar otro |
+| CA-W07-08 | W07-02 | El consumo muestra las cotizaciones contra el presupuesto (usadas, % y disponibles) y «Lo recarga Solventa»; agotado, la tarjeta pasa a alerta con el 429 |
+| CA-W07-09 | W07-02 | El estado muestra «Operativo», «Degradado» o «Con fallas» con ícono y texto, la salud general, la latencia y la disponibilidad (o «Sin tráfico en la ventana»), Cotización y Emisión, sin nombres de micros internos, y cambia con la ventana |
+| CA-W07-10 | W07-02 | El consumo por API (gráfico de cotizaciones por día y tabla) y las ventas y comisiones (indicadores y tabla por mes, montos en pesos) siguen al entorno; en pruebas se marcan como «Datos simulados». Una sección que falla muestra su error con reintento sin ocultar las demás; un 401 vuelve al ingreso con el aviso |

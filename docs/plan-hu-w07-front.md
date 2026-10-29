@@ -20,7 +20,7 @@ verde.
 |---|---|---|
 | 5.1 Piezas comunes | `feat/KAN-30-portal-socios-base` | Hecho (ver abajo) |
 | 5.2 W07-01 Login | `feat/KAN-30-ingreso-socio` | Hecho: `IngresoSocio.vue`, enlace de G-01, CA-W07-01 a 04 (propuestos) |
-| 5.3 W07-02 Panel | — | Pendiente |
+| 5.3 W07-02 Panel | `feat/KAN-30-panel-socio` | Hecho: `PanelSocio.vue`, CA-W07-05 a 10 (propuestos) |
 | 5.4 W07-03 Documentación | — | Pendiente |
 | 5.6 W07-04 Estado del sistema | — | Pendiente (con el borrador GraphQL de `estadoSistema`) |
 | 5.5 Guía en PDF | — | Pendiente (al final) |
@@ -55,6 +55,18 @@ regeneran los tipos. El borrador GraphQL de `estadoSistema` (v0.19) llega con W0
 **Hecho en 5.2:** `views/IngresoSocio.vue` contra Figma `2001:3340` con la plantilla de G-01, el aviso de sesión
 vencida y el enlace de G-01 habilitado (se quitó `ingreso.socioTitulo`). Pruebas: `tests/pantalla-w07-01.test.ts` y
 `e2e/cypress/e2e/pantallas/w07-01.cy.ts` (camino feliz, errores y responsive a 1280 y 390 px).
+
+**Hecho en 5.3:** `views/PanelSocio.vue` contra Figma `2001:3562`, con el estado en `composables/usePanelSocio.ts` (cada
+sección carga sola, con su error y reintento; un 401 vuelve al ingreso con el aviso). Las piezas del panel van en
+`components/socios/`: `TarjetaCredenciales`, `ModalRegenerar`, `BotonCopiar`, `TarjetaConsumo`, `TarjetaEstado` (sin
+depender del panel, para reusarla en W07-04) y `GraficoCotizaciones` (SVG propio, regla 8 y skill de dataviz). Son
+composiciones de pantalla, como `ModalRechazo` de W04, no piezas nuevas de la librería `ui/`. Desvíos frente a Figma:
+- Título «Panel del socio» en vez de «Dashboard de API», y la barra común de «Cerrar sesión» en vez del encabezado
+  propio de Figma.
+- El aviso «Al regenerar…» va en la confirmación de «Regenerar», no fijo en la tarjeta.
+- «Mostrar» y «Copiar» como acciones de texto bajo la clave; «Generar token» y «Regenerar» como botones.
+- «Última verificación» con la hora, no «Hace 2 minutos».
+Pruebas: `tests/pantalla-w07-02.test.ts` y `e2e/cypress/e2e/pantallas/w07-02.cy.ts` (incluye 1280 y 390 px).
 
 ## 1. Convenciones visuales que siguen las pantallas nuevas
 
