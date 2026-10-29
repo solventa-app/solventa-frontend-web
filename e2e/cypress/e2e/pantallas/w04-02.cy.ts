@@ -1,12 +1,13 @@
 import { describeConMocks } from "../../support/entorno";
+import { reiniciarSiniestros } from "../../support/siniestros";
 import { visitarComo } from "../../support/sesion";
 
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
-// Datos del dummy real de siniestros (:8107, proxy de Vite en dev:mock): sin-01 PENDIENTE, sin-04 EN_REVISION
+// Datos de la semilla de siniestros del backend real local (ver support/siniestros.ts): sin-01 PENDIENTE, sin-04 EN_REVISION
 // derivado, sin-05 APROBADO y sin-09 RECHAZADO (una verificación no cumple). Se reinicia antes de cada prueba.
 describeConMocks("W04-02 · Detalle del siniestro (pantalla aislada)", () => {
   beforeEach(() => {
-    cy.request("POST", "/graphql/siniestros/control/reiniciar");
+    reiniciarSiniestros();
   });
 
   it("muestra migas, datos, galería, SFC, tiempo restante y las tres acciones", () => {

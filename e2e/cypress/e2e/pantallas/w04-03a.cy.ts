@@ -1,13 +1,14 @@
 import { describeConMocks } from "../../support/entorno";
+import { reiniciarSiniestros } from "../../support/siniestros";
 import { visitarComo } from "../../support/sesion";
 
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
-// Flujo real contra el dummy (:8107): detalle de sin-01 (PENDIENTE) → Aprobar → W04-03a.
+// Flujo real contra el backend local (support/siniestros.ts): detalle de sin-01 (PENDIENTE) → Aprobar → W04-03a.
 describeConMocks(
   "W04-03a · Confirmación de aprobación (pantalla aislada)",
   () => {
     beforeEach(() => {
-      cy.request("POST", "/graphql/siniestros/control/reiniciar");
+      reiniciarSiniestros();
     });
 
     it("tras aprobar muestra insignia, indemnización es-CO, método y plazo", () => {

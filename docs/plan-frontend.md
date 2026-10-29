@@ -56,8 +56,8 @@ Observaciones:
 
 ## HU-W04 — mesa de siniestros (KAN-27): 6 pantallas y un modal
 
-Construida contra Figma `Solventa-web-Final` (sección HU-W04) y el dummy `stub-siniestros` del backend (`/graphql/siniestros`,
-puerto 8107 en local). Plan y desvíos: [`plan-ejecucion-hu-w04-siniestros.md`](plan-ejecucion-hu-w04-siniestros.md). Rol: `BACKOFFICE`.
+Construida contra Figma `Solventa-web-Final` (sección HU-W04) y el dummy `stub-siniestros` del backend; desde KAN-247 la
+consume del BFF real (`/v1/graphql/web` con token de BACKOFFICE, servicio CLAIMS). Plan y desvíos: [`plan-ejecucion-hu-w04-siniestros.md`](plan-ejecucion-hu-w04-siniestros.md). Rol: `BACKOFFICE`.
 
 | Pantalla | Ruta | Qué se construye | Criterios |
 |---|---|---|---|

@@ -11,7 +11,7 @@ import { crearRouter } from '../src/router'
 import { restablecerSiniestrosDePrueba } from '../src/mocks/siniestros'
 import { servidor } from '../src/mocks/node'
 
-const dummy = graphql.link('*/graphql/siniestros')
+const bff = graphql.link('*/v1/graphql/web')
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
 function crearRouterDePrueba(): Router {
@@ -141,7 +141,7 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
   })
 
   it('bandeja vacía: aviso propio y "0 casos" en cola', async () => {
-    servidor.use(dummy.query('siniestros', () => HttpResponse.json({ data: { siniestros: [] } })))
+    servidor.use(bff.query('siniestros', () => HttpResponse.json({ data: { siniestros: [] } })))
     const { wrapper } = await montarBandeja()
     expect(wrapper.text()).toContain('No hay siniestros asignados a la mesa de control.')
     expect(wrapper.get('[data-prueba="total-cola"]').text()).toBe('Total en cola: 0 casos')
@@ -159,7 +159,7 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
   })
 
   it('si la carga falla muestra un mensaje amigable con "Reintentar" que vuelve a cargar', async () => {
-    servidor.use(dummy.query('siniestros', () => new HttpResponse(null, { status: 503 }), { once: true }))
+    servidor.use(bff.query('siniestros', () => new HttpResponse(null, { status: 503 }), { once: true }))
     const { wrapper } = await montarBandeja()
     const alerta = wrapper.get('[role="alert"]')
     expect(alerta.text()).toContain('No pudimos cargar los siniestros en este momento.')
