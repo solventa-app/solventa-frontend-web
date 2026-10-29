@@ -599,6 +599,11 @@ export const es = {
   'polizaEmitida.descargar': 'Descargar documento',
   'polizaEmitida.errorDescarga': 'No pudimos abrir el documento. Intenta nuevamente.',
   'polizaEmitida.correo': 'También te enviamos el documento firmado a tu correo.',
+  // HU-W07 · Portal de socios: mensajes comunes del cliente REST y de la sesión técnica.
+  'socios.error.generico': 'No pudimos completar la solicitud. Intenta nuevamente.',
+  'socios.error.presupuesto': 'Presupuesto agotado: las cotizaciones responden 429 hasta que Solventa lo recargue.',
+  'socios.sesion.vencida': 'Tu sesión técnica venció. Ingresa de nuevo.',
+  'socios.sesion.soloProduccion': 'Ingresa al portal con la clave de producción.',
 }
 
 export type Clave = keyof typeof es

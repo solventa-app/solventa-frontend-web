@@ -599,4 +599,9 @@ export const en: Record<Clave, string> = {
   'polizaEmitida.descargar': 'Download document',
   'polizaEmitida.errorDescarga': "We couldn't open the document. Please try again.",
   'polizaEmitida.correo': 'We also emailed you the signed document.',
+  // HU-W07 · Partner portal: shared messages of the REST client and the technical session.
+  'socios.error.generico': "We couldn't complete the request. Please try again.",
+  'socios.error.presupuesto': 'Budget exhausted: quotes return 429 until Solventa tops it up.',
+  'socios.sesion.vencida': 'Your technical session expired. Please sign in again.',
+  'socios.sesion.soloProduccion': 'Sign in to the portal with your production key.',
 }

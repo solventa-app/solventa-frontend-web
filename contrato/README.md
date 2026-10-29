@@ -12,6 +12,10 @@ npm run codegen --prefix apps/web   # regenera apps/web/src/graphql/tipos.ts
 Origen del esquema del backend: repo hermano `../solventa-backend` (por defecto), `BACKEND_SCHEMA_PATH` (ruta) o
 `BACKEND_SCHEMA_URL` (+ `BACKEND_SCHEMA_TOKEN` si el repo es privado). Detalle en `scripts/contrato.mjs`.
 
+**Borrador local de HU-W07:** `borrador-socios-v1.yaml` (OpenAPI de la API de socios) **no es una copia del backend**:
+lo escribe el front mientras el backend no publique `contracts/openapi/socios-v1.yaml` (`docs/plan-hu-w07-front.md`).
+`npm run codegen` genera `apps/web/src/api/tipos-socios.ts`. Al publicarse el real, se borra y se copia el del backend.
+
 ## Reglas (ADR-06)
 
 1. El backend solo hace cambios **aditivos**; retirar algo = deprecar un sprint antes. Si ves una ruptura, avísalo: es un defecto del backend.

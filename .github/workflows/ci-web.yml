@@ -39,7 +39,7 @@ jobs:
       - name: Los tipos generados están al día con el contrato
         run: |
           npm run codegen
-          git diff --exit-code -- src/graphql/tipos.ts
+          git diff --exit-code -- src/graphql/tipos.ts src/api/tipos-socios.ts
       - name: Pruebas (Vitest)
         run: npm test
       - name: Build
