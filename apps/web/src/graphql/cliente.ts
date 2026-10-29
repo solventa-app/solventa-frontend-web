@@ -19,10 +19,12 @@ export function usarToken(nuevo: string | null): void {
 }
 
 export interface OpcionesEjecucion {
-  /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa '/graphql/siniestros'. */
+  /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa su versión 1, '/v1/graphql/web'. */
   endpoint?: string
-  /** Si se manda el JWT de la sesión. `false` para servicios públicos (el dummy de siniestros). */
+  /** Si se manda el JWT de la sesión. `false` para operaciones que no deben llevarlo. */
   conToken?: boolean
+  /** Cabeceras extra, p. ej. `X-Enlace-Firma` de la página del enlace (HU-W03), que no usa sesión. */
+  cabeceras?: Record<string, string>
 }
 
 export async function ejecutar<T>(
@@ -33,7 +35,11 @@ export async function ejecutar<T>(
 ): Promise<T> {
   const { endpoint = '/graphql/web', conToken = true } = opciones
   // Accept-Language: el BFF devuelve sus mensajes (errores, avisos) en el idioma del selector del header.
-  const cabeceras: Record<string, string> = { 'Content-Type': 'application/json', 'Accept-Language': cabeceraIdioma() }
+  const cabeceras: Record<string, string> = {
+    ...opciones.cabeceras,
+    'Content-Type': 'application/json',
+    'Accept-Language': cabeceraIdioma(),
+  }
   if (conToken && token) cabeceras.Authorization = `Bearer ${token}`
 
   const respuesta = await fetchFn(endpoint, {

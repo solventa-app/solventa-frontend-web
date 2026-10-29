@@ -140,7 +140,16 @@ function abrirSesion(token: string, nombre?: string | null, iniciadaEn = Date.no
   return true
 }
 
+// Estado en memoria de otras pantallas que no debe sobrevivir a la sesión (regla 7), p. ej. el nombre y el correo
+// del cliente que captura un ASESOR en W01-01. Cada composable registra aquí cómo borrarlo.
+const limpiezasAlCerrar = new Set<() => void>()
+
+export function alCerrarSesion(limpiar: () => void): void {
+  limpiezasAlCerrar.add(limpiar)
+}
+
 function cerrarSesion(): void {
+  for (const limpiar of limpiezasAlCerrar) limpiar()
   estado.token = null
   estado.rol = null
   estado.nombre = ''

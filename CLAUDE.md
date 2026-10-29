@@ -4,7 +4,7 @@ Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proye
 
 Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-frontend.md). Convenciones: [`docs/convenciones.md`](docs/convenciones.md).
 
-## Estado (2026-10-25)
+## Estado (2026-10-27)
 
 - Sprint 1 (12–25 de octubre de 2026): las 12 pantallas de HU-W01 y HU-W05 están construidas (`src/views/`),
   integradas con el BFF/gateway real y sincronizadas con el **contrato v0.8** (KAN-24). Siguen funcionando con mocks (`dev:mock`).
@@ -31,10 +31,21 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   Sin captura de tarjeta ni pantallas de indemnizaciones (Sprint 3). La evidencia de FC-10 desde la web es una
   plantilla sin ejecutar (`docs/evidencias/FC-10-web-plantilla.md`).
 - **HU-W04 (mesa de siniestros, KAN-27):** construidas W04-01, W04-02 (con el modal de rechazo), W04-02b, W04-03a,
-  W04-03b y W04-03c (`docs/plan-ejecucion-hu-w04-siniestros.md`). Consumen el dummy `stub-siniestros` del backend
-  (puerto 8107) por `/graphql/siniestros` (proxy de Vite, `VITE_SINIESTROS_URL`), **sin token** y **solo en local**: staging
-  está diferido. Criterios CA-W04-01 a 29 **propuestos** en `docs/plan-frontend.md`. Pruebas: Vitest 299 en total (toda la web)
-  y Cypress de W04 39 (7 specs por pantalla y responsive más `w04-siniestros.cy.ts`), con el dummy levantado.
+  W04-03b y W04-03c (`docs/plan-ejecucion-hu-w04-siniestros.md`). Consumen el **BFF real** por `/v1/graphql/web` con el
+  JWT de BACKOFFICE (servicio CLAIMS, contrato v0.21; proxy de Vite `/v1` y rewrite de Vercel). Los tipos siguen saliendo
+  de `contrato/siniestros.graphql` (idéntico a la v0.21) hasta sincronizar el contrato principal junto con HU-W03. En
+  `dev:mock` responden los mocks de MSW; los E2E de W04 corren contra el backend local (`e2e/cypress/support/siniestros.ts`). Criterios CA-W04-01 a 29 **propuestos** en `docs/plan-frontend.md`. Pruebas: Cypress de W04 39 (7 specs por pantalla y
+  responsive más `w04-siniestros.cy.ts`), con el backend local y la semilla de siniestros.
+- **HU-W03 (suscripción, firma y pago con el asesor, KAN-26) — solo front, con mocks** (`docs/plan-front-w03-y-ajustes-w01-w05.md`):
+  W03-01 (solo ASESOR) con el modal del asesor (código por correo, «Emitir», reenviar enlace), y las páginas públicas del
+  enlace `/firma#t=…`: W03-02 (contrato en PDF y firma en tres modos), W03-02b, W03-03 («Pagar»), el retorno de la
+  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.18** (F-F1: el borrador
+  local de la v0.17 se borró y sus tipos salen de `src/graphql/tipos.ts`). La imagen de la firma (TRAZO e IMAGEN) **no viaja
+  por GraphQL** (F-F2): `solicitarSubidaFirma` → PUT directo a la URL firmada con TODOS los encabezados →
+  `firmarPorEnlace` con `imagenArchivoId`; NOMBRE manda `nombreFirma`. Mocks en `src/mocks/suscripcion.ts`; correo y pasarela simulados en `/dev/correo` y `/dev/pasarela/:sesion`, solo
+  en `dev:mock` (no entran al build). W01-01 pide nombre y correo del cliente solo al ASESOR (W01-A1) y W05-01 muestra el
+  medio de pago y el origen (W05-A5; esos campos solo se piden con mocks hasta la v0.17). Pruebas: Vitest 349 (toda la web) y Cypress
+  `w03-suscripcion.cy.ts` (6). Fallan 3 pruebas de Cypress que ya fallaban en `develop` (`w05-01.cy.ts` y `w01-oferta.cy.ts`).
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
@@ -76,7 +87,7 @@ bloque". Lo esencial:
 4. **Una pantalla = un componente en `src/views/`**, registrado en `src/router/pantallas.ts` (campo `componente`) y con `data-pantalla="<id>"` en su raíz.
 5. **Nunca mostrar un error técnico ni un 5xx.** Hay estados de carga, vacío, error y degradado (oferta preliminar, cobro pendiente) y todos se diseñan.
 6. **Consentimiento explícito.** El checkbox de Habeas Data no viene marcado y el botón de enviar está deshabilitado hasta marcarlo (CA-W01-01). Nunca un valor por defecto.
-7. **Sin datos personales** en `localStorage`, consola, URL ni logs. El JWT es la única excepción: vive en `sessionStorage` (`solventa.token`) para que la sesión sobreviva a una recarga y se borra al cerrar la pestaña o la sesión (decisión de felipe, 2026-10-17). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
+7. **Sin datos personales** en `localStorage`, consola, URL ni logs. El JWT es la única excepción: vive en `sessionStorage` (`solventa.token`) para que la sesión sobreviva a una recarga y se borra al cerrar la pestaña o la sesión (decisión de felipe, 2026-10-17). El token del enlace de firma (HU-W03, D-3, 2026-10-27) vive en memoria y se quita de la URL al leerlo; toca `sessionStorage` (`solventa.enlaceFirma`) **solo** como puente del viaje a la pasarela: se escribe al salir, con vencimiento (≤ 15 min y ≤ el del enlace), y se lee una vez y se borra al volver (`useEnlaceFirma.ts`). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
 8. **No sobre-construir.** Cada tarea se traza a una pantalla o criterio de `docs/plan-frontend.md`. Sin librerías ni capas que una pantalla del sprint no pida (Pinia, un cliente GraphQL pesado y una librería de UI se agregan cuando haya una razón).
 
 ## Agentes de este repo (`.claude/agents/`)

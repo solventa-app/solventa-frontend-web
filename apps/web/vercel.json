@@ -6,6 +6,7 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/graphql/:path*", "destination": "https://solventa-gateway-btxoyawl.uc.gateway.dev/graphql/:path*" },
+    { "source": "/v1/:path*", "destination": "https://solventa-gateway-btxoyawl.uc.gateway.dev/v1/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -1,13 +1,14 @@
 import { describeConMocks } from "../../support/entorno";
+import { reiniciarSiniestros } from "../../support/siniestros";
 import { visitarComo } from "../../support/sesion";
 
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
-// Flujo real contra el dummy (:8107): detalle de sin-06 (PENDIENTE) → Rechazar → modal → W04-03b.
+// Flujo real contra el backend local (support/siniestros.ts): detalle de sin-06 (PENDIENTE) → Rechazar → modal → W04-03b.
 describeConMocks(
   "W04-03b · Modal de rechazo y confirmación de rechazo (pantalla aislada)",
   () => {
     beforeEach(() => {
-      cy.request("POST", "/graphql/siniestros/control/reiniciar");
+      reiniciarSiniestros();
     });
 
     it("el modal se cierra con Escape y devuelve el foco a Rechazar", () => {

@@ -19,8 +19,11 @@ const props = withDefaults(
     hint?: string
     required?: boolean
     disabled?: boolean
-    /** Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home). */
-    icono?: 'badge' | 'payments' | 'home' | 'lock'
+    /**
+     * Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home; nombre y correo
+     * del cliente en W01-01 con un ASESOR → person y mail).
+     */
+    icono?: 'badge' | 'payments' | 'home' | 'lock' | 'person' | 'mail'
   }>(),
   {
     type: 'text',

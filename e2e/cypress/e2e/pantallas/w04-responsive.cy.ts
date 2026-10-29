@@ -1,4 +1,5 @@
 import { describeConMocks } from "../../support/entorno";
+import { reiniciarSiniestros } from "../../support/siniestros";
 import { visitarComo } from "../../support/sesion";
 
 // Responsive de HU-W04 (KAN-27): en 375, 768 y 1280 px la página no tiene scroll horizontal (la tabla puede
@@ -28,7 +29,7 @@ function comprobar(pantalla: string, nombre: string) {
 
 describeConMocks("HU-W04 · Responsive", () => {
   beforeEach(() => {
-    cy.request("POST", "/graphql/siniestros/control/reiniciar");
+    reiniciarSiniestros();
   });
 
   ANCHOS.forEach(([ancho, alto]) => {

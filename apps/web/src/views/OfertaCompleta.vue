@@ -5,11 +5,12 @@
     sale de la captura (`plazoMeses`).
   - El guard exige `oferta.prima` (nula en la PRELIMINAR) para no formatear un monto nulo al navegar
     atrás/adelante.
-  - "Continuar a suscripción" va deshabilitado: lleva a HU-W03, fuera de este sprint.
+  - "Continuar a suscripción" lleva al ASESOR a W03-01 (HU-W03). Por ahora siempre acompaña un asesor (W03-19):
+    el CLIENTE ve "Contactar a un asesor" (W01-05) en su lugar.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
+import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
@@ -17,7 +18,7 @@ import { formatearMonto, formatearPorcentaje } from '../utils/formato'
 import { nombreFuente } from '../utils/nombres'
 
 const { estado, captura } = useCotizacion()
-const { rutaInicio } = useSesion()
+const { estado: sesion, rutaInicio } = useSesion()
 const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : null))
 </script>
 
@@ -65,8 +66,22 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
             }}</span>
           </div>
         </div>
-        <Boton disabled class="w-full">{{ t('oferta.continuar') }}</Boton>
-        <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('comun.fueraSprint') }}</p>
+        <RouterLink
+          v-if="sesion.rol === 'ASESOR'"
+          :to="`/suscripcion/${oferta.id}`"
+          class="inline-flex h-[44px] w-full items-center justify-center rounded-[4px] bg-primario px-5 font-semibold text-cuerpo text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+        >
+          {{ t('oferta.continuar') }}
+        </RouterLink>
+        <template v-else>
+          <RouterLink
+            to="/cotizacion/asesor"
+            class="inline-flex h-[44px] w-full items-center justify-center rounded-[4px] bg-primario px-5 font-semibold text-cuerpo text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+          >
+            {{ t('oferta.contactarAsesor') }}
+          </RouterLink>
+          <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('oferta.conAsesor') }}</p>
+        </template>
         <RouterLink
           to="/cotizacion/fuentes"
           class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"

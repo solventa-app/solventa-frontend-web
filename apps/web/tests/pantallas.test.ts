@@ -33,9 +33,12 @@ const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06']
 // HU-W04 (Sprint 2, KAN-27): registradas en el bloque 1; sus vistas llegan en los bloques 2 a 5.
 const HU_W04 = ['W04-01', 'W04-02', 'W04-02b', 'W04-03a', 'W04-03b', 'W04-03c']
 
+// HU-W03 (Sprint 2, KAN-26): W03-01 del asesor y las páginas del enlace de firma (W03-05 no se construye).
+const HU_W03 = ['W03-01', 'W03-02', 'W03-02b', 'W03-03', 'W03-R', 'W03-04']
+
 describe('catálogo de pantallas', () => {
-  it('cubre las 12 pantallas del Sprint 1, las rutas honestas fuera de sprint y las de HU-W04', () => {
-    const idsEsperados = [...SPRINT_1, ...RUTAS_FUERA_DE_SPRINT_1, ...HU_W04].sort()
+  it('cubre las 12 pantallas del Sprint 1, las rutas honestas fuera de sprint y las de HU-W04 y HU-W03', () => {
+    const idsEsperados = [...SPRINT_1, ...RUTAS_FUERA_DE_SPRINT_1, ...HU_W04, ...HU_W03].sort()
     expect(pantallas.map((p) => p.id).sort()).toEqual(idsEsperados)
   })
 

@@ -7,6 +7,12 @@ import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 import { t } from '../i18n'
 
+// W05-A5 (borrador de la v0.17): origen del cobro y marca y tipo del medio. El BFF desplegado (v0.16) rechazaría
+// campos que no conoce, así que solo se piden con los mocks y en las pruebas. Al publicarse la v0.17 se quita la
+// condición y estos campos pasan a la consulta siempre.
+const CAMPOS_V017 =
+  import.meta.env.MODE === 'mock' || import.meta.env.MODE === 'test' ? 'origen medio { marca tipo }' : ''
+
 const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
   cobros(estado: $estado, pagina: $pagina, tamano: $tamano) {
     id
@@ -18,6 +24,7 @@ const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
     idTransaccion
     motivo
     reintentosRestantes
+    ${CAMPOS_V017}
   }
 }`
 
@@ -32,6 +39,7 @@ const REINTENTAR_COBRO = `mutation reintentarCobro($cobroId: ID!) {
     idTransaccion
     motivo
     reintentosRestantes
+    ${CAMPOS_V017}
   }
 }`
 

@@ -17,6 +17,20 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
 };
 
+export type AccionSugerida =
+  | 'CONTACTAR_ASESOR'
+  | 'ESPERAR';
+
+export type Archivo = {
+  creadoEn: Scalars['DateTime']['output'];
+  estado: EstadoArchivo;
+  id: Scalars['ID']['output'];
+  motivo?: Maybe<Scalars['String']['output']>;
+  tamanoBytes?: Maybe<Scalars['Int']['output']>;
+  tipo: Scalars['String']['output'];
+  tipoContenido: Scalars['String']['output'];
+};
+
 export type CanalContacto =
   | 'AGENDAR'
   | 'CHAT'
@@ -34,10 +48,18 @@ export type Cobro = {
   id: Scalars['ID']['output'];
   idTransaccion?: Maybe<Scalars['String']['output']>;
   intentos?: Maybe<Scalars['Int']['output']>;
+  medio?: Maybe<MedioPago>;
   monto: Monto;
   motivo?: Maybe<Scalars['String']['output']>;
+  origen?: Maybe<OrigenCobro>;
   polizaId: Scalars['ID']['output'];
   reintentosRestantes?: Maybe<Scalars['Int']['output']>;
+};
+
+export type CodigoEnviado = {
+  correoEnmascarado: Scalars['String']['output'];
+  propuestaId: Scalars['ID']['output'];
+  venceEn: Scalars['DateTime']['output'];
 };
 
 export type ConfirmacionContacto = {
@@ -65,6 +87,16 @@ export type ConsentimientoInput = {
   versionTexto: Scalars['String']['input'];
 };
 
+export type ContactoInput = {
+  correo?: InputMaybe<Scalars['String']['input']>;
+  telefono?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ContactoTitularInput = {
+  correo: Scalars['String']['input'];
+  nombre: Scalars['String']['input'];
+};
+
 export type CrearCobroInput = {
   clienteId?: InputMaybe<Scalars['ID']['input']>;
   idIntentoCobro: Scalars['ID']['input'];
@@ -75,14 +107,63 @@ export type CrearCobroInput = {
 
 export type CrearUsuarioInput = {
   clave: Scalars['String']['input'];
+  correo?: InputMaybe<Scalars['String']['input']>;
+  documentoIdentidad?: InputMaybe<Scalars['String']['input']>;
   nombre?: InputMaybe<Scalars['String']['input']>;
   rol: RolUsuario;
+  telefono?: InputMaybe<Scalars['String']['input']>;
   usuario: Scalars['String']['input'];
 };
 
 export type CredencialesInput = {
   clave: Scalars['String']['input'];
   usuario: Scalars['String']['input'];
+};
+
+export type DescargaArchivo = {
+  url: Scalars['String']['output'];
+  venceEn: Scalars['DateTime']['output'];
+};
+
+export type DocumentoFirma = {
+  formaCobro: Scalars['String']['output'];
+  meses: Scalars['Int']['output'];
+  montoMensual: Monto;
+  propuestaId: Scalars['ID']['output'];
+  resumen: Scalars['String']['output'];
+  version: Scalars['String']['output'];
+};
+
+export type EncabezadoSubida = {
+  nombre: Scalars['String']['output'];
+  valor: Scalars['String']['output'];
+};
+
+export type EnlaceEnviado = {
+  correoEnmascarado: Scalars['String']['output'];
+  propuesta: Propuesta;
+  venceEn: Scalars['DateTime']['output'];
+};
+
+export type EnlaceFirma = {
+  documento?: Maybe<DocumentoFirma>;
+  documentoUrl?: Maybe<Scalars['String']['output']>;
+  firma?: Maybe<FirmaRegistrada>;
+  poliza?: Maybe<Poliza>;
+  propuesta: Propuesta;
+  venceEn?: Maybe<Scalars['DateTime']['output']>;
+  vigente: Scalars['Boolean']['output'];
+};
+
+export type ErrorAceptacion = {
+  mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorAceptacion>;
+  puedeReintentar: Scalars['Boolean']['output'];
+};
+
+export type ErrorArchivo = {
+  codigo: Scalars['String']['output'];
+  mensaje: Scalars['String']['output'];
 };
 
 export type ErrorAutenticacion = {
@@ -93,15 +174,46 @@ export type ErrorCobro = {
   mensaje: Scalars['String']['output'];
 };
 
+export type ErrorCodigo = {
+  intentosRestantes?: Maybe<Scalars['Int']['output']>;
+  mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorCodigo>;
+  puedeReintentar: Scalars['Boolean']['output'];
+};
+
+export type ErrorEmision = {
+  mensaje: Scalars['String']['output'];
+  puedeReintentar: Scalars['Boolean']['output'];
+};
+
+export type ErrorFirma = {
+  mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorFirma>;
+  puedeReintentar: Scalars['Boolean']['output'];
+};
+
 export type ErrorOferta = {
   mensaje: Scalars['String']['output'];
   motivo?: Maybe<MotivoErrorOferta>;
   puedeReintentar: Scalars['Boolean']['output'];
 };
 
+export type ErrorPago = {
+  fallosSeguidos?: Maybe<Scalars['Int']['output']>;
+  mensaje: Scalars['String']['output'];
+  motivo?: Maybe<MotivoErrorPago>;
+  puedeReintentar: Scalars['Boolean']['output'];
+};
+
 export type ErrorUsuario = {
   mensaje: Scalars['String']['output'];
 };
+
+export type EstadoArchivo =
+  | 'DISPONIBLE'
+  | 'ELIMINADO'
+  | 'PENDIENTE'
+  | 'RECHAZADO';
 
 export type EstadoCobro =
   | 'COBRADO'
@@ -119,13 +231,57 @@ export type EstadoFuente =
   | 'FALLO'
   | 'OK';
 
+export type EstadoPoliza =
+  | 'EMITIDA';
+
+export type EstadoPropuesta =
+  | 'ACEPTADA'
+  | 'CANCELADA'
+  | 'EMITIDA'
+  | 'EN_EMISION'
+  | 'EN_FIRMA'
+  | 'EN_REVISION'
+  | 'FIRMADA'
+  | 'IDENTIDAD_VERIFICADA'
+  | 'NO_EMITIDA'
+  | 'PAGO_RECHAZADO'
+  | 'PENDIENTE_PAGO';
+
 export type EstadoUsuario =
   | 'ACTIVO'
   | 'SUSPENDIDO';
 
+export type EstadoVisible =
+  | 'EMITIDA'
+  | 'EMITIENDO'
+  | 'NO_EMITIDA';
+
 export type FactorScore = {
   nombre: Scalars['String']['output'];
   peso: Scalars['Float']['output'];
+};
+
+export type FirmaRegistrada = {
+  estado: EstadoPropuesta;
+  firmadaEn: Scalars['DateTime']['output'];
+  propuestaId: Scalars['ID']['output'];
+  referencia: Scalars['String']['output'];
+};
+
+export type FirmarPorEnlaceInput = {
+  aceptaTerminos: Scalars['Boolean']['input'];
+  autorizaCobro: Scalars['Boolean']['input'];
+  imagenArchivoId?: InputMaybe<Scalars['ID']['input']>;
+  modo: ModoFirma;
+  nombreFirma?: InputMaybe<Scalars['String']['input']>;
+  propuestaId?: InputMaybe<Scalars['ID']['input']>;
+  versionDocumento: Scalars['String']['input'];
+};
+
+export type FirmarPropuestaInput = {
+  autorizaCobro: Scalars['Boolean']['input'];
+  propuestaId: Scalars['ID']['input'];
+  versionDocumento: Scalars['String']['input'];
 };
 
 export type FuenteConsultada = {
@@ -135,6 +291,16 @@ export type FuenteConsultada = {
   nombre: Scalars['String']['output'];
   origen: OrigenFuente;
 };
+
+export type MedioPago = {
+  marca: Scalars['String']['output'];
+  tipo: TipoMedioPago;
+};
+
+export type ModoFirma =
+  | 'IMAGEN'
+  | 'NOMBRE'
+  | 'TRAZO';
 
 export type Monto = {
   moneda: Scalars['String']['output'];
@@ -146,28 +312,107 @@ export type MontoInput = {
   valor: Scalars['String']['input'];
 };
 
+export type MotivoErrorAceptacion =
+  | 'CONSENTIMIENTO_NO_VIGENTE'
+  | 'OFERTA_NO_ENCONTRADA'
+  | 'OFERTA_PRELIMINAR'
+  | 'OFERTA_VENCIDA';
+
+export type MotivoErrorCodigo =
+  | 'CODIGO_INVALIDO'
+  | 'CODIGO_VENCIDO'
+  | 'INTENTOS_AGOTADOS'
+  | 'PROPUESTA_NO_VALIDA';
+
+export type MotivoErrorFirma =
+  | 'COBRO_NO_AUTORIZADO'
+  | 'ENLACE_VENCIDO'
+  | 'IMAGEN_INVALIDA'
+  | 'PROPUESTA_NO_FIRMABLE'
+  | 'SERVICIO_FIRMA_NO_DISPONIBLE'
+  | 'VERSION_DOCUMENTO_DESACTUALIZADA';
+
 export type MotivoErrorOferta =
   | 'CONSENTIMIENTO_NO_VIGENTE'
   | 'DATOS_INSUFICIENTES'
   | 'FUENTES_NO_DISPONIBLES';
 
+export type MotivoErrorPago =
+  | 'ENLACE_VENCIDO'
+  | 'FONDOS_INSUFICIENTES'
+  | 'PAGO_RECHAZADO'
+  | 'PASARELA_NO_DISPONIBLE'
+  | 'REQUIERE_OTRA_TARJETA'
+  | 'SESION_VENCIDA'
+  | 'TARJETA_VENCIDA';
+
+export type MotivoEstadoPropuesta =
+  | 'NO_APROBADA'
+  | 'PAGO_EN_PROCESO'
+  | 'PAGO_FONDOS_INSUFICIENTES'
+  | 'PAGO_RECHAZADO'
+  | 'REVISION_MANUAL';
+
 export type Mutation = {
+  aceptarOferta: ResultadoAceptacion;
+  actualizarContacto: ResultadoUsuario;
+  actualizarPreferencias: ResultadoUsuario;
   cambiarRolUsuario: ResultadoUsuario;
+  confirmarPago: ResultadoPago;
+  confirmarSubidaArchivo: ResultadoArchivo;
   contactarAsesor: ConfirmacionContacto;
   crearCobro: ResultadoCobro;
   crearUsuario: ResultadoUsuario;
+  descargarArchivo: ResultadoDescargaArchivo;
+  emitirPropuesta: ResultadoEmision;
+  enviarCodigoVerificacion: ResultadoEnvioCodigo;
+  firmarPorEnlace: ResultadoFirma;
+  firmarPropuesta: ResultadoFirma;
+  iniciarPago: ResultadoInicioPago;
   iniciarSesion: ResultadoSesion;
+  reenviarEnlaceFirma: ResultadoEmision;
   registrarConsentimiento: Consentimiento;
   reintentarCobro: Cobro;
   revocarConsentimiento: Consentimiento;
   solicitarOferta: ResultadoOferta;
+  solicitarSubidaArchivo: ResultadoSubidaArchivo;
+  solicitarSubidaFirma: ResultadoSubidaArchivo;
   suspenderUsuario: ResultadoUsuario;
+  ticketAvisos: TicketAvisos;
+  verificarCodigo: ResultadoVerificacion;
+};
+
+
+export type MutationAceptarOfertaArgs = {
+  contacto?: InputMaybe<ContactoTitularInput>;
+  ofertaId: Scalars['ID']['input'];
+};
+
+
+export type MutationActualizarContactoArgs = {
+  entrada: ContactoInput;
+};
+
+
+export type MutationActualizarPreferenciasArgs = {
+  entrada: PreferenciasInput;
 };
 
 
 export type MutationCambiarRolUsuarioArgs = {
   id: Scalars['ID']['input'];
   rol: RolUsuario;
+};
+
+
+export type MutationConfirmarPagoArgs = {
+  propuestaId?: InputMaybe<Scalars['ID']['input']>;
+  sesionId: Scalars['ID']['input'];
+};
+
+
+export type MutationConfirmarSubidaArchivoArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -187,8 +432,44 @@ export type MutationCrearUsuarioArgs = {
 };
 
 
+export type MutationDescargarArchivoArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationEmitirPropuestaArgs = {
+  propuestaId: Scalars['ID']['input'];
+};
+
+
+export type MutationEnviarCodigoVerificacionArgs = {
+  correo?: InputMaybe<Scalars['String']['input']>;
+  propuestaId: Scalars['ID']['input'];
+};
+
+
+export type MutationFirmarPorEnlaceArgs = {
+  entrada: FirmarPorEnlaceInput;
+};
+
+
+export type MutationFirmarPropuestaArgs = {
+  entrada: FirmarPropuestaInput;
+};
+
+
+export type MutationIniciarPagoArgs = {
+  propuestaId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
 export type MutationIniciarSesionArgs = {
   entrada: CredencialesInput;
+};
+
+
+export type MutationReenviarEnlaceFirmaArgs = {
+  propuestaId: Scalars['ID']['input'];
 };
 
 
@@ -212,8 +493,26 @@ export type MutationSolicitarOfertaArgs = {
 };
 
 
+export type MutationSolicitarSubidaArchivoArgs = {
+  entrada: SolicitudSubidaArchivoInput;
+};
+
+
+export type MutationSolicitarSubidaFirmaArgs = {
+  propuestaId?: InputMaybe<Scalars['ID']['input']>;
+  tamanoBytes: Scalars['Int']['input'];
+  tipoContenido: Scalars['String']['input'];
+};
+
+
 export type MutationSuspenderUsuarioArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationVerificarCodigoArgs = {
+  codigo: Scalars['String']['input'];
+  propuestaId: Scalars['ID']['input'];
 };
 
 export type NivelRiesgo =
@@ -232,9 +531,20 @@ export type Oferta = {
   tipo: TipoOferta;
 };
 
+export type OrigenCobro =
+  | 'INTERACTIVO'
+  | 'RECURRENTE';
+
 export type OrigenFuente =
   | 'OPEN_DATA'
   | 'OPEN_FINANCE';
+
+export type PaginaPropuestas = {
+  pagina: Scalars['Int']['output'];
+  propuestas: Array<Propuesta>;
+  tamano: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+};
 
 export type PerfilRiesgo = {
   fechaVigencia: Scalars['DateTime']['output'];
@@ -242,11 +552,58 @@ export type PerfilRiesgo = {
   score: Scalars['Int']['output'];
 };
 
+export type Poliza = {
+  cobertura: Monto;
+  documentoUrl: Scalars['String']['output'];
+  estado: EstadoPoliza;
+  id: Scalars['ID']['output'];
+  numero: Scalars['String']['output'];
+  prima: Monto;
+  vigenciaDesde: Scalars['DateTime']['output'];
+  vigenciaHasta: Scalars['DateTime']['output'];
+};
+
+export type PreferenciasInput = {
+  idioma: Scalars['String']['input'];
+  moneda: Scalars['String']['input'];
+};
+
+export type Propuesta = {
+  accionSugerida?: Maybe<AccionSugerida>;
+  actualizadoEn: Scalars['DateTime']['output'];
+  cobertura: Monto;
+  creadaEn?: Maybe<Scalars['DateTime']['output']>;
+  estado: EstadoPropuesta;
+  estadoVisible?: Maybe<EstadoVisible>;
+  id: Scalars['ID']['output'];
+  mensajeEstado?: Maybe<Scalars['String']['output']>;
+  motivoEstado?: Maybe<MotivoEstadoPropuesta>;
+  nombreAsesor?: Maybe<Scalars['String']['output']>;
+  nombreTitular?: Maybe<Scalars['String']['output']>;
+  ofertaId: Scalars['ID']['output'];
+  plazoMeses: Scalars['Int']['output'];
+  poliza?: Maybe<Poliza>;
+  polizaId?: Maybe<Scalars['ID']['output']>;
+  prima: Monto;
+};
+
 export type Query = {
+  archivo?: Maybe<Archivo>;
   cobros: Array<Cobro>;
+  convertirMontos: Array<Monto>;
+  documentoFirma?: Maybe<DocumentoFirma>;
+  firmaPorEnlace?: Maybe<EnlaceFirma>;
   oferta?: Maybe<Oferta>;
+  poliza?: Maybe<Poliza>;
+  propuesta?: Maybe<Propuesta>;
+  propuestas: PaginaPropuestas;
   usuarios: Array<Usuario>;
   yo?: Maybe<Usuario>;
+};
+
+
+export type QueryArchivoArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -258,8 +615,41 @@ export type QueryCobrosArgs = {
 };
 
 
+export type QueryConvertirMontosArgs = {
+  moneda: Scalars['String']['input'];
+  montos: Array<MontoInput>;
+};
+
+
+export type QueryDocumentoFirmaArgs = {
+  propuestaId: Scalars['ID']['input'];
+};
+
+
+export type QueryFirmaPorEnlaceArgs = {
+  propuestaId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
 export type QueryOfertaArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryPolizaArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPropuestaArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryPropuestasArgs = {
+  estado?: InputMaybe<EstadoVisible>;
+  pagina?: InputMaybe<Scalars['Int']['input']>;
+  tamano?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -272,13 +662,33 @@ export type RangoPrima = {
   minima: Monto;
 };
 
+export type ResultadoAceptacion = ErrorAceptacion | Propuesta;
+
+export type ResultadoArchivo = Archivo | ErrorArchivo;
+
 export type ResultadoCobro = Cobro | ErrorCobro;
+
+export type ResultadoDescargaArchivo = DescargaArchivo | ErrorArchivo;
+
+export type ResultadoEmision = EnlaceEnviado | ErrorEmision | Propuesta;
+
+export type ResultadoEnvioCodigo = CodigoEnviado | ErrorCodigo;
+
+export type ResultadoFirma = ErrorFirma | FirmaRegistrada;
+
+export type ResultadoInicioPago = ErrorPago | SesionPago;
 
 export type ResultadoOferta = ErrorOferta | Oferta;
 
+export type ResultadoPago = ErrorPago | Poliza;
+
 export type ResultadoSesion = ErrorAutenticacion | Sesion;
 
+export type ResultadoSubidaArchivo = ErrorArchivo | SubidaArchivo;
+
 export type ResultadoUsuario = ErrorUsuario | Usuario;
+
+export type ResultadoVerificacion = ErrorCodigo | Propuesta;
 
 export type RolUsuario =
   | 'ASESOR'
@@ -291,13 +701,45 @@ export type Sesion = {
   usuario: Usuario;
 };
 
+export type SesionPago = {
+  sesionId: Scalars['ID']['output'];
+  urlPago: Scalars['String']['output'];
+  venceEn: Scalars['DateTime']['output'];
+};
+
 export type SolicitudOfertaInput = {
   consentimientoId: Scalars['ID']['input'];
   direccionInmueble: Scalars['String']['input'];
-  documentoIdentidad: Scalars['String']['input'];
+  documentoIdentidad?: InputMaybe<Scalars['String']['input']>;
   plazoMeses: Scalars['Int']['input'];
   valorCredito: Scalars['String']['input'];
 };
+
+export type SolicitudSubidaArchivoInput = {
+  consentimientoId?: InputMaybe<Scalars['ID']['input']>;
+  propietarioId?: InputMaybe<Scalars['ID']['input']>;
+  tamanoBytes: Scalars['Int']['input'];
+  tipo: Scalars['String']['input'];
+  tipoContenido: Scalars['String']['input'];
+};
+
+export type SubidaArchivo = {
+  archivo: Archivo;
+  encabezados: Array<EncabezadoSubida>;
+  metodo: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+  venceEn: Scalars['DateTime']['output'];
+};
+
+export type TicketAvisos = {
+  ticket: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+  venceEn: Scalars['DateTime']['output'];
+};
+
+export type TipoMedioPago =
+  | 'CREDITO'
+  | 'DEBITO';
 
 export type TipoOferta =
   | 'COMPLETA'
@@ -305,9 +747,13 @@ export type TipoOferta =
 
 export type Usuario = {
   creadoEn: Scalars['DateTime']['output'];
+  documentoEnmascarado?: Maybe<Scalars['String']['output']>;
   estado: EstadoUsuario;
   id: Scalars['ID']['output'];
+  idioma: Scalars['String']['output'];
+  moneda: Scalars['String']['output'];
   nombre?: Maybe<Scalars['String']['output']>;
   rol: RolUsuario;
+  tieneContacto: Scalars['Boolean']['output'];
   usuario: Scalars['String']['output'];
 };

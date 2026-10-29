@@ -1,14 +1,15 @@
 import { describeConMocks } from "../support/entorno";
+import { reiniciarSiniestros } from "../support/siniestros";
 import { ingresar } from "../support/sesion";
 
 // E2E de la historia HU-W04 (ver nota de convención en w01-oferta.cy.ts: cruza varias pantallas a propósito;
-// el E2E por pantalla vive en cypress/e2e/pantallas/w04-*.cy.ts). Corre contra el dummy real de siniestros
-// (:8107, proxy de Vite en dev:mock), que se reinicia antes de cada prueba: 10 siniestros, 4 pendientes
+// el E2E por pantalla vive en cypress/e2e/pantallas/w04-*.cy.ts). Corre contra el backend real local
+// (support/siniestros.ts), que se reinicia antes de cada prueba: 10 siniestros, 4 pendientes
 // (sin-03, sin-01, sin-06 y sin-10), 3 en revisión, 2 aprobados y 1 rechazado. Cada prueba usa un caso
 // distinto para no depender del orden: derivar sin-03, aprobar sin-01 y rechazar sin-06.
 describeConMocks("HU-W04 · Mesa de siniestros (back-office)", () => {
   beforeEach(() => {
-    cy.request("POST", "/graphql/siniestros/control/reiniciar");
+    reiniciarSiniestros();
     ingresar("BACKOFFICE");
     cy.contains("a", "Siniestros").click();
     cy.location("pathname").should("eq", "/operador/siniestros");

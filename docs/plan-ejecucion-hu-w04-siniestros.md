@@ -240,16 +240,98 @@ Cada pantalla es una vista en `src/views/` con `data-pantalla` y sus estados de 
   - Terraform y el informe de servicios del backend **excluyen los dummies** (no se despliegan; ver "Diferido").
 - **Pendiente:** staging (sección siguiente) y validar los CA-W04 contra Jira.
 
-## Diferido: despliegue a staging (se hará después, no ahora)
-- Backend:
-  - En `servicios.json` agregar `"publico": true` al dummy.
-  - En `validar_servicios.py`, permitir `publico` solo a los servicios `dummy`.
-  - Quitar la exclusión del despliegue en `seleccionar_servicios.py`.
-  - Terraform ya da `allUsers` a los públicos (`infra/servicios.tf:281-289`).
-- Front:
-  - En `apps/web/vercel.json`, el rewrite `/graphql/siniestros/:path*` hacia la URL de Cloud Run, **antes** de `/graphql/:path*`.
-  - El spec `w04-staging.cy.ts`.
-  - La evidencia contra staging.
+## Diferido: despliegue a staging (obsoleto)
+> **Ya no aplica** (2026-10-28). El hotfix #331 del backend desplegó el dummy en staging de otra forma:
+> Cloud Run privado detrás del API Gateway, sin `publico` y sin un rewrite nuevo (el `/graphql/:path*` de Vercel ya
+> lo cubre). Y la web va a pasar al backend real (sección siguiente), así que el dummy deja de ser el camino.
+
+## Conexión al backend real (KAN-247, 2026-10-28)
+
+> Decidido el 2026-10-28 con el plan del backend `../solventa-backend/docs/plan-completar-hu-w04.md`. El backend real
+> ya está construido en la rama `feat/KAN-27-backend-siniestros` del backend: el servicio `claims` (MongoDB), las
+> evidencias en el almacenamiento, la orden de pago en PAYMENTS y las operaciones en el BFF. Ese backend ya está en
+> `develop` (PR backend #378).
+>
+> **Ejecutado (rama `feat/KAN-247-mesa-siniestros-backend-real`):** ajustes 1, 2, 3, 6, 7 y 8. Los ajustes 4 y 5
+> (tipos del contrato principal) **se difieren** al PR que sincronice el contrato v0.21 junto con la migración de
+> HU-W03 del borrador v0.17 a la v0.18: copiar el contrato principal arrastra la v0.18, que duplica los 20 tipos del
+> borrador de W03. Mientras tanto W04 se tipa con `contrato/siniestros.graphql`, idéntico a la parte de siniestros de
+> la v0.21. El 9 (geoetiqueta) y el 10 (renovar la URL firmada) siguen pendientes. Verificación: typecheck, lint, Prettier, Vitest (344) y build; los 39
+> E2E de W04 contra el backend local con la semilla, y `dev:mock` sin backend.
+>
+> **Corte de 700 ms en local:** con el compose completo, el gateway Envoy a veces responde 504 en el detalle o en
+> derivar (la máquina está cargada; en caliente el detalle tarda 100–150 ms en el BFF). La web muestra el error con
+> «Reintentar», como pide la regla 5. Para correr los E2E sin esa intermitencia, apuntar la web al BFF directo
+> (`VITE_BFF_URL=http://localhost:8000`).
+
+**Lo que ya está listo y no cambia:**
+- las 7 pantallas, el modal de rechazo y las confirmaciones;
+- las consultas y mutaciones: los mismos nombres, argumentos y campos (contrato principal **v0.21**);
+- la union `ResultadoResolucion`, que se distingue por la forma (`'mensaje' in r` / `'estado' in r`);
+- los mensajes de negocio del backend, que son los mismos del dummy y se muestran tal cual (también en inglés);
+- el router, que ya exige BACKOFFICE, y `ejecutar()`, que ya manda el JWT y traduce 502, 503 y 504;
+- `<img :src="e.url">`, que acepta la URL firmada absoluta.
+
+**Ajustes:**
+
+| # | Qué | Dónde |
+|---|---|---|
+| 1 ✅ | `SINIESTROS = { endpoint: '/v1/graphql/web', conToken: true }` (hoy `'/graphql/siniestros'` sin token). El backend exige token de BACKOFFICE en todas las operaciones | `apps/web/src/composables/useSiniestros.ts:17` |
+| 2 ✅ | Proxy `'/v1'` hacia el gateway (`VITE_BFF_URL` o `:8080`); quitar `'/graphql/siniestros'` y `VITE_SINIESTROS_URL` | `apps/web/vite.config.ts`, `src/env.d.ts`, `.env.example` |
+| 3 ✅ | Rewrite `/v1/:path*` hacia el gateway de staging, antes de la regla SPA | `apps/web/vercel.json` |
+| 4 (diferido) | Importar los tipos de `graphql/tipos.ts` (contrato principal) en vez de `tipos-siniestros.ts`, en 6 archivos: `useSiniestros.ts`, `useResultadoReciente.ts`, `ModalRechazo.vue`, `DetalleSiniestro.vue`, `BandejaSiniestros.vue` y `mocks/siniestros.ts` | `src/` |
+| 5 (diferido) | Sincronizar el contrato principal v0.21 (`contract-consumer`). Quitar `siniestros.graphql` de `scripts/contrato.mjs`, el segundo `generates` de `codegen.ts`, la exclusión de cobertura y el `git diff` de `ci-web.yml`; borrar `contrato/siniestros.graphql` y `src/graphql/tipos-siniestros.ts`. El backend conserva su copia del dummy, así que `verificar` no falla mientras tanto | front |
+| 6 ✅ | La bandeja pide solo `id radicado estado asegurado { nombre } notificadoEn`: hoy pide `CAMPOS_SINIESTRO` completo, y con el backend real eso pediría la póliza y firmaría las URLs de todas las evidencias en cada carga | `useSiniestros.ts` (`CONSULTA_SINIESTROS`) |
+| 7 ✅ | Mocks en `*/v1/graphql/web`, registrados también en `mocks/browser.ts`, para que `dev:mock` funcione sin backend (regla 2; hoy depende del dummy) | `src/mocks/` |
+| 8 ✅ | Las 8 specs que reinician con `cy.request('POST', '/graphql/siniestros/control/reiniciar')` pasan a `POST http://localhost:8012/_demo/reiniciar` (solo local, `DEMO_REINICIAR=true`). Antes de correrlas: `docker compose run --rm sembrar-siniestros` en el backend | `e2e/cypress/e2e/w04-siniestros.cy.ts` y `pantallas/w04-*` |
+| 9 | La geoetiqueta (ver abajo) | — |
+| 10 | Renovar la URL firmada de las evidencias cuando venza (ver «Imágenes con URL firmada», abajo). **Pendiente, no se hace ahora** | `DetalleSiniestro.vue`, `useSiniestros.ts` |
+
+**Datos que cambian frente al dummy** (por si alguna prueba los tenía fijos):
+- `Poliza.numero` sale de POLICY: `SOL-2026-000001` a `SOL-2026-000010`, no los números del dummy.
+- Las fechas llegan en UTC (`…+00:00`), no en `-05:00`. La web ya las formatea con `Intl`, así que no cambia lo que
+  se ve.
+- `peritos(siniestroId)` llega ordenado por nombre.
+- Los radicados, los ids (`sin-01`…), los peritos, los textos y los estados son los del dummy: la semilla los
+  reutiliza.
+- `Evidencia.url` es una URL firmada que vence a los 5 minutos (ver la sección siguiente).
+
+**Imágenes con URL firmada (ajuste 10, pendiente; no se trabaja ahora).**
+
+*Qué es.* Las fotos y documentos de un siniestro son datos personales y viven en un bucket **privado**. Al abrir el
+detalle, el BFF pide al almacenamiento, en nombre del BACKOFFICE que consulta (queda auditado), una URL por evidencia.
+Cada URL trae una firma que permite descargar ese archivo durante **5 minutos** (300 s). El navegador baja la imagen
+directo del bucket, sin pasar por el BFF. Si la URL se filtra (un log, el historial, un pantallazo), a los 5 minutos ya
+no sirve.
+
+*Qué vence y qué no.* Los 5 minutos cuentan para **descargar** la imagen, no para mirarla. El operador puede quedarse
+el tiempo que necesite en el detalle y decidir después:
+
+| Momento | ¿Le afectan los 5 min? |
+|---|---|
+| Revisa la bandeja (pendientes, en revisión, cerradas) | No: la bandeja no trae imágenes (ajuste 6) |
+| Abre un siniestro y ve las miniaturas que ya cargaron | No: una imagen descargada sigue en pantalla |
+| Se queda analizando el caso más de 5 minutos | No |
+| Aprueba, rechaza o deriva | No: las mutaciones no usan las URL |
+| **Tras más de 5 min, hace clic en una imagen para ampliarla** (se abre en otra pestaña) | **Sí**: la pestaña la pide de nuevo con la URL vencida y el bucket responde «acceso denegado» |
+| **Tras más de 5 min, baja con scroll hasta imágenes que aún no veía** | **Sí**: el `<img>` usa `loading="lazy"`, así que esas imágenes se descargan apenas se ven y salen «Imagen no disponible» |
+
+*Cómo resolverlo (recomendado, solo en el front; el backend no cambia).* El contrato ya entrega una `Evidencia.url`
+nueva en cada consulta de `siniestro(id)`:
+- al fallar una imagen (`@error` → `marcarFallida`), volver a consultar `siniestro(id)` **una sola vez** y reintentar
+  con la URL nueva; si vuelve a fallar, queda «Imagen no disponible»;
+- al hacer clic para ampliar, si el detalle se cargó hace más de 4 minutos, volver a consultar antes de abrir la pestaña.
+
+*Alternativas descartadas como única solución:*
+- **Subir el vencimiento** (30 min o 1 h, configuración del backend): alarga la ventana en que una URL filtrada sirve, y
+  el problema vuelve si el operador tarda más.
+- **Quitar `loading="lazy"`:** arregla el scroll, pero no el clic para ampliar.
+
+**Geoetiqueta desde el EXIF (W04-14, pendiente; no se trabaja ahora).** La etiqueta «Geoetiquetada» de las fotos
+debe salir de los metadatos de la foto: si la foto trae la ubicación donde se tomó, se muestra; si no, no. Hoy el
+backend devuelve `geoetiquetada` fijado por la semilla, porque las fotos del dummy no traen EXIF. Cuando el móvil
+suba las fotos (HU-M04), el backend extraerá el GPS del EXIF al recibirlas. En la web la condición ya es
+`v-if="e.geoetiquetada"` y no cambia; queda por revisar el criterio CA-W04-08 en Jira.
 
 ## Verificación de cada bloque del front
 - En `apps/web`: `npm run typecheck`, `lint`, `formato:verificar`, `test` y `build`.

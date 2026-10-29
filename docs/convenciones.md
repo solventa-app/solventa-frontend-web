@@ -79,6 +79,12 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
 - **Datos personales:** no se guardan en `localStorage`, no van a la consola ni a la URL. El consentimiento es un acto explícito del usuario, nunca un valor por defecto.
 - Dinero: el contrato lo entrega como texto decimal + moneda; se formatea con `Intl.NumberFormat`, nunca con `parseFloat` para operar.
 - Pruebas en `tests/*.test.ts`; los mocks de MSW son la misma fuente para Vitest y para `dev:mock`.
+- Convenciones de demo de los mocks de HU-W03 (`src/mocks/suscripcion.ts`, **no son del backend real**): el código de
+  verificación `000000` es válido y `999999` está vencido; un correo del cliente en `@revision.test` manda a revisión y en
+  `@rechazo.test` no emite; los tokens fijos del enlace son `demo`, `vencido`, `firmado` y `emitido` (`/firma#t=demo`); las
+  tarjetas de la pasarela simulada son las del stub del backend (`4242…` aprobada, `…0002` fondos insuficientes, `…0069`
+  vencida, `…0119` falla de la pasarela). El buzón y la pasarela simulados viven en `/dev/correo` y `/dev/pasarela/:sesion`,
+  solo con `dev:mock`.
 
 ## Documentos
 

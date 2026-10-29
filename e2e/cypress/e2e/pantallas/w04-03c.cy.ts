@@ -1,4 +1,5 @@
 import { describeConMocks } from "../../support/entorno";
+import { reiniciarSiniestros } from "../../support/siniestros";
 import { visitarComo } from "../../support/sesion";
 
 // E2E por pantalla individual (KAN-203). Ver convención en pantallas/g-01.cy.ts.
@@ -7,7 +8,7 @@ describeConMocks(
   "W04-03c · Confirmación de derivación (pantalla aislada)",
   () => {
     beforeEach(() => {
-      cy.request("POST", "/graphql/siniestros/control/reiniciar");
+      reiniciarSiniestros();
     });
 
     it("tras derivar muestra insignia, radicado, perito con ciudad, tiempo con fecha y notificación", () => {

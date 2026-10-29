@@ -12,7 +12,7 @@ import { MENSAJES_SINIESTROS, restablecerSiniestrosDePrueba } from '../src/mocks
 import { servidor } from '../src/mocks/node'
 
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
-const dummy = graphql.link('*/graphql/siniestros')
+const bff = graphql.link('*/v1/graphql/web')
 
 describe('useSiniestros', () => {
   beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
@@ -41,13 +41,20 @@ describe('useSiniestros', () => {
     expect(estado.siniestros.map((s) => s.id)).toEqual(['sin-01'])
   })
 
-  it('llama a /graphql/siniestros sin Authorization aunque haya sesión', async () => {
+  it('llama a /v1/graphql/web del BFF con el JWT de la sesión', async () => {
     usarToken('jwt-de-prueba')
     const espia = vi.fn(fetchPrueba)
     await useSiniestros(espia).cargarSiniestros()
     const [url, init] = espia.mock.calls[0]
-    expect(String(url)).toBe('/graphql/siniestros')
-    expect((init?.headers as Record<string, string>).Authorization).toBeUndefined()
+    expect(String(url)).toBe('/v1/graphql/web')
+    expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer jwt-de-prueba')
+  })
+
+  it('la bandeja no pide la póliza ni las evidencias (el BFF firmaría todas las URL)', async () => {
+    const espia = vi.fn(fetchPrueba)
+    await useSiniestros(espia).cargarSiniestros()
+    const { query } = JSON.parse(String(espia.mock.calls[0][1]?.body)) as { query: string }
+    expect(query).not.toMatch(/poliza|evidencias/)
   })
 
   it('carga el detalle con evidencias, póliza y resolución', async () => {
@@ -55,7 +62,7 @@ describe('useSiniestros', () => {
     await cargarSiniestro('sin-02')
     expect(estado.noEncontrado).toBe(false)
     expect(estado.detalle?.radicado).toBe('SIN-2026-0142')
-    expect(estado.detalle?.evidencias[0].url).toBe('/graphql/siniestros/medios/sin-02-foto-1.jpg')
+    expect(estado.detalle?.evidencias[0].url).toBe('/mock/siniestros/medios/sin-02-foto-1.jpg')
     expect(estado.detalle?.resolucion?.perito?.id).toBe('per-01')
   })
 
@@ -126,10 +133,10 @@ describe('useSiniestros', () => {
 
   it('una falla técnica (5xx) da mensajes seguros, nunca el error crudo', async () => {
     servidor.use(
-      dummy.query('siniestros', () => new HttpResponse(null, { status: 500 })),
-      dummy.query('siniestro', () => new HttpResponse(null, { status: 503 })),
-      dummy.query('peritos', () => HttpResponse.json({ errors: [{ message: 'Unexpected error.' }] })),
-      dummy.mutation('aprobarSiniestro', () => new HttpResponse(null, { status: 500 })),
+      bff.query('siniestros', () => new HttpResponse(null, { status: 500 })),
+      bff.query('siniestro', () => new HttpResponse(null, { status: 503 })),
+      bff.query('peritos', () => HttpResponse.json({ errors: [{ message: 'Unexpected error.' }] })),
+      bff.mutation('aprobarSiniestro', () => new HttpResponse(null, { status: 500 })),
     )
     const { estado, cargarSiniestros, cargarSiniestro, cargarPeritos, aprobar } = useSiniestros(fetchPrueba)
     await cargarSiniestros()

@@ -6,6 +6,9 @@
     cambio aditivo en contrato/CHANGELOG.md.
   - El toast "Cobro reenviado a la pasarela" se oculta a los 3,5 s (anotación del propio Figma).
   - Pendiente: el `role="tablist"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
+  - W05-A5 (sin Figma, borrador de la v0.17): columna «Medio de pago» con la marca y el tipo (nunca dígitos de la
+    tarjeta) y el origen. Un cobro «En línea» lo pagó el cliente en la pasarela: el operador no lo reintenta (cobraría
+    una tarjeta que el cliente pudo cambiar, W03-30); un rechazado lo resuelve el cliente y un pendiente se concilia.
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -65,7 +68,11 @@ const INSIGNIA: Record<
 // CA-W05-02 (prototipo W05-01, decisión del 2026-10-17): un RECHAZADO se reintenta a mano hasta 3 veces; el
 // BFF dice cuántos le quedan. Un PENDIENTE lo reintenta el sistema solo.
 function puedeReintentar(cobro: Cobro): boolean {
-  return cobro.estado === 'RECHAZADO' && (cobro.reintentosRestantes ?? 0) > 0
+  return cobro.estado === 'RECHAZADO' && !enLinea(cobro) && (cobro.reintentosRestantes ?? 0) > 0
+}
+
+function enLinea(cobro: Cobro): boolean {
+  return cobro.origen === 'INTERACTIVO'
 }
 
 function fechaDelIntento(cobro: Cobro): string {
@@ -178,12 +185,13 @@ onUnmounted(() => {
 
         <div class="w-full overflow-hidden rounded-lg border border-borde bg-white">
           <div class="max-h-[520px] overflow-auto">
-            <table class="w-full min-w-[800px] border-collapse text-left">
+            <table class="w-full min-w-[900px] border-collapse text-left">
               <thead>
                 <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
                   <th scope="col" class="py-[25px] pl-4 pr-[14px]">{{ t('conciliacion.cliente') }}</th>
                   <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.poliza') }}</th>
                   <th scope="col" class="py-[25px] pr-[14px] text-right">{{ t('conciliacion.prima') }}</th>
+                  <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.medio') }}</th>
                   <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.estado') }}</th>
                   <th scope="col" class="py-[25px] pr-[14px]">{{ t('conciliacion.fecha') }}</th>
                   <th scope="col" class="py-[25px] pr-4 text-center">{{ t('conciliacion.acciones') }}</th>
@@ -191,7 +199,7 @@ onUnmounted(() => {
               </thead>
               <tbody>
                 <tr v-if="cobrosFiltrados.length === 0">
-                  <td colspan="6" class="py-6 text-center text-[13px] text-tinta-suave">
+                  <td colspan="7" class="py-6 text-center text-[13px] text-tinta-suave">
                     {{ t('conciliacion.vacio') }}
                   </td>
                 </tr>
@@ -200,6 +208,15 @@ onUnmounted(() => {
                   <td class="py-[24px] pr-[14px] font-mono text-[13px] text-tinta-suave">{{ cobro.polizaId }}</td>
                   <td class="py-[24px] pr-[14px] text-right text-[13px] text-tinta">
                     {{ formatearMonto(cobro.monto) }}
+                  </td>
+                  <td class="py-[18px] pr-[14px] text-[13px] text-tinta" data-prueba="medio-pago">
+                    <template v-if="cobro.medio">
+                      {{ cobro.medio.marca }} · {{ t(`conciliacion.tipoMedio.${cobro.medio.tipo}`) }}
+                    </template>
+                    <template v-else>—</template>
+                    <span v-if="cobro.origen" class="block text-[11px] text-tinta-suave">
+                      {{ t(`conciliacion.origen.${cobro.origen}`) }}
+                    </span>
                   </td>
                   <td class="py-[18px] pr-[14px]">
                     <span
@@ -228,11 +245,17 @@ onUnmounted(() => {
                         estado.reintentando === cobro.id ? t('conciliacion.reintentando') : t('conciliacion.reintentar')
                       }}
                     </Boton>
+                    <span
+                      v-else-if="cobro.estado === 'RECHAZADO' && enLinea(cobro)"
+                      class="text-[11px] text-tinta-suave"
+                    >
+                      {{ t('conciliacion.loResuelveCliente') }}
+                    </span>
                     <span v-else-if="cobro.estado === 'RECHAZADO'" class="text-[11px] text-error">
                       {{ t('conciliacion.otroMedio') }}
                     </span>
                     <span v-else-if="cobro.estado === 'PENDIENTE'" class="text-[11px] text-tinta-suave">
-                      {{ t('conciliacion.automatico') }}
+                      {{ enLinea(cobro) ? t('conciliacion.seConcilia') : t('conciliacion.automatico') }}
                     </span>
                   </td>
                 </tr>
@@ -285,6 +308,7 @@ onUnmounted(() => {
             <p class="text-[11px] leading-[18px] text-tinta-suave">
               {{ t('conciliacion.controlAntes') }} <em>{{ t('conciliacion.estado.RECHAZADO') }}</em>
               {{ t('conciliacion.controlDespues') }}
+              {{ t('conciliacion.controlEnLinea') }}
             </p>
           </div>
         </div>

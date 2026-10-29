@@ -7,19 +7,23 @@
   - Los dos enlaces del pie son los disparadores de demo de los mocks (documento terminado en 999 →
     oferta preliminar, en 000 → error).
   - "Inicio" vuelve al home del rol de la sesión: Cliente y Asesor comparten esta pantalla.
+  - Solo un ASESOR ve "Nombre completo del cliente" y "Correo del cliente" (W01-A1, sin Figma): viven en
+    memoria y cotizar no los envía; se usan al aceptar la oferta (W03-01). Un CLIENTE no los ve porque su
+    contacto ya está en AUTH.
 -->
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
-import { esErrorOferta, useCotizacion } from '../composables/useCotizacion'
+import { correoClienteValido, esErrorOferta, nombreClienteValido, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { t, type Clave } from '../i18n'
 
 const router = useRouter()
 const { estado, captura } = useCotizacion()
-const { rutaInicio } = useSesion()
+const { estado: sesion, rutaInicio } = useSesion()
+const esAsesor = computed(() => sesion.rol === 'ASESOR')
 
 const avisoConsentimiento = computed(() =>
   esErrorOferta(estado.resultado) && estado.resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE'
@@ -33,6 +37,12 @@ const intentoEnvio = ref(false)
 
 function validar(): boolean {
   const nuevosErrores: Record<string, Clave> = {}
+  if (esAsesor.value) {
+    if (!captura.nombreCliente.trim()) nuevosErrores.nombreCliente = 'solicitud.errorNombreClienteVacio'
+    else if (!nombreClienteValido(captura.nombreCliente)) nuevosErrores.nombreCliente = 'solicitud.errorNombreCliente'
+    if (!captura.correoCliente.trim()) nuevosErrores.correoCliente = 'solicitud.errorCorreoClienteVacio'
+    else if (!correoClienteValido(captura.correoCliente)) nuevosErrores.correoCliente = 'solicitud.errorCorreoCliente'
+  }
   if (!captura.documentoIdentidad.trim()) {
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumentoVacio'
   } else if (captura.documentoIdentidad.replace(/\D/g, '').length < 6) {
@@ -72,6 +82,10 @@ function simular(sufijo: '999' | '000') {
   captura.valorCredito = captura.valorCredito || '185000000'
   captura.plazoMeses = captura.plazoMeses || '60'
   captura.direccionInmueble = captura.direccionInmueble || 'Cra 45 # 22-18, Bogotá D.C.'
+  if (esAsesor.value) {
+    captura.nombreCliente = captura.nombreCliente || 'Carlos Restrepo Gómez'
+    captura.correoCliente = captura.correoCliente || 'cliente@correo.com'
+  }
   captura.consentimiento = true
   irAConsultar()
 }
@@ -85,6 +99,25 @@ function simular(sufijo: '999' | '000') {
       <div class="flex w-full max-w-[880px] flex-col items-center gap-6">
         <TituloPantalla class="text-center">{{ t('solicitud.titulo') }}</TituloPantalla>
         <form class="flex w-full max-w-[400px] flex-col gap-5" novalidate @submit.prevent="enviar">
+          <template v-if="esAsesor">
+            <CampoFormulario
+              v-model="captura.nombreCliente"
+              :label="t('solicitud.nombreCliente')"
+              :placeholder="t('solicitud.nombreClienteEjemplo')"
+              icono="person"
+              :error="intentoEnvio && errores.nombreCliente ? t(errores.nombreCliente) : undefined"
+              required
+            />
+            <CampoFormulario
+              v-model="captura.correoCliente"
+              :label="t('solicitud.correoCliente')"
+              type="email"
+              :placeholder="t('solicitud.correoClienteEjemplo')"
+              icono="mail"
+              :error="intentoEnvio && errores.correoCliente ? t(errores.correoCliente) : undefined"
+              required
+            />
+          </template>
           <CampoFormulario
             v-model="captura.documentoIdentidad"
             :label="t('solicitud.documento')"
