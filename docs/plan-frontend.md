@@ -107,7 +107,8 @@ consume del BFF real (`/v1/graphql/web` con token de BACKOFFICE, servicio CLAIMS
 
 Plan, decisiones y estado: [`plan-hu-w07-front.md`](plan-hu-w07-front.md). Figma `Solventa-web-Final`: W07-01 `2001:3340`,
 W07-02 `2001:3562`, W07-03 `2001:3434`; W07-04 no tiene frame (aprobado sin Figma). Contrato: la API REST de
-socios de la v0.22 (`contrato/socios-v1.json`) y `estadoSistema` de GraphQL. Los criterios CA-W07 se proponen con
+socios de la v0.22 (`contrato/socios-v1.json`) y `estadoSistema` de GraphQL. Guía de integración para el socio:
+[`guia-integracion-socios.md`](guia-integracion-socios.md). Los criterios CA-W07 se proponen con
 cada pantalla.
 
 | Pantalla | Ruta | Qué se construye | Acceso |

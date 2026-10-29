@@ -97,6 +97,7 @@ router usa history).
 - [`CLAUDE.md`](CLAUDE.md) — contexto de trabajo, reglas y agentes (léelo antes de tocar código).
 - [`docs/plan-frontend.md`](docs/plan-frontend.md) — pantallas, actividades y decisiones por sprint.
 - [`docs/convenciones.md`](docs/convenciones.md) — ramas, commits, PR, definición de hecho y reglas de código.
+- [`docs/guia-integracion-socios.md`](docs/guia-integracion-socios.md) — guía de integración para socios de distribución (HU-W07, API v1).
 - [`contrato/README.md`](contrato/README.md) — cómo se mantiene el contrato y qué hacen los mocks.
 
 ## Configuración pendiente en GitHub (una vez creado el primer push)

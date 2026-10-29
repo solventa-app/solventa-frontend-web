@@ -52,8 +52,8 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   PDF y Swagger de pruebas y producción, `ui/Pestanas.vue`) construidas, y W07-04 (estado del sistema del operador,
   `/operador/estado`, contrato **v0.22** `estadoSistema`). Contrato REST: la copia de la v0.22 `contrato/socios-v1.json`
   (OpenAPI 3.1) → `src/api/tipos-socios.ts` (`openapi-typescript`, `npm run codegen`); consumo y ventas son «del entorno
-  del token» (el de pruebas se pide con la clave de pruebas). Mocks en `src/mocks/socios.ts`. Pendientes: la guía en PDF
-  (5.5) y probar contra el BFF real (sus rutas `/v1` de socios llegan con los bloques 4 y 5 del backend).
+  del token» (el de pruebas se pide con la clave de pruebas). Mocks en `src/mocks/socios.ts`. Guía de integración en español:
+  `docs/guia-integracion-socios.md` (Markdown, sin PDF). Pendiente: probar contra el BFF real (sus rutas `/v1` de socios llegan con los bloques 4 y 5 del backend).
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
