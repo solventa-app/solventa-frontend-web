@@ -4,7 +4,8 @@
 //   - un ID de socio que empieza por `bloqueado` → 423, bloqueo por intentos;
 //   - un ID de socio que empieza por `agotado` → presupuesto de cotizaciones agotado (429 al cotizar);
 //   - una clave que empieza por `sk_test` → token de PRUEBAS; cualquier otra → PRODUCCIÓN;
-//   - la ventana de 15 minutos → «sin tráfico» (disponibilidad y latencia en null).
+//   - la ventana de 15 minutos → «sin tráfico» (disponibilidad y latencia en null);
+//   - cotizar con un documento terminado en `999` → oferta PRELIMINAR (como los mocks de W01); otro → COMPLETA.
 import { http, HttpResponse } from 'msw'
 import type { components } from '../api/tipos-socios'
 
@@ -233,18 +234,19 @@ export const handlersSocios = [
   }),
 
   // Cotizar descuenta del presupuesto del entorno del token (W07-9); el resto del flujo llega con W07-03.
-  http.post('*/v1/cotizaciones', ({ request }) => {
+  http.post('*/v1/cotizaciones', async ({ request }) => {
     const claims = claimsDe(request)
     if (!claims) return sinSesion()
     const restantes = ASIGNADAS[claims.entorno] - consumidasDe(claims.sub, claims.entorno)
     if (restantes <= 0) {
       return error(429, 'PRESUPUESTO_AGOTADO', MENSAJES_SOCIOS.presupuesto, { 'Retry-After': '3600' })
     }
+    const cuerpo = ((await request.json().catch(() => null)) ?? {}) as Partial<Esquemas['SolicitudCotizacion']>
     estado.consumidas[claims.entorno] += 1
     const respuesta: Esquemas['Cotizacion'] = {
       oferta: {
         id: `oferta-socio-${estado.consumidas[claims.entorno]}`,
-        tipo: 'COMPLETA',
+        tipo: cuerpo.documentoIdentidad?.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA',
         prima: monto('185000'),
         cobertura: monto('250000000'),
         venceEn: new Date(Date.now() + 7 * 86_400_000).toISOString(),

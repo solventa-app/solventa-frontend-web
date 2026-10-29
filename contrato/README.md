@@ -14,7 +14,8 @@ Origen del esquema del backend: repo hermano `../solventa-backend` (por defecto)
 
 **Borrador local de HU-W07:** `borrador-socios-v1.yaml` (OpenAPI de la API de socios) **no es una copia del backend**:
 lo escribe el front mientras el backend no publique `contracts/openapi/socios-v1.yaml` (`docs/plan-hu-w07-front.md`).
-`npm run codegen` genera `apps/web/src/api/tipos-socios.ts`. Al publicarse el real, se borra y se copia el del backend.
+`npm run codegen` genera `apps/web/src/api/tipos-socios.ts` y `npm run contrato:sincronizar` deja una copia en
+`apps/web/src/contrato/socios-v1.yaml` para el Swagger de W07-03. Al publicarse el real, se borra y se copia el del backend.
 
 ## Reglas (ADR-06)
 

@@ -17,6 +17,8 @@ info:
     API exclusiva para socios de distribución: cotizar y vender la póliza de Vida Hipotecario de Solventa desde la app
     del socio. Los montos van como texto decimal con su moneda. Nunca responde un 5xx crudo; si las fuentes fallan, la
     oferta es PRELIMINAR. Los errores siguen la forma de `ErrorPublico`, en el idioma de `Accept-Language`.
+    Con un token de PRUEBAS las respuestas son simuladas (propuesta del borrador): un documento terminado en 999 recibe
+    una oferta PRELIMINAR, cualquier otro una COMPLETA, y el código de verificación del titular es siempre 000000.
 servers:
   - url: /v1
 security:

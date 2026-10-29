@@ -21,7 +21,7 @@ verde.
 | 5.1 Piezas comunes | `feat/KAN-30-portal-socios-base` | Hecho (ver abajo) |
 | 5.2 W07-01 Login | `feat/KAN-30-ingreso-socio` | Hecho: `IngresoSocio.vue`, enlace de G-01, CA-W07-01 a 04 (propuestos) |
 | 5.3 W07-02 Panel | `feat/KAN-30-panel-socio` | Hecho: `PanelSocio.vue`, CA-W07-05 a 10 (propuestos) |
-| 5.4 W07-03 Documentación | — | Pendiente |
+| 5.4 W07-03 Documentación | `feat/KAN-30-documentacion-api` | Hecho: `DocumentacionApi.vue`, `ui/Pestanas.vue`, Swagger embebido; CA-W07-11 a 13 (propuestos) |
 | 5.6 W07-04 Estado del sistema | — | Pendiente (con el borrador GraphQL de `estadoSistema`) |
 | 5.5 Guía en PDF | — | Pendiente (al final) |
 | Integración con el backend | — | Pendiente (espera el contrato real) |
@@ -67,6 +67,20 @@ composiciones de pantalla, como `ModalRechazo` de W04, no piezas nuevas de la li
 - «Mostrar» y «Copiar» como acciones de texto bajo la clave; «Generar token» y «Regenerar» como botones.
 - «Última verificación» con la hora, no «Hace 2 minutos».
 Pruebas: `tests/pantalla-w07-02.test.ts` y `e2e/cypress/e2e/pantallas/w07-02.cy.ts` (incluye 1280 y 390 px).
+
+**Hecho en 5.4:** `views/DocumentacionApi.vue` contra Figma `2001:3434` y la pieza nueva de la librería
+`components/ui/Pestanas.vue` (patrón de pestañas de WAI-ARIA: foco móvil, flechas, Inicio y Fin; en
+`IndiceComponentes.vue`). El Swagger embebido es `components/socios/SwaggerSocios.vue`: `swagger-ui-dist` 5.33.2 fijo,
+cargado en diferido y sin CDN, con el token del entorno de la pestaña inyectado en cada «Try it out» y su CSS ajustado a
+la web. Lee `apps/web/src/contrato/socios-v1.yaml`, la copia del borrador que deja `npm run contrato:sincronizar` (Vercel
+solo publica `apps/web`; una prueba de Vitest exige que sea idéntica al borrador). Desvíos y decisiones:
+- La barra de pestañas usa el subrayado en `enlace`, como el frame (el plan decía `primario`).
+- La lista fija de endpoints y el ejemplo del prototipo se reemplazan por el Swagger, que sí se puede probar.
+- Mientras la guía en PDF no se publique (5.5), la pestaña lo dice en vez de mostrar un visor vacío.
+- Documentos de prueba del sandbox (propuesta del borrador, avisar al backend): documento terminado en `999` →
+  PRELIMINAR, otro → COMPLETA, código del titular `000000`. El mock de cotizaciones los sigue.
+Pruebas: `tests/pantalla-w07-03.test.ts` (Swagger simulado para revisar el token por pestaña) y
+`e2e/cypress/e2e/pantallas/w07-03.cy.ts` (recorre las pestañas y hace «Try it out» de una cotización en pruebas).
 
 ## 1. Convenciones visuales que siguen las pantallas nuevas
 

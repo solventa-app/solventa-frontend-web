@@ -710,4 +710,27 @@ export const en: Record<Clave, string> = {
   'socios.ventas.estado.EMITIDA': 'Issued',
   'socios.ventas.estado.NO_EMITIDA': 'Not issued',
   'socios.ventas.estado.PAGO_RECHAZADO': 'Payment declined',
+
+  // HU-W07 · Documentación de la API (W07-03).
+  'socios.docs.titulo': 'API documentation',
+  'socios.docs.pestanas': 'Documentation sections',
+  'socios.docs.pestana.guia': 'Integration guide',
+  'socios.docs.pestana.pruebas': 'Sandbox',
+  'socios.docs.pestana.produccion': 'Production',
+  'socios.docs.subtitulo.guia': 'Everything you need to sell Solventa policies from your app',
+  'socios.docs.subtitulo.pruebas': 'Try the API with simulated responses: nothing is really quoted or issued',
+  'socios.docs.subtitulo.produccion': 'The real API: every quote counts against your budget',
+  'socios.docs.distintivo.pruebas': 'Environment: Sandbox',
+  'socios.docs.distintivo.produccion': 'Environment: Production',
+  'socios.docs.guiaPendiente':
+    "The PDF integration guide isn't published yet. Meanwhile, the full API reference is in the sandbox and production tabs.",
+  'socios.docs.abrirGuia': 'Open in a new tab',
+  'socios.docs.descargarGuia': 'Download',
+  'socios.docs.sinVisorPdf': "Your browser can't show PDFs here. Use «Download» to read the guide.",
+  'socios.docs.pruebas.titulo': 'Test documents (simulated responses)',
+  'socios.docs.pruebas.preliminar': 'A document ending in 999 gets a PRELIMINARY offer.',
+  'socios.docs.pruebas.completa': 'Any other document gets a COMPLETE offer.',
+  'socios.docs.pruebas.codigo': "The holder's verification code is always 000000.",
+  'socios.docs.produccion.alerta': 'Trying quotes here uses up your real budget.',
+  'socios.docs.swaggerFallo': "We couldn't load the interactive documentation. Reload the page to try again.",
 }

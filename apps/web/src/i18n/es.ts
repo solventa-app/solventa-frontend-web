@@ -710,6 +710,30 @@ export const es = {
   'socios.ventas.estado.EMITIDA': 'Emitidas',
   'socios.ventas.estado.NO_EMITIDA': 'No emitidas',
   'socios.ventas.estado.PAGO_RECHAZADO': 'Pago rechazado',
+
+  // HU-W07 · Documentación de la API (W07-03).
+  'socios.docs.titulo': 'Documentación de la API',
+  'socios.docs.pestanas': 'Secciones de la documentación',
+  'socios.docs.pestana.guia': 'Guía de integración',
+  'socios.docs.pestana.pruebas': 'Pruebas (sandbox)',
+  'socios.docs.pestana.produccion': 'Producción',
+  'socios.docs.subtitulo.guia': 'Todo lo que necesitas para vender pólizas Solventa desde tu app',
+  'socios.docs.subtitulo.pruebas': 'Prueba la API con respuestas simuladas: no se cotiza ni se emite de verdad',
+  'socios.docs.subtitulo.produccion': 'La API real: cada cotización descuenta de tu presupuesto',
+  'socios.docs.distintivo.pruebas': 'Entorno: Sandbox',
+  'socios.docs.distintivo.produccion': 'Entorno: Producción',
+  'socios.docs.guiaPendiente':
+    'La guía de integración en PDF todavía no está publicada. Mientras tanto, la referencia completa de la API está en las pestañas de pruebas y de producción.',
+  'socios.docs.abrirGuia': 'Abrir en otra pestaña',
+  'socios.docs.descargarGuia': 'Descargar',
+  'socios.docs.sinVisorPdf': 'Tu navegador no muestra PDF aquí. Usa «Descargar» para leer la guía.',
+  'socios.docs.pruebas.titulo': 'Documentos de prueba (respuestas simuladas)',
+  'socios.docs.pruebas.preliminar': 'Un documento terminado en 999 recibe una oferta PRELIMINAR.',
+  'socios.docs.pruebas.completa': 'Cualquier otro documento recibe una oferta COMPLETA.',
+  'socios.docs.pruebas.codigo': 'El código de verificación del titular es siempre 000000.',
+  'socios.docs.produccion.alerta': 'Probar cotizaciones aquí descuenta presupuesto real.',
+  'socios.docs.swaggerFallo':
+    'No pudimos cargar la documentación interactiva. Recarga la página para intentarlo de nuevo.',
 }
 
 export type Clave = keyof typeof es

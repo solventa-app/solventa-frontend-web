@@ -330,6 +330,7 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W07',
     sprint: 2,
     socio: true,
-    criterios: [],
+    criterios: ['CA-W07-11', 'CA-W07-12', 'CA-W07-13'],
+    componente: () => import('../views/DocumentacionApi.vue'),
   },
 ]

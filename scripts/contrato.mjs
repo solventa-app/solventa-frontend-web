@@ -18,6 +18,9 @@ const copia = resolve(aqui, '../contrato/schema.graphql')
 const hermano = resolve(aqui, '../../solventa-backend/contracts/graphql/schema.graphql')
 const copiaJur = resolve(aqui, '../contrato/jurisdicciones.json')
 const copiaJurWeb = resolve(aqui, '../apps/web/src/contrato/jurisdicciones.json')
+// Borrador del contrato REST de socios (HU-W07): la web lo sirve al Swagger de W07-03, así que lleva su propia copia.
+const borradorSocios = resolve(aqui, '../contrato/borrador-socios-v1.yaml')
+const copiaSociosWeb = resolve(aqui, '../apps/web/src/contrato/socios-v1.yaml')
 
 const normalizar = (texto) => texto.replace(/\r\n/g, '\n').trimEnd() + '\n'
 
@@ -49,6 +52,7 @@ if (modo === 'sincronizar') {
   await writeFile(copia, esperado, 'utf8')
   // El despliegue de Vercel solo sube apps/web: la web importa su propia copia del catálogo.
   await writeFile(copiaJurWeb, normalizar(await readFile(copiaJur, 'utf8')), 'utf8')
+  await writeFile(copiaSociosWeb, normalizar(await readFile(borradorSocios, 'utf8')), 'utf8')
   console.log(`Contrato sincronizado desde ${origen}.\nAhora corre: npm run codegen --prefix apps/web`)
 } else {
   const actual = normalizar(await readFile(copia, 'utf8'))
@@ -60,6 +64,12 @@ if (modo === 'sincronizar') {
   const jurWeb = await readFile(copiaJurWeb, 'utf8').then(normalizar, () => null)
   if (jurRaiz !== jurWeb) {
     console.error('El catálogo de jurisdicciones de apps/web falta o difiere del de la raíz.\nCorre: npm run contrato:sincronizar')
+    process.exit(1)
+  }
+  const sociosRaiz = normalizar(await readFile(borradorSocios, 'utf8'))
+  const sociosWeb = await readFile(copiaSociosWeb, 'utf8').then(normalizar, () => null)
+  if (sociosRaiz !== sociosWeb) {
+    console.error('La copia del contrato de socios de apps/web falta o difiere del borrador.\nCorre: npm run contrato:sincronizar')
     process.exit(1)
   }
   console.log(`Contrato al día con ${origen}.`)

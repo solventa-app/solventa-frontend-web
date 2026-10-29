@@ -114,7 +114,7 @@ cada pantalla.
 |---|---|---|---|
 | W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01); CA-W07-01 a 04 | Público |
 | W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones; CA-W07-05 a 10 | Sesión del socio |
-| W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas | Sesión del socio |
+| W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas; CA-W07-11 a 13 | Sesión del socio |
 | W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa | `BACKOFFICE` |
 
 **Criterios propuestos de HU-W07** (se validan contra Jira, KAN-30):
@@ -131,3 +131,6 @@ cada pantalla.
 | CA-W07-08 | W07-02 | El consumo muestra las cotizaciones contra el presupuesto (usadas, % y disponibles) y «Lo recarga Solventa»; agotado, la tarjeta pasa a alerta con el 429 |
 | CA-W07-09 | W07-02 | El estado muestra «Operativo», «Degradado» o «Con fallas» con ícono y texto, la salud general, la latencia y la disponibilidad (o «Sin tráfico en la ventana»), Cotización y Emisión, sin nombres de micros internos, y cambia con la ventana |
 | CA-W07-10 | W07-02 | El consumo por API (gráfico de cotizaciones por día y tabla) y las ventas y comisiones (indicadores y tabla por mes, montos en pesos) siguen al entorno; en pruebas se marcan como «Datos simulados». Una sección que falla muestra su error con reintento sin ocultar las demás; un 401 vuelve al ingreso con el aviso |
+| CA-W07-11 | W07-03 | La documentación abre en «Guía de integración» (no en la que cuesta) con el PDF en el idioma activo, «Abrir en otra pestaña» y «Descargar»; si el PDF no está o el navegador no lo muestra, se dice; la pestaña activa va en la URL |
+| CA-W07-12 | W07-03 | «Pruebas (sandbox)» muestra el Swagger del contrato con el token de pruebas, el distintivo «Entorno: Sandbox» y los documentos de prueba con el código 000000 |
+| CA-W07-13 | W07-03 | «Producción» muestra el Swagger con el token de producción, el distintivo en alerta y el aviso fijo de que probar cotizaciones descuenta presupuesto real |
