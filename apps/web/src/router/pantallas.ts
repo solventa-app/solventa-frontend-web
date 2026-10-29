@@ -9,12 +9,14 @@ export interface Pantalla {
   id: string
   ruta: string
   nombre: string
-  historia: 'HU-W01' | 'HU-W03' | 'HU-W04' | 'HU-W05' | 'Global'
+  historia: 'HU-W01' | 'HU-W03' | 'HU-W04' | 'HU-W05' | 'HU-W07' | 'Global'
   sprint: 1 | 2 | 3
   /** Criterios de aceptación que cubre (CA-*), ver docs/plan-frontend.md. */
   criterios: string[]
   /** Roles con acceso (ver router/index.ts). Si se omite, la pantalla es pública. */
   roles?: Rol[]
+  /** Pantalla del portal de socios (HU-W07): exige la sesión técnica del socio, no un usuario con rol. */
+  socio?: boolean
   /** Ruta concreta para enlazar o probar una ruta con parámetros (p. ej. `:id`). Si se omite, se usa `ruta`. */
   rutaEjemplo?: string
   /** Si se omite, se usa `PantallaPendiente`. */
@@ -299,5 +301,33 @@ export const pantallas: Pantalla[] = [
     roles: ['BACKOFFICE'],
     criterios: ['CA-W04-23', 'CA-W04-29'],
     componente: () => import('../views/ConfirmacionDerivacion.vue'),
+  },
+  // HU-W07 (Sprint 2, KAN-30): portal de socios. Registradas en las piezas comunes (plan-hu-w07-front.md, 5.1);
+  // cada vista llega en su PR. El portal no usa `roles`: lo protege la sesión técnica del socio (`socio`).
+  {
+    id: 'W07-01',
+    ruta: '/socios/ingreso',
+    nombre: 'Ingreso al portal de socios',
+    historia: 'HU-W07',
+    sprint: 2,
+    criterios: [],
+  },
+  {
+    id: 'W07-02',
+    ruta: '/socios/panel',
+    nombre: 'Panel del socio',
+    historia: 'HU-W07',
+    sprint: 2,
+    socio: true,
+    criterios: [],
+  },
+  {
+    id: 'W07-03',
+    ruta: '/socios/documentacion',
+    nombre: 'Documentación de la API',
+    historia: 'HU-W07',
+    sprint: 2,
+    socio: true,
+    criterios: [],
   },
 ]

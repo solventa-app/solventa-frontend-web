@@ -2,4 +2,5 @@ dist/
 coverage/
 public/mockServiceWorker.js
 src/graphql/tipos.ts
+src/api/tipos-socios.ts
 src/contrato/jurisdicciones.json

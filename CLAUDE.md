@@ -45,6 +45,11 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   en `dev:mock` (no entran al build). W01-01 pide nombre y correo del cliente solo al ASESOR (W01-A1) y W05-01 muestra el
   medio de pago y el origen (W05-A5; esos campos solo se piden con mocks hasta la v0.17). Pruebas: Vitest 349 (toda la web) y Cypress
   `w03-suscripcion.cy.ts` (6). Fallan 3 pruebas de Cypress que ya fallaban en `develop` (`w05-01.cy.ts` y `w01-oferta.cy.ts`).
+- **HU-W07 (portal de socios, KAN-30), en curso, solo front con mocks** (`docs/plan-hu-w07-front.md`, un PR por paso):
+  hechas las piezas comunes (5.1): cliente REST `src/api/socios.ts`, sesión técnica `useSesionSocio.ts` (JWT de 15 min
+  en `sessionStorage` `solventa.tokenSocio`, misma excepción de la regla 7), guardia `socio: true` y rutas W07-01 a 03.
+  Contrato: **borrador local** `contrato/borrador-socios-v1.yaml` → `src/api/tipos-socios.ts` (`openapi-typescript`,
+  `npm run codegen`) hasta que el backend publique `socios-v1.yaml`. Mocks en `src/mocks/socios.ts`.
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").

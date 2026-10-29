@@ -102,3 +102,17 @@ consume del BFF real (`/v1/graphql/web` con token de BACKOFFICE, servicio CLAIMS
 - CA-W04-27: tras rechazar se confirma con el motivo, el comentario, la fecha y la vía de recurso; el caso queda rechazado.
 - CA-W04-28: tras aprobar se confirma con la indemnización en es-CO, el método de transferencia y el plazo; el caso queda aprobado.
 - CA-W04-29: las confirmaciones solo existen tras la acción en la misma sesión; por URL directa muestran un estado vacío con "Volver a la bandeja".
+
+## HU-W07 — portal de socios (KAN-30): 3 pantallas más el estado del sistema
+
+Plan, decisiones y estado: [`plan-hu-w07-front.md`](plan-hu-w07-front.md). Figma `Solventa-web-Final`: W07-01 `2001:3340`,
+W07-02 `2001:3562`, W07-03 `2001:3434`; W07-04 no tiene frame (aprobado sin Figma). Contrato: borrador local
+`contrato/borrador-socios-v1.yaml` hasta que el backend publique `socios-v1.yaml`. Los criterios CA-W07 se proponen con
+cada pantalla.
+
+| Pantalla | Ruta | Qué se construye | Acceso |
+|---|---|---|---|
+| W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01) | Público |
+| W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones | Sesión del socio |
+| W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas | Sesión del socio |
+| W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa | `BACKOFFICE` |
