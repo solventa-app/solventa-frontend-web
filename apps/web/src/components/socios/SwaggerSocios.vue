@@ -1,21 +1,21 @@
 <!--
   Swagger embebido de la documentación de la API (W07-03, plan-hu-w07-front.md 5.4 #2). Usa `swagger-ui-dist` en versión
   fija, empaquetado y sin CDN, cargado en diferido para que no pese en el resto de la web. Lee la copia del contrato de
-  socios que trae la web (src/contrato/socios-v1.yaml, hoy el borrador) e inyecta en cada «Try it out» el token del
+  socios que trae la web (src/contrato/socios-v1.json, contrato v0.22) e inyecta en cada «Try it out» el token del
   entorno de la pestaña con `requestInterceptor`: el de pruebas o el de producción, pedido con la clave de ese entorno
   y renovado si venció. Su CSS se ajusta a la web (Inter, colores de la marca y de los métodos como las pastillas del
   prototipo, sin la barra superior ni el «Authorize» de Swagger): es la única excepción al «sin CSS propio» del plan.
 -->
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import urlContrato from '../../contrato/socios-v1.yaml?url'
+import urlContrato from '../../contrato/socios-v1.json?url'
 import type { Entorno } from '../../api/socios'
 import { usePanelSocio, type TokenGenerado } from '../../composables/usePanelSocio'
 import { t } from '../../i18n'
 
 const props = defineProps<{ entorno: Entorno }>()
 
-const { estado, cargarCredenciales, generarToken } = usePanelSocio()
+const { generarToken } = usePanelSocio()
 const contenedor = ref<HTMLElement | null>(null)
 const fallo = ref(false)
 let token: TokenGenerado | null = null
@@ -23,7 +23,6 @@ let token: TokenGenerado | null = null
 /** Token vigente del entorno (con un minuto de margen); `null` si no se pudo pedir. */
 async function tokenVigente(): Promise<string | null> {
   if (token && token.expiraEn - Date.now() > 60_000) return token.token
-  if (!estado.credenciales) await cargarCredenciales()
   const resultado = await generarToken(props.entorno)
   token = typeof resultado === 'string' ? null : resultado
   return token?.token ?? null

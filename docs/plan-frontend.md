@@ -106,8 +106,8 @@ consume del BFF real (`/v1/graphql/web` con token de BACKOFFICE, servicio CLAIMS
 ## HU-W07 — portal de socios (KAN-30): 3 pantallas más el estado del sistema
 
 Plan, decisiones y estado: [`plan-hu-w07-front.md`](plan-hu-w07-front.md). Figma `Solventa-web-Final`: W07-01 `2001:3340`,
-W07-02 `2001:3562`, W07-03 `2001:3434`; W07-04 no tiene frame (aprobado sin Figma). Contrato: borrador local
-`contrato/borrador-socios-v1.yaml` hasta que el backend publique `socios-v1.yaml`. Los criterios CA-W07 se proponen con
+W07-02 `2001:3562`, W07-03 `2001:3434`; W07-04 no tiene frame (aprobado sin Figma). Contrato: la API REST de
+socios de la v0.22 (`contrato/socios-v1.json`) y `estadoSistema` de GraphQL. Los criterios CA-W07 se proponen con
 cada pantalla.
 
 | Pantalla | Ruta | Qué se construye | Acceso |
@@ -130,9 +130,9 @@ cada pantalla.
 | CA-W07-07 | W07-02 | «Generar token» muestra el token de 15 minutos con su cuenta regresiva y, al vencer, pide generar otro |
 | CA-W07-08 | W07-02 | El consumo muestra las cotizaciones contra el presupuesto (usadas, % y disponibles) y «Lo recarga Solventa»; agotado, la tarjeta pasa a alerta con el 429 |
 | CA-W07-09 | W07-02 | El estado muestra «Operativo», «Degradado» o «Con fallas» con ícono y texto, la salud general, la latencia y la disponibilidad (o «Sin tráfico en la ventana»), Cotización y Emisión, sin nombres de micros internos, y cambia con la ventana |
-| CA-W07-10 | W07-02 | El consumo por API (gráfico de cotizaciones por día y tabla) y las ventas y comisiones (indicadores y tabla por mes, montos en pesos) siguen al entorno; en pruebas se marcan como «Datos simulados». Una sección que falla muestra su error con reintento sin ocultar las demás; un 401 vuelve al ingreso con el aviso |
+| CA-W07-10 | W07-02 | El consumo por API (gráfico de llamadas por día y tabla con llamadas, con éxito, con error y latencia, con su rango de fechas) y las ventas y comisiones (propuestas, pólizas emitidas, conversión de propuesta a póliza, primas y comisión con su tasa, y la tabla por mes, en pesos) siguen al entorno; en pruebas se marcan como «Datos simulados». Una sección que falla muestra su error con reintento sin ocultar las demás; un 401 de la sesión vuelve al ingreso con el aviso |
 | CA-W07-11 | W07-03 | La documentación abre en «Guía de integración» (no en la que cuesta) con el PDF en el idioma activo, «Abrir en otra pestaña» y «Descargar»; si el PDF no está o el navegador no lo muestra, se dice; la pestaña activa va en la URL |
-| CA-W07-12 | W07-03 | «Pruebas (sandbox)» muestra el Swagger del contrato con el token de pruebas, el distintivo «Entorno: Sandbox» y los documentos de prueba con el código 000000 |
+| CA-W07-12 | W07-03 | «Pruebas (sandbox)» muestra el Swagger del contrato con el token de pruebas, el distintivo «Entorno: Sandbox» y el modo prueba (respuestas simuladas y el código 000000) |
 | CA-W07-13 | W07-03 | «Producción» muestra el Swagger con el token de producción, el distintivo en alerta y el aviso fijo de que probar cotizaciones descuenta presupuesto real |
 | CA-W07-14 | W07-04 | El operador llega desde la tarjeta «Estado del sistema» de G-02b y ve la caja de estado con la ventana, la tabla por servicio (peso, salud, disponibilidad o «sin tráfico», latencia media, p95 y si responde `/health`) y las APIs externas con su circuito, siempre con texto y no solo color |
 | CA-W07-15 | W07-04 | La pantalla se recarga sola cada 30 s sin «Cargando…»; si una recarga falla conserva los datos, y si falla al entrar muestra el error con reintento, nunca un 5xx |

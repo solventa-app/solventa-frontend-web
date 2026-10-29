@@ -98,9 +98,9 @@ onUnmounted(() => clearInterval(reloj))
         <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.credenciales.socioId') }}</span>
         <div class="flex items-center justify-between gap-2">
           <code class="break-all font-mono text-[13px] text-tinta" data-prueba="socio-id">{{
-            credencial.socioId
+            credencial.clientId
           }}</code>
-          <BotonCopiar :texto="credencial.socioId" :etiqueta="t('socios.credenciales.socioId')" />
+          <BotonCopiar :texto="credencial.clientId" :etiqueta="t('socios.credenciales.socioId')" />
         </div>
       </div>
 

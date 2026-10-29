@@ -21,7 +21,7 @@ describeConMocks('W07-02 · Panel del socio (pantalla aislada)', () => {
       cy.get('[data-prueba="socio-id"]').should('have.text', 'retail-fintech-042')
       cy.get('[data-prueba="cotizaciones"]').should('contain.text', '842').and('contain.text', '1.000')
       cy.get('[data-prueba="caja-estado"]').should('contain.text', 'Operativo')
-      cy.get('[data-prueba="grafico-cotizaciones"]').should('be.visible')
+      cy.get('[data-prueba="grafico-llamadas"]').should('be.visible')
       cy.get('[data-prueba="tabla-ventas"]').should('contain.text', 'Octubre de 2026')
     })
   })
@@ -61,11 +61,12 @@ describeConMocks('W07-02 · Panel del socio (pantalla aislada)', () => {
     it(`a ${ancho}px no se desborda y las tarjetas ${ancho < 1024 ? 'se apilan' : 'van en tres columnas'}`, () => {
       cy.viewport(ancho, alto)
       cy.document().then((doc) => expect(doc.documentElement.scrollWidth).to.be.at.most(ancho))
-      cy.get('[data-prueba="tarjeta-credenciales"]').then(($credenciales) => {
-        cy.get('[data-prueba="tarjeta-consumo"]').then(($consumo) => {
-          const mismaFila = $credenciales[0].getBoundingClientRect().top === $consumo[0].getBoundingClientRect().top
-          expect(mismaFila).to.eq(ancho >= 1024)
-        })
+      cy.get('[data-prueba="cotizaciones"]').should('exist')
+      // Se reintenta hasta que la maqueta se asiente (las secciones cargan por separado); 2 px de tolerancia.
+      cy.get('[data-prueba="tarjeta-credenciales"]').should(($credenciales) => {
+        const consumo = Cypress.$('[data-prueba="tarjeta-consumo"]')[0]
+        const diferencia = Math.abs($credenciales[0].getBoundingClientRect().top - consumo.getBoundingClientRect().top)
+        expect(diferencia < 2).to.eq(ancho >= 1024)
       })
       cy.screenshot(`w07-02-${ancho}`, { capture: 'viewport' })
     })

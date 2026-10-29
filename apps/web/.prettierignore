@@ -4,4 +4,4 @@ public/mockServiceWorker.js
 src/graphql/tipos.ts
 src/api/tipos-socios.ts
 src/contrato/jurisdicciones.json
-src/contrato/socios-v1.yaml
+src/contrato/socios-v1.json

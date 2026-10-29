@@ -32,24 +32,22 @@ export function reiniciarEstadoSistema(): void {
 }
 
 /**
- * La caja de estado es la misma del panel del socio (TarjetaEstado, con la forma de `GET /v1/estado`): se adapta la
- * respuesta de GraphQL a esa forma, sin los micros.
+ * La caja de estado es la misma del panel del socio (TarjetaEstado, con la forma de `GET /v1/estado`, que en el contrato
+ * v0.22 es la de GraphQL sin los micros): se copian los campos que comparte.
  */
 export function comoEstadoGeneral(datos: EstadoSistema): Estado {
   return {
-    general: {
-      porcentaje: datos.porcentaje,
-      color: datos.color,
-      disponibilidad: datos.disponibilidad ?? null,
-      latenciaMediaMs: datos.latenciaMediaMs ?? null,
-      ventana: datos.ventana as Ventana,
-    },
+    porcentaje: datos.porcentaje,
+    color: datos.color,
+    disponibilidad: datos.disponibilidad ?? null,
+    latenciaMediaMs: datos.latenciaMediaMs ?? null,
+    ventana: datos.ventana as Ventana,
+    calculadoEn: datos.calculadoEn,
     apis: datos.apis.map((api) => ({
-      api: api.nombre as Estado['apis'][number]['api'],
+      nombre: api.nombre as Estado['apis'][number]['nombre'],
       porcentaje: api.porcentaje,
       color: api.color,
     })),
-    verificadoEn: datos.calculadoEn,
   }
 }
 

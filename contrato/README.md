@@ -12,10 +12,10 @@ npm run codegen --prefix apps/web   # regenera apps/web/src/graphql/tipos.ts
 Origen del esquema del backend: repo hermano `../solventa-backend` (por defecto), `BACKEND_SCHEMA_PATH` (ruta) o
 `BACKEND_SCHEMA_URL` (+ `BACKEND_SCHEMA_TOKEN` si el repo es privado). Detalle en `scripts/contrato.mjs`.
 
-**Borrador local de HU-W07:** `borrador-socios-v1.yaml` (OpenAPI de la API de socios) **no es una copia del backend**:
-lo escribe el front mientras el backend no publique `contracts/openapi/socios-v1.yaml` (`docs/plan-hu-w07-front.md`).
-`npm run codegen` genera `apps/web/src/api/tipos-socios.ts` y `npm run contrato:sincronizar` deja una copia en
-`apps/web/src/contrato/socios-v1.yaml` para el Swagger de W07-03. Al publicarse el real, se borra y se copia el del backend.
+**API REST de socios (HU-W07, v0.22):** `socios-v1.json` es la copia de `solventa-backend/contracts/openapi/socios-v1.json`
+(OpenAPI 3.1) y tampoco se edita a mano. `npm run contrato:sincronizar` la trae junto con el esquema GraphQL y deja otra
+copia en `apps/web/src/contrato/socios-v1.json` para el Swagger de W07-03 (Vercel solo publica `apps/web`);
+`contrato:verificar` comprueba las dos. `npm run codegen` genera `apps/web/src/api/tipos-socios.ts`.
 
 ## Reglas (ADR-06)
 

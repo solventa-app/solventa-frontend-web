@@ -1,5 +1,5 @@
 <!--
-  Gráfico de cotizaciones por día del panel del socio (W07-02, plan-hu-w07-front.md 5.3; sin Figma, aprobado).
+  Gráfico de llamadas por día del panel del socio (W07-02, plan-hu-w07-front.md 5.3; sin Figma, aprobado).
   SVG propio, sin librería (regla 8), con las reglas de la skill de dataviz: una sola serie en `primario` (el título
   la nombra, sin leyenda), barras de 24 px como máximo con 4 px redondeados en la punta y rectas en la base, grilla
   tenue, el texto en tinta (nunca del color de la serie) y un tooltip al pasar o enfocar cada barra, con un área de
@@ -11,7 +11,7 @@ import type { Consumo } from '../../api/socios'
 import { t } from '../../i18n'
 import { formatearFechaCorta, formatearNumero } from '../../utils/formato'
 
-const props = defineProps<{ datos: Consumo['cotizacionesPorDia'] }>()
+const props = defineProps<{ datos: Consumo['diario'] }>()
 
 // El ancho del SVG es el del contenedor (no se escala con viewBox): así el texto queda en 11 px en cualquier pantalla.
 const ALTO = 200
@@ -35,7 +35,7 @@ const activo = ref<number | null>(null)
 
 /** Tope del eje redondeado hacia arriba a un número «limpio» (1, 2 o 5 × 10ⁿ). */
 const tope = computed(() => {
-  const maximo = Math.max(1, ...props.datos.map((d) => d.cantidad))
+  const maximo = Math.max(1, ...props.datos.map((d) => d.llamadas))
   const potencia = 10 ** Math.floor(Math.log10(maximo))
   return [1, 2, 5, 10].map((m) => m * potencia).find((v) => v >= maximo) ?? maximo
 })
@@ -49,12 +49,12 @@ const barras = computed(() =>
   props.datos.map((d, i) => {
     const centro = MARGEN.izquierda + franja.value * (i + 0.5)
     const x = centro - anchoBarra.value / 2
-    const arriba = y(d.cantidad)
+    const arriba = y(d.llamadas)
     const base = y(0)
     const r = Math.min(4, anchoBarra.value / 2, base - arriba)
     // Punta redondeada (4 px) y base recta, anclada a la línea de cero.
     const camino =
-      d.cantidad > 0
+      d.llamadas > 0
         ? `M${x},${base} V${arriba + r} Q${x},${arriba} ${x + r},${arriba} H${x + anchoBarra.value - r} Q${x + anchoBarra.value},${arriba} ${x + anchoBarra.value},${arriba + r} V${base} Z`
         : ''
     return { ...d, centro, camino, etiqueta: diaCorto(d.fecha) }
@@ -73,7 +73,7 @@ const tooltip = computed(() => (activo.value === null ? null : barras.value[acti
 </script>
 
 <template>
-  <figure ref="contenedor" class="relative m-0 flex flex-col gap-2" data-prueba="grafico-cotizaciones">
+  <figure ref="contenedor" class="relative m-0 flex flex-col gap-2" data-prueba="grafico-llamadas">
     <figcaption class="text-[13px] font-semibold text-tinta">{{ t('socios.consumo.grafico') }}</figcaption>
     <svg
       :width="ancho"
@@ -120,7 +120,7 @@ const tooltip = computed(() => (activo.value === null ? null : barras.value[acti
           :height="altoUtil"
           fill="transparent"
           tabindex="0"
-          :aria-label="t('socios.consumo.barra.dia', { dia: barra.etiqueta, n: formatearNumero(barra.cantidad) })"
+          :aria-label="t('socios.consumo.barra.dia', { dia: barra.etiqueta, n: formatearNumero(barra.llamadas) })"
           class="cursor-default focus:outline-none"
           @mouseenter="activo = i"
           @mouseleave="activo = null"
@@ -135,7 +135,7 @@ const tooltip = computed(() => (activo.value === null ? null : barras.value[acti
       class="pointer-events-none absolute top-6 -translate-x-1/2 whitespace-nowrap rounded-[4px] border border-borde bg-white px-2 py-1 text-[12px] text-tinta"
       :style="{ left: `${(tooltip.centro / ancho) * 100}%` }"
     >
-      {{ tooltip.etiqueta }} · <strong class="font-semibold">{{ formatearNumero(tooltip.cantidad) }}</strong>
+      {{ tooltip.etiqueta }} · <strong class="font-semibold">{{ formatearNumero(tooltip.llamadas) }}</strong>
     </div>
 
     <table class="sr-only">
@@ -147,13 +147,13 @@ const tooltip = computed(() => (activo.value === null ? null : barras.value[acti
       <thead>
         <tr>
           <th scope="col">{{ t('socios.consumo.dia') }}</th>
-          <th scope="col">{{ t('socios.consumo.columnaCotizaciones') }}</th>
+          <th scope="col">{{ t('socios.consumo.columnaLlamadas') }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="barra in barras" :key="barra.fecha">
           <td>{{ barra.etiqueta }}</td>
-          <td>{{ formatearNumero(barra.cantidad) }}</td>
+          <td>{{ formatearNumero(barra.llamadas) }}</td>
         </tr>
       </tbody>
     </table>

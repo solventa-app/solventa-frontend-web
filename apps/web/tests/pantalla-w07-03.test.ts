@@ -100,10 +100,10 @@ describe('W07-03 · Documentación de la API', () => {
     expect(router.currentRoute.value.query.pestana).toBe('produccion')
   })
 
-  it('CA-W07-12: «Pruebas» trae los documentos de prueba, el código 000000 y el token de PRUEBAS', async () => {
+  it('CA-W07-12: «Pruebas» explica el modo prueba (respuestas simuladas, código 000000) y usa el token de PRUEBAS', async () => {
     const wrapper = await montarDocs('pruebas')
     expect(wrapper.get('[data-prueba="distintivo-entorno"]').text()).toBe('Entorno: Sandbox')
-    expect(wrapper.get('[data-prueba="caja-pruebas"]').text()).toMatch(/999.*PRELIMINAR.*000000/s)
+    expect(wrapper.get('[data-prueba="caja-pruebas"]').text()).toMatch(/simuladas.*000000/s)
     expect((await tokenInyectado())?.entorno).toBe('PRUEBAS')
   })
 
@@ -157,9 +157,9 @@ describe('Pestanas (librería)', () => {
 })
 
 describe('contrato de socios de la web', () => {
-  it('la copia que sirve la web es idéntica al borrador de contrato/', () => {
-    const raiz = readFileSync(resolve(__dirname, '../../../contrato/borrador-socios-v1.yaml'), 'utf8')
-    const web = readFileSync(resolve(__dirname, '../src/contrato/socios-v1.yaml'), 'utf8')
+  it('la copia que sirve la web es idéntica a la de contrato/ (v0.22)', () => {
+    const raiz = readFileSync(resolve(__dirname, '../../../contrato/socios-v1.json'), 'utf8')
+    const web = readFileSync(resolve(__dirname, '../src/contrato/socios-v1.json'), 'utf8')
     expect(web.trimEnd()).toBe(raiz.trimEnd())
   })
 })

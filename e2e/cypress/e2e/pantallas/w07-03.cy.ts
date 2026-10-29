@@ -1,5 +1,6 @@
 // E2E por pantalla individual (ver la convención en g-01.cy.ts). W07-03 · Documentación de la API (HU-W07), contra los
-// mocks de MSW: el Swagger de pruebas cotiza contra src/mocks/socios.ts (documento terminado en 999 → PRELIMINAR).
+// mocks de MSW: el Swagger de pruebas cotiza contra src/mocks/socios.ts (convención de demo del mock: documento
+// terminado en 999 → PRELIMINAR).
 import { describeConMocks } from '../../support/entorno'
 
 function ingresarComoSocio() {
@@ -34,7 +35,7 @@ describeConMocks('W07-03 · Documentación de la API (pantalla aislada)', () => 
   it('en pruebas, «Try it out» de una cotización responde con la oferta simulada', () => {
     cy.contains('[role="tab"]', 'Pruebas (sandbox)').click()
     cy.get('[data-prueba="swagger"] .opblock-summary-path', { timeout: 15000 }).should('have.length.greaterThan', 5)
-    cy.contains('.opblock-summary-path', /^\/cotizaciones$/).click()
+    cy.contains('.opblock-summary-path', /^\/v1\/cotizaciones$/).click()
     cy.get('.opblock.is-open').within(() => {
       cy.contains('button', 'Try it out').click()
       cy.get('textarea.body-param__text').invoke(
@@ -42,8 +43,8 @@ describeConMocks('W07-03 · Documentación de la API (pantalla aislada)', () => 
         JSON.stringify({
           consentimientoId: 'c-1',
           documentoIdentidad: '1020789999',
-          valorCredito: { valor: '185000000', moneda: 'COP' },
-          plazoMeses: 240,
+          valorCredito: '185000000.00',
+          plazoMeses: 48,
           direccionInmueble: 'Calle 80 # 10-20',
         }),
       )

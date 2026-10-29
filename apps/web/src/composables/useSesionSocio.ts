@@ -1,12 +1,13 @@
 // Sesión técnica del portal de socios (HU-W07). Separada de useSesion.ts porque el socio no es un usuario con rol:
-// entra con su ID de socio y la clave de producción (W07-3) y recibe un JWT de 15 minutos (`POST /v1/token`).
+// entra con su ID de socio (el `clientId` de producción) y la clave de producción (W07-3) y recibe un JWT de 15 minutos
+// (`POST /v1/token`, contrato v0.22).
 //
 // El token vive en `sessionStorage` (`solventa.tokenSocio`) con la misma excepción de la regla 7 que el JWT de
 // usuario: sobrevive a recargar la pestaña y se borra al cerrarla o al cerrar sesión. Solo se guarda el token (sus
-// claims no traen datos personales); el nombre del socio no se guarda: llega con el token o, tras recargar, con
-// `GET /v1/credenciales`. Al vencer, se vuelve al login con el aviso «Tu sesión técnica venció».
+// claims no traen datos personales); el nombre del socio no viaja en el token ni se guarda: llega con
+// `GET /v1/credenciales` al ingresar y al recargar. Al vencer, se vuelve al login con el aviso «Tu sesión técnica venció».
 import { reactive } from 'vue'
-import { ErrorSocios, pedirToken, type Entorno } from '../api/socios'
+import { ErrorSocios, obtenerCredenciales, pedirToken, type Entorno } from '../api/socios'
 import { t } from '../i18n'
 
 export const CLAVE_TOKEN_SOCIO = 'solventa.tokenSocio'
@@ -97,9 +98,23 @@ export function useSesionSocio(fetchFn: typeof fetch = fetch) {
       const respuesta = await pedirToken(socioId.trim(), clave, fetchFn)
       // Al portal se entra con la clave de producción (W07-3); la de pruebas solo sirve en la API.
       if (respuesta.entorno !== 'PRODUCCION') return t('socios.sesion.soloProduccion')
-      return abrirSesion(respuesta.token, respuesta.socio.nombre) ? null : t('socios.error.generico')
+      if (!abrirSesion(respuesta.accessToken)) return t('socios.error.generico')
+      await cargarNombre()
+      return null
     } catch (error) {
       return error instanceof ErrorSocios ? error.message : t('socios.error.generico')
+    }
+  }
+
+  /** El nombre comercial del socio para el encabezado; si no llega, se muestra el ID (nunca un error). */
+  async function cargarNombre(): Promise<void> {
+    const token = estado.token
+    if (!token) return
+    try {
+      const credenciales = await obtenerCredenciales(token, fetchFn)
+      if (estado.token === token) estado.nombre = credenciales.socio.nombre
+    } catch {
+      /* se queda el ID de socio */
     }
   }
 

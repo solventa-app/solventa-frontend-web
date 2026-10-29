@@ -662,10 +662,9 @@ export const es = {
   'socios.consumo.disponibles': '{n} disponibles',
   'socios.consumo.recarga': 'Renovación del presupuesto:',
   'socios.consumo.recargaQuien': 'Lo recarga Solventa',
-  'socios.consumo.grafico': 'Cotizaciones por día',
-  'socios.consumo.barra.dia': '{dia}: {n} cotizaciones',
+  'socios.consumo.grafico': 'Llamadas por día',
+  'socios.consumo.barra.dia': '{dia}: {n} llamadas',
   'socios.consumo.dia': 'Día',
-  'socios.consumo.columnaCotizaciones': 'Cotizaciones',
   'socios.estado.titulo': 'Estado',
   'socios.estado.ventana': 'Ventana de tiempo',
   'socios.estado.servicio': 'Estado del servicio: {estado}',
@@ -697,19 +696,12 @@ export const es = {
   'socios.ventas.simulado': 'Datos simulados',
   'socios.ventas.propuestas': 'Propuestas',
   'socios.ventas.polizas': 'Pólizas emitidas',
-  'socios.ventas.conversion': 'Conversión',
-  'socios.ventas.primas': 'Primas cobradas',
+  'socios.ventas.conversion': 'Conversión (propuesta → póliza)',
+  'socios.ventas.primas': 'Primas',
   'socios.ventas.comision': 'Comisión causada',
   'socios.ventas.porMes': 'Ventas por mes',
   'socios.ventas.mes': 'Mes',
   'socios.ventas.vacio': 'Todavía no hay ventas.',
-  'socios.ventas.estado.ACEPTADA': 'Aceptadas',
-  'socios.ventas.estado.EN_FIRMA': 'En firma',
-  'socios.ventas.estado.FIRMADA': 'Firmadas',
-  'socios.ventas.estado.PENDIENTE_PAGO': 'Pendientes de pago',
-  'socios.ventas.estado.EMITIDA': 'Emitidas',
-  'socios.ventas.estado.NO_EMITIDA': 'No emitidas',
-  'socios.ventas.estado.PAGO_RECHAZADO': 'Pago rechazado',
 
   // HU-W07 · Documentación de la API (W07-03).
   'socios.docs.titulo': 'Documentación de la API',
@@ -727,9 +719,7 @@ export const es = {
   'socios.docs.abrirGuia': 'Abrir en otra pestaña',
   'socios.docs.descargarGuia': 'Descargar',
   'socios.docs.sinVisorPdf': 'Tu navegador no muestra PDF aquí. Usa «Descargar» para leer la guía.',
-  'socios.docs.pruebas.titulo': 'Documentos de prueba (respuestas simuladas)',
-  'socios.docs.pruebas.preliminar': 'Un documento terminado en 999 recibe una oferta PRELIMINAR.',
-  'socios.docs.pruebas.completa': 'Cualquier otro documento recibe una oferta COMPLETA.',
+  'socios.docs.pruebas.titulo': 'Modo prueba',
   'socios.docs.pruebas.codigo': 'El código de verificación del titular es siempre 000000.',
   'socios.docs.produccion.alerta': 'Probar cotizaciones aquí descuenta presupuesto real.',
   'socios.docs.swaggerFallo':
@@ -761,6 +751,11 @@ export const es = {
   'estadoSistema.responde': 'Responde',
   'estadoSistema.noResponde': 'No responde',
   'estadoSistema.sinTrafico': 'Sin tráfico',
+  'socios.consumo.columnaLlamadas': 'Llamadas',
+  'socios.panel.rango': 'Del {desde} al {hasta}',
+  'socios.ventas.tasa': 'Tasa de comisión: {tasa}',
+  'socios.docs.pruebas.simuladas':
+    'Con el token de pruebas las respuestas son simuladas: no se consultan fuentes ni se cobra.',
 }
 
 export type Clave = keyof typeof es

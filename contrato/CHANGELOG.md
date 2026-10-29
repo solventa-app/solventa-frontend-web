@@ -147,6 +147,11 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
   con `EstadoSistema`, `SaludApi`, `SaludMicro`, `SaludExterna`, `ColorSalud` y `EstadoCircuito`, y `Propuesta.nombreSocio`.
   La v0.19 ya no se usa (W07 tomó la v0.22).
 - Lo que cambia para la web: W07-04 (estado del sistema del operador) usa `estadoSistema`.
-- **Pendiente:** la v0.22 también publica la API REST de socios en `contracts/openapi/socios-v1.json` (OpenAPI 3.1). El
-  portal (W07-01 a W07-03) sigue con el borrador local `contrato/borrador-socios-v1.yaml` hasta reemplazarlo por ese
-  contrato en un PR propio.
+- La v0.22 también publica la API REST de socios en `contracts/openapi/socios-v1.json` (OpenAPI 3.1). La web la copia en
+  `contrato/socios-v1.json` y se borró el borrador local `contrato/borrador-socios-v1.yaml` (PR del contrato real de
+  socios). Diferencias con el borrador que cambiaron el portal: `POST /v1/token` recibe `clientId` y devuelve
+  `accessToken` sin el socio (el nombre sale de `GET /v1/credenciales`); las credenciales traen `clientId`; los errores
+  traen `codigo` estable y no hay 423 (el bloqueo es un 401 `CREDENCIALES_INVALIDAS`); consumo y ventas son del entorno
+  del token, con `desde`/`hasta` (la serie diaria cuenta llamadas); el estado es plano (`porcentaje`, `apis[].nombre`,
+  `calculadoEn`); las ventas traen totales, `meses` y `tasaComision`. El contrato no define documentos de prueba: solo el
+  código `000000` y que el modo prueba responde datos simulados.

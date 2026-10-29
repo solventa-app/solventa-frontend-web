@@ -18,7 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cobertura": "vitest run --coverage",
-    "codegen": "graphql-codegen --config codegen.ts && openapi-typescript ../../contrato/borrador-socios-v1.yaml -o src/api/tipos-socios.ts"
+    "codegen": "graphql-codegen --config codegen.ts && openapi-typescript ../../contrato/socios-v1.json -o src/api/tipos-socios.ts"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

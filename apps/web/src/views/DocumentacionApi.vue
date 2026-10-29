@@ -8,7 +8,8 @@
   1. «Guía de integración» (por defecto: no es la que cuesta): el PDF de public/socios/ en el idioma activo, con
      «Abrir en otra pestaña» y «Descargar». Si el navegador no muestra PDF, una tarjeta con la descarga; si la guía aún
      no se publica (paso 5.5), se dice así.
-  2. «Pruebas (sandbox)»: Swagger con el token de pruebas y una caja con los documentos de prueba y el código 000000.
+  2. «Pruebas (sandbox)»: Swagger con el token de pruebas y una caja con el modo prueba del contrato (respuestas
+     simuladas y el código 000000).
   3. «Producción»: Swagger con el token de producción y la alerta fija de que cotizar descuenta presupuesto real.
   La pestaña activa va en la URL (`?pestana=guia|pruebas|produccion`, no es un dato personal) para compartir el enlace.
   Título del encabezado: «Documentación de la API» en vez de «Documentación y playground» (criterio 1 del plan).
@@ -192,8 +193,7 @@ onMounted(() => {
               <div class="flex flex-col gap-1">
                 <strong class="font-semibold">{{ t('socios.docs.pruebas.titulo') }}</strong>
                 <ul class="list-disc pl-5">
-                  <li>{{ t('socios.docs.pruebas.preliminar') }}</li>
-                  <li>{{ t('socios.docs.pruebas.completa') }}</li>
+                  <li>{{ t('socios.docs.pruebas.simuladas') }}</li>
                   <li>{{ t('socios.docs.pruebas.codigo') }}</li>
                 </ul>
               </div>

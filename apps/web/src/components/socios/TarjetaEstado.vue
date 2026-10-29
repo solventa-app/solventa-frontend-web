@@ -20,7 +20,7 @@ defineEmits<{ 'update:ventana': [ventana: Ventana]; reintentar: [] }>()
 
 const VENTANAS: Ventana[] = ['15m', '1h', '24h', '7d']
 
-type Color = Estado['general']['color']
+type Color = Estado['color']
 const TONO: Record<
   Color,
   { caja: string; texto: string; barra: string; icono: 'check_circle' | 'warning' | 'cancel' }
@@ -31,7 +31,8 @@ const TONO: Record<
 }
 const BADGE: Record<Color, 'exito' | 'alerta' | 'error'> = { VERDE: 'exito', AMARILLO: 'alerta', ROJO: 'error' }
 
-const general = computed(() => props.salud?.general ?? null)
+// El estado viene plano en el contrato v0.22 (GET /v1/estado y, adaptado, estadoSistema de GraphQL).
+const general = computed(() => props.salud ?? null)
 const tono = computed(() => (general.value ? TONO[general.value.color] : TONO.VERDE))
 const sinTrafico = computed(
   () => !!general.value && general.value.disponibilidad == null && general.value.latenciaMediaMs == null,
@@ -121,10 +122,10 @@ const sinTrafico = computed(
         <ul class="flex flex-col gap-2" :aria-label="t('socios.estado.apis')">
           <li
             v-for="api in salud.apis"
-            :key="api.api"
+            :key="api.nombre"
             class="flex items-center justify-between gap-2 text-[13px] text-tinta"
           >
-            {{ t(`socios.estado.api.${api.api}`) }}
+            {{ t(`socios.estado.api.${api.nombre}`) }}
             <Badge :tipo="BADGE[api.color]">{{ formatearNumero(api.porcentaje, 1) }} %</Badge>
           </li>
         </ul>
@@ -136,7 +137,7 @@ const sinTrafico = computed(
       class="flex items-center justify-between border-t border-borde pt-[9px] text-[11px] leading-[14px] text-tinta-suave"
     >
       {{ t('socios.estado.verificacion') }}
-      <span class="text-[13px] font-medium text-tinta">{{ formatearHora(salud.verificadoEn) }}</span>
+      <span class="text-[13px] font-medium text-tinta">{{ formatearHora(salud.calculadoEn) }}</span>
     </p>
   </section>
 </template>

@@ -19,7 +19,10 @@ async function montarPanel(socioId = 'retail-fintech-042') {
   await router.push('/socios/panel')
   const wrapper = mount(PanelSocio, { global: { plugins: [router] }, attachTo: document.body })
   montados.push(wrapper)
-  await esperar(() => wrapper.find('[data-prueba="socio-id"]').exists())
+  // Las credenciales cargan primero (dan el token de pruebas); luego el resto de las secciones.
+  await esperar(
+    () => wrapper.find('[data-prueba="socio-id"]').exists() && wrapper.find('[data-prueba="indicadores"]').exists(),
+  )
   return wrapper
 }
 
@@ -141,9 +144,14 @@ describe('W07-02 · Panel del socio', () => {
 
   it('CA-W07-10: consumo por API con gráfico y ventas en pesos; en pruebas, «Datos simulados»', async () => {
     const wrapper = await montarPanel()
-    expect(wrapper.find('[data-prueba="grafico-cotizaciones"]').exists()).toBe(true)
-    expect(wrapper.get('[data-prueba="tabla-consumo"]').text()).toContain('/v1/cotizaciones')
-    expect(wrapper.get('[data-prueba="indicadores"]').text()).toMatch(/\$\s?48\.650\.000/)
+    expect(wrapper.find('[data-prueba="grafico-llamadas"]').exists()).toBe(true)
+    expect(wrapper.get('[data-prueba="rango-consumo"]').text()).toBe('Del 30 sep 2026 al 29 oct 2026')
+    // «Con éxito» = llamadas − errores (el contrato da los dos).
+    expect(wrapper.get('[data-prueba="tabla-consumo"]').text()).toMatch(/cotizaciones\s*842\s*833\s*9\s*412 ms/)
+    const indicadores = wrapper.get('[data-prueba="indicadores"]').text()
+    expect(indicadores).toMatch(/\$\s?48\.650\.000/)
+    expect(indicadores).toMatch(/77\s?%/) // 126 emitidas / 164 propuestas
+    expect(indicadores).toMatch(/Tasa de comisión: 10\s?%/)
     expect(wrapper.text()).toContain('Octubre de 2026')
     expect(wrapper.text()).not.toContain('Datos simulados')
 

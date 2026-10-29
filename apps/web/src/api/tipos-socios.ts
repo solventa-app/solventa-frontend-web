@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/token": {
+    "/v1/token": {
         parameters: {
             query?: never;
             header?: never;
@@ -13,15 +13,69 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Pide un token de 15 minutos con el ID de socio y la clave de un entorno */
-        post: operations["solicitarToken"];
+        /**
+         * Cambia la clave del socio por un token de 15 minutos
+         * @description El entorno del token (PRODUCCION o PRUEBAS) es el de la clave usada.
+         */
+        post: operations["crearToken"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/consentimientos": {
+    "/v1/.well-known/jwks.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Claves públicas para validar los tokens (ES256) */
+        get: operations["jwks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/openapi.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Este contrato */
+        get: operations["openapi"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/docs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Documentación navegable (Swagger UI) */
+        get: operations["docs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/consentimientos": {
         parameters: {
             query?: never;
             header?: never;
@@ -30,7 +84,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Registra el consentimiento del titular antes de cotizar */
+        /**
+         * Registra el consentimiento del titular antes de cotizar
+         * @description Regla 7: sin consentimiento vigente no se consulta ninguna fuente. Queda registrado que lo otorgó el socio. Con un token de PRUEBAS responde el modo prueba: datos simulados, sin consultar fuentes ni cobrar.
+         */
         post: operations["registrarConsentimiento"];
         delete?: never;
         options?: never;
@@ -38,7 +95,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/consentimientos/{id}/revocar": {
+    "/v1/consentimientos/{consentimientoId}/revocar": {
         parameters: {
             query?: never;
             header?: never;
@@ -47,7 +104,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoca un consentimiento */
+        /**
+         * Revoca el consentimiento
+         * @description Rechaza nuevas consultas y borra el contacto de las propuestas no emitidas. Con un token de PRUEBAS responde el modo prueba: datos simulados, sin consultar fuentes ni cobrar.
+         */
         post: operations["revocarConsentimiento"];
         delete?: never;
         options?: never;
@@ -55,7 +115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/cotizaciones": {
+    "/v1/cotizaciones": {
         parameters: {
             query?: never;
             header?: never;
@@ -64,7 +124,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cotiza la póliza (descuenta una unidad del presupuesto) */
+        /**
+         * Cotiza la póliza (descuenta presupuesto)
+         * @description Única operación que descuenta presupuesto (W07-9). Si las fuentes fallan, la oferta es PRELIMINAR (no es un error). Con un token de PRUEBAS responde el modo prueba: datos simulados, sin consultar fuentes ni cobrar.
+         */
         post: operations["cotizar"];
         delete?: never;
         options?: never;
@@ -72,7 +135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/propuestas": {
+    "/v1/propuestas": {
         parameters: {
             query?: never;
             header?: never;
@@ -81,7 +144,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Acepta una oferta y crea la propuesta */
+        /**
+         * Acepta una oferta COMPLETA con el contacto del titular
+         * @description Con un token de PRUEBAS responde el modo prueba: datos simulados, sin consultar fuentes ni cobrar.
+         */
         post: operations["crearPropuesta"];
         delete?: never;
         options?: never;
@@ -89,15 +155,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/propuestas/{id}": {
+    "/v1/propuestas/{propuestaId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Consulta el estado de una propuesta (consulta periódica, sin webhooks) */
-        get: operations["consultarPropuesta"];
+        /**
+         * Estado de la propuesta (seguimiento por consulta periódica)
+         * @description W07-8: el socio consulta hasta un estado final (EMITIDA, NO_EMITIDA o CANCELADA).
+         */
+        get: operations["obtenerPropuesta"];
         put?: never;
         post?: never;
         delete?: never;
@@ -106,24 +175,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/propuestas/{id}/documento-firma": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Documento que firmará el titular */
-        get: operations["documentoFirma"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/propuestas/{id}/solicitud-firma": {
+    "/v1/propuestas/{propuestaId}/codigo": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,23 +184,80 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Pide el enlace de firma para el titular */
-        post: operations["solicitarFirma"];
+        /**
+         * Envía al correo del titular el código de verificación
+         * @description W07-15: el titular le dicta el código al socio. En modo prueba el código es `000000`.
+         */
+        post: operations["enviarCodigo"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/polizas/{id}": {
+    "/v1/propuestas/{propuestaId}/codigo/verificar": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Consulta una póliza emitida */
-        get: operations["consultarPoliza"];
+        get?: never;
+        put?: never;
+        /** Verifica el código que dictó el titular */
+        post: operations["verificarCodigo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/propuestas/{propuestaId}/emitir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide la suscripción y envía al titular el enlace de firma y pago
+         * @description Exige la identidad verificada. El titular firma y paga con el enlace (30 min); la URL nunca vuelve al socio. Repetir la llamada no vuelve a decidir.
+         */
+        post: operations["emitir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/propuestas/{propuestaId}/reenviar-enlace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envía un enlace nuevo y anula el anterior */
+        post: operations["reenviarEnlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/polizas/{polizaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Póliza emitida */
+        get: operations["obtenerPoliza"];
         put?: never;
         post?: never;
         delete?: never;
@@ -157,14 +266,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/polizas/{id}/documento": {
+    "/v1/polizas/{polizaId}/documento": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** PDF de la póliza */
+        /** PDF de la póliza firmada */
         get: operations["documentoPoliza"];
         put?: never;
         post?: never;
@@ -174,65 +283,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/credenciales": {
+    "/v1/estado": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Las credenciales del socio por entorno */
-        get: operations["credenciales"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/credenciales/{entorno}/rotar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Regenera la clave de un entorno (la anterior deja de servir) */
-        post: operations["rotarCredencial"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/consumo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Presupuesto de cotizaciones y llamadas por API */
-        get: operations["consumo"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/estado": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Salud general del servicio y de cada API (sin nombres de micros internos) */
+        /** Salud del sistema y de cada API */
         get: operations["estado"];
         put?: never;
         post?: never;
@@ -242,17 +300,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/ventas": {
+    "/v1/consumo": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Propuestas, pólizas, primas cobradas y comisión causada por mes */
+        /**
+         * Consumo por API y presupuesto de cotizaciones
+         * @description Del entorno del token. Sin fechas: los últimos 30 días.
+         */
+        get: operations["consumo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ventas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Propuestas, pólizas emitidas, primas y comisión por mes
+         * @description Sin fechas: los últimos 12 meses. Con un token de PRUEBAS responde el modo prueba: datos simulados, sin consultar fuentes ni cobrar.
+         */
         get: operations["ventas"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/credenciales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Las claves vigentes del socio */
+        get: operations["credenciales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/credenciales/{entorno}/rotar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Genera una clave nueva para el entorno y revoca la anterior
+         * @description Los tokens ya emitidos con la clave anterior siguen valiendo hasta vencer (15 min).
+         */
+        post: operations["rotarCredencial"];
         delete?: never;
         options?: never;
         head?: never;
@@ -263,111 +381,153 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @enum {string} */
-        Entorno: "PRODUCCION" | "PRUEBAS";
-        /**
-         * @default 1h
-         * @enum {string}
-         */
-        Ventana: "15m" | "1h" | "24h" | "7d";
-        /**
-         * @description Verde ≥ 90, amarillo ≥ 70, rojo < 70.
-         * @enum {string}
-         */
-        Color: "VERDE" | "AMARILLO" | "ROJO";
+        /** @description Error controlado. Nunca un 5xx crudo (regla 4): ante una falla interna se responde 503 con este cuerpo, `puedeReintentar = true` y `Retry-After`. */
+        ErrorPublico: {
+            /** @enum {string} */
+            codigo: "CREDENCIALES_INVALIDAS" | "TOKEN_INVALIDO" | "PROHIBIDO" | "NO_ENCONTRADO" | "DATOS_INVALIDOS" | "CONSENTIMIENTO_NO_VIGENTE" | "OFERTA_NO_ENCONTRADA" | "OFERTA_PRELIMINAR" | "OFERTA_VENCIDA" | "CONTACTO_INVALIDO" | "CODIGO_INVALIDO" | "CODIGO_VENCIDO" | "INTENTOS_AGOTADOS" | "PROPUESTA_NO_VALIDA" | "PRESUPUESTO_AGOTADO" | "SERVICIO_NO_DISPONIBLE";
+            /** @description En el idioma de `Accept-Language` (es o en). */
+            mensaje: string;
+            puedeReintentar: boolean;
+            intentosRestantes?: number | null;
+        };
         Monto: {
-            /** @example 185000 */
+            /** @example 1500000.00 */
             valor: string;
             /** @example COP */
             moneda: string;
         };
-        ErrorPublico: {
-            /** @example PRESUPUESTO_AGOTADO */
-            codigo: string;
-            mensaje: string;
-        };
         SolicitudToken: {
-            /** @example retail-fintech-042 */
-            socioId: string;
-            /** @description La clave larga del entorno. El entorno del token sale de la clave. */
+            clientId: string;
             clave: string;
         };
         Token: {
-            /** @description JWT ES256 de 15 minutos */
-            token: string;
-            /** @enum {string} */
-            tipo: "Bearer";
+            /** @description JWT ES256, 15 minutos. */
+            accessToken: string;
+            /** @constant */
+            tokenType: "Bearer";
             /** Format: date-time */
             expiraEn: string;
             entorno: components["schemas"]["Entorno"];
-            socio: components["schemas"]["Socio"];
         };
-        /** @description Propuesta del borrador. El portal necesita el nombre para el encabezado. */
-        Socio: {
-            id: string;
-            /** @example Retail Fintech S.A.S. */
-            nombre: string;
+        /** @enum {string} */
+        Entorno: "PRODUCCION" | "PRUEBAS";
+        Jwks: {
+            keys: Record<string, never>[];
         };
         SolicitudConsentimiento: {
+            /** @description Al menos 6 dígitos. */
             documentoIdentidad: string;
+            /** @example cotizacion-seguro-vida-hipotecario */
             finalidad: string;
+            /** @example v1 */
             versionTexto: string;
         };
         Consentimiento: {
             id: string;
-            /** @enum {string} */
-            estado: "VIGENTE" | "REVOCADO" | "VENCIDO";
+            finalidad: string;
+            versionTexto: string;
+            /** Format: date-time */
+            otorgadoEn: string;
             /** Format: date-time */
             venceEn: string;
+            revocadoEn?: string | null;
+            vigente: boolean;
+            /** @enum {string} */
+            estado: "VIGENTE" | "REVOCADO" | "VENCIDO";
         };
         SolicitudCotizacion: {
             consentimientoId: string;
+            /** @description Al menos 6 dígitos. */
             documentoIdentidad: string;
-            valorCredito: components["schemas"]["Monto"];
+            /** @example 1500000.00 */
+            valorCredito: string;
             plazoMeses: number;
             direccionInmueble: string;
         };
-        Cotizacion: {
-            oferta: components["schemas"]["Oferta"];
-            /** @description Cotizaciones que quedan en el presupuesto */
-            restantes: number;
+        FuenteConsultada: {
+            nombre: string;
+            /** @enum {string} */
+            estado: "OK" | "CACHE" | "FALLO";
         };
+        /** @description COMPLETA trae `prima`; PRELIMINAR (fuentes degradadas) trae `rangoPrima` y no se puede aceptar. */
         Oferta: {
             id: string;
             /** @enum {string} */
             tipo: "COMPLETA" | "PRELIMINAR";
-            prima: components["schemas"]["Monto"];
+            prima?: components["schemas"]["Monto"] | null;
+            rangoPrima?: {
+                minima: components["schemas"]["Monto"];
+                maxima: components["schemas"]["Monto"];
+            } | null;
             cobertura: components["schemas"]["Monto"];
-            /** Format: date-time */
-            venceEn: string;
+            nivelRiesgo?: ("BAJO" | "MEDIO" | "ALTO") | null;
+            fuentes: components["schemas"]["FuenteConsultada"][];
+        };
+        Cotizacion: {
+            oferta: components["schemas"]["Oferta"];
+            presupuestoRestante: number;
+        };
+        /** @description Del titular. POLICY lo guarda cifrado y lo borra con el consentimiento si no se emite. */
+        Contacto: {
+            nombre: string;
+            /** Format: email */
+            correo: string;
         };
         SolicitudPropuesta: {
             ofertaId: string;
+            contacto: components["schemas"]["Contacto"];
+        };
+        /** @description El enlace de firma del titular. La URL nunca se entrega al socio (W07-17). */
+        EstadoEnlace: {
+            vigente: boolean;
+            venceEn?: string | null;
         };
         Propuesta: {
             id: string;
+            ofertaId: string;
             /** @enum {string} */
-            estado: "ACEPTADA" | "IDENTIDAD_VERIFICADA" | "EN_FIRMA" | "FIRMADA" | "PENDIENTE_PAGO" | "EMITIDA" | "NO_EMITIDA" | "PAGO_RECHAZADO" | "CANCELADA";
+            estado: "ACEPTADA" | "IDENTIDAD_VERIFICADA" | "EN_FIRMA" | "FIRMADA" | "EN_EMISION" | "PENDIENTE_PAGO" | "PAGO_RECHAZADO" | "EN_REVISION" | "NO_EMITIDA" | "EMITIDA" | "CANCELADA";
+            /** @enum {string} */
+            estadoVisible: "EMITIENDO" | "EMITIDA" | "NO_EMITIDA";
+            mensajeEstado?: string | null;
+            prima: components["schemas"]["Monto"];
+            cobertura: components["schemas"]["Monto"];
+            plazoMeses: number;
             polizaId?: string | null;
-        };
-        DocumentoFirma: {
-            version: string;
-            url: string;
-        };
-        SolicitudFirma: {
-            autorizaCobro: boolean;
-            versionDocumento: string;
-        };
-        EnlaceFirma: {
-            urlFirma: string;
+            enlace?: components["schemas"]["EstadoEnlace"] | null;
             /** Format: date-time */
-            expiraEn: string;
+            creadaEn: string;
+            /** Format: date-time */
+            actualizadoEn: string;
+        };
+        /** @description `correo` corrige el del contacto antes de enviar el código; si falta, se usa el guardado. */
+        SolicitudCodigo: {
+            correo?: string | null;
+        };
+        CodigoEnviado: {
+            correoEnmascarado: string;
+            /** Format: date-time */
+            venceEn: string;
+        };
+        VerificacionCodigo: {
+            codigo: string;
+        };
+        EnlaceEnviado: {
+            correoEnmascarado: string;
+            /** Format: date-time */
+            venceEn: string;
+        };
+        /** @description Si la suscripción aprueba, `propuesta.estado = EN_FIRMA` y `enlace` dice a qué correo se envió. Si no, la propuesta queda EN_REVISION o NO_EMITIDA con `mensajeEstado`. */
+        Emision: {
+            propuesta: components["schemas"]["Propuesta"];
+            enlace?: components["schemas"]["EnlaceEnviado"] | null;
         };
         Poliza: {
             id: string;
             numero: string;
             /** @enum {string} */
-            estado: "EMITIDA" | "CANCELADA";
+            estado: "EMITIDA";
+            ramo: string;
             /** Format: date-time */
             vigenciaDesde: string;
             /** Format: date-time */
@@ -375,91 +535,93 @@ export interface components {
             prima: components["schemas"]["Monto"];
             cobertura: components["schemas"]["Monto"];
         };
-        Credenciales: {
-            socio: components["schemas"]["Socio"];
-            entornos: components["schemas"]["Credencial"][];
-        };
-        /** @description Una por entorno: el ID con el que se pide el token y la clave larga (AUTH la guarda cifrada para poder mostrarla en el portal). */
-        Credencial: {
-            entorno: components["schemas"]["Entorno"];
-            socioId: string;
-            clave: string;
-            /** Format: date-time */
-            creadaEn: string;
-        };
-        Consumo: {
-            entorno: components["schemas"]["Entorno"];
-            ventana: components["schemas"]["Ventana"];
-            presupuesto: components["schemas"]["Presupuesto"];
-            porApi: components["schemas"]["ConsumoApi"][];
-            /** @description Propuesta del borrador. Últimos días, para el gráfico del panel. */
-            cotizacionesPorDia: components["schemas"]["ConteoDia"][];
-        };
-        /** @description Solo las cotizaciones descuentan. No se renueva solo; lo recarga Solventa. */
-        Presupuesto: {
-            asignadas: number;
-            consumidas: number;
-            restantes: number;
-        };
-        ConsumoApi: {
+        /** @enum {string} */
+        Color: "VERDE" | "AMARILLO" | "ROJO";
+        SaludApi: {
             /** @enum {string} */
-            api: "cotizaciones" | "consentimientos" | "propuestas" | "firma" | "polizas";
-            llamadas: number;
-            exitosas: number;
-            conError: number;
-            latenciaMediaMs?: number | null;
+            nombre: "COTIZACION" | "EMISION";
+            porcentaje: number;
+            color: components["schemas"]["Color"];
         };
-        ConteoDia: {
-            /** Format: date */
-            fecha: string;
-            cantidad: number;
-        };
-        Estado: {
-            general: components["schemas"]["SaludGeneral"];
-            apis: components["schemas"]["SaludApi"][];
-            /** Format: date-time */
-            verificadoEn: string;
-        };
-        /** @description Disponibilidad y latencia media consolidadas del gateway. Sin métricas (solo `/health`) o sin tráfico, llegan en null. */
-        SaludGeneral: {
+        /** @description Sin nombres de microservicios internos (W07-14). */
+        EstadoSistema: {
             porcentaje: number;
             color: components["schemas"]["Color"];
             disponibilidad?: number | null;
             latenciaMediaMs?: number | null;
             ventana: components["schemas"]["Ventana"];
+            /** Format: date-time */
+            calculadoEn: string;
+            apis: components["schemas"]["SaludApi"][];
         };
-        SaludApi: {
-            /** @enum {string} */
-            api: "COTIZACION" | "EMISION";
-            porcentaje: number;
-            color: components["schemas"]["Color"];
+        /** @enum {string} */
+        Ventana: "15m" | "1h" | "24h" | "7d";
+        ConsumoApi: {
+            api: string;
+            llamadas: number;
+            errores: number;
+            latenciaMediaMs?: number | null;
         };
-        Ventas: {
+        Consumo: {
             entorno: components["schemas"]["Entorno"];
-            /** @description true en PRUEBAS (comisiones ficticias del modo prueba) */
-            simulado: boolean;
-            propuestasPorEstado: {
-                estado: string;
-                cantidad: number;
+            /** Format: date */
+            desde: string;
+            /** Format: date */
+            hasta: string;
+            /** @description Solo cotizaciones descuenta presupuesto (W07-9). */
+            presupuesto: {
+                asignadas: number;
+                consumidas: number;
+                restantes: number;
+            };
+            porApi: components["schemas"]["ConsumoApi"][];
+            diario: {
+                /** Format: date */
+                fecha: string;
+                llamadas: number;
             }[];
-            polizasEmitidas: number;
-            /** @description Pólizas emitidas / cotizaciones */
-            conversion: number;
-            primasCobradas: components["schemas"]["Monto"];
-            comisionCausada: components["schemas"]["Monto"];
-            porMes: components["schemas"]["VentasMes"][];
         };
         VentasMes: {
-            /** @example 2026-10 */
             mes: string;
-            polizasEmitidas: number;
-            primasCobradas: components["schemas"]["Monto"];
-            comisionCausada: components["schemas"]["Monto"];
+            propuestas: number;
+            emitidas: number;
+            primas: components["schemas"]["Monto"];
+            comision: components["schemas"]["Monto"];
+        };
+        /** @description La comisión se causa al emitir: prima × tasa congelada al aceptar (W07-7). */
+        Ventas: {
+            /** Format: date */
+            desde: string;
+            /** Format: date */
+            hasta: string;
+            /** @example 0.1000 */
+            tasaComision: string;
+            meses: components["schemas"]["VentasMes"][];
+            totales: {
+                propuestas: number;
+                emitidas: number;
+                primas: components["schemas"]["Monto"];
+                comision: components["schemas"]["Monto"];
+            };
+        };
+        Credencial: {
+            entorno: components["schemas"]["Entorno"];
+            clientId: string;
+            clave: string;
+            /** Format: date-time */
+            creadaEn: string;
+        };
+        Credenciales: {
+            socio: {
+                id: string;
+                nombre: string;
+            };
+            credenciales: components["schemas"]["Credencial"][];
         };
     };
     responses: {
-        /** @description Datos inválidos */
-        Invalido: {
+        /** @description Sin token o token inválido (`TOKEN_INVALIDO`). */
+        NoAutenticado: {
             headers: {
                 [name: string]: unknown;
             };
@@ -467,36 +629,8 @@ export interface components {
                 "application/json": components["schemas"]["ErrorPublico"];
             };
         };
-        /** @description Token ausente o vencido, o ID de socio y clave incorrectos (mensaje genérico) */
-        NoAutorizado: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorPublico"];
-            };
-        };
-        /** @description Propuesta del borrador. Demasiados intentos fallidos con ese ID de socio */
-        Bloqueado: {
-            headers: {
-                "Retry-After"?: number;
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorPublico"];
-            };
-        };
-        /** @description No existe o no la vendió este socio */
-        NoEncontrado: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorPublico"];
-            };
-        };
-        /** @description El presupuesto de cotizaciones se agotó (código PRESUPUESTO_AGOTADO). Solo en cotizaciones */
-        PresupuestoAgotado: {
+        /** @description Falla interna controlada (`SERVICIO_NO_DISPONIBLE`), con `Retry-After`. */
+        NoDisponible: {
             headers: {
                 "Retry-After"?: number;
                 [name: string]: unknown;
@@ -507,10 +641,7 @@ export interface components {
         };
     };
     parameters: {
-        Id: string;
-        /** @description Por defecto, el entorno del token. */
-        EntornoConsulta: components["schemas"]["Entorno"];
-        Ventana: components["schemas"]["Ventana"];
+        AcceptLanguage: "es" | "en";
     };
     requestBodies: never;
     headers: never;
@@ -518,10 +649,12 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    solicitarToken: {
+    crearToken: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -531,7 +664,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Token emitido */
+            /** @description Token emitido. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -540,14 +673,102 @@ export interface operations {
                     "application/json": components["schemas"]["Token"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            423: components["responses"]["Bloqueado"];
+            /** @description Credenciales inválidas (`CREDENCIALES_INVALIDAS`). Mensaje genérico. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    jwks: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description JWKS. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Jwks"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    openapi: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OpenAPI 3.1. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    docs: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página HTML. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
     registrarConsentimiento: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -557,7 +778,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Consentimiento registrado */
+            /** @description Consentimiento vigente por 30 días. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -566,22 +787,33 @@ export interface operations {
                     "application/json": components["schemas"]["Consentimiento"];
                 };
             };
-            400: components["responses"]["Invalido"];
-            401: components["responses"]["NoAutorizado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
     revocarConsentimiento: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
-                id: components["parameters"]["Id"];
+                consentimientoId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Consentimiento revocado */
+            /** @description Consentimiento revocado. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -590,14 +822,25 @@ export interface operations {
                     "application/json": components["schemas"]["Consentimiento"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            404: components["responses"]["NoEncontrado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
     cotizar: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -607,7 +850,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Oferta COMPLETA o PRELIMINAR, con las cotizaciones restantes del presupuesto */
+            /** @description Oferta COMPLETA o PRELIMINAR. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -616,15 +859,44 @@ export interface operations {
                     "application/json": components["schemas"]["Cotizacion"];
                 };
             };
-            400: components["responses"]["Invalido"];
-            401: components["responses"]["NoAutorizado"];
-            429: components["responses"]["PresupuestoAgotado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Presupuesto agotado (`PRESUPUESTO_AGOTADO`). */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
     crearPropuesta: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -634,7 +906,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Propuesta creada */
+            /** @description Propuesta ACEPTADA. Aceptar otra vez la misma oferta devuelve la misma propuesta. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -643,22 +915,51 @@ export interface operations {
                     "application/json": components["schemas"]["Propuesta"];
                 };
             };
-            400: components["responses"]["Invalido"];
-            401: components["responses"]["NoAutorizado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description `OFERTA_NO_ENCONTRADA`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description `OFERTA_PRELIMINAR`, `OFERTA_VENCIDA` o `CONSENTIMIENTO_NO_VIGENTE`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description `CONTACTO_INVALIDO` o `DATOS_INVALIDOS`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
-    consultarPropuesta: {
+    obtenerPropuesta: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
-                id: components["parameters"]["Id"];
+                propuestaId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description La propuesta */
+            /** @description Propuesta. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -667,74 +968,235 @@ export interface operations {
                     "application/json": components["schemas"]["Propuesta"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            404: components["responses"]["NoEncontrado"];
-        };
-    };
-    documentoFirma: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["Id"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Versión y URL del documento */
-            200: {
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocumentoFirma"];
+                    "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            404: components["responses"]["NoEncontrado"];
+            503: components["responses"]["NoDisponible"];
         };
     };
-    solicitarFirma: {
+    enviarCodigo: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
-                id: components["parameters"]["Id"];
+                propuestaId: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SolicitudFirma"];
+                "application/json": components["schemas"]["SolicitudCodigo"];
             };
         };
         responses: {
-            /** @description Enlace de firma del proveedor */
+            /** @description Código enviado; vence a los 10 minutos. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnlaceFirma"];
+                    "application/json": components["schemas"]["CodigoEnviado"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            404: components["responses"]["NoEncontrado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description `PROPUESTA_NO_VALIDA`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
-    consultarPoliza: {
+    verificarCodigo: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
-                id: components["parameters"]["Id"];
+                propuestaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificacionCodigo"];
+            };
+        };
+        responses: {
+            /** @description Propuesta en IDENTIDAD_VERIFICADA. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Propuesta"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description `CODIGO_INVALIDO` (con `intentosRestantes`), `CODIGO_VENCIDO`, `INTENTOS_AGOTADOS` o `PROPUESTA_NO_VALIDA`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    emitir: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                propuestaId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description La póliza */
+            /** @description Resultado de la suscripción. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Emision"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description `PROPUESTA_NO_VALIDA`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    reenviarEnlace: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                propuestaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Enlace reenviado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnlaceEnviado"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description `PROPUESTA_NO_VALIDA`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    obtenerPoliza: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                polizaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Póliza. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -743,22 +1205,33 @@ export interface operations {
                     "application/json": components["schemas"]["Poliza"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            404: components["responses"]["NoEncontrado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
     documentoPoliza: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path: {
-                id: components["parameters"]["Id"];
+                polizaId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description El PDF */
+            /** @description PDF. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -767,68 +1240,60 @@ export interface operations {
                     "application/pdf": string;
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-            404: components["responses"]["NoEncontrado"];
+            401: components["responses"]["NoAutenticado"];
+            /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
-    credenciales: {
+    estado: {
         parameters: {
-            query?: never;
-            header?: never;
+            query?: {
+                ventana?: components["schemas"]["Ventana"];
+            };
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description El socio y sus credenciales */
+            /** @description Estado. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Credenciales"];
+                    "application/json": components["schemas"]["EstadoSistema"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-        };
-    };
-    rotarCredencial: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entorno: components["schemas"]["Entorno"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description La credencial nueva */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Credencial"];
-                };
-            };
-            401: components["responses"]["NoAutorizado"];
+            401: components["responses"]["NoAutenticado"];
+            503: components["responses"]["NoDisponible"];
         };
     };
     consumo: {
         parameters: {
             query?: {
-                /** @description Por defecto, el entorno del token. */
-                entorno?: components["parameters"]["EntornoConsulta"];
-                ventana?: components["parameters"]["Ventana"];
+                desde?: string;
+                hasta?: string;
             };
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description El consumo del entorno en la ventana */
+            /** @description Consumo. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -837,45 +1302,25 @@ export interface operations {
                     "application/json": components["schemas"]["Consumo"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
-        };
-    };
-    estado: {
-        parameters: {
-            query?: {
-                ventana?: components["parameters"]["Ventana"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description El estado en la ventana */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Estado"];
-                };
-            };
-            401: components["responses"]["NoAutorizado"];
+            401: components["responses"]["NoAutenticado"];
+            503: components["responses"]["NoDisponible"];
         };
     };
     ventas: {
         parameters: {
             query?: {
-                /** @description Por defecto, el entorno del token. */
-                entorno?: components["parameters"]["EntornoConsulta"];
+                desde?: string;
+                hasta?: string;
             };
-            header?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Las ventas del entorno */
+            /** @description Ventas. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -884,7 +1329,76 @@ export interface operations {
                     "application/json": components["schemas"]["Ventas"];
                 };
             };
-            401: components["responses"]["NoAutorizado"];
+            401: components["responses"]["NoAutenticado"];
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    credenciales: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credenciales. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Credenciales"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description Solo con un token de PRODUCCION (`PROHIBIDO`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    rotarCredencial: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path: {
+                entorno: components["schemas"]["Entorno"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Credencial nueva. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Credencial"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description Solo con un token de PRODUCCION (`PROHIBIDO`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
         };
     };
 }

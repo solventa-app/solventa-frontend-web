@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import GraficoCotizaciones from '../components/socios/GraficoCotizaciones.vue'
+import GraficoLlamadas from '../components/socios/GraficoLlamadas.vue'
 import TarjetaConsumo from '../components/socios/TarjetaConsumo.vue'
 import TarjetaCredenciales from '../components/socios/TarjetaCredenciales.vue'
 import TarjetaEstado from '../components/socios/TarjetaEstado.vue'
@@ -20,7 +20,7 @@ import type { Entorno } from '../api/socios'
 import { usePanelSocio } from '../composables/usePanelSocio'
 import { useSesionSocio } from '../composables/useSesionSocio'
 import { localeIntl, t } from '../i18n'
-import { formatearMonto, formatearNumero, formatearPorcentaje } from '../utils/formato'
+import { formatearFechaCorta, formatearMonto, formatearNumero, formatearPorcentaje } from '../utils/formato'
 
 const router = useRouter()
 const sesion = useSesionSocio()
@@ -28,22 +28,21 @@ const { estado, cargarTodo, cambiarEntorno, cambiarVentana, cargarEstado, cargar
   usePanelSocio()
 
 const ENTORNOS: Entorno[] = ['PRODUCCION', 'PRUEBAS']
-const ESTADOS_CONOCIDOS = [
-  'ACEPTADA',
-  'EN_FIRMA',
-  'FIRMADA',
-  'PENDIENTE_PAGO',
-  'EMITIDA',
-  'NO_EMITIDA',
-  'PAGO_RECHAZADO',
-]
-
 const nombre = computed(() => sesion.estado.nombre || sesion.estado.socioId)
 const ventas = computed(() => estado.ventas)
-const totalPropuestas = computed(() => ventas.value?.propuestasPorEstado.reduce((s, p) => s + p.cantidad, 0) ?? 0)
+/** Conversión de propuesta a póliza emitida (el contrato da los dos totales, no la tasa). */
+const conversion = computed(() =>
+  ventas.value && ventas.value.totales.propuestas > 0
+    ? ventas.value.totales.emitidas / ventas.value.totales.propuestas
+    : 0,
+)
+// En pruebas, las ventas del contrato son simuladas (W07-10).
+const simuladas = computed(() => estado.entorno === 'PRUEBAS')
 
-function etiquetaEstado(codigo: string): string {
-  return ESTADOS_CONOCIDOS.includes(codigo) ? t(`socios.ventas.estado.${codigo as 'EMITIDA'}`) : codigo
+/** «Del 30 sep 2026 al 29 oct 2026»: el rango que devuelve el contrato (`desde` y `hasta`, fechas sin hora). */
+function rango(desde: string, hasta: string): string {
+  const dia = (fecha: string) => formatearFechaCorta(`${fecha}T17:00:00Z`)
+  return t('socios.panel.rango', { desde: dia(desde), hasta: dia(hasta) })
 }
 
 function etiquetaMes(mes: string): string {
@@ -139,10 +138,10 @@ onMounted(() => {
               <Boton variante="secundario" @click="cargarConsumo()">{{ t('socios.panel.reintentar') }}</Boton>
             </div>
             <template v-else-if="estado.consumo">
-              <GraficoCotizaciones
-                v-if="estado.consumo.cotizacionesPorDia.length"
-                :datos="estado.consumo.cotizacionesPorDia"
-              />
+              <p class="text-[11px] leading-[14px] text-tinta-suave" data-prueba="rango-consumo">
+                {{ rango(estado.consumo.desde, estado.consumo.hasta) }}
+              </p>
+              <GraficoLlamadas v-if="estado.consumo.diario.length" :datos="estado.consumo.diario" />
               <div class="w-full overflow-x-auto">
                 <table class="w-full min-w-[560px] border-collapse text-left" data-prueba="tabla-consumo">
                   <caption class="sr-only">
@@ -170,10 +169,10 @@ onMounted(() => {
                       :key="fila.api"
                       class="border-b border-borde text-[13px] text-tinta last:border-b-0"
                     >
-                      <td class="py-4 pl-4 pr-3 font-mono">/v1/{{ fila.api }}</td>
+                      <td class="py-4 pl-4 pr-3 font-mono">{{ fila.api }}</td>
                       <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.llamadas) }}</td>
-                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.exitosas) }}</td>
-                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.conError) }}</td>
+                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.llamadas - fila.errores) }}</td>
+                      <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.errores) }}</td>
                       <td class="py-4 pr-4 text-right">
                         {{ fila.latenciaMediaMs == null ? '—' : `${formatearNumero(fila.latenciaMediaMs)} ms` }}
                       </td>
@@ -189,7 +188,7 @@ onMounted(() => {
           <h2 id="titulo-ventas" class="flex flex-wrap items-center gap-2 text-[16px] font-semibold text-tinta">
             {{ t('socios.ventas.titulo') }}
             <span
-              v-if="ventas?.simulado"
+              v-if="simuladas"
               class="flex items-center gap-1 rounded-full bg-info-fondo px-2 py-[2px] text-[11px] font-semibold text-info"
             >
               <IconoMaterial nombre="science" class="h-4 w-4" />
@@ -206,36 +205,39 @@ onMounted(() => {
           </div>
 
           <template v-else-if="ventas">
+            <p class="text-[11px] leading-[14px] text-tinta-suave" data-prueba="rango-ventas">
+              {{ rango(ventas.desde, ventas.hasta) }}
+            </p>
             <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5" data-prueba="indicadores">
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.propuestas') }}</span>
-                <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(totalPropuestas) }}</strong>
-                <ul class="flex flex-col text-[11px] leading-[14px] text-tinta-suave">
-                  <li v-for="p in ventas.propuestasPorEstado" :key="p.estado">
-                    {{ etiquetaEstado(p.estado) }}: {{ formatearNumero(p.cantidad) }}
-                  </li>
-                </ul>
+                <strong class="text-[22px] font-bold text-tinta">{{
+                  formatearNumero(ventas.totales.propuestas)
+                }}</strong>
               </li>
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.polizas') }}</span>
-                <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(ventas.polizasEmitidas) }}</strong>
+                <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(ventas.totales.emitidas) }}</strong>
               </li>
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.conversion') }}</span>
-                <strong class="text-[22px] font-bold text-tinta">{{ formatearPorcentaje(ventas.conversion) }}</strong>
+                <strong class="text-[22px] font-bold text-tinta">{{ formatearPorcentaje(conversion) }}</strong>
               </li>
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.primas') }}</span>
-                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.primasCobradas) }}</strong>
+                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.totales.primas) }}</strong>
               </li>
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.comision') }}</span>
-                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.comisionCausada) }}</strong>
+                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.totales.comision) }}</strong>
+                <span class="text-[11px] leading-[14px] text-tinta-suave">{{
+                  t('socios.ventas.tasa', { tasa: formatearPorcentaje(Number(ventas.tasaComision)) })
+                }}</span>
               </li>
             </ul>
 
             <div class="w-full overflow-x-auto rounded-[8px] border border-borde bg-white">
-              <table class="w-full min-w-[560px] border-collapse text-left" data-prueba="tabla-ventas">
+              <table class="w-full min-w-[640px] border-collapse text-left" data-prueba="tabla-ventas">
                 <caption class="sr-only">
                   {{
                     t('socios.ventas.porMes')
@@ -244,26 +246,28 @@ onMounted(() => {
                 <thead>
                   <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
                     <th scope="col" class="py-4 pl-4 pr-3">{{ t('socios.ventas.mes') }}</th>
+                    <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.propuestas') }}</th>
                     <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.polizas') }}</th>
                     <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.primas') }}</th>
                     <th scope="col" class="py-4 pr-4 text-right">{{ t('socios.ventas.comision') }}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-if="!ventas.porMes.length">
-                    <td colspan="4" class="py-6 text-center text-[13px] text-tinta-suave">
+                  <tr v-if="!ventas.meses.length">
+                    <td colspan="5" class="py-6 text-center text-[13px] text-tinta-suave">
                       {{ t('socios.ventas.vacio') }}
                     </td>
                   </tr>
                   <tr
-                    v-for="fila in ventas.porMes"
+                    v-for="fila in ventas.meses"
                     :key="fila.mes"
                     class="border-b border-borde text-[13px] text-tinta last:border-b-0"
                   >
                     <td class="py-4 pl-4 pr-3">{{ etiquetaMes(fila.mes) }}</td>
-                    <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.polizasEmitidas) }}</td>
-                    <td class="py-4 pr-3 text-right">{{ formatearMonto(fila.primasCobradas) }}</td>
-                    <td class="py-4 pr-4 text-right">{{ formatearMonto(fila.comisionCausada) }}</td>
+                    <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.propuestas) }}</td>
+                    <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.emitidas) }}</td>
+                    <td class="py-4 pr-3 text-right">{{ formatearMonto(fila.primas) }}</td>
+                    <td class="py-4 pr-4 text-right">{{ formatearMonto(fila.comision) }}</td>
                   </tr>
                 </tbody>
               </table>

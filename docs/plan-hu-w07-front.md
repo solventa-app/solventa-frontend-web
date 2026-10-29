@@ -24,9 +24,10 @@ verde.
 | 5.4 W07-03 Documentación | `feat/KAN-30-documentacion-api` | Hecho: `DocumentacionApi.vue`, `ui/Pestanas.vue`, Swagger embebido; CA-W07-11 a 13 (propuestos) |
 | 5.6 W07-04 Estado del sistema | `feat/KAN-30-estado-sistema` | Hecho: `EstadoSistema.vue` sobre el contrato v0.22 (sin borrador GraphQL); CA-W07-14 y 15 (propuestos) |
 | 5.5 Guía en PDF | — | Pendiente (al final) |
-| Integración con el backend | — | Pendiente: el backend publicó `socios-v1.json` en la v0.22; falta cambiar el borrador por el contrato real y probar contra el BFF |
+| Contrato REST real (v0.22) | `feat/KAN-30-contrato-socios-real` | Hecho: el portal usa `contrato/socios-v1.json`; se borró el borrador (ver «Contrato real» abajo) |
+| Integración con el backend | — | Pendiente: probar el portal contra el BFF real cuando lleguen sus rutas `/v1` de socios (bloques 4 y 5 del backend) |
 
-**Decisión del 2026-10-29 (Felipe): el contrato es un borrador local**, como el de W03 (D-1). El backend todavía no
+**Decisión del 2026-10-29 (Felipe), ya cumplida: el contrato fue un borrador local**, como el de W03 (D-1). El backend todavía no
 publica `contracts/openapi/socios-v1.yaml` ni `estadoSistema` (bloque 1 de `plan-completar-hu-w07.md`, rama
 `feat/KAN-30-socios-api`). El front lo escribe en `contrato/borrador-socios-v1.yaml` con los endpoints y campos del
 bloque 1; lo que el plan del backend no fija va marcado «Propuesta del borrador» y se avisa al backend:
@@ -40,6 +41,23 @@ bloque 1; lo que el plan del backend no fija va marcado «Propuesta del borrador
 `npm run codegen` genera `apps/web/src/api/tipos-socios.ts` con `openapi-typescript` (versión fija). El CI lo
 verifica igual que `tipos.ts`. Al publicarse el contrato real se borra el borrador, se copia el del backend y se
 regeneran los tipos. El borrador GraphQL de `estadoSistema` (v0.19) llega con W07-04.
+
+**Contrato real (v0.22, 2026-10-29).** El backend publicó `contracts/openapi/socios-v1.json` (OpenAPI 3.1) y
+`estadoSistema` en GraphQL, así que el borrador se borró: `contrato.mjs` copia `socios-v1.json` a `contrato/` y a
+`apps/web/src/contrato/`, y `npm run codegen` genera los tipos desde ahí. Lo que cambió en el portal:
+- **Ingreso:** `POST /v1/token` recibe `clientId` y devuelve `accessToken`, sin el socio; el nombre del encabezado sale de
+  `GET /v1/credenciales` al ingresar. El bloqueo por intentos es un 401 `CREDENCIALES_INVALIDAS` (no hay 423) y el
+  cliente distingue ese código de `TOKEN_INVALIDO` (sesión vencida), aunque ambos sean 401.
+- **Panel:** consumo y ventas son «del entorno del token» con `desde`/`hasta` (30 días y 12 meses por defecto): los de
+  producción se piden con el token de la sesión y los de pruebas con un token pedido con la clave de pruebas. La
+  ventana de tiempo solo cambia el estado. El gráfico pasó a **llamadas por día** (`diario`), la tabla calcula «con
+  éxito» como llamadas menos errores, y las ventas muestran totales, conversión de propuesta a póliza (calculada),
+  `tasaComision` y la tabla por mes (el contrato no trae propuestas por estado).
+- **Estado:** viene plano (`porcentaje`, `apis[].nombre`, `calculadoEn`), la misma forma que `estadoSistema` sin los
+  micros, así que `TarjetaEstado` sirve igual al socio y al operador.
+- **Documentación:** el Swagger lee `socios-v1.json`. La caja de pruebas dice solo lo que el contrato define (respuestas
+  simuladas y el código `000000`); los documentos de prueba que propuso el borrador (`999` → PRELIMINAR) quedan solo como
+  convención del mock.
 
 **Hecho en 5.1:**
 - `src/api/socios.ts` (cliente REST), `src/composables/useSesionSocio.ts` (sesión técnica, `solventa.tokenSocio`) y la
@@ -72,13 +90,13 @@ Pruebas: `tests/pantalla-w07-02.test.ts` y `e2e/cypress/e2e/pantallas/w07-02.cy.
 `components/ui/Pestanas.vue` (patrón de pestañas de WAI-ARIA: foco móvil, flechas, Inicio y Fin; en
 `IndiceComponentes.vue`). El Swagger embebido es `components/socios/SwaggerSocios.vue`: `swagger-ui-dist` 5.33.2 fijo,
 cargado en diferido y sin CDN, con el token del entorno de la pestaña inyectado en cada «Try it out» y su CSS ajustado a
-la web. Lee `apps/web/src/contrato/socios-v1.yaml`, la copia del borrador que deja `npm run contrato:sincronizar` (Vercel
-solo publica `apps/web`; una prueba de Vitest exige que sea idéntica al borrador). Desvíos y decisiones:
+la web. Lee `apps/web/src/contrato/socios-v1.json`, la copia que deja `npm run contrato:sincronizar` (Vercel solo
+publica `apps/web`; una prueba de Vitest exige que sea idéntica a la de `contrato/`). Desvíos y decisiones:
 - La barra de pestañas usa el subrayado en `enlace`, como el frame (el plan decía `primario`).
 - La lista fija de endpoints y el ejemplo del prototipo se reemplazan por el Swagger, que sí se puede probar.
 - Mientras la guía en PDF no se publique (5.5), la pestaña lo dice en vez de mostrar un visor vacío.
-- Documentos de prueba del sandbox (propuesta del borrador, avisar al backend): documento terminado en `999` →
-  PRELIMINAR, otro → COMPLETA, código del titular `000000`. El mock de cotizaciones los sigue.
+- Documentos de prueba del sandbox: el borrador proponía `999` → PRELIMINAR; el contrato real no los define, así que
+  la caja solo explica el modo prueba (ver «Contrato real»).
 Pruebas: `tests/pantalla-w07-03.test.ts` (Swagger simulado para revisar el token por pestaña) y
 `e2e/cypress/e2e/pantallas/w07-03.cy.ts` (recorre las pestañas y hace «Try it out» de una cotización en pruebas).
 
