@@ -30,7 +30,7 @@ exact reference for every endpoint is in the portal's Swagger (the «Sandbox» a
 
 Open Solventa's sign-in page and choose **«Are you a distribution partner? Go to the API partner portal»**.
 
-![Partner portal sign-in](img/guia-socios/ingreso.png)
+![Partner portal sign-in](img/guia-socios/en/ingreso.png)
 
 1. **Partner ID:** your production identifier (for example, `retail-fintech-042`).
 2. **Access key:** your **production key**. The sandbox key does not open the portal.
@@ -42,7 +42,7 @@ expired».
 
 ## 3. Get to know your dashboard
 
-![Partner dashboard](img/guia-socios/panel.png)
+![Partner dashboard](img/guia-socios/en/panel.png)
 
 1. **Environment:** «Production» or «Sandbox». It changes the credentials, usage and sales you see.
 2. **Credentials:** your ID and key for the selected environment, with «Show», «Copy», «Generate token» and
@@ -92,7 +92,7 @@ minutes). To avoid an outage:
 
 ## 5. Test without risk
 
-![Documentation in the sandbox](img/guia-socios/documentacion-pruebas.png)
+![Documentation in the sandbox](img/guia-socios/en/documentacion-pruebas.png)
 
 In the portal, **«API documentation» → «Sandbox»** opens the Swagger with your sandbox token: you can try every endpoint
 with «Try it out». With a **sandbox** (`PRUEBAS`) token:
