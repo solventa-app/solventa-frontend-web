@@ -310,7 +310,8 @@ export const pantallas: Pantalla[] = [
     nombre: 'Ingreso al portal de socios',
     historia: 'HU-W07',
     sprint: 2,
-    criterios: [],
+    criterios: ['CA-W07-01', 'CA-W07-02', 'CA-W07-03', 'CA-W07-04'],
+    componente: () => import('../views/IngresoSocio.vue'),
   },
   {
     id: 'W07-02',
@@ -319,7 +320,8 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W07',
     sprint: 2,
     socio: true,
-    criterios: [],
+    criterios: ['CA-W07-05', 'CA-W07-06', 'CA-W07-07', 'CA-W07-08', 'CA-W07-09', 'CA-W07-10'],
+    componente: () => import('../views/PanelSocio.vue'),
   },
   {
     id: 'W07-03',
@@ -328,6 +330,17 @@ export const pantallas: Pantalla[] = [
     historia: 'HU-W07',
     sprint: 2,
     socio: true,
-    criterios: [],
+    criterios: ['CA-W07-11', 'CA-W07-12', 'CA-W07-13'],
+    componente: () => import('../views/DocumentacionApi.vue'),
+  },
+  {
+    id: 'W07-04',
+    ruta: '/operador/estado',
+    nombre: 'Estado del sistema',
+    historia: 'HU-W07',
+    sprint: 2,
+    roles: ['BACKOFFICE'],
+    criterios: ['CA-W07-14', 'CA-W07-15'],
+    componente: () => import('../views/EstadoSistema.vue'),
   },
 ]

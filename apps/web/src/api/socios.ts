@@ -1,6 +1,6 @@
-// Cliente REST de la API de socios (HU-W07, `/v1`). Sin librería, como graphql/cliente.ts: `fetch` con el token del
-// socio, `Accept-Language` y los tipos generados del contrato (hoy el borrador contrato/borrador-socios-v1.yaml →
-// tipos-socios.ts). Nunca deja salir un error técnico ni un 5xx (regla 5): cada fallo llega como `ErrorSocios` con un
+// Cliente REST de la API de socios (HU-W07, `/v1`, contrato v0.22: contrato/socios-v1.json). Sin librería, como
+// graphql/cliente.ts: `fetch` con el token del socio, `Accept-Language` y los tipos generados del contrato
+// (tipos-socios.ts). Nunca deja salir un error técnico ni un 5xx (regla 5): cada fallo llega como `ErrorSocios` con un
 // código estable y un mensaje para el usuario.
 import { cabeceraIdioma, t } from '../i18n'
 import type { components } from './tipos-socios'
@@ -12,12 +12,18 @@ export type Token = Esquemas['Token']
 export type Credenciales = Esquemas['Credenciales']
 export type Credencial = Esquemas['Credencial']
 export type Consumo = Esquemas['Consumo']
-export type Estado = Esquemas['Estado']
+export type Estado = Esquemas['EstadoSistema']
 export type Ventas = Esquemas['Ventas']
 
 /** Qué salió mal, sin depender del texto del mensaje. */
 export type CodigoErrorSocios =
-  'NO_AUTORIZADO' | 'BLOQUEADO' | 'NO_ENCONTRADO' | 'PRESUPUESTO_AGOTADO' | 'SERVICIO_LENTO' | 'ERROR'
+  | 'CREDENCIALES_INVALIDAS'
+  | 'NO_AUTORIZADO'
+  | 'PROHIBIDO'
+  | 'NO_ENCONTRADO'
+  | 'PRESUPUESTO_AGOTADO'
+  | 'SERVICIO_LENTO'
+  | 'ERROR'
 
 export class ErrorSocios extends Error {
   constructor(
@@ -28,19 +34,21 @@ export class ErrorSocios extends Error {
   }
 }
 
-const CODIGOS: Record<number, CodigoErrorSocios> = {
-  401: 'NO_AUTORIZADO',
-  404: 'NO_ENCONTRADO',
-  423: 'BLOQUEADO',
-  429: 'PRESUPUESTO_AGOTADO',
+/** El `codigo` de `ErrorPublico` decide; el estado HTTP solo cuando el cuerpo no trae uno conocido. */
+function codigoDe(status: number, codigo: string | undefined): CodigoErrorSocios {
+  if (codigo === 'CREDENCIALES_INVALIDAS') return 'CREDENCIALES_INVALIDAS'
+  if (codigo === 'TOKEN_INVALIDO' || status === 401) return 'NO_AUTORIZADO'
+  if (codigo === 'PROHIBIDO' || status === 403) return 'PROHIBIDO'
+  if (codigo === 'PRESUPUESTO_AGOTADO' || status === 429) return 'PRESUPUESTO_AGOTADO'
+  if (codigo === 'NO_ENCONTRADO' || status === 404) return 'NO_ENCONTRADO'
+  return 'ERROR'
 }
 
-async function mensajeDelBackend(respuesta: Response): Promise<string | null> {
+async function errorPublico(respuesta: Response): Promise<Partial<Esquemas['ErrorPublico']>> {
   try {
-    const cuerpo = (await respuesta.json()) as Partial<Esquemas['ErrorPublico']>
-    return cuerpo.mensaje?.trim() || null
+    return (await respuesta.json()) as Partial<Esquemas['ErrorPublico']>
   } catch {
-    return null
+    return {}
   }
 }
 
@@ -69,21 +77,23 @@ export async function llamarApiSocios<T>(metodo: 'GET' | 'POST', ruta: string, o
 
   if (respuesta.ok) return (await respuesta.json()) as T
   if (respuesta.status >= 500) {
-    // 502/503/504 son del gateway (reintentable); cualquier otro 5xx tampoco se muestra tal cual.
+    // 502/503/504 del gateway y el 503 controlado del BFF (SERVICIO_NO_DISPONIBLE) son reintentables; ningún 5xx se
+    // muestra tal cual.
     const lento = [502, 503, 504].includes(respuesta.status)
     throw new ErrorSocios(
       t(lento ? 'comun.servicioLento' : 'socios.error.generico'),
       lento ? 'SERVICIO_LENTO' : 'ERROR',
     )
   }
-  const codigo = CODIGOS[respuesta.status] ?? 'ERROR'
+  const error = await errorPublico(respuesta)
+  const codigo = codigoDe(respuesta.status, error.codigo)
   // El presupuesto agotado tiene su texto fijo en el portal; los demás 4xx traen el mensaje del backend.
   if (codigo === 'PRESUPUESTO_AGOTADO') throw new ErrorSocios(t('socios.error.presupuesto'), codigo)
-  throw new ErrorSocios((await mensajeDelBackend(respuesta)) ?? t('socios.error.generico'), codigo)
+  throw new ErrorSocios(error.mensaje?.trim() || t('socios.error.generico'), codigo)
 }
 
-export const pedirToken = (socioId: string, clave: string, fetchFn?: typeof fetch) =>
-  llamarApiSocios<Token>('POST', '/token', { cuerpo: { socioId, clave }, fetchFn })
+export const pedirToken = (clientId: string, clave: string, fetchFn?: typeof fetch) =>
+  llamarApiSocios<Token>('POST', '/token', { cuerpo: { clientId, clave }, fetchFn })
 
 export const obtenerCredenciales = (token: string, fetchFn?: typeof fetch) =>
   llamarApiSocios<Credenciales>('GET', '/credenciales', { token, fetchFn })
@@ -91,11 +101,13 @@ export const obtenerCredenciales = (token: string, fetchFn?: typeof fetch) =>
 export const rotarCredencial = (token: string, entorno: Entorno, fetchFn?: typeof fetch) =>
   llamarApiSocios<Credencial>('POST', `/credenciales/${entorno}/rotar`, { token, fetchFn })
 
-export const obtenerConsumo = (token: string, entorno: Entorno, ventana: Ventana, fetchFn?: typeof fetch) =>
-  llamarApiSocios<Consumo>('GET', `/consumo?entorno=${entorno}&ventana=${ventana}`, { token, fetchFn })
+/** Del entorno del token, los últimos 30 días. */
+export const obtenerConsumo = (token: string, fetchFn?: typeof fetch) =>
+  llamarApiSocios<Consumo>('GET', '/consumo', { token, fetchFn })
 
 export const obtenerEstado = (token: string, ventana: Ventana, fetchFn?: typeof fetch) =>
   llamarApiSocios<Estado>('GET', `/estado?ventana=${ventana}`, { token, fetchFn })
 
-export const obtenerVentas = (token: string, entorno: Entorno, fetchFn?: typeof fetch) =>
-  llamarApiSocios<Ventas>('GET', `/ventas?entorno=${entorno}`, { token, fetchFn })
+/** Del entorno del token, los últimos 12 meses (con un token de PRUEBAS, datos simulados). */
+export const obtenerVentas = (token: string, fetchFn?: typeof fetch) =>
+  llamarApiSocios<Ventas>('GET', '/ventas', { token, fetchFn })

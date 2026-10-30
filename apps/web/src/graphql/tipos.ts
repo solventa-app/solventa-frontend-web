@@ -8,7 +8,8 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   /**
-   * Contrato GraphQL del BFF (v0, Sprint 1: HU-W01 y HU-W05; v0.20 suma el onboarding de HU-M01).
+   * Contrato GraphQL del BFF (v0, Sprint 1: HU-W01 y HU-W05; v0.20 suma el onboarding de HU-M01; v0.22, el estado del
+   * sistema de HU-W07. La API REST de los socios está aparte, en contracts/openapi/socios-v1.json).
    *
    * Este archivo es la FUENTE DE VERDAD del contrato con `solventa-frontend`.
    * Reglas (ver contracts/README.md): solo cambios ADITIVOS; para quitar algo se marca @deprecated
@@ -66,6 +67,11 @@ export type CodigoEnviado = {
   propuestaId: Scalars['ID']['output'];
   venceEn: Scalars['DateTime']['output'];
 };
+
+export type ColorSalud =
+  | 'AMARILLO'
+  | 'ROJO'
+  | 'VERDE';
 
 export type ConfirmacionContacto = {
   canal: CanalContacto;
@@ -240,6 +246,12 @@ export type EstadoArchivo =
   | 'PENDIENTE'
   | 'RECHAZADO';
 
+export type EstadoCircuito =
+  | 'ABIERTO'
+  | 'CERRADO'
+  | 'DESCONOCIDO'
+  | 'SEMIABIERTO';
+
 export type EstadoCobro =
   | 'COBRADO'
   | 'COBRANDO'
@@ -284,6 +296,17 @@ export type EstadoSiniestro =
   | 'EN_REVISION'
   | 'PENDIENTE'
   | 'RECHAZADO';
+
+export type EstadoSistema = {
+  apis: Array<SaludApi>;
+  calculadoEn: Scalars['DateTime']['output'];
+  color: ColorSalud;
+  disponibilidad?: Maybe<Scalars['Float']['output']>;
+  latenciaMediaMs?: Maybe<Scalars['Int']['output']>;
+  micros: Array<SaludMicro>;
+  porcentaje: Scalars['Int']['output'];
+  ventana: Scalars['String']['output'];
+};
 
 export type EstadoUsuario =
   | 'ACTIVO'
@@ -753,6 +776,7 @@ export type Propuesta = {
   mensajeEstado?: Maybe<Scalars['String']['output']>;
   motivoEstado?: Maybe<MotivoEstadoPropuesta>;
   nombreAsesor?: Maybe<Scalars['String']['output']>;
+  nombreSocio?: Maybe<Scalars['String']['output']>;
   nombreTitular?: Maybe<Scalars['String']['output']>;
   ofertaId: Scalars['ID']['output'];
   plazoMeses: Scalars['Int']['output'];
@@ -766,6 +790,7 @@ export type Query = {
   cobros: Array<Cobro>;
   convertirMontos: Array<Monto>;
   documentoFirma?: Maybe<DocumentoFirma>;
+  estadoSistema: EstadoSistema;
   firmaPorEnlace?: Maybe<EnlaceFirma>;
   miVerificacion?: Maybe<Onboarding>;
   oferta?: Maybe<Oferta>;
@@ -802,6 +827,11 @@ export type QueryConvertirMontosArgs = {
 
 export type QueryDocumentoFirmaArgs = {
   propuestaId: Scalars['ID']['input'];
+};
+
+
+export type QueryEstadoSistemaArgs = {
+  ventana?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -918,6 +948,31 @@ export type RolUsuario =
   | 'ASESOR'
   | 'BACKOFFICE'
   | 'CLIENTE';
+
+export type SaludApi = {
+  color: ColorSalud;
+  externas: Array<SaludExterna>;
+  micros: Array<Scalars['String']['output']>;
+  nombre: Scalars['String']['output'];
+  porcentaje: Scalars['Int']['output'];
+};
+
+export type SaludExterna = {
+  estado: EstadoCircuito;
+  nombre: Scalars['String']['output'];
+};
+
+export type SaludMicro = {
+  color: ColorSalud;
+  disponibilidad?: Maybe<Scalars['Float']['output']>;
+  latenciaMediaMs?: Maybe<Scalars['Int']['output']>;
+  latenciaP95Ms?: Maybe<Scalars['Int']['output']>;
+  nombre: Scalars['String']['output'];
+  peso: Scalars['Int']['output'];
+  porcentaje: Scalars['Int']['output'];
+  responde: Scalars['Boolean']['output'];
+  sinTrafico: Scalars['Boolean']['output'];
+};
 
 export type Sesion = {
   expiraEn: Scalars['DateTime']['output'];

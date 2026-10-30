@@ -1,5 +1,5 @@
 // Piezas comunes del portal de socios (HU-W07, plan-hu-w07-front.md 5.1): cliente REST, sesión técnica del socio,
-// guardia del router y mocks del borrador del contrato.
+// guardia del router y mocks del contrato de socios (v0.22).
 import { createMemoryHistory } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErrorSocios, llamarApiSocios, obtenerConsumo, obtenerCredenciales, rotarCredencial } from '../src/api/socios'
@@ -67,13 +67,32 @@ describe('cliente REST de socios', () => {
     expect(eRed.message).not.toMatch(/fetch/i)
   })
 
+  it('el código del contrato distingue credenciales incorrectas de un token vencido (los dos son 401)', async () => {
+    const credenciales = await fallo(
+      llamarApiSocios('POST', '/token', {
+        fetchFn: respuesta(401, {
+          codigo: 'CREDENCIALES_INVALIDAS',
+          mensaje: 'Datos incorrectos.',
+          puedeReintentar: false,
+        }),
+      }),
+    )
+    expect(credenciales.codigo).toBe('CREDENCIALES_INVALIDAS')
+    const sesion = await fallo(
+      llamarApiSocios('GET', '/consumo', {
+        fetchFn: respuesta(401, { codigo: 'TOKEN_INVALIDO', mensaje: 'x', puedeReintentar: false }),
+      }),
+    )
+    expect(sesion.codigo).toBe('NO_AUTORIZADO')
+  })
+
   it('un 429 es «presupuesto agotado» con el texto del portal; un 401 trae el mensaje del backend', async () => {
     const e429 = await fallo(llamarApiSocios('POST', '/cotizaciones', { fetchFn: respuesta(429) }))
     expect(e429.codigo).toBe('PRESUPUESTO_AGOTADO')
     expect(e429.message).toMatch(/Presupuesto agotado/)
     const e401 = await fallo(
       llamarApiSocios('GET', '/consumo', {
-        fetchFn: respuesta(401, { codigo: 'NO_AUTORIZADO', mensaje: 'Mensaje del backend.' }),
+        fetchFn: respuesta(401, { codigo: 'TOKEN_INVALIDO', mensaje: 'Mensaje del backend.', puedeReintentar: false }),
       }),
     )
     expect(e401).toMatchObject({ codigo: 'NO_AUTORIZADO', message: 'Mensaje del backend.' })
@@ -151,20 +170,26 @@ describe('mocks de la API de socios', () => {
 
   it('devuelve las credenciales por entorno y rota la clave de uno', async () => {
     const antes = await obtenerCredenciales(token(), fetchPrueba)
-    expect(antes.entornos.map((c) => c.entorno)).toEqual(['PRODUCCION', 'PRUEBAS'])
+    expect(antes.credenciales.map((c) => c.entorno)).toEqual(['PRODUCCION', 'PRUEBAS'])
     const nueva = await rotarCredencial(token(), 'PRUEBAS', fetchPrueba)
-    expect(nueva.clave).not.toBe(antes.entornos[1].clave)
+    expect(nueva.clave).not.toBe(antes.credenciales[1].clave)
     expect(nueva.clave.startsWith('sk_test_')).toBe(true)
   })
 
   it('cotizar descuenta del presupuesto; agotado responde 429', async () => {
-    const consumo = await obtenerConsumo(token(), 'PRODUCCION', '1h', fetchPrueba)
+    const consumo = await obtenerConsumo(token(), fetchPrueba)
     expect(consumo.presupuesto).toMatchObject({ asignadas: 1000, consumidas: 842, restantes: 158 })
     const agotado = tokenSocioDeDemo('agotado-01', 'PRODUCCION')
     const error = await fallo(
       llamarApiSocios('POST', '/cotizaciones', { cuerpo: {}, token: agotado, fetchFn: fetchPrueba }),
     )
     expect(error.codigo).toBe('PRESUPUESTO_AGOTADO')
+  })
+
+  it('el consumo y las ventas son del entorno del token', async () => {
+    const pruebas = tokenSocioDeDemo('retail-fintech-042', 'PRUEBAS')
+    expect((await obtenerConsumo(pruebas, fetchPrueba)).entorno).toBe('PRUEBAS')
+    expect((await obtenerConsumo(token(), fetchPrueba)).entorno).toBe('PRODUCCION')
   })
 
   it('sin token vigente, la cuenta responde 401', async () => {

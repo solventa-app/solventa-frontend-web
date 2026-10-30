@@ -32,13 +32,13 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   plantilla sin ejecutar (`docs/evidencias/FC-10-web-plantilla.md`).
 - **HU-W04 (mesa de siniestros, KAN-27):** construidas W04-01, W04-02 (con el modal de rechazo), W04-02b, W04-03a,
   W04-03b y W04-03c (`docs/plan-ejecucion-hu-w04-siniestros.md`). Consumen el **BFF real** por `/v1/graphql/web` con el
-  JWT de BACKOFFICE (servicio CLAIMS; proxy de Vite `/v1` y rewrite de Vercel), con los tipos del contrato principal **v0.21** (`tipos.ts`). En
+  JWT de BACKOFFICE (servicio CLAIMS; proxy de Vite `/v1` y rewrite de Vercel), con los tipos del contrato principal (`tipos.ts`, hoy **v0.22**). En
   `dev:mock` responden los mocks de MSW; los E2E de W04 corren contra el backend local (`e2e/cypress/support/siniestros.ts`). Criterios CA-W04-01 a 29 **propuestos** en `docs/plan-frontend.md`. Pruebas: Cypress de W04 39 (7 specs por pantalla y
   responsive más `w04-siniestros.cy.ts`), con el backend local y la semilla de siniestros.
 - **HU-W03 (suscripción, firma y pago con el asesor, KAN-26) — solo front, con mocks** (`docs/plan-front-w03-y-ajustes-w01-w05.md`):
   W03-01 (solo ASESOR) con el modal del asesor (código por correo, «Emitir», reenviar enlace), y las páginas públicas del
   enlace `/firma#t=…`: W03-02 (contrato en PDF y firma en tres modos), W03-02b, W03-03 («Pagar»), el retorno de la
-  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.21** (F-F1, en la v0.18: el borrador
+  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.22** (F-F1, en la v0.18: el borrador
   local de la v0.17 se borró y sus tipos salen de `src/graphql/tipos.ts`). La imagen de la firma (TRAZO e IMAGEN) **no viaja
   por GraphQL** (F-F2): `solicitarSubidaFirma` → PUT directo a la URL firmada con TODOS los encabezados →
   `firmarPorEnlace` con `imagenArchivoId`; NOMBRE manda `nombreFirma`. Mocks en `src/mocks/suscripcion.ts`; correo y pasarela simulados en `/dev/correo` y `/dev/pasarela/:sesion`, solo
@@ -47,9 +47,13 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   `w03-suscripcion.cy.ts` (6). Fallan 3 pruebas de Cypress que ya fallaban en `develop` (`w05-01.cy.ts` y `w01-oferta.cy.ts`).
 - **HU-W07 (portal de socios, KAN-30), en curso, solo front con mocks** (`docs/plan-hu-w07-front.md`, un PR por paso):
   hechas las piezas comunes (5.1): cliente REST `src/api/socios.ts`, sesión técnica `useSesionSocio.ts` (JWT de 15 min
-  en `sessionStorage` `solventa.tokenSocio`, misma excepción de la regla 7), guardia `socio: true` y rutas W07-01 a 03.
-  Contrato: **borrador local** `contrato/borrador-socios-v1.yaml` → `src/api/tipos-socios.ts` (`openapi-typescript`,
-  `npm run codegen`) hasta que el backend publique `socios-v1.yaml`. Mocks en `src/mocks/socios.ts`.
+  en `sessionStorage` `solventa.tokenSocio`, misma excepción de la regla 7), guardia `socio: true` y rutas W07-01 a 03; W07-01 (ingreso del socio, enlace
+  desde G-01) W07-02 (panel: credenciales, consumo, estado, consumo por API y ventas) y W07-03 (documentación: guía en
+  PDF y Swagger de pruebas y producción, `ui/Pestanas.vue`) construidas, y W07-04 (estado del sistema del operador,
+  `/operador/estado`, contrato **v0.22** `estadoSistema`). Contrato REST: la copia de la v0.22 `contrato/socios-v1.json`
+  (OpenAPI 3.1) → `src/api/tipos-socios.ts` (`openapi-typescript`, `npm run codegen`); consumo y ventas son «del entorno
+  del token» (el de pruebas se pide con la clave de pruebas). Mocks en `src/mocks/socios.ts`. Guía de integración en español:
+  `docs/guia-integracion-socios.md` (Markdown, sin PDF). Pendiente: probar contra el BFF real (sus rutas `/v1` de socios llegan con los bloques 4 y 5 del backend).
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").

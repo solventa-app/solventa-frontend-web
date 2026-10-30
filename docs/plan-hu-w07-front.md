@@ -19,14 +19,15 @@ verde.
 | Paso | PR / rama | Estado |
 |---|---|---|
 | 5.1 Piezas comunes | `feat/KAN-30-portal-socios-base` | Hecho (ver abajo) |
-| 5.2 W07-01 Login | — | Pendiente |
-| 5.3 W07-02 Panel | — | Pendiente |
-| 5.4 W07-03 Documentación | — | Pendiente |
-| 5.6 W07-04 Estado del sistema | — | Pendiente (con el borrador GraphQL de `estadoSistema`) |
-| 5.5 Guía en PDF | — | Pendiente (al final) |
-| Integración con el backend | — | Pendiente (espera el contrato real) |
+| 5.2 W07-01 Login | `feat/KAN-30-ingreso-socio` | Hecho: `IngresoSocio.vue`, enlace de G-01, CA-W07-01 a 04 (propuestos) |
+| 5.3 W07-02 Panel | `feat/KAN-30-panel-socio` | Hecho: `PanelSocio.vue`, CA-W07-05 a 10 (propuestos) |
+| 5.4 W07-03 Documentación | `feat/KAN-30-documentacion-api` | Hecho: `DocumentacionApi.vue`, `ui/Pestanas.vue`, Swagger embebido; CA-W07-11 a 13 (propuestos) |
+| 5.6 W07-04 Estado del sistema | `feat/KAN-30-estado-sistema` | Hecho: `EstadoSistema.vue` sobre el contrato v0.22 (sin borrador GraphQL); CA-W07-14 y 15 (propuestos) |
+| 5.5 Guía de integración | `chore/KAN-30-guia-integracion-socios` | Hecha **solo en español y en Markdown** (decisión de Felipe, 2026-10-29): `docs/guia-integracion-socios.md`, con capturas en `docs/img/guia-socios/`. Sin PDF ni versión en inglés |
+| Contrato REST real (v0.22) | `feat/KAN-30-contrato-socios-real` | Hecho: el portal usa `contrato/socios-v1.json`; se borró el borrador (ver «Contrato real» abajo) |
+| Integración con el backend | — | Pendiente: probar el portal contra el BFF real cuando lleguen sus rutas `/v1` de socios (bloques 4 y 5 del backend) |
 
-**Decisión del 2026-10-29 (Felipe): el contrato es un borrador local**, como el de W03 (D-1). El backend todavía no
+**Decisión del 2026-10-29 (Felipe), ya cumplida: el contrato fue un borrador local**, como el de W03 (D-1). El backend todavía no
 publica `contracts/openapi/socios-v1.yaml` ni `estadoSistema` (bloque 1 de `plan-completar-hu-w07.md`, rama
 `feat/KAN-30-socios-api`). El front lo escribe en `contrato/borrador-socios-v1.yaml` con los endpoints y campos del
 bloque 1; lo que el plan del backend no fija va marcado «Propuesta del borrador» y se avisa al backend:
@@ -41,6 +42,23 @@ bloque 1; lo que el plan del backend no fija va marcado «Propuesta del borrador
 verifica igual que `tipos.ts`. Al publicarse el contrato real se borra el borrador, se copia el del backend y se
 regeneran los tipos. El borrador GraphQL de `estadoSistema` (v0.19) llega con W07-04.
 
+**Contrato real (v0.22, 2026-10-29).** El backend publicó `contracts/openapi/socios-v1.json` (OpenAPI 3.1) y
+`estadoSistema` en GraphQL, así que el borrador se borró: `contrato.mjs` copia `socios-v1.json` a `contrato/` y a
+`apps/web/src/contrato/`, y `npm run codegen` genera los tipos desde ahí. Lo que cambió en el portal:
+- **Ingreso:** `POST /v1/token` recibe `clientId` y devuelve `accessToken`, sin el socio; el nombre del encabezado sale de
+  `GET /v1/credenciales` al ingresar. El bloqueo por intentos es un 401 `CREDENCIALES_INVALIDAS` (no hay 423) y el
+  cliente distingue ese código de `TOKEN_INVALIDO` (sesión vencida), aunque ambos sean 401.
+- **Panel:** consumo y ventas son «del entorno del token» con `desde`/`hasta` (30 días y 12 meses por defecto): los de
+  producción se piden con el token de la sesión y los de pruebas con un token pedido con la clave de pruebas. La
+  ventana de tiempo solo cambia el estado. El gráfico pasó a **llamadas por día** (`diario`), la tabla calcula «con
+  éxito» como llamadas menos errores, y las ventas muestran totales, conversión de propuesta a póliza (calculada),
+  `tasaComision` y la tabla por mes (el contrato no trae propuestas por estado).
+- **Estado:** viene plano (`porcentaje`, `apis[].nombre`, `calculadoEn`), la misma forma que `estadoSistema` sin los
+  micros, así que `TarjetaEstado` sirve igual al socio y al operador.
+- **Documentación:** el Swagger lee `socios-v1.json`. La caja de pruebas dice solo lo que el contrato define (respuestas
+  simuladas y el código `000000`); los documentos de prueba que propuso el borrador (`999` → PRELIMINAR) quedan solo como
+  convención del mock.
+
 **Hecho en 5.1:**
 - `src/api/socios.ts` (cliente REST), `src/composables/useSesionSocio.ts` (sesión técnica, `solventa.tokenSocio`) y la
   guardia del router para `socio: true`.
@@ -51,6 +69,45 @@ regeneran los tipos. El borrador GraphQL de `estadoSistema` (v0.19) llega con W0
   `clave-erronea` → 401; ID que empieza por `bloqueado` → 423; ID que empieza por `agotado` → presupuesto agotado;
   clave `sk_test…` → token de PRUEBAS; ventana de 15 min → sin tráfico.
 - El enlace de G-01 y los textos de cada pantalla llegan con su PR (5.2 en adelante).
+
+**Hecho en 5.2:** `views/IngresoSocio.vue` contra Figma `2001:3340` con la plantilla de G-01, el aviso de sesión
+vencida y el enlace de G-01 habilitado (se quitó `ingreso.socioTitulo`). Pruebas: `tests/pantalla-w07-01.test.ts` y
+`e2e/cypress/e2e/pantallas/w07-01.cy.ts` (camino feliz, errores y responsive a 1280 y 390 px).
+
+**Hecho en 5.3:** `views/PanelSocio.vue` contra Figma `2001:3562`, con el estado en `composables/usePanelSocio.ts` (cada
+sección carga sola, con su error y reintento; un 401 vuelve al ingreso con el aviso). Las piezas del panel van en
+`components/socios/`: `TarjetaCredenciales`, `ModalRegenerar`, `BotonCopiar`, `TarjetaConsumo`, `TarjetaEstado` (sin
+depender del panel, para reusarla en W07-04) y `GraficoCotizaciones` (SVG propio, regla 8 y skill de dataviz). Son
+composiciones de pantalla, como `ModalRechazo` de W04, no piezas nuevas de la librería `ui/`. Desvíos frente a Figma:
+- Título «Panel del socio» en vez de «Dashboard de API», y la barra común de «Cerrar sesión» en vez del encabezado
+  propio de Figma.
+- El aviso «Al regenerar…» va en la confirmación de «Regenerar», no fijo en la tarjeta.
+- «Mostrar» y «Copiar» como acciones de texto bajo la clave; «Generar token» y «Regenerar» como botones.
+- «Última verificación» con la hora, no «Hace 2 minutos».
+Pruebas: `tests/pantalla-w07-02.test.ts` y `e2e/cypress/e2e/pantallas/w07-02.cy.ts` (incluye 1280 y 390 px).
+
+**Hecho en 5.4:** `views/DocumentacionApi.vue` contra Figma `2001:3434` y la pieza nueva de la librería
+`components/ui/Pestanas.vue` (patrón de pestañas de WAI-ARIA: foco móvil, flechas, Inicio y Fin; en
+`IndiceComponentes.vue`). El Swagger embebido es `components/socios/SwaggerSocios.vue`: `swagger-ui-dist` 5.33.2 fijo,
+cargado en diferido y sin CDN, con el token del entorno de la pestaña inyectado en cada «Try it out» y su CSS ajustado a
+la web. Lee `apps/web/src/contrato/socios-v1.json`, la copia que deja `npm run contrato:sincronizar` (Vercel solo
+publica `apps/web`; una prueba de Vitest exige que sea idéntica a la de `contrato/`). Desvíos y decisiones:
+- La barra de pestañas usa el subrayado en `enlace`, como el frame (el plan decía `primario`).
+- La lista fija de endpoints y el ejemplo del prototipo se reemplazan por el Swagger, que sí se puede probar.
+- Mientras la guía en PDF no se publique (5.5), la pestaña lo dice en vez de mostrar un visor vacío.
+- Documentos de prueba del sandbox: el borrador proponía `999` → PRELIMINAR; el contrato real no los define, así que
+  la caja solo explica el modo prueba (ver «Contrato real»).
+Pruebas: `tests/pantalla-w07-03.test.ts` (Swagger simulado para revisar el token por pestaña) y
+`e2e/cypress/e2e/pantallas/w07-03.cy.ts` (recorre las pestañas y hace «Try it out» de una cotización en pruebas).
+
+**Hecho en 5.6:** el backend publicó la **v0.22** (2026-10-29) con `estadoSistema(ventana)` en GraphQL, así que no hizo
+falta un borrador: la web sincronizó la v0.22 (solo GraphQL) y `views/EstadoSistema.vue` (`/operador/estado`, BACKOFFICE)
+la lee con `composables/useEstadoSistema.ts`, que se recarga cada 30 s como W05-01. Reusa `TarjetaEstado` (adapta la
+respuesta a la forma del panel del socio) y suma la tabla por servicio y la de APIs externas (en la v0.22 vienen dentro
+de cada API: la tabla las junta con su API). G-02b suma la tercera tarjeta. Mock en `src/mocks/estadoSistema.ts` con los
+pesos de `contracts/salud.json`. Pruebas: `tests/pantalla-w07-04.test.ts` y `e2e/cypress/e2e/pantallas/w07-04.cy.ts`.
+El BFF de la v0.22 todavía responde `estadoSistema` con un error controlado (esqueleto): contra el backend real la
+pantalla muestra el error con reintento hasta que se implemente.
 
 ## 1. Convenciones visuales que siguen las pantallas nuevas
 
@@ -230,6 +287,10 @@ Disposición, de arriba abajo:
   y comprueba que el PDF carga.
 
 ### 5.5 La guía de integración en PDF (se hace al final)
+
+> **Cambio del 2026-10-29 (Felipe):** la guía se hizo solo en español y como Markdown para la documentación
+> (`docs/guia-integracion-socios.md`), no como PDF en `public/socios/`. Lo de abajo queda como el diseño original. La
+> pestaña «Guía de integración» de W07-03 sigue mostrando que la guía en PDF no está publicada.
 
 **Cuándo:** **después de terminar las pantallas finales**: el login, el panel y las dos pestañas de Swagger. Así las
 capturas muestran la web real y no un borrador.
