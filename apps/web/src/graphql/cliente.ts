@@ -1,13 +1,17 @@
 // Cliente GraphQL mínimo contra el BFF (canal web: /graphql/web). Sin librería a propósito: con pocas
 // operaciones no hace falta urql ni Apollo, y MSW intercepta HTTP igual con cualquiera de ellos.
 import { cabeceraIdioma, t } from '../i18n'
+import { log, obtenerCodigoSoporte } from '../log'
 
 export class ErrorGraphQL extends Error {
+  readonly codigoSoporte: string
+
   constructor(
     mensaje: string,
     readonly errores: unknown[] = [],
   ) {
     super(mensaje)
+    this.codigoSoporte = obtenerCodigoSoporte()
   }
 }
 
@@ -48,12 +52,26 @@ export async function ejecutar<T>(
     body: JSON.stringify({ query: consulta, variables }),
   })
   if (respuesta.status === 502 || respuesta.status === 503 || respuesta.status === 504) {
-    throw new ErrorGraphQL(t('comun.servicioLento'))
+    const err = new ErrorGraphQL(t('comun.servicioLento'))
+    log.warn('BFF no disponible temporalmente', { status: respuesta.status, endpoint })
+    throw err
   }
-  if (!respuesta.ok) throw new ErrorGraphQL(`El BFF respondió ${respuesta.status}`)
+  if (!respuesta.ok) {
+    const err = new ErrorGraphQL(`El BFF respondió ${respuesta.status}`)
+    log.error('Error HTTP del BFF', err, { status: respuesta.status, endpoint })
+    throw err
+  }
 
   const cuerpo = (await respuesta.json()) as { data?: T; errors?: { message: string }[] }
-  if (cuerpo.errors?.length) throw new ErrorGraphQL(cuerpo.errors[0].message, cuerpo.errors)
-  if (!cuerpo.data) throw new ErrorGraphQL('Respuesta GraphQL sin datos')
+  if (cuerpo.errors?.length) {
+    const err = new ErrorGraphQL(cuerpo.errors[0].message, cuerpo.errors)
+    log.warn('Error GraphQL devuelto por el BFF', { endpoint })
+    throw err
+  }
+  if (!cuerpo.data) {
+    const err = new ErrorGraphQL('Respuesta GraphQL sin datos')
+    log.error('Respuesta GraphQL sin datos', err, { endpoint })
+    throw err
+  }
   return cuerpo.data
 }

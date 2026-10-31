@@ -92,7 +92,7 @@ function simular(sufijo: '999' | '000') {
 </script>
 
 <template>
-  <div class="flex h-screen flex-col overflow-hidden" data-pantalla="W01-01">
+  <div class="sentry-block flex h-screen flex-col overflow-hidden" data-pantalla="W01-01">
     <HeaderPantalla :titulo="t('solicitud.header')" />
     <MigasDePan :seccion="t('comun.nuevaCotizacion')" :a-inicio="rutaInicio()" />
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">

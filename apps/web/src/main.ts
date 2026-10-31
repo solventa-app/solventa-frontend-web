@@ -1,5 +1,7 @@
+import * as Sentry from '@sentry/vue'
 import { createApp } from 'vue'
 import App from './App.vue'
+import { limpiar } from './observabilidad/limpiar'
 import { crearRouter } from './router'
 import './styles/twind'
 import './styles/base.css'
@@ -14,7 +16,29 @@ async function arrancar() {
     const { worker } = await import('./mocks/browser')
     await worker.start({ onUnhandledFrame: 'bypass' })
   }
-  createApp(App).use(crearRouter()).mount('#app')
+  const app = createApp(App)
+  const router = crearRouter()
+  const dsn = import.meta.env.VITE_SENTRY_DSN
+  if (dsn) {
+    Sentry.init({
+      app,
+      dsn,
+      environment: import.meta.env.VITE_AMBIENTE,
+      release: import.meta.env.VITE_RELEASE,
+      integrations: [
+        Sentry.browserTracingIntegration({ router }),
+        Sentry.replayIntegration({ maskAllText: true, maskAllInputs: true, blockAllMedia: true }),
+      ],
+      tracesSampleRate: 0.1,
+      // /graphql es relativo (Vercel lo reescribe al gateway): traceparent solo ahí
+      tracePropagationTargets: [/^\/graphql/, /^\/v1\/graphql/],
+      replaysSessionSampleRate: 0, // no grabar sesiones normales
+      replaysOnErrorSampleRate: 1.0, // sí grabar cuando hay un error
+      beforeSend: limpiar,
+      beforeBreadcrumb: (b) => (b.category === 'ui.input' ? null : b),
+    })
+  }
+  app.use(router).mount('#app')
 }
 
 arrancar()
