@@ -41,6 +41,16 @@ Plan aprobado con Felipe: validar W01 y W05 contra sus objetivos y lo ya constru
 
 ## Próximos pasos
 
-1. Integrar `feat/KAN-28-ajustes-w05-sse` y los PR del backend `feat/KAN-24-ajustes-retencion-perfil` y
-   `feat/KAN-28-ajustes-cobro-recurrente`.
-2. Fase de validación con infraestructura local y remota.
+Punto de retoma (2026-10-31): PR web #110 y #111 (apilado sobre #110) con el CI en verde y sin integrar; dependen de los
+PR backend #459 y #460. **W01 no está integrada.**
+
+1. Integrar en orden: backend #459 → #460; web #110 → #111.
+2. Con el compose: Cypress de W01 y W05 contra el backend real y recorrido por la web (D-F0, D-F4). W05-01 no se ha visto
+   en el navegador.
+3. Staging y demás, en `../solventa-backend/PROJECT_STATUS.md`.
+
+**Límite conocido de W05-01:** el stream se cierra tras 15 min sin eventos y se reabre al volver a la pestaña; no hay
+recarga periódica de respaldo.
+
+**Antes de un PR:** `npm run formato:verificar` (Prettier falló en el CI de #111). Título: `tipo(alcance): KAN-N
+descripción`; `gh pr edit` falla por Projects classic, usar `gh api -X PATCH`.

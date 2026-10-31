@@ -66,6 +66,8 @@ Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proye
 - La app móvil se construye en otro repositorio.
 - GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git).
 
+- **Ajustes de W01 y W05 (KAN-24, KAN-28, 2026-10-31):** PR #110 y #111 sin integrar, CI en verde. W05-01 por SSE con `useAvisos.ts`. Falta Cypress contra el backend real. Retoma en `PROJECT_STATUS.md`.
+
 ## Plan y decisiones cerradas de HU-W01 (2026-10-18)
 
 Plan del front: [`docs/plan-completar-hu-w01.md`](docs/plan-completar-hu-w01.md) (qué cambia por bloque, despliegue,
