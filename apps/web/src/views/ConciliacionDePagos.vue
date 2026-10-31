@@ -14,12 +14,14 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Boton, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { useAvisos } from '../composables/useAvisos'
 import { useConciliacion } from '../composables/useConciliacion'
 import { formatearFecha, formatearMonto } from '../utils/formato'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 import { t } from '../i18n'
 
-const { estado, cargarCobros, reintentarCobro } = useConciliacion()
+const { estado, cargarCobros, reintentarCobro, aplicarAviso } = useConciliacion()
+const avisos = useAvisos(aplicarAviso)
 
 // `undefined` es la pestaña "Todos".
 const PESTANAS: (EstadoCobro | undefined)[] = [undefined, 'COBRANDO', 'COBRADO', 'RECHAZADO', 'PENDIENTE']
@@ -92,30 +94,26 @@ async function alReintentar(cobroId: string) {
   }, 3500)
 }
 
-// La tabla se vuelve a pedir sola mientras la pantalla está abierta, para ver un cobro pendiente que el
-// sistema ya cobró (CA-W05-05) sin recargar la página. Sin botón nuevo: el prototipo no lo tiene. No
-// recarga con la pestaña oculta y recarga apenas se vuelve a ella.
-const INTERVALO_REFRESCO_MS = 30_000
-let temporizadorRefresco: ReturnType<typeof setInterval> | undefined
-
-function refrescar() {
-  if (document.visibilityState === 'hidden') return
-  void cargarCobros(undefined, { silencioso: true })
-}
-
+// La tabla se actualiza por SSE (W05-A6), sin botón: el prototipo no lo tiene. La conexión solo vive con la pestaña
+// visible; al volver se abre otra y se consulta una vez lo que pasó mientras tanto.
 function alCambiarVisibilidad() {
-  if (document.visibilityState === 'visible') refrescar()
+  if (document.visibilityState === 'hidden') {
+    avisos.cerrar()
+    return
+  }
+  void avisos.abrir()
+  void cargarCobros(undefined, { silencioso: true })
 }
 
 onMounted(() => {
   void cargarCobros()
-  temporizadorRefresco = setInterval(refrescar, INTERVALO_REFRESCO_MS)
+  void avisos.abrir()
   document.addEventListener('visibilitychange', alCambiarVisibilidad)
 })
 
 onUnmounted(() => {
   clearTimeout(temporizadorToast)
-  clearInterval(temporizadorRefresco)
+  avisos.cerrar()
   document.removeEventListener('visibilitychange', alCambiarVisibilidad)
 })
 </script>
@@ -309,6 +307,7 @@ onUnmounted(() => {
               {{ t('conciliacion.controlAntes') }} <em>{{ t('conciliacion.estado.RECHAZADO') }}</em>
               {{ t('conciliacion.controlDespues') }}
               {{ t('conciliacion.controlEnLinea') }}
+              {{ t('conciliacion.controlRecurrente') }}
             </p>
           </div>
         </div>

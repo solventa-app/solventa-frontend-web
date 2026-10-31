@@ -171,49 +171,16 @@ describe('HU-W05 · pantallas', () => {
       })
     })
 
-    describe('recarga automática', () => {
+    describe('actualización por SSE', () => {
       afterEach(() => vi.useRealTimers())
 
-      it('vuelve a pedir la tabla cada 30 s sin mostrar "Cargando…" y se detiene al salir', async () => {
-        const { wrapper } = await montarConciliacion()
-        const llamadas: string[] = []
-        servidor.use(
-          http.post('*/graphql/web', async ({ request }) => {
-            llamadas.push(((await request.json()) as { query: string }).query)
-            return HttpResponse.json({ data: { cobros: [] } })
-          }),
-        )
-        vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
-        // El intervalo se programó al montar con los temporizadores reales: se vuelve a montar con falsos.
-        wrapper.unmount()
-        const router = crearRouterDePrueba()
-        router.push('/operador/conciliacion')
-        await router.isReady()
-        const segunda = montar(ConciliacionDePagos, { global: { plugins: [router] } })
-        // Se espera la carga inicial (llega por MSW, no basta con flushPromises) antes de empezar a contar.
-        await vi.waitFor(() => expect(llamadas.length).toBeGreaterThan(0))
-        llamadas.length = 0
-
-        vi.advanceTimersByTime(29_000)
-        await flushPromises()
-        expect(llamadas).toHaveLength(0)
-
-        vi.advanceTimersByTime(1_000)
-        await vi.waitFor(() => expect(llamadas).toHaveLength(1))
-        expect(segunda.text()).not.toContain('Cargando conciliación de pagos')
-
-        segunda.unmount()
-        vi.advanceTimersByTime(60_000)
-        await flushPromises()
-        expect(llamadas).toHaveLength(1)
-      })
-
-      it('no recarga con la pestaña oculta y recarga al volver a ella', async () => {
+      it('no consulta con la pestaña oculta y consulta una vez al volver a ella', async () => {
         const { wrapper } = await montarConciliacion()
         let consultas = 0
         servidor.use(
-          http.post('*/graphql/web', () => {
-            consultas++
+          http.post('*/graphql/web', async ({ request }) => {
+            const { query } = (await request.json()) as { query: string }
+            if (query.includes('query cobros')) consultas++
             return HttpResponse.json({ data: { cobros: [] } })
           }),
         )

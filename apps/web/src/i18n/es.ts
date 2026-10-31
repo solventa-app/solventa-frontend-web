@@ -237,6 +237,8 @@ export const es = {
   'conciliacion.origen.RECURRENTE': 'Recurrente',
   'conciliacion.loResuelveCliente': 'Lo resuelve el cliente',
   'conciliacion.seConcilia': 'Se concilia',
+  'conciliacion.controlRecurrente':
+    'La prima se cobra en cada ciclo con el medio guardado al emitir la póliza, sin que el cliente haga nada.',
   'conciliacion.controlEnLinea':
     'Los cobros en línea los paga el cliente desde la pasarela; si fallan o se rechazan, él elige otra tarjeta.',
   'conciliacion.acciones': 'Acciones',
