@@ -176,6 +176,9 @@ export const en: Record<Clave, string> = {
   'errorOferta.asesor': 'Talk to an advisor',
   'errorOferta.validacion': 'Secure B2B2C validation',
   'errorOferta.vacio': 'There is no active error in memory yet.',
+  'errorOferta.codigoSoporte': 'Something went wrong. If you contact support, share this code: {codigo}',
+  'errorOferta.copiar': 'Copy',
+  'errorOferta.copiado': 'Copied',
 
   // W01-04 · Source details
   'fuentes.titulo': 'Source details',

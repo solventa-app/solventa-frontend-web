@@ -6,7 +6,7 @@ import vue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'public/mockServiceWorker.js', 'src/graphql/tipos.ts', 'src/api/tipos-socios.ts'] },
+  { ignores: ['dist/', 'public/mockServiceWorker.js', 'src/graphql/tipos.ts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...vue.configs['flat/recommended'],
@@ -20,6 +20,14 @@ export default tseslint.config(
       'no-undef': 'off',
       // Los nombres de las vistas son de una palabra en algunos casos de la librería (Boton, Chip, Badge).
       'vue/multi-word-component-names': 'off',
+      // Solo se permite usar `log` (src/log.ts), nunca `console.*` directo en el código de aplicación.
+      'no-console': 'error',
+    },
+  },
+  {
+    files: ['src/log.ts', 'src/mocks/**/*.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
   prettier,
