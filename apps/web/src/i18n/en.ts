@@ -238,6 +238,8 @@ export const en: Record<Clave, string> = {
   'conciliacion.origen.RECURRENTE': 'Recurring',
   'conciliacion.loResuelveCliente': 'The customer resolves it',
   'conciliacion.seConcilia': 'Being reconciled',
+  'conciliacion.controlRecurrente':
+    'The premium is charged every cycle with the payment method saved when the policy was issued, with no action from the customer.',
   'conciliacion.controlEnLinea':
     'Online payments are made by the customer on the payment gateway; if they fail or are declined, the customer chooses another card.',
   'conciliacion.acciones': 'Actions',

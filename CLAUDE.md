@@ -24,9 +24,9 @@ Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proye
   sin exponer códigos 5xx en `useCotizacion`, `useConciliacion` ni `useSesion`. `apps/web/.env.example`, `vite.config.ts`
   y `README.md` apuntan por defecto al gateway Envoy local (`http://localhost:8080`) y `apps/web/vercel.json` reescribe
   `/graphql/:path*` al gateway de staging.
-- **HU-W05 (plan de HU-W05, KAN-28):** W05-01 se **recarga sola cada 30 s** mientras está abierta y al volver a la
+- **HU-W05 (plan de HU-W05, KAN-28):** W05-01 se actualiza por **SSE** (`useAvisos.ts`, W05-A6; ya no hay recarga cada 30 s) y consulta una vez al volver a la
   pestaña (`useConciliacion.cargarCobros(…, { silencioso: true })`: sin «Cargando…», conserva la tabla si falla y descarta
-  la respuesta que se cruce con un reintento), para ver un pendiente que Cloud Tasks ya cobró. Contra staging corre
+  la respuesta que se cruce con un reintento). Contra staging corre
   `e2e/cypress/e2e/w05-staging.cy.ts`; los specs de mocks de W05 se saltan solos ahí (`e2e/cypress/support/entorno.ts`).
   Sin captura de tarjeta ni pantallas de indemnizaciones (Sprint 3). La evidencia de FC-10 desde la web es una
   plantilla sin ejecutar (`docs/evidencias/FC-10-web-plantilla.md`).
