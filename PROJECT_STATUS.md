@@ -47,16 +47,16 @@ Plan aprobado con Felipe: validar W01 y W05 contra sus objetivos y lo ya constru
 
 ## Próximos pasos
 
-Punto de retoma (2026-10-31): PR web #110 y #111 (apilado sobre #110) con el CI en verde y sin integrar; dependen de los
-PR backend #459 y #460. **W01 no está integrada.**
+Punto de retoma (2026-10-31): los ajustes de W01 y W05 están integrados y verificados con el stack local. W05-01 trae todas
+las páginas de cobros. Nada de esto se ha probado en staging.
 
-1. Integrar en orden: backend #459 → #460; web #110 → #111.
-2. Con el compose: Cypress de W01 y W05 contra el backend real y recorrido por la web (D-F0, D-F4). W05-01 no se ha visto
-   en el navegador.
-3. Staging y demás, en `../solventa-backend/PROJECT_STATUS.md`.
+1. Liberar y desplegar cuando se decida: ver `../solventa-backend/PROJECT_STATUS.md`.
+2. Correr `e2e/cypress/e2e/w05-staging.cy.ts` contra staging. Su encabezado «ID de transacción» no existe en W05-01: revisarlo.
+
+**Cypress contra el stack real:** `e2e/cypress/integracion/README.md`. Desde VS Code, antes `unset ELECTRON_RUN_AS_NODE`.
 
 **Límite conocido de W05-01:** el stream se cierra tras 15 min sin eventos y se reabre al volver a la pestaña; no hay
 recarga periódica de respaldo.
 
-**Antes de un PR:** `npm run formato:verificar` (Prettier falló en el CI de #111). Título: `tipo(alcance): KAN-N
-descripción`; `gh pr edit` falla por Projects classic, usar `gh api -X PATCH`.
+**Antes de un PR:** `npm run formato:verificar`. Título: `tipo(alcance): KAN-N descripción`; `gh pr edit` falla por
+Projects classic, usar `gh api -X PATCH`.

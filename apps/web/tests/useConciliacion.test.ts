@@ -22,6 +22,26 @@ describe('useConciliacion', () => {
     await cargarCobros()
   })
 
+  it('trae todas las páginas del BFF, no solo la primera', async () => {
+    const paginas: number[] = []
+    servidor.use(
+      http.post('*/graphql/web', async ({ request }) => {
+        const { variables } = (await request.json()) as { variables: { pagina: number } }
+        paginas.push(variables.pagina)
+        const base = { estado: 'COBRADO', monto: { valor: '1', moneda: 'COP' } }
+        const cantidad = variables.pagina === 1 ? 100 : 3
+        const cobros = Array.from({ length: cantidad }, (_, i) => ({ ...base, id: `${variables.pagina}-${i}` }))
+        return HttpResponse.json({ data: { cobros } })
+      }),
+    )
+    const { cargarCobros, estado } = useConciliacion(fetchPrueba)
+
+    await cargarCobros()
+
+    expect(paginas).toEqual([1, 2])
+    expect(estado.cobros).toHaveLength(103)
+  })
+
   it('carga los 4 cobros del mock', () => {
     const { estado } = useConciliacion(fetchPrueba)
     expect(estado.cobros).toHaveLength(4)
