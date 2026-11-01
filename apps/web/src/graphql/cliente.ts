@@ -26,6 +26,20 @@ export function haySesion(): boolean {
   return token !== null
 }
 
+/** Descarga un PDF protegido por la sesión (póliza del cliente o del asesor) como `blob:`; null si no llega un PDF. */
+export async function pdfDeSesion(ruta: string, fetchFn: typeof fetch = fetch): Promise<string | null> {
+  if (!token) return null
+  try {
+    const respuesta = await fetchFn(ruta, { headers: { Authorization: `Bearer ${token}` } })
+    if (!respuesta.ok) return null
+    // Si la ruta no llega al BFF, el hosting responde 200 con el index.html de la SPA.
+    if (!(respuesta.headers.get('Content-Type') ?? '').includes('application/pdf')) return null
+    return URL.createObjectURL(await respuesta.blob())
+  } catch {
+    return null
+  }
+}
+
 export interface OpcionesEjecucion {
   /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa su versión 1, '/v1/graphql/web'. */
   endpoint?: string
