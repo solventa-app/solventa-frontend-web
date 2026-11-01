@@ -17,7 +17,7 @@ import { Boton, FooterPantalla, HeaderPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import FirmaTresModos from '../components/FirmaTresModos.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
-import { useEnlaceFirma, type FirmaCapturada, type PasoEnlace } from '../composables/useEnlaceFirma'
+import { rutaDe, useEnlaceFirma, type FirmaCapturada, type PasoEnlace } from '../composables/useEnlaceFirma'
 import { t } from '../i18n'
 import { formatearHora, formatearMonto } from '../utils/formato'
 
@@ -39,7 +39,7 @@ async function abrir() {
 function continuar() {
   if (!puedeFirmar.value) return
   estado.firmaCapturada = firma.value
-  router.push('/firma/confirmar')
+  router.push(rutaDe('/confirmar'))
 }
 
 onMounted(abrir)

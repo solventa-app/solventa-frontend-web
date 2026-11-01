@@ -14,13 +14,23 @@ import { useRoute, useRouter } from 'vue-router'
 import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
-import { esErrorPago, hayToken, irAPasarela, tomarTokenDelPuente, useEnlaceFirma } from '../composables/useEnlaceFirma'
+import {
+  esErrorPago,
+  hayAcceso,
+  irAPasarela,
+  rutaDe,
+  tomarTokenDelPuente,
+  usarPropuestaDeSesion,
+  useEnlaceFirma,
+} from '../composables/useEnlaceFirma'
+import { useSesion } from '../composables/useSesion'
 import type { ErrorPago } from '../graphql/tipos'
 import { t } from '../i18n'
 
 const route = useRoute()
 const router = useRouter()
 const { estado, confirmarPago, iniciarPago } = useEnlaceFirma()
+const sesionDelCliente = useSesion()
 
 type Vista = 'confirmando' | 'error' | 'sinEnlace' | 'falla'
 const vista = ref<Vista>('confirmando')
@@ -55,11 +65,11 @@ async function confirmar() {
     return
   }
   if (!esErrorPago(resultado)) {
-    router.replace('/firma/poliza')
+    router.replace(rutaDe('/poliza'))
     return
   }
   if (resultado.motivo === 'ENLACE_VENCIDO') {
-    router.replace('/firma')
+    router.replace(rutaDe(''))
     return
   }
   errorPago.value = resultado
@@ -73,7 +83,7 @@ async function pagarDeNuevo() {
     return
   }
   if (esErrorPago(resultado)) {
-    if (resultado.motivo === 'ENLACE_VENCIDO') router.replace('/firma')
+    if (resultado.motivo === 'ENLACE_VENCIDO') router.replace(rutaDe(''))
     else errorPago.value = resultado
     return
   }
@@ -81,9 +91,20 @@ async function pagarDeNuevo() {
 }
 
 onMounted(() => {
-  if (!hayToken() && !tomarTokenDelPuente()) {
-    vista.value = 'sinEnlace'
-    return
+  // Sin token del enlace ni puente, un CLIENTE con sesión vuelve a su propia propuesta (la pasarela regresa a
+  // `/pago/retorno/{propuestaId}`).
+  const propuestaId = route.params.propuestaId
+  if (!hayAcceso() && !tomarTokenDelPuente()) {
+    if (
+      typeof propuestaId === 'string' &&
+      sesionDelCliente.sesionActiva() &&
+      sesionDelCliente.estado.rol === 'CLIENTE'
+    ) {
+      usarPropuestaDeSesion(propuestaId)
+    } else {
+      vista.value = 'sinEnlace'
+      return
+    }
   }
   confirmar()
 })

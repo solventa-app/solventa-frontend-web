@@ -23,6 +23,7 @@ import type {
   MutationEmitirPropuestaArgs,
   MutationEnviarCodigoVerificacionArgs,
   MutationFirmarPorEnlaceArgs,
+  MutationIniciarPagoArgs,
   MutationReenviarEnlaceFirmaArgs,
   MutationSolicitarSubidaFirmaArgs,
   MutationVerificarCodigoArgs,
@@ -225,9 +226,15 @@ function sembrarToken(token: string): PropuestaMock | null {
   return registro
 }
 
-function porToken(request: Request): PropuestaMock | null {
+function porToken(request: Request, propuestaId?: string | null): PropuestaMock | null {
   const token = request.headers.get('X-Enlace-Firma')
-  if (!token) return null
+  if (!token) {
+    // Recorrido del CLIENTE en su sesión (W03-33): el JWT y el `propuestaId` hacen de token; la sesión no vence con el enlace.
+    const registro = request.headers.get('Authorization') && propuestaId ? propuestas.get(propuestaId) : undefined
+    if (!registro) return null
+    registro.enlaceVence = Math.max(registro.enlaceVence, Date.now() + MIN_ENLACE * 60_000)
+    return registro
+  }
   const id = tokens.get(token)
   if (id) return propuestas.get(id) ?? null
   return sembrarToken(token)
@@ -445,10 +452,16 @@ export const handlersSuscripcion = [
 
   bff.mutation<{ emitirPropuesta: ResultadoEmision }, MutationEmitirPropuestaArgs>(
     'emitirPropuesta',
-    ({ variables }) => {
+    ({ variables, request }) => {
       const registro = propuestas.get(variables.propuestaId)
       const responder = (emitirPropuesta: ResultadoEmision) =>
         HttpResponse.json<{ data: { emitirPropuesta: ResultadoEmision } }>({ data: { emitirPropuesta } })
+      // «Firmar» del CLIENTE (W03-32): sin código ni enlace; UNDER aprueba y la propuesta pasa a EN_FIRMA en su sesión.
+      const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
+      if (registro && token && leerClaims(token)?.rol === 'CLIENTE' && registro.propuesta.estado === 'ACEPTADA') {
+        cambiarEstado(registro, 'EN_FIRMA')
+        return responder(registro.propuesta)
+      }
       if (!registro || registro.propuesta.estado !== 'IDENTIDAD_VERIFICADA') {
         return responder({ mensaje: 'Verifica la identidad del cliente antes de emitir.', puedeReintentar: false })
       }
@@ -486,8 +499,8 @@ export const handlersSuscripcion = [
 
   // ---------- Página del enlace: sin sesión, el token llega en X-Enlace-Firma ----------
 
-  bff.query<{ firmaPorEnlace: EnlaceFirma | null }>('firmaPorEnlace', ({ request }) => {
-    const registro = porToken(request)
+  bff.query<{ firmaPorEnlace: EnlaceFirma | null }>('firmaPorEnlace', ({ request, variables }) => {
+    const registro = porToken(request, (variables as { propuestaId?: string | null }).propuestaId)
     if (!registro) return HttpResponse.json({ data: { firmaPorEnlace: null } })
     const porFirmar = registro.propuesta.estado === 'EN_FIRMA'
     return HttpResponse.json({
@@ -508,7 +521,7 @@ export const handlersSuscripcion = [
   bff.mutation<{ firmarPorEnlace: ResultadoFirma }, MutationFirmarPorEnlaceArgs>(
     'firmarPorEnlace',
     ({ variables, request }) => {
-      const registro = porToken(request)
+      const registro = porToken(request, variables.entrada.propuestaId)
       const { entrada } = variables
       const responder = (firmarPorEnlace: ResultadoFirma) =>
         HttpResponse.json<{ data: { firmarPorEnlace: ResultadoFirma } }>({ data: { firmarPorEnlace } })
@@ -544,7 +557,7 @@ export const handlersSuscripcion = [
   bff.mutation<{ solicitarSubidaFirma: ResultadoSubidaArchivo }, MutationSolicitarSubidaFirmaArgs>(
     'solicitarSubidaFirma',
     ({ variables, request }) => {
-      const registro = porToken(request)
+      const registro = porToken(request, variables.propuestaId)
       const { tipoContenido, tamanoBytes } = variables
       const responder = (solicitarSubidaFirma: ResultadoSubidaArchivo) =>
         HttpResponse.json<{ data: { solicitarSubidaFirma: ResultadoSubidaArchivo } }>({
@@ -582,28 +595,31 @@ export const handlersSuscripcion = [
     return new HttpResponse(null, { status: 200 })
   }),
 
-  bff.mutation<{ iniciarPago: ResultadoInicioPago }>('iniciarPago', ({ request }) => {
-    const registro = porToken(request)
-    const responder = (iniciarPago: ResultadoInicioPago) =>
-      HttpResponse.json<{ data: { iniciarPago: ResultadoInicioPago } }>({ data: { iniciarPago } })
-    if (!registro || !enlaceVigente(registro)) {
-      return responder(errorPago('El enlace venció. Pide uno nuevo a tu asesor.', 'ENLACE_VENCIDO', false))
-    }
-    if (registro.propuesta.estado !== 'FIRMADA') {
-      return responder(errorPago('Primero firma el contrato.', null, false))
-    }
-    registro.fallosSeguidos = 0 // pagar con otra tarjeta reinicia la cuenta de fallos
-    const sesion: SesionPagoMock = {
-      id: siguiente('ses'),
-      propuestaId: registro.propuesta.id,
-      estado: 'ABIERTA',
-      venceEn: Date.now() + MIN_SESION_PAGO * 60_000,
-      motivo: null,
-      medio: null,
-    }
-    sesiones.set(sesion.id, sesion)
-    return responder({ sesionId: sesion.id, urlPago: `/dev/pasarela/${sesion.id}`, venceEn: iso(sesion.venceEn) })
-  }),
+  bff.mutation<{ iniciarPago: ResultadoInicioPago }, MutationIniciarPagoArgs>(
+    'iniciarPago',
+    ({ request, variables }) => {
+      const registro = porToken(request, variables.propuestaId)
+      const responder = (iniciarPago: ResultadoInicioPago) =>
+        HttpResponse.json<{ data: { iniciarPago: ResultadoInicioPago } }>({ data: { iniciarPago } })
+      if (!registro || !enlaceVigente(registro)) {
+        return responder(errorPago('El enlace venció. Pide uno nuevo a tu asesor.', 'ENLACE_VENCIDO', false))
+      }
+      if (registro.propuesta.estado !== 'FIRMADA') {
+        return responder(errorPago('Primero firma el contrato.', null, false))
+      }
+      registro.fallosSeguidos = 0 // pagar con otra tarjeta reinicia la cuenta de fallos
+      const sesion: SesionPagoMock = {
+        id: siguiente('ses'),
+        propuestaId: registro.propuesta.id,
+        estado: 'ABIERTA',
+        venceEn: Date.now() + MIN_SESION_PAGO * 60_000,
+        motivo: null,
+        medio: null,
+      }
+      sesiones.set(sesion.id, sesion)
+      return responder({ sesionId: sesion.id, urlPago: `/dev/pasarela/${sesion.id}`, venceEn: iso(sesion.venceEn) })
+    },
+  ),
 
   bff.mutation<{ confirmarPago: ResultadoPago }, MutationConfirmarPagoArgs>('confirmarPago', ({ variables }) => {
     // Una sesión abierta antes de vencer el enlace se acepta al regresar (W03-22): no se exige el enlace vigente.
@@ -649,13 +665,13 @@ export const handlersSuscripcion = [
   }),
 
   // PDFs: el contrato a firmar y la póliza emitida. Sin el token del enlace, 401 (como la ruta del BFF).
-  http.get('*/mock/propuestas/:id/contrato.pdf', ({ request }) =>
-    porToken(request)
+  http.get('*/mock/propuestas/:id/contrato.pdf', ({ request, params }) =>
+    porToken(request, String(params.id))
       ? pdf(['Contrato de Seguro de Vida Grupo Deudores', 'Documento de ejemplo del mock (no es un contrato real).'])
       : new HttpResponse(null, { status: 401 }),
   ),
-  http.get('*/mock/polizas/:id/documento.pdf', ({ request }) => {
-    const registro = porToken(request)
+  http.get('*/mock/polizas/:id/documento.pdf', ({ request, params }) => {
+    const registro = porToken(request, [...propuestas.values()].find((r) => r.poliza?.id === params.id)?.propuesta.id)
     if (!registro?.poliza) return new HttpResponse(null, { status: 401 })
     return pdf([
       `Poliza ${registro.poliza.numero}`,

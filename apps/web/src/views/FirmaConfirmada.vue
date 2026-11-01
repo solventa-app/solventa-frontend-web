@@ -12,7 +12,7 @@ import { useRouter } from 'vue-router'
 import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
-import { esErrorPago, irAPasarela, useEnlaceFirma, type PasoEnlace } from '../composables/useEnlaceFirma'
+import { esErrorPago, irAPasarela, rutaDe, useEnlaceFirma, type PasoEnlace } from '../composables/useEnlaceFirma'
 import type { ErrorPago } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearFecha } from '../utils/formato'
@@ -33,7 +33,7 @@ async function pagar() {
   const resultado = await iniciarPago()
   if (!resultado) return
   if (esErrorPago(resultado)) {
-    if (resultado.motivo === 'ENLACE_VENCIDO') router.replace('/firma')
+    if (resultado.motivo === 'ENLACE_VENCIDO') router.replace(rutaDe(''))
     else errorPago.value = resultado
     return
   }

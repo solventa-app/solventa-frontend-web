@@ -17,6 +17,17 @@ export function crearRutas(): RouteRecordRaw[] {
     meta: { pantalla },
   }))
 
+  // Firma y pago del CLIENTE en su sesión (T7, W03-33): las mismas cuatro páginas del enlace, bajo la propuesta y con
+  // sesión de CLIENTE. No son pantallas nuevas del catálogo: reutilizan los componentes de W03-02, 02b, 03 y 04.
+  for (const pantalla of pantallas.filter((p) => ['W03-02', 'W03-02b', 'W03-03', 'W03-04'].includes(p.id))) {
+    rutas.push({
+      path: `/propuestas/:propuestaId${pantalla.ruta}`,
+      name: `${pantalla.id}-sesion`,
+      component: pantalla.componente ?? (() => import('../views/PantallaPendiente.vue')),
+      meta: { pantalla: { ...pantalla, roles: ['CLIENTE'] } },
+    })
+  }
+
   // Índice de pantallas e índice de componentes solo en desarrollo: sirven para revisar el
   // prototipo y la librería de componentes (D-F1) sin navegar a mano.
   if (import.meta.env.DEV) {

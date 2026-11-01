@@ -13,7 +13,7 @@
 // 4. Nunca va a `localStorage`, a un log, a la consola ni a la URL de una petición.
 import { reactive } from 'vue'
 import type { Router } from 'vue-router'
-import { ErrorGraphQL, ejecutar, type OpcionesEjecucion } from '../graphql/cliente'
+import { ErrorGraphQL, ejecutar, pdfDeSesion, type OpcionesEjecucion } from '../graphql/cliente'
 import type {
   EnlaceFirma,
   ErrorFirma,
@@ -28,6 +28,7 @@ import type {
   SesionPago,
 } from '../graphql/tipos'
 import { t } from '../i18n'
+import { alCerrarSesion } from './useSesion'
 import { bytesDeBase64, tipoRealImagen } from '../utils/firma'
 
 export const CLAVE_PUENTE = 'solventa.enlaceFirma'
@@ -39,8 +40,8 @@ const CAMPOS_PROPUESTA = `id ofertaId estado prima { valor moneda } cobertura { 
 const CAMPOS_POLIZA = `id numero estado vigenciaDesde vigenciaHasta prima { valor moneda } cobertura { valor moneda } documentoUrl`
 const CAMPOS_FIRMA = `propuestaId firmadaEn referencia estado`
 
-const CONSULTA_ENLACE = `query firmaPorEnlace {
-  firmaPorEnlace {
+const CONSULTA_ENLACE = `query firmaPorEnlace($propuestaId: ID) {
+  firmaPorEnlace(propuestaId: $propuestaId) {
     vigente venceEn documentoUrl
     propuesta { ${CAMPOS_PROPUESTA} }
     documento { propuestaId version resumen montoMensual { valor moneda } meses formaCobro }
@@ -55,22 +56,22 @@ const MUTACION_FIRMAR = `mutation firmarPorEnlace($entrada: FirmarPorEnlaceInput
     ... on ErrorFirma { mensaje puedeReintentar motivo }
   }
 }`
-const MUTACION_SUBIDA_FIRMA = `mutation solicitarSubidaFirma($tipoContenido: String!, $tamanoBytes: Int!) {
-  solicitarSubidaFirma(tipoContenido: $tipoContenido, tamanoBytes: $tamanoBytes) {
+const MUTACION_SUBIDA_FIRMA = `mutation solicitarSubidaFirma($tipoContenido: String!, $tamanoBytes: Int!, $propuestaId: ID) {
+  solicitarSubidaFirma(tipoContenido: $tipoContenido, tamanoBytes: $tamanoBytes, propuestaId: $propuestaId) {
     __typename
     ... on SubidaArchivo { url metodo archivo { id } encabezados { nombre valor } }
     ... on ErrorArchivo { codigo mensaje }
   }
 }`
-const MUTACION_INICIAR_PAGO = `mutation iniciarPago {
-  iniciarPago {
+const MUTACION_INICIAR_PAGO = `mutation iniciarPago($propuestaId: ID) {
+  iniciarPago(propuestaId: $propuestaId) {
     __typename
     ... on SesionPago { sesionId urlPago venceEn }
     ... on ErrorPago { mensaje puedeReintentar motivo fallosSeguidos }
   }
 }`
-const MUTACION_CONFIRMAR_PAGO = `mutation confirmarPago($sesionId: ID!) {
-  confirmarPago(sesionId: $sesionId) {
+const MUTACION_CONFIRMAR_PAGO = `mutation confirmarPago($sesionId: ID!, $propuestaId: ID) {
+  confirmarPago(sesionId: $sesionId, propuestaId: $propuestaId) {
     __typename
     ... on Poliza { ${CAMPOS_POLIZA} }
     ... on ErrorPago { mensaje puedeReintentar motivo fallosSeguidos }
@@ -96,6 +97,9 @@ interface EstadoEnlace {
 }
 
 let token: string | null = null
+// Modo sesión (T7, W03-33): el CLIENTE registrado firma y paga en su sesión, sin enlace. Las operaciones llevan su JWT y
+// el `propuestaId`; no hay token del enlace ni puente. Se fija al entrar a una página `/propuestas/:propuestaId/firma…`.
+let propuestaSesion: string | null = null
 
 const estado = reactive<EstadoEnlace>({
   enlace: null,
@@ -181,12 +185,44 @@ function borrarPuente(): void {
 /** Borra el token y todo lo del enlace (memoria y puente). */
 export function olvidarEnlace(): void {
   token = null
+  propuestaSesion = null
   borrarPuente()
   Object.assign(estado, { enlace: null, firmaCapturada: null, aceptaTerminos: false, cargando: false, error: null })
 }
 
+// Al cerrar la sesión no queda nada del recorrido del cliente en memoria.
+alCerrarSesion(olvidarEnlace)
+
 export function hayToken(): boolean {
   return token !== null
+}
+
+/** Hay con qué autorizar las operaciones: el token del enlace o la sesión del cliente con su propuesta. */
+export function hayAcceso(): boolean {
+  return token !== null || propuestaSesion !== null
+}
+
+/** Fija (o quita) el modo sesión. Sin enlace de por medio: si había un token de otra propuesta, se descarta. */
+export function usarPropuestaDeSesion(propuestaId: string | null): void {
+  if (propuestaId && token) olvidarEnlace()
+  if (propuestaId !== propuestaSesion) {
+    propuestaSesion = propuestaId
+    if (!propuestaId || estado.enlace?.propuesta.id !== propuestaId) {
+      Object.assign(estado, { enlace: null, firmaCapturada: null, aceptaTerminos: false, error: null })
+    }
+  }
+}
+
+/** El recorrido es el del cliente en su sesión (no el del enlace). */
+export function enModoSesion(): boolean {
+  return propuestaSesion !== null
+}
+
+export type SubRuta = '' | '/confirmar' | '/confirmada' | '/poliza'
+
+/** Ruta de una página del recorrido: la pública del enlace, o la de la sesión del cliente. */
+export function rutaDe(sub: SubRuta): string {
+  return propuestaSesion ? `/propuestas/${propuestaSesion}/firma${sub}` : `/firma${sub}`
 }
 
 // ---------- Operaciones ----------
@@ -201,13 +237,16 @@ export function pasoDelEnlace(enlace: EnlaceFirma | null): PasoEnlace {
   return 'otro'
 }
 
-export const RUTA_DEL_PASO: Record<PasoEnlace, string> = {
-  firmar: '/firma',
-  pagar: '/firma/confirmada',
-  emitida: '/firma/poliza',
-  vencido: '/firma',
-  otro: '/firma',
+const SUBRUTA_DEL_PASO: Record<PasoEnlace, SubRuta> = {
+  firmar: '',
+  pagar: '/confirmada',
+  emitida: '/poliza',
+  vencido: '',
+  otro: '',
 }
+
+/** A dónde lleva cada paso, según el recorrido sea el del enlace o el de la sesión. */
+export const rutaDelPaso = (paso: PasoEnlace): string => rutaDe(SUBRUTA_DEL_PASO[paso])
 
 /**
  * Va a la página de la pasarela. La real está fuera de Solventa (W03-28) y se abre con una navegación completa; la
@@ -226,17 +265,21 @@ function mensajeSeguro(error: unknown): string {
 }
 
 export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
-  const opciones = (): OpcionesEjecucion => ({
-    conToken: false,
-    cabeceras: token ? { 'X-Enlace-Firma': token } : undefined,
-  })
+  const opciones = (): OpcionesEjecucion =>
+    propuestaSesion
+      ? { conToken: true }
+      : { conToken: false, cabeceras: token ? { 'X-Enlace-Firma': token } : undefined }
+
+  /** En modo sesión toda operación nombra la propuesta; con el enlace el BFF la saca del token. */
+  const conPropuesta = (variables: Record<string, unknown> = {}) =>
+    propuestaSesion ? { ...variables, propuestaId: propuestaSesion } : variables
 
   async function operar<T>(consulta: string, variables: Record<string, unknown> = {}): Promise<T | null> {
-    if (!token) return null
+    if (!hayAcceso()) return null
     estado.cargando = true
     estado.error = null
     try {
-      return await ejecutar<T>(consulta, variables, fetchFn, opciones())
+      return await ejecutar<T>(consulta, conPropuesta(variables), fetchFn, opciones())
     } catch (error) {
       estado.error = mensajeSeguro(error)
       return null
@@ -247,12 +290,12 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
 
   /** Lee el estado del enlace. Con el enlace vencido o inexistente, borra el token (no sirve para nada más). */
   async function cargar(): Promise<PasoEnlace | null> {
-    if (!token) return 'vencido'
+    if (!hayAcceso()) return 'vencido'
     const datos = await operar<{ firmaPorEnlace: EnlaceFirma | null }>(CONSULTA_ENLACE)
     if (!datos) return null // falla técnica: la pantalla muestra el error con reintento
     estado.enlace = datos.firmaPorEnlace
     const paso = pasoDelEnlace(estado.enlace)
-    if (paso === 'vencido') {
+    if (paso === 'vencido' && !propuestaSesion) {
       token = null
       borrarPuente()
     }
@@ -305,6 +348,7 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
         versionDocumento: documento.version,
         aceptaTerminos: estado.aceptaTerminos,
         autorizaCobro: true,
+        ...(propuestaSesion ? { propuestaId: propuestaSesion } : {}),
         modo: capturada.modo,
         ...(imagenArchivoId ? { imagenArchivoId } : { nombreFirma: capturada.contenido }),
       },
@@ -325,7 +369,8 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
   async function iniciarPago(): Promise<ResultadoInicioPago | null> {
     const datos = await operar<{ iniciarPago: ResultadoInicioPago }>(MUTACION_INICIAR_PAGO)
     if (!datos) return null
-    if (esSesionPago(datos.iniciarPago)) guardarPuente(estado.enlace?.venceEn ?? datos.iniciarPago.venceEn)
+    if (esSesionPago(datos.iniciarPago) && !propuestaSesion)
+      guardarPuente(estado.enlace?.venceEn ?? datos.iniciarPago.venceEn)
     return datos.iniciarPago
   }
 
@@ -346,6 +391,7 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
 
   /** Descarga un PDF protegido por el token (contrato o póliza) como `blob:` para un iframe o una pestaña nueva. */
   async function urlDelPdf(ruta: string): Promise<string | null> {
+    if (propuestaSesion) return pdfDeSesion(ruta, fetchFn)
     if (!token) return null
     try {
       const respuesta = await fetchFn(ruta, { headers: { 'X-Enlace-Firma': token } })
@@ -364,10 +410,13 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
    * lleva a esa pantalla («retoma donde iba»). Devuelve el paso, o null si hubo una falla técnica.
    */
   async function entrar(router: Router, pasosPropios: PasoEnlace[]): Promise<PasoEnlace | null> {
-    tomarTokenDelFragmento()
+    // Una página `/propuestas/:propuestaId/firma…` es el recorrido del cliente en su sesión; la de `/firma` usa el enlace.
+    const propuestaId = router.currentRoute.value.params.propuestaId
+    usarPropuestaDeSesion(typeof propuestaId === 'string' ? propuestaId : null)
+    if (!propuestaSesion) tomarTokenDelFragmento()
     const paso = await cargar()
     // Vencido: cada página muestra el estado vacío ahí mismo, sin navegar.
-    if (paso && paso !== 'vencido' && !pasosPropios.includes(paso)) await router.replace(RUTA_DEL_PASO[paso])
+    if (paso && paso !== 'vencido' && !pasosPropios.includes(paso)) await router.replace(rutaDelPaso(paso))
     return paso
   }
 

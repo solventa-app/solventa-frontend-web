@@ -14,7 +14,7 @@ import { useRouter } from 'vue-router'
 import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
-import { esErrorFirma, hayToken, useEnlaceFirma } from '../composables/useEnlaceFirma'
+import { esErrorFirma, hayAcceso, rutaDe, usarPropuestaDeSesion, useEnlaceFirma } from '../composables/useEnlaceFirma'
 import type { ErrorFirma } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearMonto } from '../utils/formato'
@@ -24,11 +24,14 @@ const { estado, firmar } = useEnlaceFirma()
 
 const documento = computed(() => estado.enlace?.documento ?? null)
 const errorFirma = ref<ErrorFirma | null>(null)
-const sinEnlace = !hayToken()
+// En el recorrido del cliente (`/propuestas/:propuestaId/firma/confirmar`) la sesión autoriza; en el del enlace, el token.
+const propuestaDeLaRuta = router.currentRoute.value.params.propuestaId
+if (typeof propuestaDeLaRuta === 'string') usarPropuestaDeSesion(propuestaDeLaRuta)
+const sinEnlace = !hayAcceso()
 
 onMounted(() => {
   // Sin firma en memoria (p. ej. tras recargar) se vuelve a W03-02; sin token, estado vacío aquí mismo.
-  if (!sinEnlace && (!documento.value || !estado.firmaCapturada)) router.replace('/firma')
+  if (!sinEnlace && (!documento.value || !estado.firmaCapturada)) router.replace(rutaDe(''))
 })
 
 async function confirmar() {
@@ -36,11 +39,11 @@ async function confirmar() {
   const resultado = await firmar()
   if (!resultado) return // falla técnica: estado.error se muestra con reintento
   if (!esErrorFirma(resultado)) {
-    router.push('/firma/confirmada')
+    router.push(rutaDe('/confirmada'))
     return
   }
   if (resultado.motivo === 'VERSION_DOCUMENTO_DESACTUALIZADA' || resultado.motivo === 'PROPUESTA_NO_FIRMABLE') {
-    router.replace('/firma')
+    router.replace(rutaDe(''))
     return
   }
   errorFirma.value = resultado
@@ -106,7 +109,7 @@ async function confirmar() {
                 : t('confirmarFirma.confirmar')
           }}
         </Boton>
-        <Boton variante="secundario" :disabled="estado.cargando" @click="router.push('/firma')">
+        <Boton variante="secundario" :disabled="estado.cargando" @click="router.push(rutaDe(''))">
           {{ t('confirmarFirma.volver') }}
         </Boton>
       </div>
