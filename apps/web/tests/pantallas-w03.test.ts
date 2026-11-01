@@ -200,6 +200,17 @@ describe('Páginas del enlace (sin sesión)', () => {
   })
 })
 
+describe('ruta de retorno de la pasarela', () => {
+  it('acepta el retorno con el id de la propuesta (como lo manda el BFF) y sin él', () => {
+    const rutas = crearRutas()
+    const retorno = rutas.find((r) => r.name === 'W03-R')
+    expect(retorno?.path).toBe('/pago/retorno/:propuestaId?')
+    const router = createRouter({ history: createMemoryHistory(), routes: rutas })
+    expect(router.resolve('/pago/retorno/p-1?sesion=ses-1').name).toBe('W03-R')
+    expect(router.resolve('/pago/retorno?sesion=ses-1').name).toBe('W03-R')
+  })
+})
+
 describe('validación previa de la imagen de firma', () => {
   const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a])
   const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0])
