@@ -32,6 +32,12 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
         '/v1': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
+        // Los PDF que entrega el BFF (contrato a firmar y póliza emitida) son rutas REST, no GraphQL.
+        '^/propuestas/[^/]+/contrato\\.pdf$': {
+          target: env.VITE_BFF_URL || 'http://localhost:8080',
+          changeOrigin: true,
+        },
+        '^/polizas/[^/]+/documento$': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
       },
     },
     test: {
