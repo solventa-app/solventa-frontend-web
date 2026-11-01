@@ -13,8 +13,8 @@ describe('W01-01 · documento de la cuenta del cliente', () => {
   })
 
   async function montar(rol: 'CLIENTE' | 'ASESOR', documentoEnmascarado: string | null) {
-    globalThis.fetch = (async () =>
-      new Response(JSON.stringify({ data: { yo: { documentoEnmascarado } } }))) as typeof fetch
+    const yo = { documentoEnmascarado, nombre: 'Ana Pérez', correo: 'ana@correo.com' }
+    globalThis.fetch = (async () => new Response(JSON.stringify({ data: { yo } }))) as typeof fetch
     useSesion().estado.rol = rol
     useCotizacion().reiniciar()
     const router = createRouter({
@@ -35,6 +35,23 @@ describe('W01-01 · documento de la cuenta del cliente', () => {
     expect(w.html()).toContain('••••3040')
     expect(w.text()).toContain('no se puede cambiar')
     w.unmount()
+  })
+
+  it('el cliente ve su nombre y su correo bloqueados; el asesor no los ve', async () => {
+    const c = await montar('CLIENTE', '10••••3040')
+    const nombre = c.get('[data-prueba="nombre-de-cuenta"]')
+    const correo = c.get('[data-prueba="correo-de-cuenta"]')
+    expect(c.html()).toContain('Ana Pérez')
+    expect(c.html()).toContain('ana@correo.com')
+    for (const campo of [nombre, correo]) {
+      const entrada = campo.element.tagName === 'INPUT' ? campo.element : campo.find('input').element
+      expect((entrada as HTMLInputElement).disabled).toBe(true)
+    }
+    c.unmount()
+    const a = await montar('ASESOR', null)
+    expect(a.find('[data-prueba="nombre-de-cuenta"]').exists()).toBe(false)
+    expect(a.find('[data-prueba="correo-de-cuenta"]').exists()).toBe(false)
+    a.unmount()
   })
 
   it('sin documento en la cuenta el campo sigue editable', async () => {

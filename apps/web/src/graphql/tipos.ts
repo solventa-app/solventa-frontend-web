@@ -1103,6 +1103,7 @@ export type Ubicacion = {
 };
 
 export type Usuario = {
+  correo?: Maybe<Scalars['String']['output']>;
   creadoEn: Scalars['DateTime']['output'];
   documentoEnmascarado?: Maybe<Scalars['String']['output']>;
   estado: EstadoUsuario;
