@@ -17,7 +17,9 @@ import {
   MAX_ALTO_FIRMA,
   MAX_ANCHO_FIRMA,
   base64DeBytes,
+  puntoEnLienzo,
   quitarPrefijoDataUrl,
+  resolucionLienzo,
   revisarArchivoFirma,
   revisarImagenFirma,
 } from '../utils/firma'
@@ -45,9 +47,10 @@ function prepararLienzo() {
   const canvas = lienzo.value
   const ctx = contexto()
   if (!canvas || !ctx) return
-  // Resolución real = tamaño en pantalla (nítido en cualquier ancho), fondo transparente.
-  canvas.width = canvas.clientWidth || 560
-  canvas.height = canvas.clientHeight || 180
+  // Resolución real = tamaño en pantalla con tope de 1200×600 (límite de POLICY), fondo transparente.
+  const { ancho, alto } = resolucionLienzo(canvas.clientWidth, canvas.clientHeight)
+  canvas.width = ancho
+  canvas.height = alto
   ctx.lineWidth = 2.5
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
@@ -55,11 +58,17 @@ function prepararLienzo() {
 }
 
 function punto(e: PointerEvent) {
-  const caja = lienzo.value!.getBoundingClientRect()
-  return { x: e.clientX - caja.left, y: e.clientY - caja.top }
+  const canvas = lienzo.value!
+  return puntoEnLienzo(e.clientX, e.clientY, canvas.getBoundingClientRect(), canvas.width, canvas.height)
 }
 
 function empezar(e: PointerEvent) {
+  // Si el lienzo se preparó antes de tener su tamaño real (o la ventana cambió) y aún está vacío, se rehace.
+  const canvas = lienzo.value
+  if (canvas && !hayTrazo.value) {
+    const { ancho, alto } = resolucionLienzo(canvas.clientWidth, canvas.clientHeight)
+    if (canvas.width !== ancho || canvas.height !== alto) prepararLienzo()
+  }
   const ctx = contexto()
   if (!ctx) return
   dibujando = true
