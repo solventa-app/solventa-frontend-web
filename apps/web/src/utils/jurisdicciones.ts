@@ -25,7 +25,9 @@ export function obtenerJurisdiccion(codigo: string): Jurisdiccion {
   const normalizado = codigo?.toUpperCase()
   const jur = JURISDICCIONES[normalizado]
   if (!jur) {
-    const soportados = Object.keys(JURISDICCIONES).sort().join(', ')
+    const soportados = Object.keys(JURISDICCIONES)
+      .sort((a, b) => a.localeCompare(b))
+      .join(', ')
     throw new Error(`País '${codigo}' no soportado. Soportados: ${soportados}`)
   }
   return jur
