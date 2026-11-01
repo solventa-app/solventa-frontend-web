@@ -63,12 +63,19 @@ afterAll(() => {
 })
 
 describe('W07-02 · Panel del socio', () => {
-  it('muestra el nombre del socio con «Cerrar sesión» y el botón a la documentación', async () => {
+  it('muestra el nombre del socio con «Cerrar sesión» y la barra lleva a la documentación', async () => {
     const wrapper = await montarPanel()
     expect(wrapper.text()).toContain('Retail Fintech S.A.S. · Socio de distribución')
-    await boton(wrapper, 'Documentación de la API').trigger('click')
+    expect(wrapper.findAll('[role="tab"]').map((p) => p.text())).toEqual([
+      'Panel',
+      'Guía de integración',
+      'API Pruebas',
+      'API Producción',
+    ])
+    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toBe('Panel')
+    await wrapper.findAll('[role="tab"]')[2].trigger('click')
     await esperar(() => router.currentRoute.value.path === '/socios/documentacion')
-    expect(router.currentRoute.value.path).toBe('/socios/documentacion')
+    expect(router.currentRoute.value.query.pestana).toBe('pruebas')
   })
 
   it('CA-W07-05: credenciales del entorno con la clave enmascarada, «Mostrar» y «Copiar»; cambian con el entorno', async () => {
@@ -81,7 +88,7 @@ describe('W07-02 · Panel del socio', () => {
     await boton(credenciales, 'Copiar').trigger('click')
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('retail-fintech-042')
 
-    await wrapper.findAll('[role="tab"]')[1].trigger('click')
+    await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
     await flushPromises()
     expect(credenciales.get('[data-prueba="socio-id"]').text()).toBe('retail-fintech-042-pruebas')
     expect(credenciales.get('[data-prueba="clave"]').text()).toMatch(/^sk_test_•+$/)
@@ -156,7 +163,7 @@ describe('W07-02 · Panel del socio', () => {
     expect(wrapper.text()).toContain('Octubre de 2026')
     expect(wrapper.text()).not.toContain('Datos simulados')
 
-    await wrapper.findAll('[role="tab"]')[1].trigger('click')
+    await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
     await esperar(() => wrapper.text().includes('Datos simulados'))
     expect(wrapper.text()).toContain('Datos simulados')
   })

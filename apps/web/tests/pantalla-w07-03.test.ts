@@ -94,8 +94,8 @@ describe('W07-03 · Documentación de la API', () => {
 
   it('la pestaña va en la URL y se puede abrir por enlace', async () => {
     const wrapper = await montarDocs('pruebas')
-    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toContain('Pruebas (sandbox)')
-    await wrapper.findAll('[role="tab"]')[2].trigger('click')
+    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toContain('API Pruebas')
+    await wrapper.findAll('[role="tab"]')[3].trigger('click')
     await esperar(() => router.currentRoute.value.query.pestana === 'produccion')
     expect(router.currentRoute.value.query.pestana).toBe('produccion')
   })
@@ -161,5 +161,14 @@ describe('contrato de socios de la web', () => {
     const raiz = readFileSync(resolve(__dirname, '../../../contrato/socios-v1.json'), 'utf8')
     const web = readFileSync(resolve(__dirname, '../src/contrato/socios-v1.json'), 'utf8')
     expect(web.trimEnd()).toBe(raiz.trimEnd())
+  })
+
+  it('la barra del portal queda fuera de main, sin migas, y vuelve al panel', async () => {
+    const wrapper = await montarDocs('pruebas')
+    expect(wrapper.find('main [role="tablist"]').exists()).toBe(false)
+    expect(wrapper.find('main nav').exists()).toBe(false)
+    await wrapper.findAll('[role="tab"]')[0].trigger('click')
+    await esperar(() => router.currentRoute.value.path === '/socios/panel')
+    expect(router.currentRoute.value.path).toBe('/socios/panel')
   })
 })

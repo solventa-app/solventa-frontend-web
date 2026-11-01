@@ -640,8 +640,11 @@ export const es = {
   'socios.panel.titulo': 'Panel del socio',
   'socios.panel.rol': 'Socio de distribución',
   'socios.panel.descripcion': 'Gestión de entorno de producción, cuotas de llamada y telemetría de servicio.',
-  'socios.panel.documentacion': 'Documentación de la API',
-  'socios.panel.entorno': 'Entorno',
+  'socios.panel.verDatos': 'Ver datos de:',
+  'socios.portal.navegacion': 'Secciones del portal',
+  'socios.portal.panel': 'Panel',
+  'socios.portal.apiPruebas': 'API Pruebas',
+  'socios.portal.apiProduccion': 'API Producción',
   'socios.panel.entornoOpcion.PRODUCCION': 'Producción',
   'socios.panel.entornoOpcion.PRUEBAS': 'Pruebas (sandbox)',
   'socios.panel.cargando': 'Cargando…',
@@ -716,7 +719,6 @@ export const es = {
 
   // HU-W07 · Documentación de la API (W07-03).
   'socios.docs.titulo': 'Documentación de la API',
-  'socios.docs.pestanas': 'Secciones de la documentación',
   'socios.docs.pestana.guia': 'Guía de integración',
   'socios.docs.pestana.pruebas': 'Pruebas (sandbox)',
   'socios.docs.pestana.produccion': 'Producción',
