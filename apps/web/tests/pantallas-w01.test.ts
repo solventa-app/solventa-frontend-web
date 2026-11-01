@@ -283,7 +283,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
 
     expect(wrapper.find('svg.animate-spin').exists()).toBe(true)
     expect(wrapper.text()).toContain('Verificando tus fuentes de Open Finance / Open Data')
-    expect(wrapper.find('.animate-pulse').exists()).toBe(true)
+    expect(wrapper.find('.barra-indeterminada').exists()).toBe(true)
+    expect(wrapper.find('.animate-pulse').exists()).toBe(false)
     expect(router.currentRoute.value.path).toBe('/cotizacion/consulta')
 
     // Con MSW 3 el handler corre un poco después de montar: hay que esperarlo antes de liberar la respuesta.
