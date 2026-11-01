@@ -73,9 +73,7 @@ export const pantallas: Pantalla[] = [
     criterios: [],
     componente: () => import('../views/MiPerfil.vue'),
   },
-  // G-06 no tiene pantalla propia todavía (ninguna HU de este sprint cubre consultar pólizas
-  // emitidas): se registra solo como destino honesto de las tarjetas "Mis pólizas"/"Pólizas
-  // emitidas" de los homes (G-02/G-02a), que sin esto no tenían a dónde llevar al hacer clic.
+  // G-06: «Mis pólizas» (cliente) y «Pólizas emitidas» (asesor); mismo componente, según el rol de la sesión.
   {
     id: 'G-06',
     ruta: '/polizas',
@@ -84,6 +82,7 @@ export const pantallas: Pantalla[] = [
     sprint: 1,
     roles: CLIENTE_O_ASESOR,
     criterios: [],
+    componente: () => import('../views/PolizasEmitidas.vue'),
   },
   {
     id: 'W01-01',
