@@ -158,6 +158,37 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
     expect(wrapper.get('[data-prueba="mostrando"]').text()).toContain('Mostrando 0 de 3')
   })
 
+  it('pagina de a 10, y cambiar de filtro vuelve a la página 1', async () => {
+    const { wrapper } = await montarBandeja()
+    const { estado } = useSiniestros()
+    const base = estado.siniestros[0]
+    estado.siniestros = Array.from({ length: 23 }, (_, i) => ({
+      ...base,
+      id: `sin-${i}`,
+      radicado: `SIN-2026-${i}`,
+      estado: 'PENDIENTE' as const,
+    }))
+    await nextTick()
+    const paginador = () => wrapper.get('[data-componente="paginador"]')
+    const boton = (texto: string) =>
+      paginador()
+        .findAll('button')
+        .find((b) => b.text() === texto)!
+
+    expect(filas(wrapper)).toHaveLength(10)
+    expect(paginador().text()).toContain('Página 1 de 3')
+    expect(boton('Anterior').attributes('disabled')).toBeDefined()
+
+    await boton('Siguiente').trigger('click')
+    await boton('Siguiente').trigger('click')
+    expect(paginador().text()).toContain('Página 3 de 3')
+    expect(filas(wrapper)).toHaveLength(3)
+    expect(boton('Siguiente').attributes('disabled')).toBeDefined()
+
+    await chip(wrapper, 'Pendiente').trigger('click')
+    expect(paginador().text()).toContain('Página 1 de 3')
+  })
+
   it('si la carga falla muestra un mensaje amigable con "Reintentar" que vuelve a cargar', async () => {
     servidor.use(bff.query('siniestros', () => new HttpResponse(null, { status: 503 }), { once: true }))
     const { wrapper } = await montarBandeja()
