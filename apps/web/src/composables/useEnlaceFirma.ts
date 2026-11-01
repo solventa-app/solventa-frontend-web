@@ -350,6 +350,9 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     try {
       const respuesta = await fetchFn(ruta, { headers: { 'X-Enlace-Firma': token } })
       if (!respuesta.ok) return null
+      // Si la ruta no llega al BFF, el hosting responde 200 con el index.html de la SPA: sin este control el
+      // visor mostraría la propia aplicación en vez del contrato.
+      if (!(respuesta.headers.get('Content-Type') ?? '').includes('application/pdf')) return null
       return URL.createObjectURL(await respuesta.blob())
     } catch {
       return null
