@@ -208,7 +208,8 @@ export const pantallas: Pantalla[] = [
   },
   {
     id: 'W03-R',
-    ruta: '/pago/retorno',
+    // El BFF devuelve a la persona a `/pago/retorno/{propuestaId}?sesion=…`; sin el id (el retorno de la pasarela simulada) también entra.
+    ruta: '/pago/retorno/:propuestaId?',
     nombre: 'Retorno de la pasarela',
     historia: 'HU-W03',
     sprint: 2,

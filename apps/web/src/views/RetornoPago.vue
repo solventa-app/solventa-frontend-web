@@ -1,5 +1,5 @@
 <!--
-  Retorno de la pasarela · `/pago/retorno?sesion=…` (HU-W03, bloque 9; sin Figma, aprobado en el plan principal 5.2).
+  Retorno de la pasarela · `/pago/retorno/:propuestaId?sesion=…` (el id de la propuesta es opcional) (HU-W03, bloque 9; sin Figma, aprobado en el plan principal 5.2).
   CA-W03-04, 05, 06, 07 y 13. Usa la tarjeta de W03-03.
 
   - El estado del pago NO viaja en la URL: Solventa lo confirma con la pasarela (`confirmarPago`, servidor a servidor).
