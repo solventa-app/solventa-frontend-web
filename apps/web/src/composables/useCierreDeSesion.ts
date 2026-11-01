@@ -6,7 +6,7 @@ import { useSesion } from './useSesion'
 
 export function useCierreDeSesion() {
   const router = useRouter()
-  const { cerrarSesion } = useSesion()
+  const { terminarSesion } = useSesion()
   const modalAbierto = ref(false)
 
   function pedirCierre() {
@@ -19,7 +19,7 @@ export function useCierreDeSesion() {
 
   function confirmarCierre() {
     modalAbierto.value = false
-    cerrarSesion()
+    void terminarSesion() // revoca el refresh en el BFF y cierra la sesión local
     void router.push('/login')
   }
 

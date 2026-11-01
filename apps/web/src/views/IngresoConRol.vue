@@ -14,6 +14,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { etiquetaRol, useSesion, type Rol } from '../composables/useSesion'
 import { t } from '../i18n'
 
@@ -55,6 +56,15 @@ async function ingresar() {
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[464px] flex-col gap-5">
         <Divisor />
+        <p
+          v-if="estado.aviso === 'vencida'"
+          role="status"
+          data-testid="aviso-sesion-vencida"
+          class="flex items-start gap-2 rounded-[8px] border border-info bg-info-fondo p-3 text-[13px] text-tinta"
+        >
+          <IconoMaterial nombre="timer" class="h-5 w-5 shrink-0 text-info" />
+          {{ t('ingreso.sesionVencida') }}
+        </p>
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
           <TituloPantalla class="mb-6">{{ t('ingreso.titulo') }}</TituloPantalla>
           <form class="flex w-full flex-col gap-5" novalidate @submit.prevent="ingresar">
