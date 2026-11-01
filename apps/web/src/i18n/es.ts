@@ -496,6 +496,11 @@ export const es = {
 
   // HU-W03 · Suscripción, firma y pago (W03-01 a W03-04, modal del asesor y retorno de la pasarela)
   'comun.cargando': 'Cargando…',
+  'oferta.firmar': 'Firmar',
+  'oferta.firmando': 'Preparando tu firma…',
+  'oferta.errorFirmar': 'No pudimos preparar tu firma. Intenta nuevamente o contacta a un asesor.',
+  'oferta.enRevision': 'Tu solicitud quedó en revisión. Un asesor te contactará para continuar.',
+  'oferta.noEmitida': 'No pudimos emitir tu póliza con esta oferta. Contacta a un asesor para revisar alternativas.',
   'oferta.contactarAsesor': 'Contactar a un asesor',
   'oferta.conAsesor': 'Tu asesor te acompaña en la firma y el pago de la póliza.',
   'suscripcion.errorTecnico': 'No pudimos completar la operación. Intenta nuevamente.',
@@ -645,6 +650,7 @@ export const es = {
   'polizaEmitida.titulo': 'Tu póliza fue emitida',
   'polizaEmitida.numero': 'N.º de póliza: {numero}',
   'polizaEmitida.fechas': 'Emitida el {emitida} · Vigencia desde {desde}',
+  'polizaEmitida.verMisPolizas': 'Ver mis pólizas',
   'polizaEmitida.descargar': 'Descargar documento',
   'polizaEmitida.errorDescarga': 'No pudimos abrir el documento. Intenta nuevamente.',
   'polizaEmitida.correo': 'También te enviamos el documento firmado a tu correo.',

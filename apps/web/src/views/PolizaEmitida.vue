@@ -12,7 +12,7 @@ import { useRouter } from 'vue-router'
 import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
-import { useEnlaceFirma, type PasoEnlace } from '../composables/useEnlaceFirma'
+import { enModoSesion, useEnlaceFirma, type PasoEnlace } from '../composables/useEnlaceFirma'
 import { t } from '../i18n'
 import { formatearFecha, formatearFechaCorta } from '../utils/formato'
 
@@ -111,5 +111,14 @@ async function descargar() {
     <p class="w-full rounded-md border border-borde bg-fondo px-4 py-3 text-[12px] text-tinta-suave">
       {{ t('polizaEmitida.correo') }}
     </p>
+    <!-- Con sesión de CLIENTE (T7) la póliza está también en «Mis pólizas»; el enlace del correo no tiene sesión. -->
+    <RouterLink
+      v-if="enModoSesion()"
+      to="/polizas"
+      data-prueba="ver-mis-polizas"
+      class="text-[13px] font-semibold text-enlace hover:underline"
+    >
+      {{ t('polizaEmitida.verMisPolizas') }}
+    </RouterLink>
   </TarjetaEnlace>
 </template>

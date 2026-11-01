@@ -497,6 +497,11 @@ export const en: Record<Clave, string> = {
 
   // HU-W03 · Suscripción, firma y pago (W03-01 a W03-04, modal del asesor y retorno de la pasarela)
   'comun.cargando': 'Loading…',
+  'oferta.firmar': 'Sign',
+  'oferta.firmando': 'Preparing your signature…',
+  'oferta.errorFirmar': "We couldn't prepare your signature. Try again or contact an advisor.",
+  'oferta.enRevision': 'Your request is under review. An advisor will contact you to continue.',
+  'oferta.noEmitida': "We couldn't issue your policy with this offer. Contact an advisor to review alternatives.",
   'oferta.contactarAsesor': 'Contact an advisor',
   'oferta.conAsesor': 'Your advisor will guide you through signing and paying for the policy.',
   'suscripcion.errorTecnico': "We couldn't complete the operation. Please try again.",
@@ -645,6 +650,7 @@ export const en: Record<Clave, string> = {
   'polizaEmitida.titulo': 'Your policy was issued',
   'polizaEmitida.numero': 'Policy no.: {numero}',
   'polizaEmitida.fechas': 'Issued on {emitida} · Coverage from {desde}',
+  'polizaEmitida.verMisPolizas': 'View my policies',
   'polizaEmitida.descargar': 'Download document',
   'polizaEmitida.errorDescarga': "We couldn't open the document. Please try again.",
   'polizaEmitida.correo': 'We also emailed you the signed document.',

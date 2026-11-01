@@ -8,6 +8,9 @@ import FirmaElectronica from '../src/views/FirmaElectronica.vue'
 import FirmaConfirmada from '../src/views/FirmaConfirmada.vue'
 import PolizaEmitida from '../src/views/PolizaEmitida.vue'
 import RetornoPago from '../src/views/RetornoPago.vue'
+import OfertaCompleta from '../src/views/OfertaCompleta.vue'
+import ConfirmarFirma from '../src/views/ConfirmarFirma.vue'
+import { ofertaDeDemo } from '../src/mocks/handlers'
 import { useCotizacion } from '../src/composables/useCotizacion'
 import { olvidarEnlace } from '../src/composables/useEnlaceFirma'
 import { useSesion } from '../src/composables/useSesion'
@@ -246,6 +249,55 @@ describe('Páginas del enlace (sin sesión)', () => {
     const { w } = await montar(RetornoPago, '/pago/retorno?sesion=ses-1')
     await esperar(() => w.text().includes('Abre de nuevo'))
     expect(w.text()).toContain('Abre de nuevo el enlace de tu correo')
+  })
+})
+
+describe('Recorrido del cliente en su sesión (T7)', () => {
+  async function entrarComoCliente() {
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'secreta123')
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    cotizacion.estado.resultado = ofertaDeDemo('COMPLETA')
+  }
+
+  it('«Firmar» acepta, emite y lleva a la firma bajo la propuesta, sin enlace', async () => {
+    await entrarComoCliente()
+    const { w, router } = await montar(OfertaCompleta, '/cotizacion/oferta')
+    expect(w.text()).toContain('Contactar a un asesor')
+    await (await boton(w, 'firmar')).trigger('click')
+    await esperar(() => /^\/propuestas\/[^/]+\/firma$/.test(router.currentRoute.value.path))
+    expect(router.currentRoute.value.path).toMatch(/^\/propuestas\/prop-\d+\/firma$/)
+  })
+
+  it('firma y confirma en su sesión: cada paso queda bajo /propuestas/:id/firma', async () => {
+    await entrarComoCliente()
+    const oferta = await montar(OfertaCompleta, '/cotizacion/oferta')
+    await (await boton(oferta.w, 'firmar')).trigger('click')
+    await esperar(() => oferta.router.currentRoute.value.path.startsWith('/propuestas/'))
+    const base = oferta.router.currentRoute.value.path
+
+    const { w, router } = await montar(FirmaElectronica, base)
+    await (await boton(w, 'modo-NOMBRE')).trigger('click')
+    await w.get('[data-componente="firma-tres-modos"] input').setValue('Ana Pérez')
+    await (await boton(w, 'acepta-terminos')).setValue(true)
+    await (await boton(w, 'firmar')).trigger('click')
+    await esperar(() => router.currentRoute.value.path === `${base}/confirmar`)
+    expect(router.currentRoute.value.path).toBe(`${base}/confirmar`)
+
+    const confirmar = await montar(ConfirmarFirma, `${base}/confirmar`)
+    await esperar(() => confirmar.w.text().length > 0)
+    expect(confirmar.router.currentRoute.value.path).toBe(`${base}/confirmar`)
+  })
+
+  it('las rutas de la sesión son solo del CLIENTE', () => {
+    const rutas = crearRutas().filter((r) => r.path.startsWith('/propuestas/:propuestaId/firma'))
+    expect(rutas.map((r) => r.path)).toEqual([
+      '/propuestas/:propuestaId/firma',
+      '/propuestas/:propuestaId/firma/confirmar',
+      '/propuestas/:propuestaId/firma/confirmada',
+      '/propuestas/:propuestaId/firma/poliza',
+    ])
+    for (const r of rutas) expect((r.meta as { pantalla: { roles: string[] } }).pantalla.roles).toEqual(['CLIENTE'])
   })
 })
 
