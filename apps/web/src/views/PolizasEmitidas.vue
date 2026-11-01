@@ -3,11 +3,14 @@
   la columna del titular y las acciones. Sin Figma propio (destino de las tarjetas de G-02 y G-02a): usa la misma
   tabla, pestañas y paginador de W05-01.
   - Pagina en el servidor y se actualiza por SSE (aviso `propuesta`); la conexión solo vive con la pestaña visible.
+  - El cliente con exactamente UNA póliza emitida pasa directo a W03-04 en su sesión (también si la primera llega por
+    aviso estando en el estado vacío). Con varias ve la tabla; el asesor siempre la ve.
   - Estado vacío con camino a una cotización nueva. «Retomar» solo para el asesor: el cliente continúa con su enlace.
   - El monto convertido es el de consulta (D-2): la póliza firmada y cobrada conserva su moneda en el PDF.
 -->
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
@@ -18,6 +21,7 @@ import type { EstadoVisible, Propuesta } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearFecha } from '../utils/formato'
 
+const router = useRouter()
 const { estado: sesion } = useSesion()
 const { estado, cargar, filtrar, irAPagina, aplicarAviso, detener, pdf } = usePolizas()
 const avisos = useAvisos(null, fetch, undefined, aplicarAviso)
@@ -25,6 +29,18 @@ const avisos = useAvisos(null, fetch, undefined, aplicarAviso)
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
 const titulo = computed(() => (esAsesor.value ? t('polizas.tituloAsesor') : t('polizas.tituloCliente')))
 const rutaInicio = computed(() => (esAsesor.value ? '/asesor' : '/inicio'))
+
+// Una sola póliza emitida (sin filtro): el cliente va a su póliza. `replace` para que «Atrás» no vuelva a rebotar.
+watch(
+  () => [estado.cargando, estado.total, estado.filtro, estado.propuestas] as const,
+  () => {
+    if (esAsesor.value || estado.cargando || estado.filtro !== undefined || estado.total !== 1) return
+    const unica = estado.propuestas[0]
+    if (unica && visible(unica) === 'EMITIDA' && unica.poliza) {
+      void router.replace(`/propuestas/${unica.id}/firma/poliza`)
+    }
+  },
+)
 
 const PESTANAS: (EstadoVisible | undefined)[] = [undefined, 'EMITIDA', 'EMITIENDO', 'NO_EMITIDA']
 const totalPaginas = computed(() => Math.max(1, Math.ceil(estado.total / TAMANO_PAGINA_POLIZAS)))

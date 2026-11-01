@@ -22,13 +22,17 @@ function propuesta(id: string, extra: Partial<Propuesta> = {}): Propuesta {
   } as Propuesta
 }
 
-function bff(paginas: Propuesta[][], total = paginas.flat().length) {
+function bff(paginas: Propuesta[][], total?: number) {
   const variables: Record<string, unknown>[] = []
   const fetchFn = (async (_url: string, init: RequestInit) => {
     const cuerpo = JSON.parse(String(init.body)) as { variables: Record<string, unknown> }
     variables.push(cuerpo.variables)
     const lista = paginas[Number(cuerpo.variables.pagina ?? 1) - 1] ?? []
-    return new Response(JSON.stringify({ data: { propuestas: { propuestas: lista, total, pagina: 1, tamano: 10 } } }))
+    return new Response(
+      JSON.stringify({
+        data: { propuestas: { propuestas: lista, total: total ?? paginas.flat().length, pagina: 1, tamano: 10 } },
+      }),
+    )
   }) as unknown as typeof fetch
   return { fetchFn, variables }
 }
@@ -116,6 +120,10 @@ describe('G-06 · PolizasEmitidas', () => {
   })
 
   async function montar(rol: 'ASESOR' | 'CLIENTE', lista: Propuesta[]) {
+    return (await montarConRouter(rol, lista)).w
+  }
+
+  async function montarConRouter(rol: 'ASESOR' | 'CLIENTE', lista: Propuesta[]) {
     const { fetchFn } = bff([lista])
     globalThis.fetch = ((url: string, init: RequestInit) =>
       String(url).includes('graphql') && String(init.body).includes('ticketAvisos')
@@ -124,14 +132,59 @@ describe('G-06 · PolizasEmitidas', () => {
     useSesion().estado.rol = rol
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: '/polizas', component: PolizasEmitidas }],
+      routes: [
+        { path: '/polizas', component: PolizasEmitidas },
+        { path: '/propuestas/:propuestaId/firma/poliza', component: { template: '<div />' } },
+      ],
     })
     router.push('/polizas')
     await router.isReady()
     const w = mount(PolizasEmitidas, { global: { plugins: [router] } })
     await flushPromises()
-    return w
+    return { w, router }
   }
+
+  const emitida = (id: string) =>
+    propuesta(id, {
+      estado: 'EMITIDA',
+      estadoVisible: 'EMITIDA',
+      poliza: { id: `pol-${id}`, numero: `POL-${id}`, documentoUrl: '/d' } as Propuesta['poliza'],
+    })
+
+  it('el cliente con una sola póliza emitida pasa a W03-04 en su sesión', async () => {
+    const { w, router } = await montarConRouter('CLIENTE', [emitida('p9')])
+    expect(router.currentRoute.value.fullPath).toBe('/propuestas/p9/firma/poliza')
+    w.unmount()
+  })
+
+  it('el cliente con varias pólizas ve la tabla', async () => {
+    const { w, router } = await montarConRouter('CLIENTE', [emitida('a'), emitida('b')])
+    expect(router.currentRoute.value.fullPath).toBe('/polizas')
+    expect(w.text()).toContain('POL-a')
+    w.unmount()
+  })
+
+  it('el asesor con una sola póliza conserva la tabla', async () => {
+    const { w, router } = await montarConRouter('ASESOR', [emitida('p9')])
+    expect(router.currentRoute.value.fullPath).toBe('/polizas')
+    w.unmount()
+  })
+
+  it('la primera póliza que llega por aviso desde el estado vacío lleva a W03-04', async () => {
+    const lista: Propuesta[] = []
+    const { w, router } = await montarConRouter('CLIENTE', lista)
+    expect(w.find('[data-prueba="polizas-vacio"]').exists()).toBe(true)
+    lista.push(emitida('p7')) // lo que verá la consulta silenciosa que dispara el aviso
+    const { aplicarAviso } = (w.vm as unknown as { $: { setupState: { aplicarAviso: (a: AvisoPropuesta) => void } } }).$
+      .setupState
+    vi.useFakeTimers()
+    aplicarAviso({ propuestaId: 'p7', estado: 'EMITIDA', estadoVisible: 'EMITIDA' })
+    await vi.advanceTimersByTimeAsync(1_500)
+    vi.useRealTimers()
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/propuestas/p7/firma/poliza')
+    w.unmount()
+  })
 
   it('sin pólizas muestra el estado vacío con camino a cotizar', async () => {
     const w = await montar('CLIENTE', [])
