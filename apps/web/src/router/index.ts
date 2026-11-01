@@ -41,6 +41,11 @@ export function crearRutas(): RouteRecordRaw[] {
     rutas.push({ path: '/dev/pasarela/:sesion', component: () => import('../views/dev/PasarelaSimulada.vue') })
   }
 
+  // T22: ruta para provocar un error y ver que llega a Sentry; nunca en producción.
+  if (import.meta.env.VITE_AMBIENTE !== 'production') {
+    rutas.push({ path: '/prueba-sentry', component: () => import('../views/dev/PruebaSentry.vue') })
+  }
+
   rutas.push({ path: '/', redirect: '/login' })
   return rutas
 }

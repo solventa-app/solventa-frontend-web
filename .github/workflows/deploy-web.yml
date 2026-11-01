@@ -66,9 +66,14 @@ jobs:
           flags=()
           if [ "$GITHUB_REF" = "refs/heads/main" ]; then flags+=(--prod); fi
           url=$(vercel deploy "${flags[@]}" --yes --token "$VERCEL_TOKEN" \
-            --build-env VITE_USE_MOCKS="$VITE_USE_MOCKS")
+            --build-env VITE_USE_MOCKS="$VITE_USE_MOCKS" \
+            --build-env VITE_SENTRY_DSN="$VITE_SENTRY_DSN" \
+            --build-env VITE_AMBIENTE="$VITE_AMBIENTE")
           echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           # 'true' = la web responde con los mocks de MSW (mientras no haya BFF desplegado).
           VITE_USE_MOCKS: ${{ vars.VITE_USE_MOCKS || 'false' }}
+          # T22: Sentry (DSN público del proyecto solventa-web) y ambiente (production solo en main).
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
+          VITE_AMBIENTE: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
