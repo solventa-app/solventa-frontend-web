@@ -244,12 +244,6 @@ onUnmounted(() => {
                         estado.reintentando === cobro.id ? t('conciliacion.reintentando') : t('conciliacion.reintentar')
                       }}
                     </Boton>
-                    <span
-                      v-else-if="cobro.estado === 'RECHAZADO' && enLinea(cobro)"
-                      class="text-[11px] text-tinta-suave"
-                    >
-                      {{ t('conciliacion.loResuelveCliente') }}
-                    </span>
                     <span v-else-if="cobro.estado === 'RECHAZADO'" class="text-[11px] text-error">
                       {{ t('conciliacion.otroMedio') }}
                     </span>

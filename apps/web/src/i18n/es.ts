@@ -234,7 +234,7 @@ export const es = {
   'conciliacion.estado.COBRANDO': 'Cobrando',
   'conciliacion.estado.COBRADO': 'Cobrado',
   'conciliacion.estado.RECHAZADO': 'Rechazado',
-  'conciliacion.estado.PENDIENTE': 'Pendiente',
+  'conciliacion.estado.PENDIENTE': 'Pendiente de reintento',
   'conciliacion.cliente': 'Cliente',
   'conciliacion.poliza': 'N.º de póliza',
   'conciliacion.prima': 'Prima',
@@ -245,7 +245,6 @@ export const es = {
   'conciliacion.tipoMedio.DEBITO': 'Débito',
   'conciliacion.origen.INTERACTIVO': 'En línea',
   'conciliacion.origen.RECURRENTE': 'Recurrente',
-  'conciliacion.loResuelveCliente': 'Lo resuelve el cliente',
   'conciliacion.seConcilia': 'Se concilia',
   'conciliacion.controlRecurrente':
     'La prima se cobra en cada ciclo con el medio guardado al emitir la póliza, sin que el cliente haga nada.',
