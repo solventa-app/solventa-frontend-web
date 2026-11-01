@@ -68,6 +68,11 @@ export type CodigoEnviado = {
   venceEn: Scalars['DateTime']['output'];
 };
 
+export type CodigoOnboardingEnviado = {
+  correoEnmascarado: Scalars['String']['output'];
+  venceEn: Scalars['DateTime']['output'];
+};
+
 export type ColorSalud =
   | 'AMARILLO'
   | 'ROJO'
@@ -471,6 +476,7 @@ export type Mutation = {
   derivarSiniestro: ResultadoResolucion;
   descargarArchivo: ResultadoDescargaArchivo;
   emitirPropuesta: ResultadoEmision;
+  enviarCodigoOnboarding: ResultadoCodigoOnboarding;
   enviarCodigoVerificacion: ResultadoEnvioCodigo;
   enviarVerificacion: ResultadoOnboarding;
   firmarPorEnlace: ResultadoFirma;
@@ -482,6 +488,7 @@ export type Mutation = {
   reenviarEnlaceFirma: ResultadoEmision;
   registrarConsentimiento: Consentimiento;
   registrarConsentimientoOnboarding: ResultadoOnboarding;
+  registrarCuenta: ResultadoSesion;
   reintentarCobro: Cobro;
   reintentarOnboarding: ResultadoOnboarding;
   revocarConsentimiento: Consentimiento;
@@ -492,6 +499,7 @@ export type Mutation = {
   suspenderUsuario: ResultadoUsuario;
   ticketAvisos: TicketAvisos;
   verificarCodigo: ResultadoVerificacion;
+  verificarCodigoOnboarding: ResultadoCodigoOnboarding;
 };
 
 
@@ -578,6 +586,11 @@ export type MutationEmitirPropuestaArgs = {
 };
 
 
+export type MutationEnviarCodigoOnboardingArgs = {
+  correo: Scalars['String']['input'];
+};
+
+
 export type MutationEnviarCodigoVerificacionArgs = {
   correo?: InputMaybe<Scalars['String']['input']>;
   propuestaId: Scalars['ID']['input'];
@@ -637,6 +650,13 @@ export type MutationRegistrarConsentimientoOnboardingArgs = {
 };
 
 
+export type MutationRegistrarCuentaArgs = {
+  clave: Scalars['String']['input'];
+  codigo: Scalars['String']['input'];
+  correo: Scalars['String']['input'];
+};
+
+
 export type MutationReintentarCobroArgs = {
   cobroId: Scalars['ID']['input'];
 };
@@ -685,6 +705,12 @@ export type MutationSuspenderUsuarioArgs = {
 export type MutationVerificarCodigoArgs = {
   codigo: Scalars['String']['input'];
   propuestaId: Scalars['ID']['input'];
+};
+
+
+export type MutationVerificarCodigoOnboardingArgs = {
+  codigo: Scalars['String']['input'];
+  correo: Scalars['String']['input'];
 };
 
 export type NivelRiesgo =
@@ -892,6 +918,7 @@ export type RangoPrima = {
 };
 
 export type Resolucion = {
+  automatica: Scalars['Boolean']['output'];
   comentario?: Maybe<Scalars['String']['output']>;
   indemnizacion?: Maybe<Monto>;
   instrucciones?: Maybe<Scalars['String']['output']>;
@@ -911,6 +938,8 @@ export type ResultadoAceptacion = ErrorAceptacion | Propuesta;
 export type ResultadoArchivo = Archivo | ErrorArchivo;
 
 export type ResultadoCobro = Cobro | ErrorCobro;
+
+export type ResultadoCodigoOnboarding = CodigoOnboardingEnviado | ErrorOnboarding;
 
 export type ResultadoCuentaOnboarding = CuentaOnboarding | ErrorOnboarding;
 

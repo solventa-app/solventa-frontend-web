@@ -110,6 +110,7 @@ function siniestrosIniciales(): Siniestro[] {
   const derivado = siniestroBase(2, 'EN_REVISION')
   derivado.resolucion = {
     tipo: 'DERIVACION',
+    automatica: false,
     resueltaEn: '2026-10-12T18:00:00Z',
     notificacion: 'Correo certificado y expediente digital de siniestros',
     perito: { ...peritosBase[0] },
@@ -119,6 +120,7 @@ function siniestrosIniciales(): Siniestro[] {
   const aprobado = siniestroBase(3, 'APROBADO')
   aprobado.resolucion = {
     tipo: 'APROBACION',
+    automatica: false,
     resueltaEn: '2026-10-14T15:00:00Z',
     notificacion: 'Enviada al asegurado y a la entidad acreedora',
     indemnizacion: { valor: '8650000', moneda: 'COP' },
@@ -133,6 +135,7 @@ function siniestrosIniciales(): Siniestro[] {
   ]
   rechazado.resolucion = {
     tipo: 'RECHAZO',
+    automatica: false,
     resueltaEn: '2026-10-15T15:00:00Z',
     notificacion: 'Enviada vía correo certificado y Open Finance',
     motivo: 'FUERA_DE_COBERTURA',
@@ -220,6 +223,7 @@ export const handlersSiniestros = [
       s.estado = 'APROBADO'
       s.resolucion = {
         tipo: 'APROBACION',
+        automatica: false,
         resueltaEn: new Date().toISOString(),
         notificacion: 'Enviada al asegurado y a la entidad acreedora',
         indemnizacion: { ...s.sumaReclamada },
@@ -238,6 +242,7 @@ export const handlersSiniestros = [
       s.estado = 'RECHAZADO'
       s.resolucion = {
         tipo: 'RECHAZO',
+        automatica: false,
         resueltaEn: new Date().toISOString(),
         notificacion: 'Enviada vía correo certificado y Open Finance',
         motivo: variables.motivo,
@@ -260,6 +265,7 @@ export const handlersSiniestros = [
       s.estado = 'EN_REVISION'
       s.resolucion = {
         tipo: 'DERIVACION',
+        automatica: false,
         resueltaEn: new Date().toISOString(),
         notificacion: 'Correo certificado y expediente digital de siniestros',
         perito: { ...perito, vencimientoInforme: vencimiento },

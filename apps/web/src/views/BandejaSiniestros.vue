@@ -9,7 +9,7 @@
   - "Abrir" lleva al detalle por el `id` del siniestro (W04-02), no por el radicado.
 -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   Badge,
   Boton,
@@ -25,6 +25,7 @@ import { useSiniestros } from '../composables/useSiniestros'
 import type { EstadoSiniestro } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearFecha, formatearFechaCorta } from '../utils/formato'
+import { textoRestante } from '../utils/plazo'
 
 const { estado, cargarSiniestros } = useSiniestros()
 
@@ -73,6 +74,12 @@ const listo = computed(() => !estado.cargando && !estado.error)
 function etiquetaFiltro(valor?: EstadoSiniestro): string {
   return valor ? t(`siniestros.estado.${valor}`) : t('siniestros.bandeja.todos')
 }
+
+// El plazo solo corre en los PENDIENTE: un caso derivado espera al perito (D-3b).
+const ahora = ref(Date.now())
+const reloj = setInterval(() => (ahora.value = Date.now()), 30_000)
+onBeforeUnmount(() => clearInterval(reloj))
+const restanteDe = (s: { venceDictamenEn: string }) => Date.parse(s.venceDictamenEn) - ahora.value
 
 onMounted(() => void cargarSiniestros())
 </script>
@@ -193,6 +200,14 @@ onMounted(() => void cargarSiniestros())
                     <time :datetime="s.notificadoEn" :title="formatearFecha(s.notificadoEn)">
                       {{ formatearFechaCorta(s.notificadoEn) }}
                     </time>
+                    <p
+                      v-if="s.estado === 'PENDIENTE' && s.venceDictamenEn"
+                      data-prueba="plazo"
+                      class="text-[11px] leading-[16.5px]"
+                      :class="restanteDe(s) <= 0 ? 'font-semibold text-error' : 'text-tinta-suave'"
+                    >
+                      {{ t('siniestros.bandeja.vence', { tiempo: textoRestante(restanteDe(s)) }) }}
+                    </p>
                   </td>
                   <td class="px-5">
                     <Badge :tipo="BADGE[s.estado]">{{ t(`siniestros.estado.${s.estado}`) }}</Badge>
