@@ -719,6 +719,8 @@ export const es = {
 
   // HU-W07 · Documentación de la API (W07-03).
   'socios.docs.titulo': 'Documentación de la API',
+  'socios.docs.autenticado': 'Autenticado con la clave de {entorno} · vence {hora}',
+  'socios.docs.sinToken': 'No pudimos obtener el token: las llamadas responderán 401. Revisa tu clave en el panel.',
   'socios.docs.pestana.guia': 'Guía de integración',
   'socios.docs.pestana.pruebas': 'Pruebas (sandbox)',
   'socios.docs.pestana.produccion': 'Producción',

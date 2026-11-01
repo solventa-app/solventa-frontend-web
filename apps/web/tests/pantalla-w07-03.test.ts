@@ -168,7 +168,21 @@ describe('contrato de socios de la web', () => {
     expect(wrapper.find('main [role="tablist"]').exists()).toBe(false)
     expect(wrapper.find('main nav').exists()).toBe(false)
     await wrapper.findAll('[role="tab"]')[0].trigger('click')
-    await esperar(() => router.currentRoute.value.path === '/socios/panel')
-    expect(router.currentRoute.value.path).toBe('/socios/panel')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/socios/panel'), { timeout: 3000 })
+  })
+
+  it('SO-04: dice con qué clave se autentica y hasta cuándo', async () => {
+    const wrapper = await montarDocs('pruebas')
+    await esperar(() => wrapper.find('[data-prueba="token-activo"]').exists())
+    expect(wrapper.get('[data-prueba="token-activo"]').text()).toMatch(
+      /Autenticado con la clave de Pruebas \(sandbox\) · vence \d+:\d{2}/,
+    )
+  })
+
+  it('SO-04: si no se obtiene el token lo avisa, en vez de dejar un 401 sin explicación', async () => {
+    servidor.use(http.post('*/v1/token', () => new HttpResponse(null, { status: 503 })))
+    const wrapper = await montarDocs('pruebas')
+    await esperar(() => wrapper.find('[data-prueba="sin-token"]').exists())
+    expect(wrapper.get('[data-prueba="sin-token"]').text()).toContain('401')
   })
 })
