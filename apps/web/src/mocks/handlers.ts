@@ -202,8 +202,9 @@ function usuarioDeDemo(usuario: string, rol: RolUsuario): Usuario {
     idioma: 'ES',
     moneda: 'COP',
     tieneContacto: rol === 'CLIENTE',
-    // v0.24: solo el CLIENTE tiene cédula y correo (el BFF real los entrega solo al propio usuario).
-    documentoEnmascarado: rol === 'CLIENTE' ? '10••••3040' : null,
+    // v0.24: el BFF real entrega cédula y correo solo al propio usuario. En demo, el correo es de todo CLIENTE y la
+    // cédula solo de quien se llama «registrado» (así los demás flujos de W01 siguen digitando el documento).
+    documentoEnmascarado: rol === 'CLIENTE' && usuario.includes('registrado') ? '10••••3040' : null,
     correo: rol === 'CLIENTE' ? `${usuario}@correo.com` : null,
   }
 }

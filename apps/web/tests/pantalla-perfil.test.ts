@@ -62,11 +62,11 @@ describe('G-05 · Mi perfil', () => {
   })
 
   it('el cliente ve su cédula enmascarada y su correo, bloqueados y sin campos de edición', async () => {
-    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'secreta123')
+    await useSesion(fetchPrueba).iniciarSesion('cliente.registrado', 'secreta123')
     const { wrapper } = await montarPerfil()
 
     expect(wrapper.get('[data-dato="documento-campo"]').text()).toBe('10••••3040')
-    expect(wrapper.get('[data-dato="correo-campo"]').text()).toBe('cliente.demo@correo.com')
+    expect(wrapper.get('[data-dato="correo-campo"]').text()).toBe('cliente.registrado@correo.com')
     expect(wrapper.findAll('main input, main textarea')).toHaveLength(0)
   })
 
