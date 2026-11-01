@@ -11,6 +11,7 @@ import RetornoPago from '../src/views/RetornoPago.vue'
 import { useCotizacion } from '../src/composables/useCotizacion'
 import { olvidarEnlace } from '../src/composables/useEnlaceFirma'
 import { useSesion } from '../src/composables/useSesion'
+import { cambiarMoneda, moneda, usarConversor } from '../src/composables/useMoneda'
 import { useSuscripcion } from '../src/composables/useSuscripcion'
 import { crearRutas } from '../src/router'
 import { servidor } from '../src/mocks/node'
@@ -108,6 +109,34 @@ describe('W03-01 · Revisar oferta aceptada', () => {
 
     expect((await boton(w, 'oferta-preliminar')).text()).toContain('Volver a calcular')
     expect(w.find('[data-prueba="aceptar"]').exists()).toBe(false)
+  })
+
+  it('la oferta se convierte a USD (se consulta) y el selector sigue activo', async () => {
+    usarConversor(async (montos, destino) =>
+      montos.map((m) => ({ valor: (Number(m.valor) / 4000).toFixed(2), moneda: destino })),
+    )
+    await prepararAsesor()
+    await cambiarMoneda('USD')
+    const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
+    await boton(w, 'tarjeta-oferta')
+    await esperar(() => w.get('[data-prueba="tarjeta-oferta"]').text().includes('23,67'))
+
+    expect(w.get('[data-prueba="tarjeta-oferta"]').text()).toMatch(/23,67/)
+    expect(w.get('select').attributes('disabled')).toBeUndefined()
+    usarConversor(null)
+    moneda.value = 'COP'
+  })
+
+  it('las páginas del enlace dejan el selector deshabilitado en la moneda del documento', async () => {
+    await cambiarMoneda('USD')
+    window.location.hash = '#t=firmado'
+    const { w } = await montar(FirmaConfirmada, '/firma/confirmada')
+    await boton(w, 'pagar')
+
+    const selector = w.get('select')
+    expect(selector.attributes('disabled')).toBeDefined()
+    expect((selector.element as HTMLSelectElement).value).toBe('COP')
+    moneda.value = 'COP'
   })
 
   it('al recargar con la identidad ya verificada ofrece «Continuar con la emisión» y no pide otro código', async () => {

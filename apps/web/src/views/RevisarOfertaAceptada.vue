@@ -22,7 +22,8 @@ import { useSesion } from '../composables/useSesion'
 import { useSuscripcion } from '../composables/useSuscripcion'
 import type { EstadoPropuesta } from '../graphql/tipos'
 import { t } from '../i18n'
-import { formatearHora, formatearMonto } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { formatearHora } from '../utils/formato'
 
 const route = useRoute()
 const router = useRouter()
@@ -126,13 +127,13 @@ function recalcular() {
             <div class="flex flex-col gap-1">
               <span class="text-[12px] text-tinta-suave">{{ t('revisarOferta.prima') }}</span>
               <span class="text-[24px] font-bold leading-none text-primario">
-                {{ prima && formatearMonto(prima) }}
+                {{ prima && montoVisible(prima) }}
                 <span class="text-[13px] font-normal text-tinta-suave">{{ t('revisarOferta.porMes') }}</span>
               </span>
             </div>
             <div class="flex flex-col gap-1 sm:items-end sm:border-l sm:border-borde sm:pl-4">
               <span class="text-[12px] text-tinta-suave">{{ t('revisarOferta.cobertura') }}</span>
-              <span class="text-[18px] font-semibold text-tinta">{{ cobertura && formatearMonto(cobertura) }}</span>
+              <span class="text-[18px] font-semibold text-tinta">{{ cobertura && montoVisible(cobertura) }}</span>
               <span class="text-[11px] text-exito">{{ t('revisarOferta.amparo') }}</span>
             </div>
           </div>
