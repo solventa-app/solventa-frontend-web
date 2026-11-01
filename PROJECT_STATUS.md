@@ -25,6 +25,12 @@ Plan aprobado con Felipe: validar W01 y W05 contra sus objetivos y lo ya constru
 - **Cobro recurrente:** el disparo de demo es un endpoint interno del backend, sin botón ni contrato nuevo. Se cobra hasta
   `vigencia_hasta`.
 
+- **Sentry (observabilidad web y móvil, organización `uniandes-xm`, 2026-10-31):** implementado en `apps/web`
+  (`@sentry/vue`, `@sentry/vite-plugin`, `src/observabilidad/limpiar.ts`, `src/log.ts`, `no-console: error` en ESLint,
+  código de soporte con botón de copiado en `OfertaError.vue`, `sentry-block` en `SolicitudYConsentimiento.vue` y
+  `ConciliacionDePagos.vue`, guía en `docs/observabilidad.md` y `docs/plan-sentry.md`). En `solventa-frontend-mobile`
+  implementado en paralelo con `sentry_flutter`, `SolLog`, `limpiar.dart` y `SentryMask`.
+
 ## Decisiones de la sesión
 
 - Por ahora **solo se valida por código**: nada de staging, workflows ni infraestructura. La validación local y remota

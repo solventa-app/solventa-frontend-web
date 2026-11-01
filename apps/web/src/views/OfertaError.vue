@@ -2,26 +2,35 @@
   W01-03c · Oferta, fallo (Figma "Solventa-web-Final", nodo 2001:1335). CA-W01-05.
 
   El texto es siempre `ErrorOferta.mensaje`, también para fallas técnicas (useCotizacion las convierte
-  en un ErrorOferta seguro): nunca un 5xx. "Reintentar" solo aparece si `puedeReintentar`. Se omite el
-  "Código de evento" del prototipo: `ErrorOferta` no lo trae. Sin un error en memoria (entrada por URL
-  o recarga) se muestra el estado vacío con enlace a la solicitud.
+  en un ErrorOferta seguro): nunca un 5xx. "Reintentar" solo aparece si `puedeReintentar`. Además
+  muestra el código de soporte de Sentry (docs/plan-sentry.md §2.6) con botón de copiar.
 -->
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esErrorOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
+import { obtenerCodigoSoporte } from '../log'
 
 const router = useRouter()
 const { estado } = useCotizacion()
 const { rutaInicio } = useSesion()
 const error = computed(() => (esErrorOferta(estado.resultado) ? estado.resultado : null))
+const codigoSoporte = computed(() => obtenerCodigoSoporte())
+const copiado = ref(false)
 
 function reintentar() {
   router.push('/cotizacion/consulta')
+}
+
+async function copiarCodigo() {
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    await navigator.clipboard.writeText(codigoSoporte.value)
+    copiado.value = true
+  }
 }
 </script>
 
@@ -47,6 +56,22 @@ function reintentar() {
         <p class="max-w-[448px] text-center text-[13px] leading-[18px] text-tinta-suave">
           {{ error.mensaje }}
         </p>
+        <div
+          data-testid="codigo-soporte"
+          class="flex flex-wrap items-center justify-center gap-2 rounded border border-borde bg-fondo px-3 py-2 text-[12px] text-tinta-suave"
+        >
+          <span>
+            {{ t('errorOferta.codigoSoporte', { codigo: '' }) }}
+            <strong class="font-mono text-tinta">{{ codigoSoporte }}</strong>
+          </span>
+          <button
+            type="button"
+            class="rounded border border-borde bg-white px-2 py-0.5 text-[11px] font-semibold text-primario hover:bg-fondo"
+            @click="copiarCodigo"
+          >
+            {{ copiado ? t('errorOferta.copiado') : t('errorOferta.copiar') }}
+          </button>
+        </div>
         <div class="flex flex-col items-center gap-4">
           <Boton v-if="error.puedeReintentar" class="w-full" @click="reintentar">
             <template #icono><IconoMaterial nombre="refresh" class="h-4 w-4" /></template>

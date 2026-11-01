@@ -175,6 +175,9 @@ export const es = {
   'errorOferta.asesor': 'Hablar con un asesor',
   'errorOferta.validacion': 'Validación segura B2B2C',
   'errorOferta.vacio': 'No hay un error activo en memoria todavía.',
+  'errorOferta.codigoSoporte': 'Algo salió mal. Si escribes a soporte, comparte este código: {codigo}',
+  'errorOferta.copiar': 'Copiar',
+  'errorOferta.copiado': 'Copiado',
 
   // W01-04 · Detalle de fuentes
   'fuentes.titulo': 'Detalle de fuentes',

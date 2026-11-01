@@ -119,7 +119,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div data-pantalla="W05-01" class="flex h-screen flex-col overflow-hidden bg-fondo">
+  <div data-pantalla="W05-01" class="sentry-block flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla :titulo="t('conciliacion.titulo')" />
     <TituloPantalla class="sr-only">{{ t('conciliacion.titulo') }}</TituloPantalla>
 
