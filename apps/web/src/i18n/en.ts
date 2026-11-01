@@ -718,6 +718,8 @@ export const en: Record<Clave, string> = {
   'socios.ventas.vacio': 'No sales yet.',
 
   // HU-W07 · Documentación de la API (W07-03).
+  'socios.docs.autenticado': 'Authenticated with the {entorno} key · expires at {hora}',
+  'socios.docs.sinToken': 'We could not get the token: calls will return 401. Check your key on the dashboard.',
   'socios.docs.titulo': 'API documentation',
   'socios.docs.pestana.guia': 'Integration guide',
   'socios.docs.pestana.pruebas': 'Sandbox',

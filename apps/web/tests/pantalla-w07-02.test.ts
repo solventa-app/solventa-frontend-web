@@ -74,8 +74,8 @@ describe('W07-02 · Panel del socio', () => {
     ])
     expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toBe('Panel')
     await wrapper.findAll('[role="tab"]')[2].trigger('click')
-    await esperar(() => router.currentRoute.value.path === '/socios/documentacion')
-    expect(router.currentRoute.value.query.pestana).toBe('pruebas')
+    // La ruta carga en diferido: se le da tiempo real.
+    await vi.waitFor(() => expect(router.currentRoute.value.query.pestana).toBe('pruebas'), { timeout: 3000 })
   })
 
   it('CA-W07-05: credenciales del entorno con la clave enmascarada, «Mostrar» y «Copiar»; cambian con el entorno', async () => {
