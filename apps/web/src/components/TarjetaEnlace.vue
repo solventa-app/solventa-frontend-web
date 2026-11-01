@@ -5,7 +5,9 @@
   enlace, sin sesión. Foco al título al montar, para que el lector de pantalla anuncie el paso.
 -->
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useEnlaceFirma } from '../composables/useEnlaceFirma'
+import { MONEDA_BASE } from '../composables/useMoneda'
 import { FooterPantalla, HeaderPantalla } from './ui'
 import IconoMaterial from './ui/IconoMaterial.vue'
 
@@ -22,6 +24,15 @@ defineProps<{
 }>()
 
 const h1 = ref<HTMLElement | null>(null)
+// Lo que se firma, se paga y se emite no se convierte (D-2): el selector queda en la moneda del documento.
+const { estado } = useEnlaceFirma()
+const monedaDelDocumento = computed(
+  () =>
+    estado.enlace?.documento?.montoMensual.moneda ??
+    estado.enlace?.poliza?.prima.moneda ??
+    estado.enlace?.propuesta.prima.moneda ??
+    MONEDA_BASE,
+)
 onMounted(async () => {
   await nextTick()
   h1.value?.focus()
@@ -30,7 +41,7 @@ onMounted(async () => {
 
 <template>
   <div class="flex h-screen flex-col overflow-hidden" :data-pantalla="pantalla">
-    <HeaderPantalla :titulo="tituloHeader" sin-perfil />
+    <HeaderPantalla :titulo="tituloHeader" :moneda-fija="monedaDelDocumento" sin-perfil />
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-4 py-10 sm:px-10">
       <section
         class="flex w-full flex-col items-center gap-4 rounded-lg border border-borde bg-white p-6"

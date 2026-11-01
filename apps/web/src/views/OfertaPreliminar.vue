@@ -12,7 +12,8 @@ import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
-import { formatearMonto, formatearPorcentaje, formatearRangoMonto } from '../utils/formato'
+import { montoVisible, rangoMontoVisible } from '../composables/useMoneda'
+import { formatearPorcentaje } from '../utils/formato'
 import { nombreFuente } from '../utils/nombres'
 
 const { estado, captura } = useCotizacion()
@@ -41,10 +42,10 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         <h2 class="text-center text-[22px] font-bold leading-[28px] text-tinta">{{ t('preliminar.titulo') }}</h2>
         <div class="flex w-full flex-col items-center gap-1.5 rounded-md border border-borde bg-fondo p-4">
           <p class="text-center text-[22px] font-bold leading-[28px] text-primario">
-            {{ t('comun.porMes', { monto: formatearRangoMonto(oferta.rangoPrima.minima, oferta.rangoPrima.maxima) }) }}
+            {{ t('comun.porMes', { monto: rangoMontoVisible(oferta.rangoPrima.minima, oferta.rangoPrima.maxima) }) }}
           </p>
           <p class="text-center text-[16px] font-semibold leading-[22px] text-tinta">
-            {{ t('comun.cobertura', { monto: formatearMonto(oferta.cobertura) }) }}
+            {{ t('comun.cobertura', { monto: montoVisible(oferta.cobertura) }) }}
           </p>
           <p class="text-center text-[11px] leading-[14px] text-tinta-suave">
             {{ t('preliminar.cache') }}

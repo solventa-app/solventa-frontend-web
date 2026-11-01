@@ -14,7 +14,8 @@ import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../c
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
-import { formatearMonto, formatearPorcentaje } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { formatearPorcentaje } from '../utils/formato'
 import { nombreFuente } from '../utils/nombres'
 
 const { estado, captura } = useCotizacion()
@@ -42,10 +43,10 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">{{ t('oferta.lista') }}</h2>
         <div class="flex w-full flex-col items-center gap-1.5 rounded-md border border-borde p-4">
           <p class="text-[22px] font-bold leading-normal text-primario">
-            {{ t('comun.porMes', { monto: formatearMonto(oferta.prima!) }) }}
+            {{ t('comun.porMes', { monto: montoVisible(oferta.prima!) }) }}
           </p>
           <p class="text-[13px] leading-[18px] text-tinta">
-            {{ t('comun.cobertura', { monto: formatearMonto(oferta.cobertura) }) }}
+            {{ t('comun.cobertura', { monto: montoVisible(oferta.cobertura) }) }}
           </p>
         </div>
         <div class="flex w-full flex-col gap-2 border-y border-borde py-4">
