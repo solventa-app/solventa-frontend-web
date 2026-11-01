@@ -64,18 +64,6 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
             <span class="text-[13px] text-tinta-suave">{{ t('homeCliente.polizasTexto') }}</span>
           </span>
         </RouterLink>
-        <RouterLink
-          to="/cotizacion/fuentes"
-          class="flex w-full max-w-[272px] gap-3 rounded-md border border-borde bg-white p-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
-        >
-          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-info-fondo">
-            <IconoMaterial nombre="badge" class="h-6 w-6 text-primario" />
-          </span>
-          <span class="flex flex-col gap-1">
-            <span class="text-[16px] font-semibold text-tinta">{{ t('home.fuentes') }}</span>
-            <span class="text-[13px] text-tinta-suave">{{ t('homeCliente.fuentesTexto') }}</span>
-          </span>
-        </RouterLink>
       </div>
 
       <p class="text-[11px] text-tinta-suave">{{ t('homeCliente.nota') }}</p>

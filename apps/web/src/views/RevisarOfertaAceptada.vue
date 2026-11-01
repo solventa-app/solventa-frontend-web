@@ -28,7 +28,7 @@ import { formatearHora } from '../utils/formato'
 const route = useRoute()
 const router = useRouter()
 const { estado: cotizacion, captura } = useCotizacion()
-const { rutaInicio } = useSesion()
+const { estado: sesion, rutaInicio } = useSesion()
 const { estado, cargarOferta, aceptar, consultarPropuesta, recuperarPropuesta } = useSuscripcion()
 
 const ofertaId = computed(() => String(route.params.ofertaId))
@@ -239,7 +239,7 @@ function recalcular() {
           </template>
 
           <RouterLink
-            v-if="esOferta(cotizacion.resultado)"
+            v-if="esOferta(cotizacion.resultado) && sesion.rol !== 'CLIENTE'"
             to="/cotizacion/fuentes"
             class="flex items-center justify-center gap-2 text-[13px] font-semibold text-enlace hover:underline"
           >

@@ -127,6 +127,7 @@ async function firmar() {
           <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('oferta.conAsesor') }}</p>
         </template>
         <RouterLink
+          v-if="sesion.rol !== 'CLIENTE'"
           to="/cotizacion/fuentes"
           class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"
         >
