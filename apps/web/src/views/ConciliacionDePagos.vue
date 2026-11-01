@@ -12,7 +12,7 @@
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Boton, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
 import { useConciliacion } from '../composables/useConciliacion'
@@ -262,29 +262,7 @@ onUnmounted(() => {
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-4 border-t border-borde bg-[#f6f3f2] px-4 py-3">
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="rounded border border-borde bg-white px-3 py-1 text-[12px] font-medium text-tinta hover:bg-fondo disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="paginaActual <= 1"
-                @click="paginaActual--"
-              >
-                {{ t('conciliacion.anterior') }}
-              </button>
-              <span class="text-[12px] text-tinta-suave">
-                {{ t('conciliacion.pagina') }} <strong class="font-semibold text-tinta">{{ paginaActual }}</strong>
-                {{ t('conciliacion.de') }}
-                <strong class="font-semibold text-tinta">{{ totalPaginas }}</strong>
-              </span>
-              <button
-                type="button"
-                class="rounded border border-borde bg-white px-3 py-1 text-[12px] font-medium text-tinta hover:bg-fondo disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="paginaActual >= totalPaginas"
-                @click="paginaActual++"
-              >
-                {{ t('conciliacion.siguiente') }}
-              </button>
-            </div>
+            <Paginador v-model:pagina="paginaActual" :total-paginas="totalPaginas" />
             <div class="flex items-center gap-4 text-[11px] text-tinta-suave">
               <span class="flex items-center gap-1">
                 <IconoMaterial nombre="sync" class="h-[18px] w-[18px]" />

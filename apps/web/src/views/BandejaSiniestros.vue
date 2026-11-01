@@ -10,7 +10,16 @@
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Badge, Boton, Chip, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import {
+  Badge,
+  Boton,
+  Chip,
+  EstadoOperador,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+  Paginador,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useSiniestros } from '../composables/useSiniestros'
 import type { EstadoSiniestro } from '../graphql/tipos'
@@ -39,6 +48,20 @@ const ordenados = computed(() =>
 const visibles = computed(() =>
   filtro.value ? ordenados.value.filter((s) => s.estado === filtro.value) : ordenados.value,
 )
+// Como W05-01: la lista llega completa y se pagina en el navegador.
+const TAMANO_PAGINA = 10
+const pagina = ref(1)
+const totalPaginas = computed(() => Math.max(1, Math.ceil(visibles.value.length / TAMANO_PAGINA)))
+const paginados = computed(() => {
+  const inicio = (pagina.value - 1) * TAMANO_PAGINA
+  return visibles.value.slice(inicio, inicio + TAMANO_PAGINA)
+})
+
+function cambiarFiltro(valor?: EstadoSiniestro) {
+  filtro.value = valor
+  pagina.value = 1
+}
+
 const enCola = computed(
   () => estado.siniestros.filter((s) => s.estado === 'PENDIENTE' || s.estado === 'EN_REVISION').length,
 )
@@ -97,7 +120,7 @@ onMounted(() => void cargarSiniestros())
             :key="valor ?? 'TODOS'"
             tamano="filtro"
             :activo="filtro === valor"
-            @click="filtro = valor"
+            @click="cambiarFiltro(valor)"
           >
             {{ etiquetaFiltro(valor) }}
             <template v-if="!valor && listo">
@@ -159,7 +182,7 @@ onMounted(() => void cargarSiniestros())
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="s in visibles" :key="s.id" class="border-t border-borde">
+                <tr v-for="s in paginados" :key="s.id" class="border-t border-borde">
                   <td class="px-5 py-[18px]">
                     <p class="text-[13px] leading-[19.5px] text-tinta">{{ s.asegurado.nombre }}</p>
                     <p class="text-[11px] leading-[16.5px] text-tinta-suave">
@@ -198,8 +221,9 @@ onMounted(() => void cargarSiniestros())
           <div
             class="flex flex-wrap items-center justify-between gap-2 border-t border-borde bg-fondo p-4 text-[11px] leading-[16.5px] text-tinta-suave"
           >
+            <Paginador v-model:pagina="pagina" :total-paginas="totalPaginas" />
             <p aria-live="polite" data-prueba="mostrando">
-              {{ t('siniestros.bandeja.mostrando', { visibles: visibles.length, total: estado.siniestros.length }) }}
+              {{ t('siniestros.bandeja.mostrando', { visibles: paginados.length, total: estado.siniestros.length }) }}
             </p>
             <p>
               {{ t('siniestros.bandeja.tiempoRespuesta') }}
