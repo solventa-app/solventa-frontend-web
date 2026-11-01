@@ -5,11 +5,14 @@
 import type { Monto } from '../graphql/tipos'
 import { idioma, localeIntl } from '../i18n'
 
+// COP y CLP se muestran sin decimales; las demás monedas, con los suyos: 11,83 USD no se redondea a 12.
+const MONEDAS_SIN_DECIMALES = ['COP', 'CLP']
+
 export function formatearMonto(monto: Pick<Monto, 'valor' | 'moneda'>): string {
   return new Intl.NumberFormat(localeIntl(), {
     style: 'currency',
     currency: monto.moneda,
-    maximumFractionDigits: 0,
+    ...(MONEDAS_SIN_DECIMALES.includes(monto.moneda) ? { maximumFractionDigits: 0 } : {}),
   }).format(monto.valor as Intl.StringNumericLiteral)
 }
 

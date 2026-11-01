@@ -47,7 +47,7 @@ const peritos = [
 
     <section style="margin-top: 2rem">
       <h2>Header de pantalla</h2>
-      <HeaderPantalla v-model:moneda="moneda" titulo="Home del Cliente" />
+      <HeaderPantalla titulo="Home del Cliente" />
     </section>
 
     <section style="margin-top: 1.5rem">

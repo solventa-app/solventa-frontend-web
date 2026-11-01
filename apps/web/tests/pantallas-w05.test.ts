@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import HomeOperador from '../src/views/HomeOperador.vue'
+import { cambiarMoneda } from '../src/composables/useMoneda'
 import ConciliacionDePagos from '../src/views/ConciliacionDePagos.vue'
 import { useSesion } from '../src/composables/useSesion'
 import { restablecerCobrosDePrueba } from '../src/mocks/handlers'
@@ -228,6 +229,14 @@ describe('HU-W05 · pantallas', () => {
       const { wrapper } = await montarConciliacion()
       const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
       expect(filaCobrando?.text()).toContain('en curso')
+    })
+
+    it('convierte montos y total a la moneda elegida, sin perder la fila (KAN-209)', async () => {
+      const { wrapper } = await montarConciliacion()
+      await cambiarMoneda('USD')
+      await vi.waitFor(() => expect(wrapper.find('tbody').text()).toContain('US$'))
+      expect(wrapper.text()).not.toContain(' COP')
+      await cambiarMoneda('COP')
     })
 
     it('muestra controles de paginación y deshabilita Anterior en la primera página', async () => {

@@ -22,6 +22,10 @@ export function usarToken(nuevo: string | null): void {
   token = nuevo
 }
 
+export function haySesion(): boolean {
+  return token !== null
+}
+
 export interface OpcionesEjecucion {
   /** Ruta GraphQL. Por defecto el canal web del BFF; siniestros (HU-W04) usa su versión 1, '/v1/graphql/web'. */
   endpoint?: string

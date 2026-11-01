@@ -16,7 +16,8 @@ import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
 import { useConciliacion } from '../composables/useConciliacion'
-import { formatearFecha, formatearMonto } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { formatearFecha } from '../utils/formato'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 import { t } from '../i18n'
 
@@ -54,7 +55,7 @@ const cobrosPaginados = computed(() => {
 const totalProcesado = computed(() => {
   const moneda = cobrosFiltrados.value[0]?.monto.moneda ?? 'COP'
   const suma = cobrosFiltrados.value.reduce((acc, c) => acc + Number(c.monto.valor), 0)
-  return formatearMonto({ valor: String(suma), moneda })
+  return montoVisible({ valor: String(suma), moneda })
 })
 
 const INSIGNIA: Record<
@@ -205,7 +206,7 @@ onUnmounted(() => {
                   <td class="py-[24px] pl-4 pr-[14px] text-[13px] text-tinta">{{ cobro.cliente?.nombre ?? '—' }}</td>
                   <td class="py-[24px] pr-[14px] font-mono text-[13px] text-tinta-suave">{{ cobro.polizaId }}</td>
                   <td class="py-[24px] pr-[14px] text-right text-[13px] text-tinta">
-                    {{ formatearMonto(cobro.monto) }}
+                    {{ montoVisible(cobro.monto) }}
                   </td>
                   <td class="py-[18px] pr-[14px] text-[13px] text-tinta" data-prueba="medio-pago">
                     <template v-if="cobro.medio">
@@ -269,7 +270,7 @@ onUnmounted(() => {
                 {{ t('conciliacion.mostrando', { visibles: cobrosPaginados.length, total: cobrosFiltrados.length }) }}
               </span>
               <span>
-                {{ t('conciliacion.total') }} <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
+                {{ t('conciliacion.total') }} <strong class="font-semibold text-tinta">{{ totalProcesado }}</strong>
               </span>
             </div>
           </div>

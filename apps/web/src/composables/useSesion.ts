@@ -9,10 +9,12 @@
 // El nombre NO viaja en el JWT (contrato v0.7: iría en base64, sin cifrar): se pide por GraphQL en
 // `iniciarSesion` y, al restaurar la sesión tras una recarga, con `yo`. Si es null o la consulta falla, se
 // muestra el alias (`usuario`), que nunca es un dato personal. El nombre no se guarda en el navegador.
+// Con el nombre llega la moneda preferida de la cuenta, que prevalece sobre la del navegador (useMoneda.ts).
 import { reactive } from 'vue'
 import { ejecutar, usarToken } from '../graphql/cliente'
 import type { ResultadoSesion, RolUsuario } from '../graphql/tipos'
 import { t } from '../i18n'
+import { adoptarMonedaDeCuenta } from './useMoneda'
 
 export type Rol = RolUsuario
 
@@ -42,7 +44,7 @@ export const RUTA_INICIO: Record<Rol, string> = {
 const MUTACION_INICIAR_SESION = `
   mutation iniciarSesion($entrada: CredencialesInput!) {
     iniciarSesion(entrada: $entrada) {
-      ... on Sesion { token usuario { nombre } }
+      ... on Sesion { token usuario { nombre moneda } }
       ... on ErrorAutenticacion { mensaje }
     }
   }
@@ -50,7 +52,7 @@ const MUTACION_INICIAR_SESION = `
 
 const CONSULTA_YO = `
   query yo {
-    yo { nombre }
+    yo { nombre moneda }
   }
 `
 
@@ -164,9 +166,10 @@ function cerrarSesion(): void {
 async function cargarNombre(fetchFn: typeof fetch = fetch): Promise<void> {
   const token = estado.token
   try {
-    const datos = await ejecutar<{ yo: { nombre?: string | null } | null }>(CONSULTA_YO, {}, fetchFn)
+    const datos = await ejecutar<{ yo: { nombre?: string | null; moneda?: string } | null }>(CONSULTA_YO, {}, fetchFn)
     const nombre = datos.yo?.nombre?.trim()
     if (nombre && estado.token === token) estado.nombre = nombre
+    if (estado.token === token) adoptarMonedaDeCuenta(datos.yo?.moneda)
   } catch {
     /* se queda el alias */
   }
@@ -193,7 +196,9 @@ export function useSesion(fetchFn: typeof fetch = fetch) {
       )
       const resultado = datos.iniciarSesion
       if ('mensaje' in resultado) return resultado.mensaje
-      return abrirSesion(resultado.token, resultado.usuario.nombre) ? null : t('ingreso.falla')
+      if (!abrirSesion(resultado.token, resultado.usuario.nombre)) return t('ingreso.falla')
+      adoptarMonedaDeCuenta(resultado.usuario.moneda)
+      return null
     } catch {
       return t('ingreso.falla')
     }

@@ -21,7 +21,8 @@ import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
 import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
-import { formatearFecha, formatearMonto } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { formatearFecha } from '../utils/formato'
 
 const route = useRoute()
 const router = useRouter()
@@ -289,7 +290,7 @@ watch(
                   <div class="mt-2 rounded bg-fondo px-6 py-2">
                     <dt class="text-[11px] text-tinta-suave">{{ t('siniestros.detalle.sumaReclamada') }}</dt>
                     <dd data-prueba="suma" class="text-[18px] font-semibold text-primario">
-                      {{ formatearMonto(s.sumaReclamada) }}
+                      {{ montoVisible(s.sumaReclamada) }}
                     </dd>
                   </div>
                   <div class="py-1.5">
@@ -386,7 +387,7 @@ watch(
                 <div v-if="s.resolucion.indemnizacion" class="py-1.5">
                   <dt class="text-[11px] text-tinta-suave">{{ t('siniestros.detalle.indemnizacion') }}</dt>
                   <dd class="text-[13px] font-semibold text-primario">
-                    {{ formatearMonto(s.resolucion.indemnizacion) }}
+                    {{ montoVisible(s.resolucion.indemnizacion) }}
                   </dd>
                 </div>
                 <div v-if="s.resolucion.metodoTransferencia" class="border-t border-borde py-1.5">
