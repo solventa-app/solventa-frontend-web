@@ -41,4 +41,4 @@ async function arrancar() {
   app.use(router).mount('#app')
 }
 
-arrancar()
+void arrancar()
