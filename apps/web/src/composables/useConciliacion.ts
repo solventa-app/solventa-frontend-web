@@ -70,6 +70,8 @@ function mensajeParaUsuario(error: unknown, generico: string): string {
   return deResolutor && error.message !== 'Unexpected error.' ? error.message : generico
 }
 
+const TAMANO_LOTE_COBROS = 100
+
 // Un lote de avisos pide la lista una sola vez.
 const ESPERA_RECARGA_MS = 1_000
 let recargaPendiente: ReturnType<typeof setTimeout> | undefined
@@ -83,6 +85,23 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
    * `silencioso`: recarga en segundo plano (la tabla se refresca sola). No muestra "Cargando…", no borra la
    * tabla ni muestra un error si falla (se conserva lo que ya hay y se reintenta en el próximo ciclo).
    */
+  // El BFF pagina (10 por defecto) y la vista filtra y cuenta sobre la lista completa: se piden todas las páginas.
+  async function traerCobros(variables: Record<string, unknown>): Promise<Cobro[]> {
+    if (variables.pagina !== undefined) {
+      return (await ejecutar<{ cobros: Cobro[] }>(COBROS, variables, fetchFn)).cobros
+    }
+    const cobros: Cobro[] = []
+    for (let pagina = 1; ; pagina++) {
+      const r = await ejecutar<{ cobros: Cobro[] }>(
+        COBROS,
+        { ...variables, pagina, tamano: TAMANO_LOTE_COBROS },
+        fetchFn,
+      )
+      cobros.push(...r.cobros)
+      if (r.cobros.length < TAMANO_LOTE_COBROS) return cobros
+    }
+  }
+
   async function cargarCobros(
     filtro?: EstadoCobro,
     opciones: { silencioso?: boolean; pagina?: number; tamano?: number } = {},
@@ -100,9 +119,9 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       if (opciones.pagina !== undefined) variables.pagina = opciones.pagina
       if (opciones.tamano !== undefined) variables.tamano = opciones.tamano
 
-      const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, variables, fetchFn)
+      const cobros = await traerCobros(variables)
       if (silencioso && (generacion !== generacionAlEmpezar || estado.reintentando !== null)) return
-      estado.cobros = r.cobros
+      estado.cobros = cobros
     } catch {
       // Nunca se muestra el error técnico/5xx crudo al usuario (CLAUDE.md regla 5).
       if (!silencioso) estado.error = t('conciliacion.errorCarga')

@@ -39,7 +39,7 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
     cy.get('[data-pantalla="W01-04"]').within(() => {
       cy.contains('h2', 'Open Finance').should('exist')
       cy.contains('h2', 'Open Data').should('exist')
-      cy.get('li').should('have.length', 5)
+      cy.get('section li').should('have.length', 5)
     })
   })
 
