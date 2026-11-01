@@ -111,3 +111,7 @@ export const obtenerEstado = (token: string, ventana: Ventana, fetchFn?: typeof 
 /** Del entorno del token, los últimos 12 meses (con un token de PRUEBAS, datos simulados). */
 export const obtenerVentas = (token: string, fetchFn?: typeof fetch) =>
   llamarApiSocios<Ventas>('GET', '/ventas', { token, fetchFn })
+
+/** Solo para mostrar: no descuenta presupuesto. */
+export const convertirMontos = (token: string, montos: Esquemas['Monto'][], moneda: string, fetchFn?: typeof fetch) =>
+  llamarApiSocios<Esquemas['Conversion']>('POST', '/conversiones', { token, cuerpo: { montos, moneda }, fetchFn })
