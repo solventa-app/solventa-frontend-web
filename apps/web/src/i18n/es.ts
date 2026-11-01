@@ -58,8 +58,7 @@ export const es = {
   'ingreso.nota':
     'Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de cotización, con distinto encabezado según quién entra.',
   'ingreso.socio': '¿Eres un socio de distribución? Ingresa al portal de socios API',
-  'ingreso.otroRol': 'Tu rol es {rol}. Selecciónalo e ingresa de nuevo.',
-  'ingreso.sinRol': 'Tu usuario no tiene un rol habilitado en esta web.',
+  'ingreso.incorrecto': 'Usuario o clave incorrectos.',
   'ingreso.falla': 'No pudimos iniciar sesión en este momento. Intenta de nuevo.',
   'ingreso.sesionVencida': 'Tu sesión venció. Inicia sesión de nuevo para continuar.',
 

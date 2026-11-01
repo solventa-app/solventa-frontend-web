@@ -228,9 +228,9 @@ let ultimoUsuarioDemo: string | null = null
 
 export const handlers = [
   bff.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
-    const { usuario, clave } = variables.entrada
-    // Mismo mensaje genérico que el BFF: no revela si el alias existe.
-    if (clave === 'clave-erronea') {
+    const { usuario, clave, rol: rolPedido } = variables.entrada
+    // Mismo mensaje genérico que el BFF: no revela si el alias existe ni qué rol tiene (T17).
+    if (clave === 'clave-erronea' || (rolPedido && rolPedido !== rolDeDemo(usuario))) {
       return HttpResponse.json({ data: { iniciarSesion: { mensaje: 'Usuario o clave incorrectos.' } } })
     }
     const rol = rolDeDemo(usuario)

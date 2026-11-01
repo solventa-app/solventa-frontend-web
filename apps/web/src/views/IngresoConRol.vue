@@ -4,8 +4,9 @@
   Inicia sesión contra el BFF (`iniciarSesion`, ver useSesion.ts); el rol real lo decide el JWT.
   Desviaciones del prototipo:
   - El campo es "Usuario", no "Correo electrónico": el backend prohíbe que el alias sea un correo.
-  - Los chips de rol se conservan, pero si el rol del token no coincide con el elegido se rechaza el
-    ingreso con «Tu rol es X» y se preselecciona su rol, en vez de entrar con otro rol.
+  - Los chips de rol se conservan y el elegido viaja como `rol` en `iniciarSesion` (T17): si no es el de la
+    cuenta, el BFF responde igual que con una clave errada. Nunca se dice cuál es el rol real ni se
+    preselecciona.
   - Sin avatar de perfil en el header (todavía no hay sesión) y con botón para ver la contraseña.
   - "Portal de socios" lleva al ingreso del portal de socios (W07-01, HU-W07).
   Pendiente: el `role="radiogroup"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
@@ -32,17 +33,14 @@ const CHIPS: Rol[] = ['CLIENTE', 'ASESOR', 'BACKOFFICE']
 async function ingresar() {
   if (!usuario.value.trim() || !clave.value || ingresando.value) return
   ingresando.value = true
-  error.value = await iniciarSesion(usuario.value.trim(), clave.value)
+  error.value = await iniciarSesion(usuario.value.trim(), clave.value, rol.value)
   ingresando.value = false
   if (error.value) return
   if (estado.rol !== rol.value) {
-    // La clave ya fue correcta, así que decirle su rol no revela nada a un tercero. Se preselecciona el
-    // chip correcto para que vuelva a ingresar con un clic, y la sesión no queda abierta con otro rol.
-    const rolReal = estado.rol
+    // Respaldo por si el BFF aún no filtra por rol: se cierra la sesión y se muestra el mismo mensaje que
+    // con una clave errada, sin decir cuál es el rol real.
     cerrarSesion()
-    const chip = CHIPS.find((c) => c === rolReal)
-    error.value = chip ? t('ingreso.otroRol', { rol: etiquetaRol(chip) }) : t('ingreso.sinRol')
-    if (chip) rol.value = chip
+    error.value = t('ingreso.incorrecto')
     clave.value = ''
     return
   }

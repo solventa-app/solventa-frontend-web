@@ -582,7 +582,7 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     expect(useSesion().estado.nombre).toBe('Asesor Demo')
   })
 
-  it('G-01 rechaza el ingreso si el rol del token no coincide con el chip elegido', async () => {
+  it('G-01 con el chip equivocado muestra el mismo error que una clave errada y no abre sesión', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')
     await router.isReady()
@@ -604,16 +604,16 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/login')
-    expect(wrapper.get('[role="alert"]').text()).toBe('Tu rol es Cliente. Selecciónalo e ingresa de nuevo.')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Usuario o clave incorrectos.')
     expect(useSesion().sesionActiva()).toBe(false)
-    // Queda preseleccionado su rol y la clave se borra.
+    expect(sessionStorage.getItem('solventa.token')).toBeNull()
+    // No se revela el rol real: el chip elegido sigue siendo el mismo.
     expect(
       wrapper
         .findAll('[role="radio"]')
-        .find((b) => b.text() === 'Cliente')!
+        .find((b) => b.text() === 'Operador')!
         .attributes('aria-checked'),
     ).toBe('true')
-    expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('')
   })
 
   it('G-01 el botón del ojo muestra y oculta la contraseña', async () => {
