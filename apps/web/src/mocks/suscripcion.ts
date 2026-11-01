@@ -372,6 +372,17 @@ export const handlersSuscripcion = [
     HttpResponse.json({ data: { propuesta: propuestas.get(variables.id)?.propuesta ?? null } }),
   ),
 
+  // Las propuestas del rol, de la más reciente a la más antigua (contrato v0.18, W03-35).
+  bff.query<{ propuestas: { propuestas: Propuesta[]; total: number; pagina: number; tamano: number } }>(
+    'propuestas',
+    () => {
+      const lista = [...propuestas.values()].map((r) => r.propuesta).reverse()
+      return HttpResponse.json({
+        data: { propuestas: { propuestas: lista, total: lista.length, pagina: 1, tamano: 50 } },
+      })
+    },
+  ),
+
   bff.mutation<{ enviarCodigoVerificacion: ResultadoEnvioCodigo }, MutationEnviarCodigoVerificacionArgs>(
     'enviarCodigoVerificacion',
     ({ variables }) => {

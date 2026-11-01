@@ -34,6 +34,11 @@ const CONSULTA_OFERTA = `query oferta($id: ID!) {
   }
 }`
 const CONSULTA_PROPUESTA = `query propuesta($id: ID!) { propuesta(id: $id) { ${CAMPOS_PROPUESTA} } }`
+// Las propuestas del rol (más reciente primero): sirve para retomar el proceso de una oferta al recargar la página.
+const CONSULTA_PROPUESTAS = `query propuestas($pagina: Int, $tamano: Int) {
+  propuestas(pagina: $pagina, tamano: $tamano) { propuestas { ${CAMPOS_PROPUESTA} } total }
+}`
+const TAMANO_BUSQUEDA = 50
 // `contacto` es el argumento nuevo de la v0.17 (borrador): el BFF lo exige a un ASESOR.
 const MUTACION_ACEPTAR = `mutation aceptarOferta($ofertaId: ID!, $contacto: ContactoTitularInput) {
   aceptarOferta(ofertaId: $ofertaId, contacto: $contacto) {
@@ -218,6 +223,26 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
   /** Un enlace nuevo anula el anterior (W03-22). */
   const reenviarEnlace = () => aplicarEmision(MUTACION_REENVIAR, 'reenviarEnlaceFirma')
 
+  /**
+   * Si se recargó la página, recupera la propuesta de esta oferta (la más reciente) para retomar donde iba. Es una
+   * ayuda en segundo plano: no enciende «cargando» (no bloquea «Aceptar») y si falla no muestra nada, la persona
+   * sigue como si no hubiera propuesta y aceptar devuelve la misma.
+   */
+  async function recuperarPropuesta(ofertaId: string): Promise<void> {
+    if (estado.propuesta?.ofertaId === ofertaId) return
+    try {
+      const datos = await ejecutar<{ propuestas: { propuestas: Propuesta[] } }>(
+        CONSULTA_PROPUESTAS,
+        { pagina: 1, tamano: TAMANO_BUSQUEDA },
+        fetchFn,
+      )
+      const encontrada = datos.propuestas.propuestas.find((p) => p.ofertaId === ofertaId)
+      if (encontrada && !estado.propuesta) estado.propuesta = encontrada
+    } catch {
+      // Sin la propuesta recuperada, la pantalla funciona como antes.
+    }
+  }
+
   /** El asesor actualiza el estado mientras el cliente firma y paga (sin recarga automática: no hay webhooks). */
   async function consultarPropuesta(): Promise<void> {
     if (!estado.propuesta) return
@@ -237,6 +262,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     emitir,
     reenviarEnlace,
     consultarPropuesta,
+    recuperarPropuesta,
     reiniciar,
   }
 }

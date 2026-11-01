@@ -110,6 +110,26 @@ describe('W03-01 · Revisar oferta aceptada', () => {
     expect(w.find('[data-prueba="aceptar"]').exists()).toBe(false)
   })
 
+  it('al recargar con la identidad ya verificada ofrece «Continuar con la emisión» y no pide otro código', async () => {
+    await prepararAsesor()
+    const suscripcion = useSuscripcion(fetchPrueba)
+    await suscripcion.aceptar('oferta-completa')
+    await suscripcion.enviarCodigo()
+    await suscripcion.verificarCodigo(CODIGO_DEMO)
+    suscripcion.reiniciar() // la recarga borra la memoria
+    useCotizacion(fetchPrueba).reiniciar()
+
+    const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
+    const continuar = await boton(w, 'continuar-emision')
+    expect(continuar.text()).toContain('Continuar con la emisión')
+
+    await continuar.trigger('click')
+    await flushPromises()
+    expect(w.find('[data-prueba="emitir"]').exists()).toBe(true)
+    expect(w.find('[data-prueba="enviar-codigo"]').exists()).toBe(false)
+    suscripcion.reiniciar() // la memoria es compartida: no se la dejamos a la siguiente prueba
+  })
+
   it('modal: «Emitir» solo con el código válido, y al emitir muestra el correo enmascarado, nunca la URL', async () => {
     await prepararAsesor()
     const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
