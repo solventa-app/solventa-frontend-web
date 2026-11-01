@@ -64,4 +64,18 @@ describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
     })
     cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/error')
   })
+
+  it('T24: el cliente ve su nombre, correo y cédula bloqueados', () => {
+    cy.intercept('POST', '**/graphql/**', (req) => {
+      if (String(req.body?.query).includes('yoDocumento')) {
+        req.reply({
+          data: { yo: { documentoEnmascarado: '10••••3040', nombre: 'Ana Pérez', correo: 'ana@correo.com' } },
+        })
+      }
+    })
+    visitarComo('CLIENTE', '/cotizacion')
+    cy.get('[data-prueba="nombre-de-cuenta"]').should('contain.text', 'Ana Pérez').find('input').should('be.disabled')
+    cy.get('[data-prueba="correo-de-cuenta"]').should('contain.text', 'ana@correo.com').find('input').should('be.disabled')
+    cy.get('[data-prueba="documento-de-cuenta"]').should('contain.text', '10••••3040').find('input').should('be.disabled')
+  })
 })
