@@ -35,6 +35,14 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       include: ['tests/**/*.test.ts'],
+      // Solo se mide con `npm run test:cobertura` (lo usa el análisis de Sonar). `include` hace que los
+      // archivos que ninguna prueba carga aparezcan al 0 %, en vez de quedar fuera del porcentaje.
+      coverage: {
+        provider: 'v8',
+        reporter: ['lcov', 'text-summary'],
+        include: ['src/**/*.{ts,vue}'],
+        exclude: ['src/graphql/tipos.ts', 'src/api/tipos-socios.ts', 'src/**/*.d.ts'],
+      },
     },
   }
 })
