@@ -160,3 +160,51 @@ describe('G-06 · PolizasEmitidas', () => {
     w.unmount()
   })
 })
+
+describe('W01-04 · Fuentes consultadas sin oferta en memoria', () => {
+  const originalFetch = globalThis.fetch
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  const OFERTA = {
+    id: 'of-1',
+    tipo: 'COMPLETA',
+    cobertura: { valor: '1', moneda: 'COP' },
+    fuentes: [{ id: 'f1', nombre: 'buro-credito', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null }],
+  }
+
+  function responder(propuestas: unknown[]) {
+    globalThis.fetch = (async (_u: string, init: RequestInit) => {
+      const cuerpo = String(init.body)
+      if (cuerpo.includes('ticketAvisos')) throw new TypeError('sin sse')
+      const datos = cuerpo.includes('ultimaPropuesta') ? { propuestas: { propuestas } } : { oferta: OFERTA }
+      return new Response(JSON.stringify({ data: datos }))
+    }) as typeof fetch
+  }
+
+  async function montar() {
+    const { default: Detalle } = await import('../src/views/DetalleDeFuentes.vue')
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: Detalle }] })
+    router.push('/')
+    await router.isReady()
+    const w = mount(Detalle, { global: { plugins: [router] } })
+    await flushPromises()
+    return w
+  }
+
+  it('carga la última oferta de la persona desde el backend', async () => {
+    responder([{ id: 'p1', ofertaId: 'of-1' }])
+    const w = await montar()
+    expect(w.text()).toContain('Open Finance')
+    w.unmount()
+  })
+
+  it('sin consultas muestra el estado vacío con «Nueva cotización»', async () => {
+    responder([])
+    const w = await montar()
+    expect(w.find('[data-prueba="fuentes-nueva"]').exists()).toBe(true)
+    expect(w.text()).toContain('Nueva cotización')
+    w.unmount()
+  })
+})
