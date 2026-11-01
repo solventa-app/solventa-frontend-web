@@ -59,8 +59,7 @@ export const en: Record<Clave, string> = {
   'ingreso.nota':
     'Each of the 3 roles has its own home — Customer and Sales advisor reach the same quote form, with a different header depending on who signs in.',
   'ingreso.socio': 'Are you a distribution partner? Go to the API partner portal',
-  'ingreso.otroRol': 'Your role is {rol}. Select it and sign in again.',
-  'ingreso.sinRol': 'Your user does not have a role enabled on this site.',
+  'ingreso.incorrecto': 'Incorrect username or password.',
   'ingreso.falla': "We couldn't sign you in right now. Please try again.",
   'ingreso.sesionVencida': 'Your session has expired. Please sign in again to continue.',
 

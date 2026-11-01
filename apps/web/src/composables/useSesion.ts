@@ -347,11 +347,11 @@ export function useSesion(fetchFn: typeof fetch = fetch) {
   if (fetchFn !== globalThis.fetch) fetchRenovacion = fetchFn
 
   /** Devuelve `null` si la sesión quedó abierta, o el mensaje que se le muestra al usuario. */
-  async function iniciarSesion(usuario: string, clave: string): Promise<string | null> {
+  async function iniciarSesion(usuario: string, clave: string, rol?: Rol): Promise<string | null> {
     try {
       const datos = await ejecutar<{ iniciarSesion: ResultadoSesion }>(
         MUTACION_INICIAR_SESION,
-        { entrada: { usuario, clave } },
+        { entrada: { usuario, clave, ...(rol ? { rol } : {}) } },
         fetchFn,
       )
       const resultado = datos.iniciarSesion

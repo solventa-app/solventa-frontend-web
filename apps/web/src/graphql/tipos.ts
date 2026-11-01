@@ -133,6 +133,7 @@ export type CrearUsuarioInput = {
 
 export type CredencialesInput = {
   clave: Scalars['String']['input'];
+  rol?: InputMaybe<RolUsuario>;
   usuario: Scalars['String']['input'];
 };
 
