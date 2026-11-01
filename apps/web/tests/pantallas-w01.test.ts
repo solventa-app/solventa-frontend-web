@@ -71,18 +71,9 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     expect(wrapper.find('button[disabled]').exists()).toBe(false)
   })
 
-  it('los enlaces de demo marcan el consentimiento y completan el documento', async () => {
-    const cotizacion = useCotizacion(fetchPrueba)
-    cotizacion.reiniciar()
+  it('la pantalla no ofrece disparadores de demo ni textos de simulación (T23)', () => {
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
-
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text().includes('fallo total'))!
-      .trigger('click')
-
-    expect(cotizacion.captura.documentoIdentidad.endsWith('000')).toBe(true)
-    expect(cotizacion.captura.consentimiento).toBe(true)
+    expect(wrapper.text().toLowerCase()).not.toContain('simular')
   })
 
   // Antes de esta prueba no había ninguna validación funcional más allá del consentimiento: el

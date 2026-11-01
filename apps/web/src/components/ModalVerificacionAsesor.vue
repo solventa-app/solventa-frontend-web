@@ -14,6 +14,7 @@ import { contactoCapturado, correoClienteValido } from '../composables/useCotiza
 import { esEnlaceEnviado, esErrorEmision, useSuscripcion } from '../composables/useSuscripcion'
 import type { ErrorCodigo } from '../graphql/tipos'
 import { t } from '../i18n'
+import { useEsperaReenvio } from '../composables/useEsperaReenvio'
 import { formatearHora } from '../utils/formato'
 
 const props = defineProps<{ abierto: boolean }>()
@@ -29,6 +30,8 @@ const codigo = ref('')
 const errorCodigo = ref<ErrorCodigo | null>(null)
 const errorEmision = ref<string | null>(null)
 const reenviado = ref(false)
+const codigoNuevo = ref(false)
+const espera = useEsperaReenvio()
 const intentoCorreo = ref(false)
 
 const idTitulo = useId()
@@ -93,6 +96,8 @@ async function pedirCodigo() {
   if (estado.error) return
   corrigiendo.value = false
   codigo.value = ''
+  codigoNuevo.value = paso.value === 'codigo'
+  espera.iniciar()
   paso.value = 'codigo'
   await enfocarPrimero()
 }
@@ -252,8 +257,21 @@ const claseEnlace =
         <Boton class="w-full" data-prueba="verificar" :disabled="!codigoCompleto || estado.cargando" @click="verificar">
           {{ estado.cargando ? t('modalAsesor.verificando') : t('modalAsesor.verificar') }}
         </Boton>
-        <button type="button" :class="claseEnlace" :disabled="estado.cargando" @click="pedirCodigo">
-          {{ t('modalAsesor.otroCodigo') }}
+        <p v-if="codigoNuevo" role="status" class="text-[13px] font-semibold text-exito" data-prueba="codigo-nuevo">
+          {{ t('modalAsesor.codigoNuevo') }}
+        </p>
+        <button
+          type="button"
+          :class="claseEnlace"
+          data-prueba="reenviar-codigo"
+          :disabled="estado.cargando || espera.activa.value"
+          @click="pedirCodigo"
+        >
+          {{
+            espera.activa.value
+              ? t('modalAsesor.reenviarEn', { tiempo: espera.texto.value })
+              : t('modalAsesor.otroCodigo')
+          }}
         </button>
       </template>
 
