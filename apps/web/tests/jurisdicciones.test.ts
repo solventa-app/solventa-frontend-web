@@ -32,7 +32,7 @@ describe('Catálogo de Jurisdicciones', () => {
     expect(co.monto_min).toBe(500000)
     expect(co.monto_max).toBe(80000000)
     expect(co.plazo_min).toBe(6)
-    expect(co.plazo_max).toBe(60)
+    expect(co.plazo_max).toBe(200)
     expect(co.dti_maximo).toBe(0.4)
 
     // Acepta minúsculas

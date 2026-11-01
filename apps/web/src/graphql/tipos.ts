@@ -382,6 +382,15 @@ export type InicioOnboarding = {
   tokenVenceEn: Scalars['DateTime']['output'];
 };
 
+export type Jurisdiccion = {
+  codigo: Scalars['String']['output'];
+  moneda: Scalars['String']['output'];
+  nombre: Scalars['String']['output'];
+  plazoMax: Scalars['Int']['output'];
+  plazoMin: Scalars['Int']['output'];
+  tipoDocumento: Scalars['String']['output'];
+};
+
 export type MedioPago = {
   marca: Scalars['String']['output'];
   tipo: TipoMedioPago;
@@ -818,6 +827,7 @@ export type Query = {
   documentoFirma?: Maybe<DocumentoFirma>;
   estadoSistema: EstadoSistema;
   firmaPorEnlace?: Maybe<EnlaceFirma>;
+  jurisdicciones: Array<Jurisdiccion>;
   miVerificacion?: Maybe<Onboarding>;
   oferta?: Maybe<Oferta>;
   onboarding?: Maybe<Onboarding>;

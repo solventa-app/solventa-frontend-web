@@ -150,7 +150,7 @@ describe('W07-02 · Panel del socio', () => {
     expect(estado.get('[data-prueba="metricas"]').text()).toContain('Sin tráfico en la ventana')
   })
 
-  it('CA-W07-10: consumo por API con gráfico y ventas en pesos; en pruebas, «Datos simulados»', async () => {
+  it('CA-W07-10: consumo por API con gráfico y ventas en pesos; en pruebas, «Entorno de pruebas»', async () => {
     const wrapper = await montarPanel()
     expect(wrapper.find('[data-prueba="grafico-llamadas"]').exists()).toBe(true)
     expect(wrapper.get('[data-prueba="rango-consumo"]').text()).toBe('Del 30 sep 2026 al 29 oct 2026')
@@ -161,11 +161,11 @@ describe('W07-02 · Panel del socio', () => {
     expect(indicadores).toMatch(/77\s?%/) // 126 emitidas / 164 propuestas
     expect(indicadores).toMatch(/Tasa de comisión: 10\s?%/)
     expect(wrapper.text()).toContain('Octubre de 2026')
-    expect(wrapper.text()).not.toContain('Datos simulados')
+    expect(wrapper.text()).not.toContain('Entorno de pruebas')
 
     await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
-    await esperar(() => wrapper.text().includes('Datos simulados'))
-    expect(wrapper.text()).toContain('Datos simulados')
+    await esperar(() => wrapper.text().includes('Entorno de pruebas'))
+    expect(wrapper.text()).toContain('Entorno de pruebas')
   })
 
   it('una sección que falla muestra su error con reintento sin tumbar las demás, nunca un 5xx', async () => {

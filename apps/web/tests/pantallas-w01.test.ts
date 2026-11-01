@@ -71,18 +71,9 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
     expect(wrapper.find('button[disabled]').exists()).toBe(false)
   })
 
-  it('los enlaces de demo marcan el consentimiento y completan el documento', async () => {
-    const cotizacion = useCotizacion(fetchPrueba)
-    cotizacion.reiniciar()
+  it('la pantalla no ofrece disparadores de demo ni textos de simulación (T23)', () => {
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
-
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text().includes('fallo total'))!
-      .trigger('click')
-
-    expect(cotizacion.captura.documentoIdentidad.endsWith('000')).toBe(true)
-    expect(cotizacion.captura.consentimiento).toBe(true)
+    expect(wrapper.text().toLowerCase()).not.toContain('simular')
   })
 
   // Antes de esta prueba no había ninguna validación funcional más allá del consentimiento: el
@@ -126,7 +117,7 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
   // Antes esta aserción vivía (con un nombre que prometía cubrirla) dentro de la prueba de
   // valorCredito, pero el body nunca tocaba el campo de plazo: quedaba sin probar de verdad.
-  it('valida que el plazo sea un entero entre 1 y 60', async () => {
+  it('valida que el plazo sea un entero entre 6 y 200', async () => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
@@ -139,13 +130,17 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Ingresa un plazo válido, entre 1 y 60 meses.')
+    expect(wrapper.text()).toContain('Ingresa un plazo válido, entre 6 y 200 meses.')
   })
 
-  // El máximo es 60 meses, igual que el BFF y la política de RATING.
+  // T18: de 6 a 200 meses, los límites del contrato (jurisdicciones), igual que el BFF.
   it.each([
-    ['60', false],
-    ['61', true],
+    ['5', true],
+    ['6', false],
+    ['7', false],
+    ['199', false],
+    ['200', false],
+    ['201', true],
   ])('con plazo de %s meses muestra el error: %s', async (plazo, conError) => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()
@@ -159,7 +154,7 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text().includes('Ingresa un plazo válido, entre 1 y 60 meses.')).toBe(conError)
+    expect(wrapper.text().includes('Ingresa un plazo válido, entre 6 y 200 meses.')).toBe(conError)
   })
 
   it('valida que la dirección del inmueble no esté vacía', async () => {
@@ -233,7 +228,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
     await new Promise((r) => setTimeout(r, 0))
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe('/cotizacion/oferta')
+    // Espera, no un tiempo fijo: las pruebas anteriores dejan consultas en vuelo (jurisdicciones, T18).
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
   })
 
   // CA-W01-02 exige mostrar progreso mientras se consulta, no solo navegar al terminar: las dos
@@ -283,7 +279,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
 
     expect(wrapper.find('svg.animate-spin').exists()).toBe(true)
     expect(wrapper.text()).toContain('Verificando tus fuentes de Open Finance / Open Data')
-    expect(wrapper.find('.animate-pulse').exists()).toBe(true)
+    expect(wrapper.find('.barra-indeterminada').exists()).toBe(true)
+    expect(wrapper.find('.animate-pulse').exists()).toBe(false)
     expect(router.currentRoute.value.path).toBe('/cotizacion/consulta')
 
     // Con MSW 3 el handler corre un poco después de montar: hay que esperarlo antes de liberar la respuesta.
@@ -291,7 +288,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
     liberar()
     await flushPromises()
     await esperarRuta(router, '/cotizacion/oferta')
-    expect(router.currentRoute.value.path).toBe('/cotizacion/oferta')
+    // Espera, no un tiempo fijo: las pruebas anteriores dejan consultas en vuelo (jurisdicciones, T18).
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
   })
 
   it('vuelve a /cotizacion con el checkbox desmarcado y aviso de re-autorización si el consentimiento no está vigente', async () => {
