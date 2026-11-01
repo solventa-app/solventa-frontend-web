@@ -12,7 +12,7 @@ Web de Solventa (Vue 3, Vite, TypeScript), en `apps/web`. El móvil vive en `sol
 ## Estado
 
 - Construidas: W01, W03 (enlace de firma y pago), W04 (mesa de siniestros, contra el BFF real), W05-01 y portal de socios W07.
-- Contrato usado: **v0.22**.
+- Contrato usado: **v0.23**.
 - W07 sigue con integración pendiente contra el backend.
 
 ## Ajustes en curso (acordados el 2026-10-31)
@@ -46,6 +46,8 @@ Plan aprobado con Felipe: validar W01 y W05 contra sus objetivos y lo ya constru
 - Renovar la URL firmada vencida de las evidencias de siniestros (ajuste 10).
 
 ## Próximos pasos
+
+**Revisión QA del equipo (2026-11-01):** plan en `../solventa-backend/docs/plan-revision-qa-2026-10-31.md`. Operador y Socio están hechos: moneda global (`useMoneda.ts`, `montoVisible`), `Paginador.vue`, `PortalSocio.vue` y contrato v0.23. Falta el desarrollador A: Asesor y Cliente. Regla de moneda en `docs/convenciones.md`.
 
 Punto de retoma (2026-10-31): los ajustes de W01 y W05 están integrados y verificados con el stack local. W05-01 trae todas
 las páginas de cobros. Nada de esto se ha probado en staging.

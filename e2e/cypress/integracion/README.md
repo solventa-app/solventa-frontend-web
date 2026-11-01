@@ -8,3 +8,6 @@ Estos specs usan el backend de verdad: el CI no los corre.
 4. Debe existir una póliza cuyo cobro recurrente ya se haya cobrado.
 5. En `e2e`: `npx cypress run --config-file cypress.integracion.config.ts`. Desde la terminal de VS Code, antes
    `unset ELECTRON_RUN_AS_NODE`.
+
+`operador-socio.cy.ts` necesita además el usuario `operador.demo` con clave `Operador-local-0001` (BACKOFFICE), los socios
+demo y la semilla de siniestros.
