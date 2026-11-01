@@ -190,6 +190,8 @@ export const en: Record<Clave, string> = {
   'fuentes.noDisponible': 'Not available',
   'fuentes.consentimiento': 'Consent valid since {fecha} · Law 1581 Habeas Data',
   'fuentes.volver': 'Back to the offer',
+  'fuentes.cargando': 'Loading your latest query…',
+  'fuentes.nuevaCotizacion': 'New quote',
   'fuentes.vacio': 'No sources to show: no offer has been requested yet.',
 
   // W01-05 · Contact an advisor

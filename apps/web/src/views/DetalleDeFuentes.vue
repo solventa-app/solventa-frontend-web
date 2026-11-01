@@ -8,10 +8,12 @@
   propio de cada fila.
 -->
 <script setup lang="ts">
-import { computed } from 'vue'
-import { FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { useAvisos } from '../composables/useAvisos'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
+import { useUltimaConsulta } from '../composables/useUltimaConsulta'
 import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
 import { formatearFecha } from '../utils/formato'
@@ -19,7 +21,17 @@ import { nombreFuente } from '../utils/nombres'
 
 const { estado } = useCotizacion()
 const { rutaInicio } = useSesion()
-const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : null))
+// Con la oferta en memoria se usa esa; si no (recarga, sesión nueva), la última de la persona desde el backend.
+const ultima = useUltimaConsulta()
+const avisos = useAvisos(null, fetch, undefined, () => void ultima.cargar({ silencioso: true }))
+const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : ultima.estado.oferta))
+
+onMounted(() => {
+  if (esOferta(estado.resultado)) return
+  void ultima.cargar()
+  void avisos.abrir()
+})
+onUnmounted(() => avisos.cerrar())
 const openFinance = computed(() => oferta.value?.fuentes.filter((f) => f.origen === 'OPEN_FINANCE') ?? [])
 const openData = computed(() => oferta.value?.fuentes.filter((f) => f.origen === 'OPEN_DATA') ?? [])
 
@@ -137,13 +149,19 @@ function rutaVolver() {
       </div>
     </main>
     <main
+      v-else-if="ultima.estado.cargando"
+      class="flex min-h-0 flex-1 flex-col items-center justify-center bg-fondo px-10 py-12"
+    >
+      <p class="text-[13px] text-tinta-suave">{{ t('fuentes.cargando') }}</p>
+    </main>
+    <main
       v-else
       class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto bg-fondo px-10 py-12 text-center"
     >
       <p class="text-[13px] text-tinta-suave">{{ t('fuentes.vacio') }}</p>
-      <RouterLink to="/cotizacion" class="text-[13px] font-semibold text-enlace hover:underline">{{
-        t('comun.irSolicitud')
-      }}</RouterLink>
+      <RouterLink to="/cotizacion" data-prueba="fuentes-nueva">
+        <Boton>{{ t('fuentes.nuevaCotizacion') }}</Boton>
+      </RouterLink>
     </main>
     <FooterPantalla />
   </div>

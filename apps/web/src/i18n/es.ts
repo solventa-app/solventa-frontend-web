@@ -189,6 +189,8 @@ export const es = {
   'fuentes.noDisponible': 'No disponible',
   'fuentes.consentimiento': 'Consentimiento vigente desde {fecha} · Ley 1581 Habeas Data',
   'fuentes.volver': 'Volver a la oferta',
+  'fuentes.cargando': 'Cargando tu última consulta…',
+  'fuentes.nuevaCotizacion': 'Nueva cotización',
   'fuentes.vacio': 'No hay fuentes para mostrar: aún no se ha consultado ninguna oferta.',
 
   // W01-05 · Contactar a un asesor
