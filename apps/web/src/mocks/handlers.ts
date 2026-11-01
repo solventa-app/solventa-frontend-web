@@ -289,6 +289,9 @@ export const handlers = [
       }),
   ),
 
+  // Sin stream en los mocks: W05-01 sigue con lo que cargó.
+  bff.mutation('ticketAvisos', () => HttpResponse.json({ errors: [{ message: 'Sin avisos en los mocks.' }] })),
+
   bff.query<{ cobros: Cobro[] }, QueryCobrosArgs>('cobros', ({ variables }) => {
     let filtrados = variables.estado ? cobros.filter((c) => c.estado === variables.estado) : cobros
     if (variables.pagina && variables.tamano && variables.pagina > 0 && variables.tamano > 0) {

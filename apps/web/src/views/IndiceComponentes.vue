@@ -19,6 +19,7 @@ import {
   FooterPantalla,
   HeaderPantalla,
   MigasDePan,
+  Pestanas,
   SelectorIdioma,
   SelectorMoneda,
   TituloPantalla,
@@ -28,6 +29,7 @@ import { idioma, t } from '../i18n'
 const documento = ref('')
 const moneda = ref('COP')
 const filtroActivo = ref('Todos')
+const pestanaActiva = ref('guia')
 const perito = ref('')
 const instrucciones = ref('')
 const peritos = [
@@ -61,6 +63,19 @@ const peritos = [
       >
         <template #derecha><EstadoOperador /></template>
       </MigasDePan>
+    </section>
+
+    <section style="margin-top: 1.5rem">
+      <h2>Pestañas (W07-03)</h2>
+      <Pestanas
+        v-model="pestanaActiva"
+        etiqueta="Pestañas de ejemplo"
+        :pestanas="[
+          { id: 'guia', texto: 'Guía de integración', icono: 'menu_book' },
+          { id: 'pruebas', texto: 'Pruebas (sandbox)', icono: 'science' },
+          { id: 'produccion', texto: 'Producción', icono: 'rocket_launch' },
+        ]"
+      />
     </section>
 
     <section style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center">

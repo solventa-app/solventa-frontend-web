@@ -102,3 +102,38 @@ consume del BFF real (`/v1/graphql/web` con token de BACKOFFICE, servicio CLAIMS
 - CA-W04-27: tras rechazar se confirma con el motivo, el comentario, la fecha y la vía de recurso; el caso queda rechazado.
 - CA-W04-28: tras aprobar se confirma con la indemnización en es-CO, el método de transferencia y el plazo; el caso queda aprobado.
 - CA-W04-29: las confirmaciones solo existen tras la acción en la misma sesión; por URL directa muestran un estado vacío con "Volver a la bandeja".
+
+## HU-W07 — portal de socios (KAN-30): 3 pantallas más el estado del sistema
+
+Plan, decisiones y estado: [`plan-hu-w07-front.md`](plan-hu-w07-front.md). Figma `Solventa-web-Final`: W07-01 `2001:3340`,
+W07-02 `2001:3562`, W07-03 `2001:3434`; W07-04 no tiene frame (aprobado sin Figma). Contrato: la API REST de
+socios de la v0.22 (`contrato/socios-v1.json`) y `estadoSistema` de GraphQL. Guía de integración para el socio:
+[`guia-integracion-socios.md`](guia-integracion-socios.md). Los criterios CA-W07 se proponen con
+cada pantalla.
+
+| Pantalla | Ruta | Qué se construye | Acceso |
+|---|---|---|---|
+| W07-01 | `/socios/ingreso` | Login técnico con ID de socio y clave de producción (plantilla de G-01); CA-W07-01 a 04 | Público |
+| W07-02 | `/socios/panel` | Credenciales, consumo y estado por entorno; consumo por API y ventas y comisiones; CA-W07-05 a 10 | Sesión del socio |
+| W07-03 | `/socios/documentacion` | Guía en PDF y Swagger de pruebas y de producción, en pestañas; CA-W07-11 a 13 | Sesión del socio |
+| W07-04 | `/operador/estado` | Estado del sistema por micro y por API externa; CA-W07-14 y 15 | `BACKOFFICE` |
+
+**Criterios propuestos de HU-W07** (se validan contra Jira, KAN-30):
+
+| Criterio | Pantalla | Qué se cumple |
+|---|---|---|
+| CA-W07-01 | W07-01 | «Ingresar» queda deshabilitado hasta llenar el ID de socio y la clave; con la clave de producción entra al panel |
+| CA-W07-02 | W07-01 | Con credenciales incorrectas se ve un mensaje genérico (no dice cuál falló) y se limpia la clave; el bloqueo por intentos muestra su propio mensaje |
+| CA-W07-03 | W07-01 | Con la clave de pruebas no se entra al portal y se explica que se usa la de producción (W07-3) |
+| CA-W07-04 | W07-01 | Si la sesión técnica vence, el portal vuelve al ingreso con el aviso «Tu sesión técnica venció»; el token se borra al cerrar sesión |
+| CA-W07-05 | W07-02 | Las credenciales son las del entorno elegido: el ID de socio y la clave enmascarada, con «Mostrar» y «Copiar» |
+| CA-W07-06 | W07-02 | «Regenerar» pide confirmación con el aviso de que la clave actual deja de funcionar; al confirmar, la clave nueva se muestra con «Copiar» |
+| CA-W07-07 | W07-02 | «Generar token» muestra el token de 15 minutos con su cuenta regresiva y, al vencer, pide generar otro |
+| CA-W07-08 | W07-02 | El consumo muestra las cotizaciones contra el presupuesto (usadas, % y disponibles) y «Lo recarga Solventa»; agotado, la tarjeta pasa a alerta con el 429 |
+| CA-W07-09 | W07-02 | El estado muestra «Operativo», «Degradado» o «Con fallas» con ícono y texto, la salud general, la latencia y la disponibilidad (o «Sin tráfico en la ventana»), Cotización y Emisión, sin nombres de micros internos, y cambia con la ventana |
+| CA-W07-10 | W07-02 | El consumo por API (gráfico de llamadas por día y tabla con llamadas, con éxito, con error y latencia, con su rango de fechas) y las ventas y comisiones (propuestas, pólizas emitidas, conversión de propuesta a póliza, primas y comisión con su tasa, y la tabla por mes, en pesos) siguen al entorno; en pruebas se marcan como «Datos simulados». Una sección que falla muestra su error con reintento sin ocultar las demás; un 401 de la sesión vuelve al ingreso con el aviso |
+| CA-W07-11 | W07-03 | La documentación abre en «Guía de integración» (no en la que cuesta) con el PDF en el idioma activo, «Abrir en otra pestaña» y «Descargar»; si el PDF no está o el navegador no lo muestra, se dice; la pestaña activa va en la URL |
+| CA-W07-12 | W07-03 | «Pruebas (sandbox)» muestra el Swagger del contrato con el token de pruebas, el distintivo «Entorno: Sandbox» y el modo prueba (respuestas simuladas y el código 000000) |
+| CA-W07-13 | W07-03 | «Producción» muestra el Swagger con el token de producción, el distintivo en alerta y el aviso fijo de que probar cotizaciones descuenta presupuesto real |
+| CA-W07-14 | W07-04 | El operador llega desde la tarjeta «Estado del sistema» de G-02b y ve la caja de estado con la ventana, la tabla por servicio (peso, salud, disponibilidad o «sin tráfico», latencia media, p95 y si responde `/health`) y las APIs externas con su circuito, siempre con texto y no solo color |
+| CA-W07-15 | W07-04 | La pantalla se recarga sola cada 30 s sin «Cargando…»; si una recarga falla conserva los datos, y si falla al entrar muestra el error con reintento, nunca un 5xx |

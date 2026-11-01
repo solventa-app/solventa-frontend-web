@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import vue from '@vitejs/plugin-vue'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
@@ -5,7 +6,25 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [vue()],
+    define: {
+      'import.meta.env.VITE_RELEASE': JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? 'local'),
+      'import.meta.env.VITE_AMBIENTE': JSON.stringify(process.env.VERCEL_ENV ?? 'local'),
+    },
+    build: {
+      sourcemap: 'hidden',
+    },
+    plugins: [
+      vue(),
+      process.env.SENTRY_AUTH_TOKEN
+        ? sentryVitePlugin({
+            org: process.env.SENTRY_ORG ?? 'uniandes-xm',
+            project: 'solventa-web',
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+            release: { name: process.env.VERCEL_GIT_COMMIT_SHA },
+            sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
+          })
+        : null,
+    ],
     server: {
       port: 5173,
       // El gateway Envoy local (:8080) y el BFF (:8000) exponen /graphql/web y /graphql/app: ver contrato/README.md.
@@ -24,7 +43,7 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['lcov', 'text-summary'],
         include: ['src/**/*.{ts,vue}'],
-        exclude: ['src/graphql/tipos.ts', 'src/graphql/tipos-siniestros.ts', 'src/**/*.d.ts'],
+        exclude: ['src/graphql/tipos.ts', 'src/api/tipos-socios.ts', 'src/**/*.d.ts'],
       },
     },
   }

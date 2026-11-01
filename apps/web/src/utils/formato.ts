@@ -55,6 +55,11 @@ export function formatearHora(iso: string): string {
   return completa.slice(completa.lastIndexOf(', ') + 2)
 }
 
+/** Un conteo con separador de miles del idioma activo: «1.000» / «1,000» (HU-W07). */
+export function formatearNumero(valor: number, decimales = 0): string {
+  return new Intl.NumberFormat(localeIntl(), { maximumFractionDigits: decimales }).format(valor)
+}
+
 export function formatearPorcentaje(peso: number): string {
   return new Intl.NumberFormat(localeIntl(), { style: 'percent', maximumFractionDigits: 0 }).format(peso)
 }

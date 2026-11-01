@@ -130,3 +130,28 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
   `SolicitudOfertaInput.documentoIdentidad` es opcional (un CLIENTE lo toma de su cuenta) y `EnlaceFirma.venceEn` es nulo con
   sesión de CLIENTE. Siguen pendientes de usar en pantallas: `propuestas`, `ticketAvisos`, `emitirPropuesta` para el CLIENTE,
   `Usuario.documentoEnmascarado` y `Cobro.origen/medio` reales.
+
+## v0.20 y v0.21 — sincronizado el 2026-10-29
+
+- KAN-27 (HU-W04): `contrato/schema.graphql` copiado del backend (v0.21, la v0.19 está reservada para HU-W07). Los tipos de
+  siniestros pasan al contrato principal con los mismos nombres y campos del dummy: se borraron `contrato/siniestros.graphql`
+  y `src/graphql/tipos-siniestros.ts`, y la mesa de siniestros importa de `tipos.ts`. `scripts/contrato.mjs`, `codegen.ts` y
+  el CI ya no sincronizan ni generan el contrato del dummy.
+- Lo que cambia para la web: `Poliza` suma `ramo: String!` (los mocks lo llenan). La v0.20 (onboarding del móvil) suma
+  estados de `EstadoUsuario` y `ErrorAutenticacion.codigo`; la web no cambia: G-01 ya muestra el `mensaje` del BFF
+  (`VERIFICACION_PENDIENTE` llega con un texto para el usuario) y ninguna pantalla enumera los estados de usuario.
+
+## v0.22 — sincronizado el 2026-10-29
+
+- KAN-30 (HU-W07): `contrato/schema.graphql` copiado del backend (v0.22). Suma `estadoSistema(ventana)` (solo BACKOFFICE)
+  con `EstadoSistema`, `SaludApi`, `SaludMicro`, `SaludExterna`, `ColorSalud` y `EstadoCircuito`, y `Propuesta.nombreSocio`.
+  La v0.19 ya no se usa (W07 tomó la v0.22).
+- Lo que cambia para la web: W07-04 (estado del sistema del operador) usa `estadoSistema`.
+- La v0.22 también publica la API REST de socios en `contracts/openapi/socios-v1.json` (OpenAPI 3.1). La web la copia en
+  `contrato/socios-v1.json` y se borró el borrador local `contrato/borrador-socios-v1.yaml` (PR del contrato real de
+  socios). Diferencias con el borrador que cambiaron el portal: `POST /v1/token` recibe `clientId` y devuelve
+  `accessToken` sin el socio (el nombre sale de `GET /v1/credenciales`); las credenciales traen `clientId`; los errores
+  traen `codigo` estable y no hay 423 (el bloqueo es un 401 `CREDENCIALES_INVALIDAS`); consumo y ventas son del entorno
+  del token, con `desde`/`hasta` (la serie diaria cuenta llamadas); el estado es plano (`porcentaje`, `apis[].nombre`,
+  `calculadoEn`); las ventas traen totales, `meses` y `tasaComision`. El contrato no define documentos de prueba: solo el
+  código `000000` y que el modo prueba responde datos simulados.

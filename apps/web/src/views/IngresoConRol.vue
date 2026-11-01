@@ -7,7 +7,7 @@
   - Los chips de rol se conservan, pero si el rol del token no coincide con el elegido se rechaza el
     ingreso con «Tu rol es X» y se preselecciona su rol, en vez de entrar con otro rol.
   - Sin avatar de perfil en el header (todavía no hay sesión) y con botón para ver la contraseña.
-  - "Portal de socios" apunta a HU-W07 (Sprint 2): se muestra sin navegación.
+  - "Portal de socios" lleva al ingreso del portal de socios (W07-01, HU-W07).
   Pendiente: el `role="radiogroup"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
 -->
 <script setup lang="ts">
@@ -110,9 +110,9 @@ async function ingresar() {
               {{ t('ingreso.nota') }}
             </p>
 
-            <p class="text-[13px] text-enlace" aria-disabled="true" :title="t('ingreso.socioTitulo')">
+            <RouterLink to="/socios/ingreso" class="text-[13px] text-enlace hover:underline">
               {{ t('ingreso.socio') }}
-            </p>
+            </RouterLink>
           </form>
         </div>
       </div>

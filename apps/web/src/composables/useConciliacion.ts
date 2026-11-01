@@ -5,13 +5,8 @@
 import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
+import type { AvisoCobro } from './useAvisos'
 import { t } from '../i18n'
-
-// W05-A5 (borrador de la v0.17): origen del cobro y marca y tipo del medio. El BFF desplegado (v0.16) rechazaría
-// campos que no conoce, así que solo se piden con los mocks y en las pruebas. Al publicarse la v0.17 se quita la
-// condición y estos campos pasan a la consulta siempre.
-const CAMPOS_V017 =
-  import.meta.env.MODE === 'mock' || import.meta.env.MODE === 'test' ? 'origen medio { marca tipo }' : ''
 
 const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
   cobros(estado: $estado, pagina: $pagina, tamano: $tamano) {
@@ -24,7 +19,8 @@ const COBROS = `query cobros($estado: EstadoCobro, $pagina: Int, $tamano: Int) {
     idTransaccion
     motivo
     reintentosRestantes
-    ${CAMPOS_V017}
+    origen
+    medio { marca tipo }
   }
 }`
 
@@ -39,7 +35,8 @@ const REINTENTAR_COBRO = `mutation reintentarCobro($cobroId: ID!) {
     idTransaccion
     motivo
     reintentosRestantes
-    ${CAMPOS_V017}
+    origen
+    medio { marca tipo }
   }
 }`
 
@@ -73,6 +70,12 @@ function mensajeParaUsuario(error: unknown, generico: string): string {
   return deResolutor && error.message !== 'Unexpected error.' ? error.message : generico
 }
 
+const TAMANO_LOTE_COBROS = 100
+
+// Un lote de avisos pide la lista una sola vez.
+const ESPERA_RECARGA_MS = 1_000
+let recargaPendiente: ReturnType<typeof setTimeout> | undefined
+
 // Cuenta los reintentos manuales (empezados y terminados): una recarga silenciosa que se cruza con uno
 // trae datos de antes del reintento y se descarta, para no devolver el cobro a su estado anterior.
 let generacion = 0
@@ -82,6 +85,23 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
    * `silencioso`: recarga en segundo plano (la tabla se refresca sola). No muestra "Cargando…", no borra la
    * tabla ni muestra un error si falla (se conserva lo que ya hay y se reintenta en el próximo ciclo).
    */
+  // El BFF pagina (10 por defecto) y la vista filtra y cuenta sobre la lista completa: se piden todas las páginas.
+  async function traerCobros(variables: Record<string, unknown>): Promise<Cobro[]> {
+    if (variables.pagina !== undefined) {
+      return (await ejecutar<{ cobros: Cobro[] }>(COBROS, variables, fetchFn)).cobros
+    }
+    const cobros: Cobro[] = []
+    for (let pagina = 1; ; pagina++) {
+      const r = await ejecutar<{ cobros: Cobro[] }>(
+        COBROS,
+        { ...variables, pagina, tamano: TAMANO_LOTE_COBROS },
+        fetchFn,
+      )
+      cobros.push(...r.cobros)
+      if (r.cobros.length < TAMANO_LOTE_COBROS) return cobros
+    }
+  }
+
   async function cargarCobros(
     filtro?: EstadoCobro,
     opciones: { silencioso?: boolean; pagina?: number; tamano?: number } = {},
@@ -99,9 +119,9 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
       if (opciones.pagina !== undefined) variables.pagina = opciones.pagina
       if (opciones.tamano !== undefined) variables.tamano = opciones.tamano
 
-      const r = await ejecutar<{ cobros: Cobro[] }>(COBROS, variables, fetchFn)
+      const cobros = await traerCobros(variables)
       if (silencioso && (generacion !== generacionAlEmpezar || estado.reintentando !== null)) return
-      estado.cobros = r.cobros
+      estado.cobros = cobros
     } catch {
       // Nunca se muestra el error técnico/5xx crudo al usuario (CLAUDE.md regla 5).
       if (!silencioso) estado.error = t('conciliacion.errorCarga')
@@ -126,5 +146,20 @@ export function useConciliacion(fetchFn: typeof fetch = fetch) {
     }
   }
 
-  return { estado, cargarCobros, reintentarCobro }
+  /**
+   * Un aviso de cobro (W05-A6) cambia solo su fila, y los filtros, que son en el navegador, la recalculan. El aviso no
+   * trae el motivo ni los reintentos: un estado final y un cobro nuevo (recurrente) piden la lista en silencio.
+   */
+  function aplicarAviso(aviso: AvisoCobro) {
+    const cobro = estado.cobros.find((c) => c.id === aviso.cobroId)
+    if (cobro) {
+      cobro.estado = aviso.estado
+      cobro.actualizadoEn = new Date().toISOString()
+    }
+    if (cobro && aviso.estado !== 'COBRADO' && aviso.estado !== 'RECHAZADO') return
+    clearTimeout(recargaPendiente)
+    recargaPendiente = setTimeout(() => void cargarCobros(undefined, { silencioso: true }), ESPERA_RECARGA_MS)
+  }
+
+  return { estado, cargarCobros, reintentarCobro, aplicarAviso }
 }

@@ -156,7 +156,8 @@ function cambiarEstado(registro: PropuestaMock, estado: Propuesta['estado'], ext
 
 function enviarEnlace(registro: PropuestaMock): EnlaceEnviado {
   if (registro.token) tokens.delete(registro.token) // un enlace nuevo anula el anterior (W03-22)
-  const token = `enl${Math.random().toString(36).slice(2, 12)}`
+  const bytes = crypto.getRandomValues(new Uint8Array(8))
+  const token = `enl${Array.from(bytes, (b) => (b % 36).toString(36)).join('')}`
   registro.token = token
   registro.enlaceVence = Date.now() + MIN_ENLACE * 60_000
   tokens.set(token, registro.propuesta.id)
@@ -193,6 +194,7 @@ function emitirPoliza(registro: PropuestaMock): Poliza {
     prima: registro.propuesta.prima,
     cobertura: registro.propuesta.cobertura,
     documentoUrl: `/mock/polizas/${id}/documento.pdf`,
+    ramo: 'Vida grupo deudor con amparo de daños al bien financiado',
   }
   // El enlace sigue sirviendo con la póliza emitida: cubre también la descarga del PDF (W03-22).
   cambiarEstado(registro, 'EMITIDA', { polizaId: id })

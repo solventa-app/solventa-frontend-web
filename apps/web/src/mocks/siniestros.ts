@@ -13,7 +13,7 @@ import type {
   QuerySiniestroArgs,
   QuerySiniestrosArgs,
   Siniestro,
-} from '../graphql/tipos-siniestros'
+} from '../graphql/tipos'
 
 const MAX_TEXTO = 500
 export const MENSAJES_SINIESTROS = {
@@ -63,6 +63,7 @@ function siniestroBase(n: number, estado: Siniestro['estado']): Siniestro {
       vigenciaHasta: '2027-02-10T05:00:00Z',
       prima: { valor: '1560000', moneda: 'COP' },
       cobertura: { valor: '52000000', moneda: 'COP' },
+      documentoUrl: `/mock/polizas/pol-0${n}/documento.pdf`,
       ramo: 'Vida grupo deudor con amparo de daños al bien financiado',
     },
     coberturaAplicada: 'Vida grupo deudor · Amparo de daños materiales al bien financiado',

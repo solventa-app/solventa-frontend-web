@@ -215,7 +215,7 @@ export const RUTA_DEL_PASO: Record<PasoEnlace, string> = {
  * mocks, que viven en memoria.
  */
 export function irAPasarela(router: Router, url: string): void {
-  if (url.startsWith('/')) router.push(url)
+  if (url.startsWith('/')) void router.push(url)
   else window.location.assign(url)
 }
 

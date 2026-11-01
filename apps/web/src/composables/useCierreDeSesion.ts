@@ -20,7 +20,7 @@ export function useCierreDeSesion() {
   function confirmarCierre() {
     modalAbierto.value = false
     cerrarSesion()
-    router.push('/login')
+    void router.push('/login')
   }
 
   return { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre }

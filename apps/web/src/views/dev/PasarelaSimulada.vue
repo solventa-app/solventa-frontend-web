@@ -166,6 +166,13 @@ function regresar() {
             <caption class="text-left font-semibold">
               Tarjetas de prueba (cualquier nombre, vencimiento futuro y CVV)
             </caption>
+            <thead>
+              <tr>
+                <th scope="col" class="text-left">Número</th>
+                <th scope="col" class="text-left">Tipo</th>
+                <th scope="col" class="text-left">Resultado</th>
+              </tr>
+            </thead>
             <tbody>
               <tr v-for="tarjeta in TARJETAS_DE_PRUEBA" :key="tarjeta.numero">
                 <td class="font-mono">{{ tarjeta.numero.replace(/(\d{4})(?=\d)/g, '$1 ') }}</td>

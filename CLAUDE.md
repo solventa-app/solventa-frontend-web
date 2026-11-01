@@ -2,7 +2,7 @@
 
 Frontend de Solventa (aseguradora digital sobre Open Finance y Open Data), Proyecto Final 2 de MISW4501. Este repo construye la **web** (Vue 3); el móvil (Flutter) vive en otro repositorio. El backend, el contrato y la infraestructura viven en `../solventa-backend`; la evidencia de los experimentos en `../solventa-arquitectura` (congelado). Estrategia de repos: ADR-06 en `../solventa-backend/docs/adr/`.
 
-Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-frontend.md). Convenciones: [`docs/convenciones.md`](docs/convenciones.md).
+**Estado vigente y próximos pasos: [`PROJECT_STATUS.md`](PROJECT_STATUS.md); léelo primero.** Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-frontend.md). Convenciones: [`docs/convenciones.md`](docs/convenciones.md).
 
 ## Estado (2026-10-27)
 
@@ -24,28 +24,36 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
   sin exponer códigos 5xx en `useCotizacion`, `useConciliacion` ni `useSesion`. `apps/web/.env.example`, `vite.config.ts`
   y `README.md` apuntan por defecto al gateway Envoy local (`http://localhost:8080`) y `apps/web/vercel.json` reescribe
   `/graphql/:path*` al gateway de staging.
-- **HU-W05 (plan de HU-W05, KAN-28):** W05-01 se **recarga sola cada 30 s** mientras está abierta y al volver a la
+- **HU-W05 (plan de HU-W05, KAN-28):** W05-01 se actualiza por **SSE** (`useAvisos.ts`, W05-A6; ya no hay recarga cada 30 s) y consulta una vez al volver a la
   pestaña (`useConciliacion.cargarCobros(…, { silencioso: true })`: sin «Cargando…», conserva la tabla si falla y descarta
-  la respuesta que se cruce con un reintento), para ver un pendiente que Cloud Tasks ya cobró. Contra staging corre
+  la respuesta que se cruce con un reintento). Contra staging corre
   `e2e/cypress/e2e/w05-staging.cy.ts`; los specs de mocks de W05 se saltan solos ahí (`e2e/cypress/support/entorno.ts`).
   Sin captura de tarjeta ni pantallas de indemnizaciones (Sprint 3). La evidencia de FC-10 desde la web es una
   plantilla sin ejecutar (`docs/evidencias/FC-10-web-plantilla.md`).
 - **HU-W04 (mesa de siniestros, KAN-27):** construidas W04-01, W04-02 (con el modal de rechazo), W04-02b, W04-03a,
   W04-03b y W04-03c (`docs/plan-ejecucion-hu-w04-siniestros.md`). Consumen el **BFF real** por `/v1/graphql/web` con el
-  JWT de BACKOFFICE (servicio CLAIMS, contrato v0.21; proxy de Vite `/v1` y rewrite de Vercel). Los tipos siguen saliendo
-  de `contrato/siniestros.graphql` (idéntico a la v0.21) hasta sincronizar el contrato principal junto con HU-W03. En
+  JWT de BACKOFFICE (servicio CLAIMS; proxy de Vite `/v1` y rewrite de Vercel), con los tipos del contrato principal (`tipos.ts`, hoy **v0.22**). En
   `dev:mock` responden los mocks de MSW; los E2E de W04 corren contra el backend local (`e2e/cypress/support/siniestros.ts`). Criterios CA-W04-01 a 29 **propuestos** en `docs/plan-frontend.md`. Pruebas: Cypress de W04 39 (7 specs por pantalla y
   responsive más `w04-siniestros.cy.ts`), con el backend local y la semilla de siniestros.
 - **HU-W03 (suscripción, firma y pago con el asesor, KAN-26) — solo front, con mocks** (`docs/plan-front-w03-y-ajustes-w01-w05.md`):
   W03-01 (solo ASESOR) con el modal del asesor (código por correo, «Emitir», reenviar enlace), y las páginas públicas del
   enlace `/firma#t=…`: W03-02 (contrato en PDF y firma en tres modos), W03-02b, W03-03 («Pagar»), el retorno de la
-  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.18** (F-F1: el borrador
+  pasarela (`/pago/retorno`, id `W03-R`) y W03-04. W03-05 no se construye. Usa el contrato **v0.22** (F-F1, en la v0.18: el borrador
   local de la v0.17 se borró y sus tipos salen de `src/graphql/tipos.ts`). La imagen de la firma (TRAZO e IMAGEN) **no viaja
   por GraphQL** (F-F2): `solicitarSubidaFirma` → PUT directo a la URL firmada con TODOS los encabezados →
   `firmarPorEnlace` con `imagenArchivoId`; NOMBRE manda `nombreFirma`. Mocks en `src/mocks/suscripcion.ts`; correo y pasarela simulados en `/dev/correo` y `/dev/pasarela/:sesion`, solo
   en `dev:mock` (no entran al build). W01-01 pide nombre y correo del cliente solo al ASESOR (W01-A1) y W05-01 muestra el
   medio de pago y el origen (W05-A5; esos campos solo se piden con mocks hasta la v0.17). Pruebas: Vitest 349 (toda la web) y Cypress
   `w03-suscripcion.cy.ts` (6). Fallan 3 pruebas de Cypress que ya fallaban en `develop` (`w05-01.cy.ts` y `w01-oferta.cy.ts`).
+- **HU-W07 (portal de socios, KAN-30), en curso, solo front con mocks** (`docs/plan-hu-w07-front.md`, un PR por paso):
+  hechas las piezas comunes (5.1): cliente REST `src/api/socios.ts`, sesión técnica `useSesionSocio.ts` (JWT de 15 min
+  en `sessionStorage` `solventa.tokenSocio`, misma excepción de la regla 7), guardia `socio: true` y rutas W07-01 a 03; W07-01 (ingreso del socio, enlace
+  desde G-01) W07-02 (panel: credenciales, consumo, estado, consumo por API y ventas) y W07-03 (documentación: guía en
+  PDF y Swagger de pruebas y producción, `ui/Pestanas.vue`) construidas, y W07-04 (estado del sistema del operador,
+  `/operador/estado`, contrato **v0.22** `estadoSistema`). Contrato REST: la copia de la v0.22 `contrato/socios-v1.json`
+  (OpenAPI 3.1) → `src/api/tipos-socios.ts` (`openapi-typescript`, `npm run codegen`); consumo y ventas son «del entorno
+  del token» (el de pruebas se pide con la clave de pruebas). Mocks en `src/mocks/socios.ts`. Guía de integración en español:
+  `docs/guia-integracion-socios.md` (Markdown, sin PDF). Pendiente: probar contra el BFF real (sus rutas `/v1` de socios llegan con los bloques 4 y 5 del backend).
 - **Sesión real:** G-01 llama a `iniciarSesion` del BFF; el JWT vive en `sessionStorage` y se restaura al recargar (`restaurarSesion()` en `useSesion.ts`) y viaja en
   `Authorization: Bearer`. El nombre del saludo no va en el JWT (contrato v0.7): sale de `Usuario.nombre` (`iniciarSesion`) o de `yo` al recargar, con el alias de respaldo. El router exige sesión y rol por pantalla (`roles` en `src/router/pantallas.ts`). Roles del
   backend: `CLIENTE`, `ASESOR` y `BACKOFFICE` (en pantalla, "Operador").
@@ -57,6 +65,8 @@ Mapa: [`README.md`](README.md). Plan: [`docs/plan-frontend.md`](docs/plan-fronte
 - D-F1 cerrada: componentes propios en `src/components/ui/` y Twind para los estilos (`docs/plan-frontend.md`).
 - La app móvil se construye en otro repositorio.
 - GitHub: organización `solventa-app` (`origin` = https://github.com/solventa-app/solventa-frontend.git).
+
+- **Ajustes de W01 y W05 (KAN-24, KAN-28, 2026-10-31):** PR #110 y #111 sin integrar, CI en verde. W05-01 por SSE con `useAvisos.ts`. Falta Cypress contra el backend real. Retoma en `PROJECT_STATUS.md`.
 
 ## Plan y decisiones cerradas de HU-W01 (2026-10-18)
 
@@ -87,7 +97,7 @@ bloque". Lo esencial:
 4. **Una pantalla = un componente en `src/views/`**, registrado en `src/router/pantallas.ts` (campo `componente`) y con `data-pantalla="<id>"` en su raíz.
 5. **Nunca mostrar un error técnico ni un 5xx.** Hay estados de carga, vacío, error y degradado (oferta preliminar, cobro pendiente) y todos se diseñan.
 6. **Consentimiento explícito.** El checkbox de Habeas Data no viene marcado y el botón de enviar está deshabilitado hasta marcarlo (CA-W01-01). Nunca un valor por defecto.
-7. **Sin datos personales** en `localStorage`, consola, URL ni logs. El JWT es la única excepción: vive en `sessionStorage` (`solventa.token`) para que la sesión sobreviva a una recarga y se borra al cerrar la pestaña o la sesión (decisión de felipe, 2026-10-17). El token del enlace de firma (HU-W03, D-3, 2026-10-27) vive en memoria y se quita de la URL al leerlo; toca `sessionStorage` (`solventa.enlaceFirma`) **solo** como puente del viaje a la pasarela: se escribe al salir, con vencimiento (≤ 15 min y ≤ el del enlace), y se lee una vez y se borra al volver (`useEnlaceFirma.ts`). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
+7. **Sin datos personales** en `localStorage`, consola, URL ni logs (`no-console: error`; todo registro pasa por `src/log.ts` y `src/observabilidad/limpiar.ts` hacia Sentry en la organización `uniandes-xm`, ver `docs/observabilidad.md`). El JWT es la única excepción: vive en `sessionStorage` (`solventa.token`) para que la sesión sobreviva a una recarga y se borra al cerrar la pestaña o la sesión (decisión de felipe, 2026-10-17). El token del enlace de firma (HU-W03, D-3, 2026-10-27) vive en memoria y se quita de la URL al leerlo; toca `sessionStorage` (`solventa.enlaceFirma`) **solo** como puente del viaje a la pasarela: se escribe al salir, con vencimiento (≤ 15 min y ≤ el del enlace), y se lee una vez y se borra al volver (`useEnlaceFirma.ts`). Dinero: texto decimal + moneda del contrato, formateado con `Intl.NumberFormat`.
 8. **No sobre-construir.** Cada tarea se traza a una pantalla o criterio de `docs/plan-frontend.md`. Sin librerías ni capas que una pantalla del sprint no pida (Pinia, un cliente GraphQL pesado y una librería de UI se agregan cuando haya una razón).
 
 ## Agentes de este repo (`.claude/agents/`)

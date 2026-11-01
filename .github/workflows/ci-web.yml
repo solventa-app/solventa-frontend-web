@@ -39,7 +39,7 @@ jobs:
       - name: Los tipos generados están al día con el contrato
         run: |
           npm run codegen
-          git diff --exit-code -- src/graphql/tipos.ts src/graphql/tipos-siniestros.ts
+          git diff --exit-code -- src/graphql/tipos.ts src/api/tipos-socios.ts
       - name: Pruebas (Vitest)
         run: npm test
       - name: Build
@@ -68,5 +68,3 @@ jobs:
         run: node scripts/contrato.mjs verificar
         env:
           BACKEND_SCHEMA_PATH: ${{ github.workspace }}/backend/contracts/graphql/schema.graphql
-          # Contrato del dummy de siniestros (HU-W04): contrato/siniestros.graphql.
-          BACKEND_CONTRATOS_DIR: ${{ github.workspace }}/backend/contracts/graphql

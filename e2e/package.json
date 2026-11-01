@@ -1,15 +1,15 @@
 {
   "name": "solventa-e2e",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "abrir": "cypress open",
     "correr": "cypress run"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "cypress": "^16.2.0",
+    "@types/node": "^26.6.6",
+    "cypress": "^16.2.1",
     "typescript": "~5.7.2"
   }
 }
