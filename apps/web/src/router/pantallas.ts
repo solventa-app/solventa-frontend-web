@@ -140,7 +140,7 @@ export const pantallas: Pantalla[] = [
     nombre: 'Detalle de fuentes consultadas',
     historia: 'HU-W01',
     sprint: 1,
-    roles: CLIENTE_O_ASESOR,
+    roles: ['ASESOR'],
     criterios: ['CA-W01-06'],
     componente: () => import('../views/DetalleDeFuentes.vue'),
   },
