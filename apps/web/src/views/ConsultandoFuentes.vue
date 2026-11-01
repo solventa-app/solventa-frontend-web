@@ -60,8 +60,11 @@ onMounted(async () => {
       <h2 class="text-center text-[16px] font-semibold leading-[22px] text-tinta">
         {{ t('consulta.verificando') }}
       </h2>
-      <div class="h-[6px] w-[400px] max-w-full overflow-hidden rounded-full bg-info-fondo">
-        <div class="h-full w-2/3 animate-pulse rounded-full bg-enlace" />
+      <div
+        class="h-[6px] w-[400px] max-w-full overflow-hidden rounded-full bg-info-fondo"
+        data-prueba="barra-indeterminada"
+      >
+        <div class="barra-indeterminada h-full w-1/3 rounded-full bg-enlace" />
       </div>
       <p class="text-center text-[11px] leading-[14px] text-tinta-suave">
         {{ t('consulta.nota') }}
