@@ -4,8 +4,6 @@
   - "Consultar oferta" queda deshabilitado hasta marcar el consentimiento de Habeas Data (regla 6).
   - `validar()` muestra los errores con el estado "Error" del campo (nodo 2001:1057) solo después de
     un intento de envío. El formulario lleva `novalidate` para que mouse y Enter validen igual.
-  - Los dos enlaces del pie son los disparadores de demo de los mocks (documento terminado en 999 →
-    oferta preliminar, en 000 → error).
   - "Inicio" vuelve al home del rol de la sesión: Cliente y Asesor comparten esta pantalla.
   - Solo un ASESOR ve "Nombre completo del cliente" y "Correo del cliente" (W01-A1, sin Figma): viven en
     memoria y cotizar no los envía; se usan al aceptar la oferta (W03-01). Un CLIENTE no los ve porque su
@@ -18,6 +16,7 @@ import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, Tit
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { ejecutar } from '../graphql/cliente'
 import { correoClienteValido, esErrorOferta, nombreClienteValido, useCotizacion } from '../composables/useCotizacion'
+import { useLimitesPlazo } from '../composables/useLimitesPlazo'
 import { useSesion } from '../composables/useSesion'
 import { t, type Clave } from '../i18n'
 
@@ -25,6 +24,9 @@ const router = useRouter()
 const { estado, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
+// T18: los límites del plazo salen del contrato (jurisdicciones), no de la pantalla.
+const { limites, cargarLimitesPlazo } = useLimitesPlazo()
+onMounted(() => void cargarLimitesPlazo())
 
 // T6 (W03-34): el CLIENTE ya tiene su documento en la cuenta. Se muestra enmascarado y de solo lectura, y a la
 // cotización viaja `null` para que el BFF use el de la cuenta. Solo vive en esta pantalla (nunca en el navegador).
@@ -74,7 +76,7 @@ function validar(): boolean {
     nuevosErrores.valorCredito = 'solicitud.errorMonto'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 60) {
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < limites.min || plazo > limites.max) {
     nuevosErrores.plazoMeses = 'solicitud.errorPlazo'
   }
   if (!captura.direccionInmueble.trim()) {
@@ -93,20 +95,6 @@ function enviar() {
   intentoEnvio.value = true
   if (!captura.consentimiento) return
   if (!validar()) return
-  irAConsultar()
-}
-
-/** Disparadores de demo (ver nota de los mocks): completan datos válidos y fuerzan el sufijo del documento. */
-function simular(sufijo: '999' | '000') {
-  captura.documentoIdentidad = `CC10203040${sufijo === '999' ? '999' : '000'}`
-  captura.valorCredito = captura.valorCredito || '185000000'
-  captura.plazoMeses = captura.plazoMeses || '60'
-  captura.direccionInmueble = captura.direccionInmueble || 'Cra 45 # 22-18, Bogotá D.C.'
-  if (esAsesor.value) {
-    captura.nombreCliente = captura.nombreCliente || 'Carlos Restrepo Gómez'
-    captura.correoCliente = captura.correoCliente || 'cliente@correo.com'
-  }
-  captura.consentimiento = true
   irAConsultar()
 }
 </script>
@@ -170,7 +158,11 @@ function simular(sufijo: '999' | '000') {
             :label="t('solicitud.plazo')"
             type="number"
             :placeholder="t('solicitud.plazoEjemplo')"
-            :error="intentoEnvio && errores.plazoMeses ? t(errores.plazoMeses) : undefined"
+            :error="
+              intentoEnvio && errores.plazoMeses
+                ? t(errores.plazoMeses, { min: limites.min, max: limites.max })
+                : undefined
+            "
             required
           />
           <CampoFormulario
@@ -211,23 +203,6 @@ function simular(sufijo: '999' | '000') {
             <p v-if="!captura.consentimiento" class="text-[11px] italic leading-[16.5px] text-tinta-suave">
               {{ t('solicitud.deshabilitado') }}
             </p>
-          </div>
-
-          <div class="flex flex-col items-start gap-1.5 border-t border-borde pt-4">
-            <button
-              type="button"
-              class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline"
-              @click="simular('999')"
-            >
-              {{ t('solicitud.simularDegradada') }}
-            </button>
-            <button
-              type="button"
-              class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline"
-              @click="simular('000')"
-            >
-              {{ t('solicitud.simularFallo') }}
-            </button>
           </div>
         </form>
       </div>

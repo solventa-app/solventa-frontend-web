@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ejecutar, usarToken } from '../src/graphql/cliente'
+import { TIEMPO_MAXIMO_MS, ejecutar, usarToken } from '../src/graphql/cliente'
 
 function fetchFalso() {
   return vi.fn(async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200 }))
@@ -25,5 +25,20 @@ describe('ejecutar · opciones', () => {
     expect((f.mock.calls[0] as unknown as [string])[0]).toBe('/v1/graphql/web')
     expect(cabeceras(f).Authorization).toBeUndefined()
     expect(cabeceras(f)['Accept-Language']).toBeTruthy()
+  })
+})
+
+describe('ejecutar: tiempo máximo', () => {
+  it('corta una petición colgada y falla con error reintentable', async () => {
+    vi.useFakeTimers()
+    const colgado = vi.fn(
+      (_u: string, init: RequestInit) =>
+        new Promise((_ok, no) => init.signal?.addEventListener('abort', () => no(new DOMException('x', 'AbortError')))),
+    )
+    const promesa = ejecutar('{ ok }', {}, colgado as unknown as typeof fetch)
+    const afirmacion = expect(promesa).rejects.toThrow('tardó más de lo esperado')
+    await vi.advanceTimersByTimeAsync(TIEMPO_MAXIMO_MS + 1)
+    await afirmacion
+    vi.useRealTimers()
   })
 })

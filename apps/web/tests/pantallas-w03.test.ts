@@ -1,7 +1,7 @@
 // Pantallas de HU-W03 (W03-01 con el modal del asesor, W03-02 a W03-04 y el retorno de la pasarela) y la validación
 // previa de la imagen de firma (utils/firma.ts). El flujo de datos y el token se prueban en w03-suscripcion.test.ts.
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import RevisarOfertaAceptada from '../src/views/RevisarOfertaAceptada.vue'
 import FirmaElectronica from '../src/views/FirmaElectronica.vue'
@@ -190,6 +190,40 @@ describe('W03-01 · Revisar oferta aceptada', () => {
     const enviado = (await boton(w, 'enlace-enviado')).text()
     expect(enviado).toContain('c•••@correo.com')
     expect(enviado).not.toContain('/firma')
+  })
+
+  it('modal: «Reenviar código» queda con cuenta regresiva de 60 s y se habilita al terminar (T23)', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    try {
+      await prepararAsesor()
+      const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
+      await (await boton(w, 'aceptar')).trigger('click')
+      await flushPromises()
+      await (await boton(w, 'enviar-codigo')).trigger('click')
+      await flushPromises()
+
+      const reenviar = await boton(w, 'reenviar-codigo')
+      expect(reenviar.attributes('disabled')).toBeDefined()
+      expect(reenviar.text()).toContain('1:00')
+
+      vi.advanceTimersByTime(18_000)
+      await flushPromises()
+      expect((await boton(w, 'reenviar-codigo')).text()).toContain('0:42')
+
+      vi.advanceTimersByTime(42_000)
+      await flushPromises()
+      const listo = await boton(w, 'reenviar-codigo')
+      expect(listo.attributes('disabled')).toBeUndefined()
+      expect(listo.text()).toBe('Enviar otro código')
+
+      await listo.trigger('click')
+      await flushPromises()
+      expect((await boton(w, 'reenviar-codigo')).attributes('disabled')).toBeDefined()
+      expect((await boton(w, 'codigo-nuevo')).text()).toContain('código nuevo')
+    } finally {
+      vi.useRealTimers()
+      useSuscripcion().reiniciar()
+    }
   })
 })
 

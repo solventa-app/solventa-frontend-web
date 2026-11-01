@@ -36,3 +36,41 @@ body {
 .pendiente {
   color: var(--color-suave);
 }
+
+/* Indicadores de carga (T12). La barra indeterminada desplaza un tramo de lado a lado: no representa un
+   porcentaje, solo dice «sigue trabajando». */
+@keyframes barra-indeterminada {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes carga-alterna {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.barra-indeterminada {
+  animation: barra-indeterminada 1.4s ease-in-out infinite;
+}
+
+/* «Reducir movimiento»: sin desplazamiento ni giro, pero el indicador sigue cambiando (parpadeo suave)
+   para que nunca parezca colgado. */
+@media (prefers-reduced-motion: reduce) {
+  .barra-indeterminada {
+    width: 100%;
+    animation: carga-alterna 1.6s ease-in-out infinite;
+  }
+
+  .animate-spin {
+    animation: carga-alterna 1.2s ease-in-out infinite !important;
+  }
+}
