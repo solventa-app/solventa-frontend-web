@@ -12,10 +12,11 @@
     contacto ya está en AUTH.
 -->
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { ejecutar } from '../graphql/cliente'
 import { correoClienteValido, esErrorOferta, nombreClienteValido, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { t, type Clave } from '../i18n'
@@ -24,6 +25,23 @@ const router = useRouter()
 const { estado, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
+
+// T6 (W03-34): el CLIENTE ya tiene su documento en la cuenta. Se muestra enmascarado y de solo lectura, y a la
+// cotización viaja `null` para que el BFF use el de la cuenta. Solo vive en esta pantalla (nunca en el navegador).
+// Sin documento en la cuenta (o si la consulta falla) el campo sigue editable como siempre.
+const documentoDeCuenta = ref<string | null>(null)
+onMounted(async () => {
+  if (sesion.rol !== 'CLIENTE') return
+  try {
+    const datos = await ejecutar<{ yo: { documentoEnmascarado?: string | null } | null }>(
+      'query yoDocumento { yo { documentoEnmascarado } }',
+    )
+    documentoDeCuenta.value = datos.yo?.documentoEnmascarado?.trim() || null
+    if (documentoDeCuenta.value) captura.documentoIdentidad = ''
+  } catch {
+    /* se queda editable */
+  }
+})
 
 const avisoConsentimiento = computed(() =>
   esErrorOferta(estado.resultado) && estado.resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE'
@@ -43,7 +61,9 @@ function validar(): boolean {
     if (!captura.correoCliente.trim()) nuevosErrores.correoCliente = 'solicitud.errorCorreoClienteVacio'
     else if (!correoClienteValido(captura.correoCliente)) nuevosErrores.correoCliente = 'solicitud.errorCorreoCliente'
   }
-  if (!captura.documentoIdentidad.trim()) {
+  if (documentoDeCuenta.value) {
+    // El documento lo pone el BFF desde la cuenta.
+  } else if (!captura.documentoIdentidad.trim()) {
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumentoVacio'
   } else if (captura.documentoIdentidad.replace(/\D/g, '').length < 6) {
     // Solo descarta valores claramente incompletos; el contrato no exige dígito de verificación.
@@ -119,6 +139,16 @@ function simular(sufijo: '999' | '000') {
             />
           </template>
           <CampoFormulario
+            v-if="documentoDeCuenta"
+            :model-value="documentoDeCuenta"
+            :label="t('solicitud.documento')"
+            :hint="t('solicitud.documentoDeCuenta')"
+            icono="badge"
+            data-prueba="documento-de-cuenta"
+            disabled
+          />
+          <CampoFormulario
+            v-else
             v-model="captura.documentoIdentidad"
             :label="t('solicitud.documento')"
             :placeholder="t('solicitud.documentoEjemplo')"
