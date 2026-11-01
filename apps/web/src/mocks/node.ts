@@ -1,5 +1,4 @@
 import { setupServer } from 'msw/node'
-import { handlersEstadoSistema } from './estadoSistema'
 import { handlers } from './handlers'
 import { handlersSiniestros } from './siniestros'
 import { handlersSocios } from './socios'
@@ -10,7 +9,6 @@ import { handlersSuscripcion } from './suscripcion'
 export const servidor = setupServer(
   ...handlersSiniestros,
   ...handlersSocios,
-  ...handlersEstadoSistema,
   ...handlersSuscripcion,
   ...handlers,
 )

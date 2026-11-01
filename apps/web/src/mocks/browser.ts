@@ -1,5 +1,4 @@
 import { setupWorker } from 'msw/browser'
-import { handlersEstadoSistema } from './estadoSistema'
 import { handlers } from './handlers'
 import { handlersSiniestros } from './siniestros'
 import { handlersSocios } from './socios'
@@ -9,7 +8,6 @@ import { handlersSuscripcion } from './suscripcion'
 export const worker = setupWorker(
   ...handlersSiniestros,
   ...handlersSocios,
-  ...handlersEstadoSistema,
   ...handlersSuscripcion,
   ...handlers,
 )
