@@ -9,7 +9,7 @@
   - "Inicio" vuelve al home del rol de la sesión: Cliente y Asesor comparten esta pantalla.
   - Solo un ASESOR ve "Nombre completo del cliente" y "Correo del cliente" (W01-A1, sin Figma): viven en
     memoria y cotizar no los envía; se usan al aceptar la oferta (W03-01). Un CLIENTE no los ve porque su
-    contacto ya está en AUTH.
+    contacto ya está en AUTH. En cambio el CLIENTE ve su nombre y su correo bloqueados, junto con su cédula (T24).
 -->
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -30,12 +30,20 @@ const esAsesor = computed(() => sesion.rol === 'ASESOR')
 // cotización viaja `null` para que el BFF use el de la cuenta. Solo vive en esta pantalla (nunca en el navegador).
 // Sin documento en la cuenta (o si la consulta falla) el campo sigue editable como siempre.
 const documentoDeCuenta = ref<string | null>(null)
+// T24: nombre y correo de la cuenta, solo para verlos (candado). Nunca entran a `captura` ni al navegador.
+const SIN_DATO = '—'
+const nombreDeCuenta = ref<string | null>(null)
+const correoDeCuenta = ref<string | null>(null)
 onMounted(async () => {
   if (sesion.rol !== 'CLIENTE') return
   try {
-    const datos = await ejecutar<{ yo: { documentoEnmascarado?: string | null } | null }>(
-      'query yoDocumento { yo { documentoEnmascarado } }',
-    )
+    const datos = await ejecutar<{
+      yo: { documentoEnmascarado?: string | null; nombre?: string | null; correo?: string | null } | null
+    }>('query yoDocumento { yo { documentoEnmascarado nombre correo } }')
+    if (datos.yo) {
+      nombreDeCuenta.value = datos.yo.nombre?.trim() || SIN_DATO
+      correoDeCuenta.value = datos.yo.correo?.trim() || SIN_DATO
+    }
     documentoDeCuenta.value = datos.yo?.documentoEnmascarado?.trim() || null
     if (documentoDeCuenta.value) captura.documentoIdentidad = ''
   } catch {
@@ -136,6 +144,24 @@ function simular(sufijo: '999' | '000') {
               icono="mail"
               :error="intentoEnvio && errores.correoCliente ? t(errores.correoCliente) : undefined"
               required
+            />
+          </template>
+          <template v-if="nombreDeCuenta !== null && correoDeCuenta !== null">
+            <CampoFormulario
+              :model-value="nombreDeCuenta"
+              :label="t('solicitud.nombreCuenta')"
+              :hint="t('solicitud.datoDeCuenta')"
+              icono="person"
+              data-prueba="nombre-de-cuenta"
+              disabled
+            />
+            <CampoFormulario
+              :model-value="correoDeCuenta"
+              :label="t('solicitud.correoCuenta')"
+              :hint="t('solicitud.datoDeCuenta')"
+              icono="mail"
+              data-prueba="correo-de-cuenta"
+              disabled
             />
           </template>
           <CampoFormulario
