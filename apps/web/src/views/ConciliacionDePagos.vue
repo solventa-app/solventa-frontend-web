@@ -12,7 +12,7 @@
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Boton, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
 import { useConciliacion } from '../composables/useConciliacion'
