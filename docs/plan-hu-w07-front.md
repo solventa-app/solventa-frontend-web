@@ -22,7 +22,7 @@ verde.
 | 5.2 W07-01 Login | `feat/KAN-30-ingreso-socio` | Hecho: `IngresoSocio.vue`, enlace de G-01, CA-W07-01 a 04 (propuestos) |
 | 5.3 W07-02 Panel | `feat/KAN-30-panel-socio` | Hecho: `PanelSocio.vue`, CA-W07-05 a 10 (propuestos) |
 | 5.4 W07-03 Documentación | `feat/KAN-30-documentacion-api` | Hecho: `DocumentacionApi.vue`, `ui/Pestanas.vue`, Swagger embebido; CA-W07-11 a 13 (propuestos) |
-| 5.6 W07-04 Estado del sistema | `feat/KAN-30-estado-sistema` | Hecho: `EstadoSistema.vue` sobre el contrato v0.22 (sin borrador GraphQL); CA-W07-14 y 15 (propuestos) |
+| 5.6 W07-04 Estado del sistema | `feat/KAN-30-estado-sistema` | **Retirada** (D-1 de la revisión QA: el operador no debe verla). Antes: `EstadoSistema.vue` sobre el contrato v0.22 (sin borrador GraphQL); CA-W07-14 y 15 (propuestos) |
 | 5.5 Guía de integración | `chore/KAN-30-guia-pdf` | Hecha en español e inglés: `docs/guia-integracion-socios.md` y `.en.md`, y sus PDF `apps/web/public/socios/guia-integracion-es.pdf` y `-en.pdf` (`python3 scripts/guia-pdf.py`), que la pestaña «Guía de integración» de W07-03 muestra según el idioma |
 | Contrato REST real (v0.22) | `feat/KAN-30-contrato-socios-real` | Hecho: el portal usa `contrato/socios-v1.json`; se borró el borrador (ver «Contrato real» abajo) |
 | Integración con el backend | — | Pendiente: probar el portal contra el BFF real cuando lleguen sus rutas `/v1` de socios (bloques 4 y 5 del backend) |

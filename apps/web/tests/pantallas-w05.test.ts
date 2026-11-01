@@ -50,6 +50,7 @@ describe('HU-W05 · pantallas', () => {
       const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
 
       expect(wrapper.find('[data-pantalla="G-02b"]').exists()).toBe(true)
+      expect(wrapper.find('a[href="/operador/estado"]').exists()).toBe(false)
       expect(wrapper.text()).toContain('Siniestros')
       const enlace = wrapper.findAll('a').find((a) => a.text().includes('Siniestros'))
       expect(enlace?.attributes('href')).toBe('/operador/siniestros')
