@@ -28,8 +28,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       // El gateway Envoy local (:8080) y el BFF (:8000) exponen /graphql/web y /graphql/app: ver contrato/README.md.
+      // '/v1' es la versión 1 de esas rutas (/v1/graphql/web); la mesa de siniestros (HU-W04) solo existe ahí.
       proxy: {
         '/graphql': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
+        '/v1': { target: env.VITE_BFF_URL || 'http://localhost:8080', changeOrigin: true },
       },
     },
     test: {
