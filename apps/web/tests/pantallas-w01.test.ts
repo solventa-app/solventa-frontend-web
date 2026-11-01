@@ -126,7 +126,7 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
 
   // Antes esta aserción vivía (con un nombre que prometía cubrirla) dentro de la prueba de
   // valorCredito, pero el body nunca tocaba el campo de plazo: quedaba sin probar de verdad.
-  it('valida que el plazo sea un entero entre 1 y 60', async () => {
+  it('valida que el plazo sea un entero entre 6 y 200', async () => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()
     const wrapper = montar(SolicitudYConsentimiento, crearRouterDePrueba())
@@ -139,13 +139,17 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Ingresa un plazo válido, entre 1 y 60 meses.')
+    expect(wrapper.text()).toContain('Ingresa un plazo válido, entre 6 y 200 meses.')
   })
 
-  // El máximo es 60 meses, igual que el BFF y la política de RATING.
+  // T18: de 6 a 200 meses, los límites del contrato (jurisdicciones), igual que el BFF.
   it.each([
-    ['60', false],
-    ['61', true],
+    ['5', true],
+    ['6', false],
+    ['7', false],
+    ['199', false],
+    ['200', false],
+    ['201', true],
   ])('con plazo de %s meses muestra el error: %s', async (plazo, conError) => {
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.reiniciar()
@@ -159,7 +163,7 @@ describe('SolicitudYConsentimiento (W01-01)', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text().includes('Ingresa un plazo válido, entre 1 y 60 meses.')).toBe(conError)
+    expect(wrapper.text().includes('Ingresa un plazo válido, entre 6 y 200 meses.')).toBe(conError)
   })
 
   it('valida que la dirección del inmueble no esté vacía', async () => {
@@ -233,7 +237,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
     await new Promise((r) => setTimeout(r, 0))
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe('/cotizacion/oferta')
+    // Espera, no un tiempo fijo: las pruebas anteriores dejan consultas en vuelo (jurisdicciones, T18).
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
   })
 
   // CA-W01-02 exige mostrar progreso mientras se consulta, no solo navegar al terminar: las dos
@@ -291,7 +296,8 @@ describe('ConsultandoFuentes (W01-02)', () => {
     liberar()
     await flushPromises()
     await esperarRuta(router, '/cotizacion/oferta')
-    expect(router.currentRoute.value.path).toBe('/cotizacion/oferta')
+    // Espera, no un tiempo fijo: las pruebas anteriores dejan consultas en vuelo (jurisdicciones, T18).
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
   })
 
   it('vuelve a /cotizacion con el checkbox desmarcado y aviso de re-autorización si el consentimiento no está vigente', async () => {

@@ -132,7 +132,7 @@ export const en: Record<Clave, string> = {
   'solicitud.errorDocumentoVacio': 'Enter your ID number.',
   'solicitud.errorDocumento': 'Enter a valid ID number',
   'solicitud.errorMonto': 'Enter a valid amount, greater than zero.',
-  'solicitud.errorPlazo': 'Enter a valid term, between 1 and 60 months.',
+  'solicitud.errorPlazo': 'Enter a valid term, between {min} and {max} months.',
   'solicitud.errorDireccion': 'Enter the address of the property to insure.',
   'solicitud.nombreCliente': "Customer's full name",
   'solicitud.nombreClienteEjemplo': 'E.g.: Carlos Restrepo Gómez',

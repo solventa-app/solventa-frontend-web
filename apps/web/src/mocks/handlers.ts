@@ -1,6 +1,7 @@
 import { HttpResponse } from 'msw'
 import { graphql } from 'msw/graphql'
 import { leerClaims } from '../composables/useSesion'
+import { LISTA_JURISDICCIONES } from '../utils/jurisdicciones'
 import type { Cobro } from '../graphql/tipos'
 import type {
   ConfirmacionContacto,
@@ -12,6 +13,7 @@ import type {
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
+  Jurisdiccion as JurisdiccionBff,
   Monto,
   Oferta,
   QueryCobrosArgs,
@@ -243,6 +245,22 @@ export const handlers = [
     }))
     return HttpResponse.json({ data: { convertirMontos: montos } })
   }),
+
+  // T18: límites por país (mismo catálogo que el contrato).
+  bff.query<{ jurisdicciones: JurisdiccionBff[] }>('jurisdicciones', () =>
+    HttpResponse.json({
+      data: {
+        jurisdicciones: LISTA_JURISDICCIONES.map((j) => ({
+          codigo: j.codigo,
+          nombre: j.nombre,
+          moneda: j.moneda,
+          tipoDocumento: j.tipo_documento,
+          plazoMin: j.plazo_min,
+          plazoMax: j.plazo_max,
+        })),
+      },
+    }),
+  ),
 
   bff.mutation('actualizarPreferencias', () =>
     HttpResponse.json({ data: { actualizarPreferencias: { __typename: 'Usuario' } } }),
