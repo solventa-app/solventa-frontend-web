@@ -12,18 +12,38 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
+import {
+  Boton,
+  CampoDireccion,
+  CampoFormulario,
+  CampoSeleccion,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+  TituloPantalla,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { ejecutar } from '../graphql/cliente'
 import { correoClienteValido, esErrorOferta, nombreClienteValido, useCotizacion } from '../composables/useCotizacion'
 import { useLimitesPlazo } from '../composables/useLimitesPlazo'
 import { useSesion } from '../composables/useSesion'
-import { t, type Clave } from '../i18n'
+import { idioma, t, type Clave } from '../i18n'
+import { cambiarPais, pais, tipoDocumento } from '../composables/usePais'
+import { nombrePais, PAISES, tiposDocumento } from '../utils/documentos'
+import { validarDocumento } from '../utils/jurisdicciones'
 
 const router = useRouter()
 const { estado, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
+// T20: el asesor elige país y tipo de documento (el tipo no viaja al backend hasta que el contrato lo traiga).
+const opcionesPais = computed(() => PAISES.map((c) => ({ valor: c, texto: nombrePais(c, idioma.value) })))
+const opcionesTipo = computed(() =>
+  tiposDocumento(pais.value, idioma.value).map((x) => ({ valor: x.codigo, texto: x.etiqueta })),
+)
+function elegirPais(v: string) {
+  cambiarPais(v)
+}
 // T18: los límites del plazo salen del contrato (jurisdicciones), no de la pantalla.
 const { limites, cargarLimitesPlazo } = useLimitesPlazo()
 onMounted(() => void cargarLimitesPlazo())
@@ -75,6 +95,12 @@ function validar(): boolean {
     // El documento lo pone el BFF desde la cuenta.
   } else if (!captura.documentoIdentidad.trim()) {
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumentoVacio'
+  } else if (esAsesor.value && tipoDocumento.value === 'PAS') {
+    if (!/^[A-Za-z0-9]{5,20}$/.test(captura.documentoIdentidad.trim()))
+      nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
+  } else if (esAsesor.value && tipoDocumento.value !== 'CC' && tipoDocumento.value !== 'CE') {
+    if (!validarDocumento(pais.value, captura.documentoIdentidad).valido)
+      nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
   } else if (captura.documentoIdentidad.replace(/\D/g, '').length < 6) {
     // Solo descarta valores claramente incompletos; el contrato no exige dígito de verificación.
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
@@ -161,15 +187,31 @@ function enviar() {
             data-prueba="documento-de-cuenta"
             disabled
           />
-          <CampoFormulario
-            v-else
-            v-model="captura.documentoIdentidad"
-            :label="t('solicitud.documento')"
-            :placeholder="t('solicitud.documentoEjemplo')"
-            icono="badge"
-            :error="intentoEnvio && errores.documentoIdentidad ? t(errores.documentoIdentidad) : undefined"
-            required
-          />
+          <template v-else>
+            <template v-if="esAsesor">
+              <CampoSeleccion
+                :model-value="pais"
+                :label="t('solicitud.pais')"
+                :opciones="opcionesPais"
+                data-prueba="pais"
+                @update:model-value="elegirPais"
+              />
+              <CampoSeleccion
+                v-model="tipoDocumento"
+                :label="t('solicitud.tipoDocumento')"
+                :opciones="opcionesTipo"
+                data-prueba="tipo-documento"
+              />
+            </template>
+            <CampoFormulario
+              v-model="captura.documentoIdentidad"
+              :label="t('solicitud.documento')"
+              :placeholder="t('solicitud.documentoEjemplo')"
+              icono="badge"
+              :error="intentoEnvio && errores.documentoIdentidad ? t(errores.documentoIdentidad) : undefined"
+              required
+            />
+          </template>
           <CampoFormulario
             v-model="captura.valorCredito"
             :label="t('solicitud.monto')"
@@ -191,13 +233,12 @@ function enviar() {
             "
             required
           />
-          <CampoFormulario
+          <CampoDireccion
             v-model="captura.direccionInmueble"
             :label="t('solicitud.direccion')"
             :placeholder="t('solicitud.direccionEjemplo')"
-            icono="home"
+            :pais="pais"
             :error="intentoEnvio && errores.direccionInmueble ? t(errores.direccionInmueble) : undefined"
-            required
           />
 
           <div class="flex flex-col gap-2 pt-2">
