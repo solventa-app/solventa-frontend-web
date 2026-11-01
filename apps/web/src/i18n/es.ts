@@ -108,9 +108,9 @@ export const es = {
   'perfil.suspendida': 'Cuenta suspendida',
   'perfil.registro': 'Fecha de registro',
   'perfil.datos': 'Datos de la cuenta',
-  'perfil.usuario': 'Usuario',
-  'perfil.rol': 'Rol',
   'perfil.nombre': 'Nombre',
+  'perfil.documento': 'Cédula',
+  'perfil.correo': 'Correo electrónico',
   'perfil.sesionIniciada': 'Sesión iniciada',
   'perfil.nota':
     'Esta información es de solo lectura. Tus datos personales se tratan conforme a la Ley 1581 de 2012 de Habeas Data.',

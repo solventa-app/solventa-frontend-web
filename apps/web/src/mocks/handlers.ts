@@ -202,6 +202,9 @@ function usuarioDeDemo(usuario: string, rol: RolUsuario): Usuario {
     idioma: 'ES',
     moneda: 'COP',
     tieneContacto: rol === 'CLIENTE',
+    // v0.24: solo el CLIENTE tiene cédula y correo (el BFF real los entrega solo al propio usuario).
+    documentoEnmascarado: rol === 'CLIENTE' ? '10••••3040' : null,
+    correo: rol === 'CLIENTE' ? `${usuario}@correo.com` : null,
   }
 }
 

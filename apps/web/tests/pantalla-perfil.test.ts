@@ -40,21 +40,34 @@ describe('G-05 · Mi perfil', () => {
     const wrapper = mount(MiPerfil, { props: { fetchFn: fetchPrueba }, global: { plugins: [router] } })
     montados.push(wrapper)
     await flushPromises()
-    await vi.waitFor(() => expect(wrapper.find('[data-dato="usuario"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(wrapper.find('[data-dato="nombre-campo"]').exists()).toBe(true))
     return { wrapper, router }
   }
 
-  it('muestra los datos reales de `yo`: nombre, usuario, rol y fecha de registro', async () => {
+  it('muestra los datos reales de `yo`: nombre, cédula, correo, rol y fecha de registro', async () => {
     await useSesion(fetchPrueba).iniciarSesion('admin.solventa', 'secreta123')
     const { wrapper } = await montarPerfil()
 
     expect(wrapper.find('[data-pantalla="G-05"]').exists()).toBe(true)
-    expect(wrapper.get('[data-dato="usuario"]').text()).toBe('admin.solventa')
+    expect(wrapper.find('[data-dato="usuario"]').exists()).toBe(false)
+    expect(wrapper.get('[data-dato="nombre-campo"]').text()).toBe('Admin Solventa')
+    // El operador no tiene cédula ni correo: se ve «—», nunca el alias.
+    expect(wrapper.get('[data-dato="documento-campo"]').text()).toBe('—')
+    expect(wrapper.get('[data-dato="correo-campo"]').text()).toBe('—')
     expect(wrapper.get('[data-dato="rol"]').text()).toBe('Operador')
     expect(wrapper.get('[data-dato="nombre"]').text()).not.toBe('')
     expect(wrapper.get('[data-dato="registro"]').text()).toMatch(/\d{4}/)
     expect(wrapper.text()).toContain('Cuenta activa')
     expect(wrapper.findAll('h1')).toHaveLength(1)
+  })
+
+  it('el cliente ve su cédula enmascarada y su correo, bloqueados y sin campos de edición', async () => {
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'secreta123')
+    const { wrapper } = await montarPerfil()
+
+    expect(wrapper.get('[data-dato="documento-campo"]').text()).toBe('10••••3040')
+    expect(wrapper.get('[data-dato="correo-campo"]').text()).toBe('cliente.demo@correo.com')
+    expect(wrapper.findAll('main input, main textarea')).toHaveLength(0)
   })
 
   it('si el BFF falla muestra un mensaje amable, nunca un error técnico', async () => {

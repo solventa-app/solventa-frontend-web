@@ -109,9 +109,9 @@ export const en: Record<Clave, string> = {
   'perfil.suspendida': 'Suspended account',
   'perfil.registro': 'Registration date',
   'perfil.datos': 'Account details',
-  'perfil.usuario': 'Username',
-  'perfil.rol': 'Role',
   'perfil.nombre': 'Name',
+  'perfil.documento': 'ID number',
+  'perfil.correo': 'Email',
   'perfil.sesionIniciada': 'Signed in',
   'perfil.nota':
     'This information is read only. Your personal data is processed in accordance with Colombian Law 1581 of 2012 (Habeas Data).',
