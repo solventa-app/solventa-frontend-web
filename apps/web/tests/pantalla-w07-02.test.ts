@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { HttpResponse, http } from 'msw'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cambiarMoneda } from '../src/composables/useMoneda'
 import { reiniciarPanelSocio } from '../src/composables/usePanelSocio'
 import { useSesionSocio } from '../src/composables/useSesionSocio'
 import { servidor } from '../src/mocks/node'
@@ -185,5 +186,14 @@ describe('W07-02 · Panel del socio', () => {
     await esperar(() => router.currentRoute.value.path === '/socios/ingreso')
     expect(useSesionSocio().sesionActiva()).toBe(false)
     expect(useSesionSocio().estado.aviso).toBeNull()
+  })
+
+  it('las ventas se convierten con la API de socios y el marco no se sale de main (SO-01, SO-02)', async () => {
+    const wrapper = await montarPanel()
+    await esperar(() => wrapper.text().includes('Ventas') && wrapper.find('tbody').exists())
+    expect(wrapper.get('main').classes()).toContain('relative')
+    await cambiarMoneda('USD')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('US$'))
+    await cambiarMoneda('COP')
   })
 })

@@ -8,7 +8,7 @@
   Cada sección carga por separado y tiene sus estados de carga, error con reintento y vacío (regla 5).
 -->
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import GraficoLlamadas from '../components/socios/GraficoLlamadas.vue'
 import TarjetaConsumo from '../components/socios/TarjetaConsumo.vue'
@@ -16,11 +16,12 @@ import TarjetaCredenciales from '../components/socios/TarjetaCredenciales.vue'
 import TarjetaEstado from '../components/socios/TarjetaEstado.vue'
 import { BarraDeCerrarSesion, Boton, FooterPantalla, HeaderPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
-import type { Entorno } from '../api/socios'
+import { convertirMontos, type Entorno } from '../api/socios'
+import { montoVisible, usarConversor } from '../composables/useMoneda'
 import { usePanelSocio } from '../composables/usePanelSocio'
 import { useSesionSocio } from '../composables/useSesionSocio'
 import { localeIntl, t } from '../i18n'
-import { formatearFechaCorta, formatearMonto, formatearNumero, formatearPorcentaje } from '../utils/formato'
+import { formatearFechaCorta, formatearNumero, formatearPorcentaje } from '../utils/formato'
 
 const router = useRouter()
 const sesion = useSesionSocio()
@@ -67,10 +68,16 @@ watch(
   },
 )
 
+// El socio no tiene sesión de GraphQL: convierte con su API.
 onMounted(() => {
   estado.sesionVencida = false
+  usarConversor(async (montos, moneda) => {
+    const resultado = await convertirMontos(sesion.estado.token ?? '', montos, moneda)
+    return resultado.montos
+  })
   cargarTodo()
 })
+onBeforeUnmount(() => usarConversor(null))
 </script>
 
 <template>
@@ -78,7 +85,7 @@ onMounted(() => {
     <HeaderPantalla :titulo="t('socios.panel.titulo')" sin-perfil />
     <BarraDeCerrarSesion :nombre="nombre" :rol="t('socios.panel.rol')" @cerrar-sesion="cerrarSesion" />
 
-    <main class="min-h-0 flex-1 overflow-y-auto bg-fondo">
+    <main class="relative min-h-0 flex-1 overflow-y-auto bg-fondo">
       <div class="mx-auto flex w-full max-w-[1020px] flex-col gap-5 px-4 py-8 sm:px-10">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <p class="text-[13px] leading-[18px] text-tinta-suave">{{ t('socios.panel.descripcion') }}</p>
@@ -225,11 +232,11 @@ onMounted(() => {
               </li>
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.primas') }}</span>
-                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.totales.primas) }}</strong>
+                <strong class="text-[18px] font-bold text-tinta">{{ montoVisible(ventas.totales.primas) }}</strong>
               </li>
               <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.comision') }}</span>
-                <strong class="text-[18px] font-bold text-tinta">{{ formatearMonto(ventas.totales.comision) }}</strong>
+                <strong class="text-[18px] font-bold text-tinta">{{ montoVisible(ventas.totales.comision) }}</strong>
                 <span class="text-[11px] leading-[14px] text-tinta-suave">{{
                   t('socios.ventas.tasa', { tasa: formatearPorcentaje(Number(ventas.tasaComision)) })
                 }}</span>
@@ -266,8 +273,8 @@ onMounted(() => {
                     <td class="py-4 pl-4 pr-3">{{ etiquetaMes(fila.mes) }}</td>
                     <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.propuestas) }}</td>
                     <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.emitidas) }}</td>
-                    <td class="py-4 pr-3 text-right">{{ formatearMonto(fila.primas) }}</td>
-                    <td class="py-4 pr-4 text-right">{{ formatearMonto(fila.comision) }}</td>
+                    <td class="py-4 pr-3 text-right">{{ montoVisible(fila.primas) }}</td>
+                    <td class="py-4 pr-4 text-right">{{ montoVisible(fila.comision) }}</td>
                   </tr>
                 </tbody>
               </table>
