@@ -7,6 +7,8 @@ export const en: Record<Clave, string> = {
   'idioma.grupo': 'Language selector',
   'moneda.etiqueta': 'Currency',
   'moneda.cambiar': 'Change currency. Current currency: {moneda}',
+  'moneda.referencia': 'Reference values. Charges are made in the original currency.',
+  'moneda.sinConversion': 'We could not convert the amounts: they are shown in their original currency.',
   'perfil.avatar': 'My profile',
   'clave.mostrar': 'Show password',
   'clave.ocultar': 'Hide password',

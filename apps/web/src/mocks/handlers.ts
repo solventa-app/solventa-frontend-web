@@ -12,8 +12,10 @@ import type {
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
+  Monto,
   Oferta,
   QueryCobrosArgs,
+  QueryConvertirMontosArgs,
   ResultadoOferta,
   ResultadoSesion,
   RolUsuario,
@@ -212,6 +214,9 @@ const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
 // MSW 3 quitó graphql.query y graphql.mutation: se cuelgan de un enlace. '*' conserva lo de antes (cualquier endpoint).
 const bff = graphql.link('*')
 
+// Tasas de demostración: pesos colombianos por unidad, como la tabla del ACL Worker.
+const COP_POR_UNIDAD: Record<string, number> = { COP: 1, USD: 4100, EUR: 4450, MXN: 225, BRL: 750, CLP: 4.4, PEN: 1100 }
+
 export const handlers = [
   bff.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
     const { usuario, clave } = variables.entrada
@@ -230,6 +235,18 @@ export const handlers = [
       },
     })
   }),
+
+  bff.query<{ convertirMontos: Monto[] }, QueryConvertirMontosArgs>('convertirMontos', ({ variables }) => {
+    const montos = [variables.montos].flat().map(({ valor, moneda }) => ({
+      valor: ((Number(valor) * COP_POR_UNIDAD[moneda]) / COP_POR_UNIDAD[variables.moneda]).toFixed(2),
+      moneda: variables.moneda,
+    }))
+    return HttpResponse.json({ data: { convertirMontos: montos } })
+  }),
+
+  bff.mutation('actualizarPreferencias', () =>
+    HttpResponse.json({ data: { actualizarPreferencias: { __typename: 'Usuario' } } }),
+  ),
 
   bff.query<{ yo: Usuario | null }>('yo', ({ request }) => {
     const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')

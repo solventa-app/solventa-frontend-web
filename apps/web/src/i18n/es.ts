@@ -6,6 +6,8 @@ export const es = {
   'idioma.grupo': 'Selector de idioma',
   'moneda.etiqueta': 'Moneda',
   'moneda.cambiar': 'Cambiar moneda. Moneda actual: {moneda}',
+  'moneda.referencia': 'Valores de referencia. El cobro se hace en la moneda original.',
+  'moneda.sinConversion': 'No pudimos convertir los valores: se muestran en su moneda original.',
   'perfil.avatar': 'Mi perfil',
   'clave.mostrar': 'Mostrar contraseña',
   'clave.ocultar': 'Ocultar contraseña',
