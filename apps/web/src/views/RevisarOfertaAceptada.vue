@@ -8,6 +8,8 @@
   - Errores de `aceptarOferta`: una PRELIMINAR o vencida se recalcula (D-11); un consentimiento no vigente vuelve a
     W01-01 con el aviso de re-autorización (bloque 4 de W01). Una falla técnica nunca muestra un 5xx (regla 5).
   - Con el enlace enviado, la tarjeta muestra el estado de la propuesta; «Actualizar estado» la vuelve a consultar.
+  - Al recargar se recupera la propuesta de la oferta (`propuestas`) y se retoma donde iba: con la identidad verificada
+    aparece «Continuar con la emisión»; la tarjeta usa la prima y la cobertura de la propuesta si la oferta ya venció.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
@@ -26,7 +28,7 @@ const route = useRoute()
 const router = useRouter()
 const { estado: cotizacion, captura } = useCotizacion()
 const { rutaInicio } = useSesion()
-const { estado, cargarOferta, aceptar, consultarPropuesta } = useSuscripcion()
+const { estado, cargarOferta, aceptar, consultarPropuesta, recuperarPropuesta } = useSuscripcion()
 
 const ofertaId = computed(() => String(route.params.ofertaId))
 const modalAbierto = ref(false)
@@ -39,6 +41,11 @@ const oferta = computed(() => {
 const plazo = computed(() => estado.propuesta?.plazoMeses ?? (Number(captura.plazoMeses) || null))
 const propuesta = computed(() => (estado.propuesta?.ofertaId === ofertaId.value ? estado.propuesta : null))
 const enCurso = computed(() => !!propuesta.value && propuesta.value.estado !== 'ACEPTADA')
+// Prima y cobertura: las de la oferta o, si ya venció, las que quedaron en la propuesta (el proceso sigue aunque la
+// oferta no se pueda volver a leer).
+const prima = computed(() => oferta.value?.prima ?? propuesta.value?.prima ?? null)
+const cobertura = computed(() => oferta.value?.cobertura ?? propuesta.value?.cobertura ?? null)
+const hayTarjeta = computed(() => !!prima.value && !!cobertura.value)
 
 const TIPO_BADGE: Partial<Record<EstadoPropuesta, 'exito' | 'alerta' | 'error' | 'enCurso'>> = {
   EMITIDA: 'exito',
@@ -50,7 +57,11 @@ const TIPO_BADGE: Partial<Record<EstadoPropuesta, 'exito' | 'alerta' | 'error' |
 }
 
 onMounted(async () => {
-  if (!oferta.value) await cargarOferta(ofertaId.value)
+  // Recargar la página no pierde el proceso: se recupera la propuesta de esta oferta y se retoma donde iba.
+  await Promise.all([
+    oferta.value ? Promise.resolve() : cargarOferta(ofertaId.value),
+    recuperarPropuesta(ofertaId.value),
+  ])
 })
 
 async function aceptarYContinuar() {
@@ -79,13 +90,17 @@ function recalcular() {
       <div class="flex w-full max-w-[640px] flex-col gap-5">
         <TituloPantalla>{{ t('revisarOferta.titulo') }}</TituloPantalla>
 
-        <p v-if="estado.cargando && !oferta" role="status" class="flex items-center gap-2 text-[13px] text-tinta-suave">
+        <p
+          v-if="estado.cargando && !oferta && !propuesta"
+          role="status"
+          class="flex items-center gap-2 text-[13px] text-tinta-suave"
+        >
           <IconoMaterial nombre="progress_activity" class="h-4 w-4 animate-spin" />
           {{ t('comun.cargando') }}
         </p>
 
         <section
-          v-else-if="oferta && oferta.prima"
+          v-else-if="hayTarjeta"
           class="flex flex-col gap-4 rounded-lg border border-borde bg-white p-4"
           data-prueba="tarjeta-oferta"
         >
@@ -111,13 +126,13 @@ function recalcular() {
             <div class="flex flex-col gap-1">
               <span class="text-[12px] text-tinta-suave">{{ t('revisarOferta.prima') }}</span>
               <span class="text-[24px] font-bold leading-none text-primario">
-                {{ formatearMonto(oferta.prima) }}
+                {{ prima && formatearMonto(prima) }}
                 <span class="text-[13px] font-normal text-tinta-suave">{{ t('revisarOferta.porMes') }}</span>
               </span>
             </div>
             <div class="flex flex-col gap-1 sm:items-end sm:border-l sm:border-borde sm:pl-4">
               <span class="text-[12px] text-tinta-suave">{{ t('revisarOferta.cobertura') }}</span>
-              <span class="text-[18px] font-semibold text-tinta">{{ formatearMonto(oferta.cobertura) }}</span>
+              <span class="text-[18px] font-semibold text-tinta">{{ cobertura && formatearMonto(cobertura) }}</span>
               <span class="text-[11px] text-exito">{{ t('revisarOferta.amparo') }}</span>
             </div>
           </div>
@@ -129,7 +144,7 @@ function recalcular() {
               </dt>
               <dd class="text-[13px] text-tinta">{{ t('comun.meses', { meses: plazo }) }}</dd>
             </div>
-            <div v-if="oferta.perfilRiesgo" class="flex items-center justify-between py-3">
+            <div v-if="oferta?.perfilRiesgo" class="flex items-center justify-between py-3">
               <dt class="flex items-center gap-2 text-[13px] text-tinta-suave">
                 <IconoMaterial nombre="leaderboard" class="h-5 w-5" />{{ t('revisarOferta.score') }}
               </dt>
@@ -167,11 +182,19 @@ function recalcular() {
                 {{ t('revisarOferta.actualizar') }}
               </Boton>
               <Boton
-                v-if="propuesta.estado === 'EN_FIRMA' || propuesta.estado === 'FIRMADA'"
-                variante="secundario"
+                v-if="propuesta.estado === 'IDENTIDAD_VERIFICADA'"
+                data-prueba="continuar-emision"
                 @click="modalAbierto = true"
               >
-                {{ t('modalAsesor.reenviar') }}
+                {{ t('revisarOferta.continuarEmision') }}
+              </Boton>
+              <Boton
+                v-if="propuesta.estado === 'EN_FIRMA' || propuesta.estado === 'FIRMADA'"
+                variante="secundario"
+                data-prueba="reenviar-enlace"
+                @click="modalAbierto = true"
+              >
+                {{ propuesta.estado === 'FIRMADA' ? t('modalAsesor.enviarEnlacePago') : t('modalAsesor.reenviar') }}
               </Boton>
             </div>
           </div>
