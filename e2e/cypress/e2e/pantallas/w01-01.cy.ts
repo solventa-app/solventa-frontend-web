@@ -18,7 +18,7 @@ describe('W01-01 · Solicitud y consentimiento (pantalla aislada)', () => {
       cy.contains('button', 'Consultar oferta').click()
       cy.contains('[role="alert"]', 'Ingresa tu documento de identidad.').should('exist')
       cy.contains('[role="alert"]', 'Ingresa un monto válido, mayor a cero.').should('exist')
-      cy.contains('[role="alert"]', 'Ingresa un plazo válido, entre 1 y 60 meses.').should('exist')
+      cy.contains('[role="alert"]', 'Ingresa un plazo válido, entre 6 y 200 meses.').should('exist')
       cy.contains('[role="alert"]', 'Ingresa la dirección del inmueble a asegurar.').should('exist')
     })
     cy.location('pathname').should('eq', '/cotizacion')

@@ -101,22 +101,22 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
         cy.contains('button', 'Consultar oferta').click()
         cy.contains('[role="alert"]', 'Ingresa un número de documento válido').should('exist')
         cy.contains('[role="alert"]', 'Ingresa un monto válido, mayor a cero.').should('exist')
-        cy.contains('[role="alert"]', 'Ingresa un plazo válido, entre 1 y 60 meses.').should('exist')
+        cy.contains('[role="alert"]', 'Ingresa un plazo válido, entre 6 y 200 meses.').should('exist')
         cy.contains('[role="alert"]', 'Ingresa la dirección del inmueble a asegurar.').should('exist')
       })
       cy.location('pathname').should('eq', '/cotizacion')
     })
 
-    it('rechaza un plazo de 61 meses', () => {
+    it('rechaza un plazo de 5 y de 201 meses', () => {
       cy.get('[data-pantalla="W01-01"]').within(() => {
-        llenar({ ...valido, plazo: '61' })
+        llenar({ ...valido, plazo: '201' })
         cy.contains('button', 'Consultar oferta').click()
         cy.contains('[role="alert"]', 'Ingresa un plazo válido').should('exist')
       })
       cy.location('pathname').should('eq', '/cotizacion')
     })
 
-    for (const plazo of ['1', '60']) {
+    for (const plazo of ['6', '200']) {
       it(`acepta documento de 6 dígitos con plazo de ${plazo} mes(es) y llega a la oferta`, () => {
         cy.get('[data-pantalla="W01-01"]').within(() => {
           llenar({ ...valido, plazo })
