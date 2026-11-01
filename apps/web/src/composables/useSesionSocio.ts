@@ -123,5 +123,5 @@ export function useSesionSocio(fetchFn: typeof fetch = fetch) {
     cerrarSesion('vencida')
   }
 
-  return { estado, iniciarSesion, cerrarSesion, vencerSesion, sesionActiva }
+  return { estado, iniciarSesion, cargarNombre, cerrarSesion, vencerSesion, sesionActiva }
 }

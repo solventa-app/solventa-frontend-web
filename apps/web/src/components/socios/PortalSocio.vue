@@ -11,7 +11,7 @@ import { useSesionSocio } from '../../composables/useSesionSocio'
 import { t } from '../../i18n'
 import { BarraDeCerrarSesion, FooterPantalla, HeaderPantalla, Pestanas, type Pestana } from '../ui'
 
-export type SeccionPortal = 'panel' | 'guia' | 'pruebas' | 'produccion'
+export type SeccionPortal = 'panel' | 'guia' | 'pruebas' | 'produccion' | 'perfil'
 
 const props = defineProps<{ pantalla: string; titulo: string; activa: SeccionPortal }>()
 
@@ -25,11 +25,13 @@ const secciones = computed<Pestana[]>(() => [
   { id: 'guia', texto: t('socios.docs.pestana.guia'), icono: 'menu_book' },
   { id: 'pruebas', texto: t('socios.portal.apiPruebas'), icono: 'science' },
   { id: 'produccion', texto: t('socios.portal.apiProduccion'), icono: 'rocket_launch' },
+  { id: 'perfil', texto: t('socios.portal.perfil'), icono: 'person' },
 ])
 
 function ir(id: string) {
   if (id === props.activa) return
-  router.push(id === 'panel' ? '/socios/panel' : { path: '/socios/documentacion', query: { pestana: id } })
+  if (id === 'perfil') router.push('/socios/perfil')
+  else router.push(id === 'panel' ? '/socios/panel' : { path: '/socios/documentacion', query: { pestana: id } })
 }
 
 function cerrarSesion() {

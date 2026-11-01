@@ -71,6 +71,7 @@ describe('W07-02 · Panel del socio', () => {
       'Guía de integración',
       'API Pruebas',
       'API Producción',
+      'Perfil',
     ])
     expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toBe('Panel')
     await wrapper.findAll('[role="tab"]')[2].trigger('click')

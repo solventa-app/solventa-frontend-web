@@ -333,4 +333,14 @@ export const pantallas: Pantalla[] = [
     criterios: ['CA-W07-11', 'CA-W07-12', 'CA-W07-13'],
     componente: () => import('../views/DocumentacionApi.vue'),
   },
+  {
+    id: 'W07-05',
+    ruta: '/socios/perfil',
+    nombre: 'Perfil del socio',
+    historia: 'HU-W07',
+    sprint: 2,
+    socio: true,
+    criterios: [],
+    componente: () => import('../views/PerfilSocio.vue'),
+  },
 ]
