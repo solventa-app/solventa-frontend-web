@@ -32,7 +32,7 @@ tamaños `pantallas/w04-responsive.cy.ts` y el de historia `w04-siniestros.cy.ts
 rechazar). **Requieren el backend real en local** con la semilla de siniestros y la web con `npm run dev` (sin mocks; ver
 el README raíz), y reinician los datos en cada prueba con `POST localhost:8012/_demo/reiniciar` de CLAIMS
 (`support/siniestros.ts`; otra URL con `CYPRESS_CLAIMS_URL`). La clave del operador local va por entorno:
-`CYPRESS_CLAVE_BACKOFFICE=admin-local-solventa npx cypress run --spec 'cypress/e2e/**/w04-*.cy.ts'`. Solo corren en local.
+`CYPRESS_CLAVE_BACKOFFICE=Admin-local-solventa npx cypress run --spec 'cypress/e2e/**/w04-*.cy.ts'`. Solo corren en local.
 Si el gateway local corta alguna petición a los 700 ms (504, con la máquina cargada), corre la web contra el BFF directo:
 `VITE_USE_MOCKS=false VITE_BFF_URL=http://localhost:8000 npx vite`. Evidencia: [`../docs/evidencias/W04-2026-10-25.md`](../docs/evidencias/W04-2026-10-25.md).
 

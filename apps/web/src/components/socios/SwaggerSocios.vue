@@ -5,30 +5,44 @@
   entorno de la pestaña con `requestInterceptor`: el de pruebas o el de producción, pedido con la clave de ese entorno
   y renovado si venció. Su CSS se ajusta a la web (Inter, colores de la marca y de los métodos como las pastillas del
   prototipo, sin la barra superior ni el «Authorize» de Swagger): es la única excepción al «sin CSS propio» del plan.
+  Como «Authorize» no se ve, una franja dice con qué clave se autentica y hasta cuándo, o avisa si no se pudo obtener el
+  token: sin él, la API responde 401.
 -->
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import urlContrato from '../../contrato/socios-v1.json?url'
 import type { Entorno } from '../../api/socios'
 import { usePanelSocio, type TokenGenerado } from '../../composables/usePanelSocio'
 import { t } from '../../i18n'
+import { formatearHora } from '../../utils/formato'
 
 const props = defineProps<{ entorno: Entorno }>()
 
 const { generarToken } = usePanelSocio()
 const contenedor = ref<HTMLElement | null>(null)
 const fallo = ref(false)
-let token: TokenGenerado | null = null
+const token = ref<TokenGenerado | null>(null)
+const sinToken = ref(false)
+const textoAutenticado = computed(() =>
+  token.value
+    ? t('socios.docs.autenticado', {
+        entorno: t(`socios.panel.entornoOpcion.${props.entorno}`),
+        hora: formatearHora(new Date(token.value.expiraEn).toISOString()),
+      })
+    : '',
+)
 
 /** Token vigente del entorno (con un minuto de margen); `null` si no se pudo pedir. */
 async function tokenVigente(): Promise<string | null> {
-  if (token && token.expiraEn - Date.now() > 60_000) return token.token
+  if (token.value && token.value.expiraEn - Date.now() > 60_000) return token.value.token
   const resultado = await generarToken(props.entorno)
-  token = typeof resultado === 'string' ? null : resultado
-  return token?.token ?? null
+  token.value = typeof resultado === 'string' ? null : resultado
+  sinToken.value = !token.value
+  return token.value?.token ?? null
 }
 
 onMounted(async () => {
+  void tokenVigente()
   try {
     const { default: SwaggerUIBundle } = await import('swagger-ui-dist/swagger-ui-es-bundle.js')
     await import('swagger-ui-dist/swagger-ui.css')
@@ -57,6 +71,21 @@ onMounted(async () => {
 <template>
   <div class="swagger-socios rounded-[8px] border border-borde bg-white" :data-entorno="entorno">
     <p v-if="fallo" role="alert" class="p-4 text-[13px] text-error">{{ t('socios.docs.swaggerFallo') }}</p>
+    <p
+      v-if="sinToken"
+      role="alert"
+      data-prueba="sin-token"
+      class="border-b border-borde bg-error-fondo px-4 py-3 text-[13px] text-error"
+    >
+      {{ t('socios.docs.sinToken') }}
+    </p>
+    <p
+      v-else-if="token"
+      data-prueba="token-activo"
+      class="border-b border-borde bg-info-fondo px-4 py-3 text-[13px] text-tinta"
+    >
+      {{ textoAutenticado }}
+    </p>
     <div ref="contenedor" data-prueba="swagger" />
   </div>
 </template>

@@ -4,8 +4,9 @@
   Inicia sesión contra el BFF (`iniciarSesion`, ver useSesion.ts); el rol real lo decide el JWT.
   Desviaciones del prototipo:
   - El campo es "Usuario", no "Correo electrónico": el backend prohíbe que el alias sea un correo.
-  - Los chips de rol se conservan, pero si el rol del token no coincide con el elegido se rechaza el
-    ingreso con «Tu rol es X» y se preselecciona su rol, en vez de entrar con otro rol.
+  - Los chips de rol se conservan y el elegido viaja como `rol` en `iniciarSesion` (T17): si no es el de la
+    cuenta, el BFF responde igual que con una clave errada. Nunca se dice cuál es el rol real ni se
+    preselecciona.
   - Sin avatar de perfil en el header (todavía no hay sesión) y con botón para ver la contraseña.
   - "Portal de socios" lleva al ingreso del portal de socios (W07-01, HU-W07).
   Pendiente: el `role="radiogroup"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
@@ -14,6 +15,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, CampoFormulario, Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { etiquetaRol, useSesion, type Rol } from '../composables/useSesion'
 import { t } from '../i18n'
 
@@ -31,17 +33,14 @@ const CHIPS: Rol[] = ['CLIENTE', 'ASESOR', 'BACKOFFICE']
 async function ingresar() {
   if (!usuario.value.trim() || !clave.value || ingresando.value) return
   ingresando.value = true
-  error.value = await iniciarSesion(usuario.value.trim(), clave.value)
+  error.value = await iniciarSesion(usuario.value.trim(), clave.value, rol.value)
   ingresando.value = false
   if (error.value) return
   if (estado.rol !== rol.value) {
-    // La clave ya fue correcta, así que decirle su rol no revela nada a un tercero. Se preselecciona el
-    // chip correcto para que vuelva a ingresar con un clic, y la sesión no queda abierta con otro rol.
-    const rolReal = estado.rol
+    // Respaldo por si el BFF aún no filtra por rol: se cierra la sesión y se muestra el mismo mensaje que
+    // con una clave errada, sin decir cuál es el rol real.
     cerrarSesion()
-    const chip = CHIPS.find((c) => c === rolReal)
-    error.value = chip ? t('ingreso.otroRol', { rol: etiquetaRol(chip) }) : t('ingreso.sinRol')
-    if (chip) rol.value = chip
+    error.value = t('ingreso.incorrecto')
     clave.value = ''
     return
   }
@@ -55,6 +54,15 @@ async function ingresar() {
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-10 py-8">
       <div class="flex w-full max-w-[464px] flex-col gap-5">
         <Divisor />
+        <p
+          v-if="estado.aviso === 'vencida'"
+          role="status"
+          data-testid="aviso-sesion-vencida"
+          class="flex items-start gap-2 rounded-[8px] border border-info bg-info-fondo p-3 text-[13px] text-tinta"
+        >
+          <IconoMaterial nombre="timer" class="h-5 w-5 shrink-0 text-info" />
+          {{ t('ingreso.sesionVencida') }}
+        </p>
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
           <TituloPantalla class="mb-6">{{ t('ingreso.titulo') }}</TituloPantalla>
           <form class="flex w-full flex-col gap-5" novalidate @submit.prevent="ingresar">

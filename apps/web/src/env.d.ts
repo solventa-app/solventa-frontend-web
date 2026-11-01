@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   readonly VITE_BFF_URL?: string
   readonly VITE_USE_MOCKS?: string
   readonly VITE_SENTRY_DSN?: string
+  readonly VITE_GOOGLE_PLACES_KEY?: string
   readonly VITE_RELEASE?: string
   readonly VITE_AMBIENTE?: string
 }

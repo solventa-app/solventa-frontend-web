@@ -9,13 +9,23 @@
   - "Abrir" lleva al detalle por el `id` del siniestro (W04-02), no por el radicado.
 -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { Badge, Boton, Chip, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  Badge,
+  Boton,
+  Chip,
+  EstadoOperador,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+  Paginador,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useSiniestros } from '../composables/useSiniestros'
 import type { EstadoSiniestro } from '../graphql/tipos'
 import { t } from '../i18n'
 import { formatearFecha, formatearFechaCorta } from '../utils/formato'
+import { textoRestante } from '../utils/plazo'
 
 const { estado, cargarSiniestros } = useSiniestros()
 
@@ -39,6 +49,20 @@ const ordenados = computed(() =>
 const visibles = computed(() =>
   filtro.value ? ordenados.value.filter((s) => s.estado === filtro.value) : ordenados.value,
 )
+// Como W05-01: la lista llega completa y se pagina en el navegador.
+const TAMANO_PAGINA = 10
+const pagina = ref(1)
+const totalPaginas = computed(() => Math.max(1, Math.ceil(visibles.value.length / TAMANO_PAGINA)))
+const paginados = computed(() => {
+  const inicio = (pagina.value - 1) * TAMANO_PAGINA
+  return visibles.value.slice(inicio, inicio + TAMANO_PAGINA)
+})
+
+function cambiarFiltro(valor?: EstadoSiniestro) {
+  filtro.value = valor
+  pagina.value = 1
+}
+
 const enCola = computed(
   () => estado.siniestros.filter((s) => s.estado === 'PENDIENTE' || s.estado === 'EN_REVISION').length,
 )
@@ -50,6 +74,12 @@ const listo = computed(() => !estado.cargando && !estado.error)
 function etiquetaFiltro(valor?: EstadoSiniestro): string {
   return valor ? t(`siniestros.estado.${valor}`) : t('siniestros.bandeja.todos')
 }
+
+// El plazo solo corre en los PENDIENTE: un caso derivado espera al perito (D-3b).
+const ahora = ref(Date.now())
+const reloj = setInterval(() => (ahora.value = Date.now()), 30_000)
+onBeforeUnmount(() => clearInterval(reloj))
+const restanteDe = (s: { venceDictamenEn: string }) => Date.parse(s.venceDictamenEn) - ahora.value
 
 onMounted(() => void cargarSiniestros())
 </script>
@@ -97,7 +127,7 @@ onMounted(() => void cargarSiniestros())
             :key="valor ?? 'TODOS'"
             tamano="filtro"
             :activo="filtro === valor"
-            @click="filtro = valor"
+            @click="cambiarFiltro(valor)"
           >
             {{ etiquetaFiltro(valor) }}
             <template v-if="!valor && listo">
@@ -159,7 +189,7 @@ onMounted(() => void cargarSiniestros())
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="s in visibles" :key="s.id" class="border-t border-borde">
+                <tr v-for="s in paginados" :key="s.id" class="border-t border-borde">
                   <td class="px-5 py-[18px]">
                     <p class="text-[13px] leading-[19.5px] text-tinta">{{ s.asegurado.nombre }}</p>
                     <p class="text-[11px] leading-[16.5px] text-tinta-suave">
@@ -170,6 +200,14 @@ onMounted(() => void cargarSiniestros())
                     <time :datetime="s.notificadoEn" :title="formatearFecha(s.notificadoEn)">
                       {{ formatearFechaCorta(s.notificadoEn) }}
                     </time>
+                    <p
+                      v-if="s.estado === 'PENDIENTE' && s.venceDictamenEn"
+                      data-prueba="plazo"
+                      class="text-[11px] leading-[16.5px]"
+                      :class="restanteDe(s) <= 0 ? 'font-semibold text-error' : 'text-tinta-suave'"
+                    >
+                      {{ t('siniestros.bandeja.vence', { tiempo: textoRestante(restanteDe(s)) }) }}
+                    </p>
                   </td>
                   <td class="px-5">
                     <Badge :tipo="BADGE[s.estado]">{{ t(`siniestros.estado.${s.estado}`) }}</Badge>
@@ -198,8 +236,9 @@ onMounted(() => void cargarSiniestros())
           <div
             class="flex flex-wrap items-center justify-between gap-2 border-t border-borde bg-fondo p-4 text-[11px] leading-[16.5px] text-tinta-suave"
           >
+            <Paginador v-model:pagina="pagina" :total-paginas="totalPaginas" />
             <p aria-live="polite" data-prueba="mostrando">
-              {{ t('siniestros.bandeja.mostrando', { visibles: visibles.length, total: estado.siniestros.length }) }}
+              {{ t('siniestros.bandeja.mostrando', { visibles: paginados.length, total: estado.siniestros.length }) }}
             </p>
             <p>
               {{ t('siniestros.bandeja.tiempoRespuesta') }}

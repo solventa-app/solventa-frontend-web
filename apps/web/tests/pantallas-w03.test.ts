@@ -1,16 +1,20 @@
 // Pantallas de HU-W03 (W03-01 con el modal del asesor, W03-02 a W03-04 y el retorno de la pasarela) y la validación
 // previa de la imagen de firma (utils/firma.ts). El flujo de datos y el token se prueban en w03-suscripcion.test.ts.
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import RevisarOfertaAceptada from '../src/views/RevisarOfertaAceptada.vue'
 import FirmaElectronica from '../src/views/FirmaElectronica.vue'
 import FirmaConfirmada from '../src/views/FirmaConfirmada.vue'
 import PolizaEmitida from '../src/views/PolizaEmitida.vue'
 import RetornoPago from '../src/views/RetornoPago.vue'
+import OfertaCompleta from '../src/views/OfertaCompleta.vue'
+import ConfirmarFirma from '../src/views/ConfirmarFirma.vue'
+import { ofertaDeDemo } from '../src/mocks/handlers'
 import { useCotizacion } from '../src/composables/useCotizacion'
 import { olvidarEnlace } from '../src/composables/useEnlaceFirma'
 import { useSesion } from '../src/composables/useSesion'
+import { cambiarMoneda, moneda, usarConversor } from '../src/composables/useMoneda'
 import { useSuscripcion } from '../src/composables/useSuscripcion'
 import { crearRutas } from '../src/router'
 import { servidor } from '../src/mocks/node'
@@ -117,6 +121,54 @@ describe('W03-01 · Revisar oferta aceptada', () => {
     expect(w.find('[data-prueba="aceptar"]').exists()).toBe(false)
   })
 
+  it('la oferta se convierte a USD (se consulta) y el selector sigue activo', async () => {
+    usarConversor(async (montos, destino) =>
+      montos.map((m) => ({ valor: (Number(m.valor) / 4000).toFixed(2), moneda: destino })),
+    )
+    await prepararAsesor()
+    await cambiarMoneda('USD')
+    const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
+    await boton(w, 'tarjeta-oferta')
+    await esperar(() => w.get('[data-prueba="tarjeta-oferta"]').text().includes('23,67'))
+
+    expect(w.get('[data-prueba="tarjeta-oferta"]').text()).toMatch(/23,67/)
+    expect(w.get('select').attributes('disabled')).toBeUndefined()
+    usarConversor(null)
+    moneda.value = 'COP'
+  })
+
+  it('las páginas del enlace dejan el selector deshabilitado en la moneda del documento', async () => {
+    await cambiarMoneda('USD')
+    window.location.hash = '#t=firmado'
+    const { w } = await montar(FirmaConfirmada, '/firma/confirmada')
+    await boton(w, 'pagar')
+
+    const selector = w.get('select')
+    expect(selector.attributes('disabled')).toBeDefined()
+    expect((selector.element as HTMLSelectElement).value).toBe('COP')
+    moneda.value = 'COP'
+  })
+
+  it('al recargar con la identidad ya verificada ofrece «Continuar con la emisión» y no pide otro código', async () => {
+    await prepararAsesor()
+    const suscripcion = useSuscripcion(fetchPrueba)
+    await suscripcion.aceptar('oferta-completa')
+    await suscripcion.enviarCodigo()
+    await suscripcion.verificarCodigo(CODIGO_DEMO)
+    suscripcion.reiniciar() // la recarga borra la memoria
+    useCotizacion(fetchPrueba).reiniciar()
+
+    const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
+    const continuar = await boton(w, 'continuar-emision')
+    expect(continuar.text()).toContain('Continuar con la emisión')
+
+    await continuar.trigger('click')
+    await flushPromises()
+    expect(w.find('[data-prueba="emitir"]').exists()).toBe(true)
+    expect(w.find('[data-prueba="enviar-codigo"]').exists()).toBe(false)
+    suscripcion.reiniciar() // la memoria es compartida: no se la dejamos a la siguiente prueba
+  })
+
   it('modal: «Emitir» solo con el código válido, y al emitir muestra el correo enmascarado, nunca la URL', async () => {
     await prepararAsesor()
     const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
@@ -145,6 +197,40 @@ describe('W03-01 · Revisar oferta aceptada', () => {
     const enviado = (await boton(w, 'enlace-enviado')).text()
     expect(enviado).toContain('c•••@correo.com')
     expect(enviado).not.toContain('/firma')
+  })
+
+  it('modal: «Reenviar código» queda con cuenta regresiva de 60 s y se habilita al terminar (T23)', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    try {
+      await prepararAsesor()
+      const { w } = await montar(RevisarOfertaAceptada, '/suscripcion/oferta-completa')
+      await (await boton(w, 'aceptar')).trigger('click')
+      await flushPromises()
+      await (await boton(w, 'enviar-codigo')).trigger('click')
+      await flushPromises()
+
+      const reenviar = await boton(w, 'reenviar-codigo')
+      expect(reenviar.attributes('disabled')).toBeDefined()
+      expect(reenviar.text()).toContain('1:00')
+
+      vi.advanceTimersByTime(18_000)
+      await flushPromises()
+      expect((await boton(w, 'reenviar-codigo')).text()).toContain('0:42')
+
+      vi.advanceTimersByTime(42_000)
+      await flushPromises()
+      const listo = await boton(w, 'reenviar-codigo')
+      expect(listo.attributes('disabled')).toBeUndefined()
+      expect(listo.text()).toBe('Enviar otro código')
+
+      await listo.trigger('click')
+      await flushPromises()
+      expect((await boton(w, 'reenviar-codigo')).attributes('disabled')).toBeDefined()
+      expect((await boton(w, 'codigo-nuevo')).text()).toContain('código nuevo')
+    } finally {
+      vi.useRealTimers()
+      useSuscripcion().reiniciar()
+    }
   })
 })
 
@@ -204,6 +290,66 @@ describe('Páginas del enlace (sin sesión)', () => {
     const { w } = await montar(RetornoPago, '/pago/retorno?sesion=ses-1')
     await esperar(() => w.text().includes('Abre de nuevo'))
     expect(w.text()).toContain('Abre de nuevo el enlace de tu correo')
+  })
+})
+
+describe('Recorrido del cliente en su sesión (T7)', () => {
+  async function entrarComoCliente() {
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'secreta123')
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    cotizacion.estado.resultado = ofertaDeDemo('COMPLETA')
+  }
+
+  it('«Firmar» acepta, emite y lleva a la firma bajo la propuesta, sin enlace', async () => {
+    await entrarComoCliente()
+    const { w, router } = await montar(OfertaCompleta, '/cotizacion/oferta')
+    expect(w.text()).toContain('Contactar a un asesor')
+    await (await boton(w, 'firmar')).trigger('click')
+    await esperar(() => /^\/propuestas\/[^/]+\/firma$/.test(router.currentRoute.value.path))
+    expect(router.currentRoute.value.path).toMatch(/^\/propuestas\/prop-\d+\/firma$/)
+  })
+
+  it('firma y confirma en su sesión: cada paso queda bajo /propuestas/:id/firma', async () => {
+    await entrarComoCliente()
+    const oferta = await montar(OfertaCompleta, '/cotizacion/oferta')
+    await (await boton(oferta.w, 'firmar')).trigger('click')
+    await esperar(() => oferta.router.currentRoute.value.path.startsWith('/propuestas/'))
+    const base = oferta.router.currentRoute.value.path
+
+    const { w, router } = await montar(FirmaElectronica, base)
+    await (await boton(w, 'modo-NOMBRE')).trigger('click')
+    await w.get('[data-componente="firma-tres-modos"] input').setValue('Ana Pérez')
+    await (await boton(w, 'acepta-terminos')).setValue(true)
+    await (await boton(w, 'firmar')).trigger('click')
+    await esperar(() => router.currentRoute.value.path === `${base}/confirmar`)
+    expect(router.currentRoute.value.path).toBe(`${base}/confirmar`)
+
+    const confirmar = await montar(ConfirmarFirma, `${base}/confirmar`)
+    await esperar(() => confirmar.w.text().length > 0)
+    expect(confirmar.router.currentRoute.value.path).toBe(`${base}/confirmar`)
+  })
+
+  it('las rutas de la sesión son solo del CLIENTE', () => {
+    const rutas = crearRutas().filter((r) => r.path.startsWith('/propuestas/:propuestaId/firma'))
+    expect(rutas.map((r) => r.path)).toEqual([
+      '/propuestas/:propuestaId/firma',
+      '/propuestas/:propuestaId/firma/confirmar',
+      '/propuestas/:propuestaId/firma/confirmada',
+      '/propuestas/:propuestaId/firma/poliza',
+    ])
+    for (const r of rutas) expect((r.meta as { pantalla: { roles: string[] } }).pantalla.roles).toEqual(['CLIENTE'])
+  })
+})
+
+describe('ruta de retorno de la pasarela', () => {
+  it('acepta el retorno con el id de la propuesta (como lo manda el BFF) y sin él', () => {
+    const rutas = crearRutas()
+    const retorno = rutas.find((r) => r.name === 'W03-R')
+    expect(retorno?.path).toBe('/pago/retorno/:propuestaId?')
+    const router = createRouter({ history: createMemoryHistory(), routes: rutas })
+    expect(router.resolve('/pago/retorno/p-1?sesion=ses-1').name).toBe('W03-R')
+    expect(router.resolve('/pago/retorno?sesion=ses-1').name).toBe('W03-R')
   })
 })
 

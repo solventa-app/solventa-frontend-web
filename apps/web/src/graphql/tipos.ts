@@ -68,6 +68,11 @@ export type CodigoEnviado = {
   venceEn: Scalars['DateTime']['output'];
 };
 
+export type CodigoOnboardingEnviado = {
+  correoEnmascarado: Scalars['String']['output'];
+  venceEn: Scalars['DateTime']['output'];
+};
+
 export type ColorSalud =
   | 'AMARILLO'
   | 'ROJO'
@@ -128,6 +133,7 @@ export type CrearUsuarioInput = {
 
 export type CredencialesInput = {
   clave: Scalars['String']['input'];
+  rol?: InputMaybe<RolUsuario>;
   usuario: Scalars['String']['input'];
 };
 
@@ -377,6 +383,15 @@ export type InicioOnboarding = {
   tokenVenceEn: Scalars['DateTime']['output'];
 };
 
+export type Jurisdiccion = {
+  codigo: Scalars['String']['output'];
+  moneda: Scalars['String']['output'];
+  nombre: Scalars['String']['output'];
+  plazoMax: Scalars['Int']['output'];
+  plazoMin: Scalars['Int']['output'];
+  tipoDocumento: Scalars['String']['output'];
+};
+
 export type MedioPago = {
   marca: Scalars['String']['output'];
   tipo: TipoMedioPago;
@@ -461,6 +476,7 @@ export type Mutation = {
   actualizarSesion: ResultadoSesion;
   aprobarSiniestro: ResultadoResolucion;
   cambiarRolUsuario: ResultadoUsuario;
+  cerrarSesion: Scalars['Boolean']['output'];
   confirmarPago: ResultadoPago;
   confirmarSubidaArchivo: ResultadoArchivo;
   confirmarSubidaOnboarding: ResultadoOnboarding;
@@ -471,6 +487,7 @@ export type Mutation = {
   derivarSiniestro: ResultadoResolucion;
   descargarArchivo: ResultadoDescargaArchivo;
   emitirPropuesta: ResultadoEmision;
+  enviarCodigoOnboarding: ResultadoCodigoOnboarding;
   enviarCodigoVerificacion: ResultadoEnvioCodigo;
   enviarVerificacion: ResultadoOnboarding;
   firmarPorEnlace: ResultadoFirma;
@@ -482,8 +499,10 @@ export type Mutation = {
   reenviarEnlaceFirma: ResultadoEmision;
   registrarConsentimiento: Consentimiento;
   registrarConsentimientoOnboarding: ResultadoOnboarding;
+  registrarCuenta: ResultadoSesion;
   reintentarCobro: Cobro;
   reintentarOnboarding: ResultadoOnboarding;
+  renovarSesion: ResultadoSesion;
   revocarConsentimiento: Consentimiento;
   solicitarOferta: ResultadoOferta;
   solicitarSubidaArchivo: ResultadoSubidaArchivo;
@@ -492,6 +511,7 @@ export type Mutation = {
   suspenderUsuario: ResultadoUsuario;
   ticketAvisos: TicketAvisos;
   verificarCodigo: ResultadoVerificacion;
+  verificarCodigoOnboarding: ResultadoCodigoOnboarding;
 };
 
 
@@ -519,6 +539,11 @@ export type MutationAprobarSiniestroArgs = {
 export type MutationCambiarRolUsuarioArgs = {
   id: Scalars['ID']['input'];
   rol: RolUsuario;
+};
+
+
+export type MutationCerrarSesionArgs = {
+  refreshToken?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -575,6 +600,11 @@ export type MutationDescargarArchivoArgs = {
 
 export type MutationEmitirPropuestaArgs = {
   propuestaId: Scalars['ID']['input'];
+};
+
+
+export type MutationEnviarCodigoOnboardingArgs = {
+  correo: Scalars['String']['input'];
 };
 
 
@@ -637,6 +667,13 @@ export type MutationRegistrarConsentimientoOnboardingArgs = {
 };
 
 
+export type MutationRegistrarCuentaArgs = {
+  clave: Scalars['String']['input'];
+  codigo: Scalars['String']['input'];
+  correo: Scalars['String']['input'];
+};
+
+
 export type MutationReintentarCobroArgs = {
   cobroId: Scalars['ID']['input'];
 };
@@ -644,6 +681,11 @@ export type MutationReintentarCobroArgs = {
 
 export type MutationReintentarOnboardingArgs = {
   onboardingId: Scalars['ID']['input'];
+};
+
+
+export type MutationRenovarSesionArgs = {
+  refreshToken?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -685,6 +727,12 @@ export type MutationSuspenderUsuarioArgs = {
 export type MutationVerificarCodigoArgs = {
   codigo: Scalars['String']['input'];
   propuestaId: Scalars['ID']['input'];
+};
+
+
+export type MutationVerificarCodigoOnboardingArgs = {
+  codigo: Scalars['String']['input'];
+  correo: Scalars['String']['input'];
 };
 
 export type NivelRiesgo =
@@ -792,6 +840,7 @@ export type Query = {
   documentoFirma?: Maybe<DocumentoFirma>;
   estadoSistema: EstadoSistema;
   firmaPorEnlace?: Maybe<EnlaceFirma>;
+  jurisdicciones: Array<Jurisdiccion>;
   miVerificacion?: Maybe<Onboarding>;
   oferta?: Maybe<Oferta>;
   onboarding?: Maybe<Onboarding>;
@@ -892,6 +941,7 @@ export type RangoPrima = {
 };
 
 export type Resolucion = {
+  automatica: Scalars['Boolean']['output'];
   comentario?: Maybe<Scalars['String']['output']>;
   indemnizacion?: Maybe<Monto>;
   instrucciones?: Maybe<Scalars['String']['output']>;
@@ -911,6 +961,8 @@ export type ResultadoAceptacion = ErrorAceptacion | Propuesta;
 export type ResultadoArchivo = Archivo | ErrorArchivo;
 
 export type ResultadoCobro = Cobro | ErrorCobro;
+
+export type ResultadoCodigoOnboarding = CodigoOnboardingEnviado | ErrorOnboarding;
 
 export type ResultadoCuentaOnboarding = CuentaOnboarding | ErrorOnboarding;
 
@@ -976,6 +1028,8 @@ export type SaludMicro = {
 
 export type Sesion = {
   expiraEn: Scalars['DateTime']['output'];
+  refreshExpiraEn?: Maybe<Scalars['DateTime']['output']>;
+  refreshToken?: Maybe<Scalars['String']['output']>;
   token: Scalars['String']['output'];
   usuario: Usuario;
 };
@@ -1064,6 +1118,7 @@ export type Ubicacion = {
 };
 
 export type Usuario = {
+  correo?: Maybe<Scalars['String']['output']>;
   creadoEn: Scalars['DateTime']['output'];
   documentoEnmascarado?: Maybe<Scalars['String']['output']>;
   estado: EstadoUsuario;

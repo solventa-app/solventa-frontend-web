@@ -21,7 +21,9 @@ import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
 import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
-import { formatearFecha, formatearMonto } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { formatearFecha } from '../utils/formato'
+import { textoRestante } from '../utils/plazo'
 
 const route = useRoute()
 const router = useRouter()
@@ -63,21 +65,15 @@ const textoArchivos = computed(() => {
   return n === 1 ? t('siniestros.detalle.archivoVerificado') : t('siniestros.detalle.archivosVerificados', { n })
 })
 
-// Tiempo restante para el dictamen: se recalcula cada minuto.
+// Tiempo restante: se recalcula cada 30 s. Mientras el caso está derivado, el dictamen queda en pausa y cuenta el
+// informe del perito (D-3b): el sistema solo aprueba solos los casos PENDIENTE.
 const ahora = ref(Date.now())
-const reloj = setInterval(() => (ahora.value = Date.now()), 60_000)
+const reloj = setInterval(() => (ahora.value = Date.now()), 30_000)
 onBeforeUnmount(() => clearInterval(reloj))
-const restanteMs = computed(() => (s.value?.venceDictamenEn ? Date.parse(s.value.venceDictamenEn) - ahora.value : null))
+const plazo = computed(() => derivacion.value?.vencimientoInforme ?? s.value?.venceDictamenEn ?? null)
+const restanteMs = computed(() => (plazo.value ? Date.parse(plazo.value) - ahora.value : null))
 const vencido = computed(() => restanteMs.value !== null && restanteMs.value <= 0)
-const textoRestante = computed(() => {
-  const ms = restanteMs.value
-  if (ms === null) return ''
-  if (ms <= 0) return t('siniestros.detalle.vencido')
-  const minutos = Math.floor(ms / 60_000)
-  const horas = Math.floor(minutos / 60)
-  if (horas >= 24) return t('siniestros.detalle.tiempoDias', { d: Math.floor(horas / 24), h: horas % 24 })
-  return t('siniestros.detalle.tiempoHoras', { h: horas, m: String(minutos % 60).padStart(2, '0') })
-})
+const restante = computed(() => (restanteMs.value === null ? '' : textoRestante(restanteMs.value)))
 
 // Acciones.
 const modalRechazoAbierto = ref(false)
@@ -289,7 +285,7 @@ watch(
                   <div class="mt-2 rounded bg-fondo px-6 py-2">
                     <dt class="text-[11px] text-tinta-suave">{{ t('siniestros.detalle.sumaReclamada') }}</dt>
                     <dd data-prueba="suma" class="text-[18px] font-semibold text-primario">
-                      {{ formatearMonto(s.sumaReclamada) }}
+                      {{ montoVisible(s.sumaReclamada) }}
                     </dd>
                   </div>
                   <div class="py-1.5">
@@ -340,23 +336,29 @@ watch(
 
               <!-- Tiempo restante para dictamen -->
               <div
-                v-if="!resuelto && s.venceDictamenEn"
+                v-if="!resuelto && plazo"
                 data-prueba="tiempo-restante"
                 class="flex items-center justify-between gap-2 rounded-lg border p-4"
                 :class="vencido ? 'border-error bg-error-fondo' : 'border-borde bg-fondo'"
               >
                 <span class="flex items-center gap-2 text-[11px] text-tinta-suave">
                   <IconoMaterial nombre="timer" class="h-6 w-6 shrink-0 text-enlace" />
-                  {{ t('siniestros.detalle.tiempoRestante') }}
+                  {{
+                    t(
+                      derivacion?.vencimientoInforme
+                        ? 'siniestros.detalle.tiempoInforme'
+                        : 'siniestros.detalle.tiempoRestante',
+                    )
+                  }}
                 </span>
                 <span class="flex items-center gap-1">
                   <IconoMaterial v-if="vencido" nombre="warning" class="h-5 w-5 text-error" />
                   <time
-                    :datetime="s.venceDictamenEn"
-                    :title="formatearFecha(s.venceDictamenEn)"
+                    :datetime="plazo"
+                    :title="formatearFecha(plazo)"
                     class="text-[13px] font-semibold"
                     :class="vencido ? 'text-error' : 'text-tinta'"
-                    >{{ textoRestante }}</time
+                    >{{ restante }}</time
                   >
                 </span>
               </div>
@@ -380,13 +382,20 @@ watch(
               <span class="text-[11px] text-tinta-suave">
                 {{ t('siniestros.detalle.resueltoEl', { fecha: formatearFecha(s.resolucion.resueltaEn) }) }}
               </span>
+              <span
+                v-if="s.resolucion.automatica"
+                data-prueba="automatica"
+                class="text-[11px] font-semibold text-alerta"
+              >
+                {{ t('siniestros.detalle.aprobadaAutomatica') }}
+              </span>
             </div>
             <dl class="mt-2">
               <template v-if="s.resolucion.tipo === 'APROBACION'">
                 <div v-if="s.resolucion.indemnizacion" class="py-1.5">
                   <dt class="text-[11px] text-tinta-suave">{{ t('siniestros.detalle.indemnizacion') }}</dt>
                   <dd class="text-[13px] font-semibold text-primario">
-                    {{ formatearMonto(s.resolucion.indemnizacion) }}
+                    {{ montoVisible(s.resolucion.indemnizacion) }}
                   </dd>
                 </div>
                 <div v-if="s.resolucion.metodoTransferencia" class="border-t border-borde py-1.5">

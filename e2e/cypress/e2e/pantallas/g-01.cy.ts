@@ -44,4 +44,16 @@ describe('G-01 · Ingreso con selector de rol (pantalla aislada)', () => {
     })
     cy.location('pathname').should('eq', '/asesor')
   })
+
+  it('con el chip equivocado muestra el mismo error que una clave errada y no abre sesión (T17)', () => {
+    cy.get('[data-pantalla="G-01"]').within(() => {
+      cy.contains('label', 'Usuario').parent().find('input').type('asesor.demo')
+      cy.get('input[type="password"]').type('secreta123')
+      cy.contains('[role="radio"]', 'Operador').click()
+      cy.contains('button', 'Ingresar').click()
+      cy.get('[role="alert"]').should('have.text', 'Usuario o clave incorrectos.')
+    })
+    cy.location('pathname').should('eq', '/login')
+    cy.window().then((ventana) => expect(ventana.sessionStorage.getItem('solventa.token')).to.equal(null))
+  })
 })

@@ -12,11 +12,12 @@
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Boton, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
+import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
 import { useConciliacion } from '../composables/useConciliacion'
-import { formatearFecha, formatearMonto } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { formatearFecha } from '../utils/formato'
 import type { Cobro, EstadoCobro } from '../graphql/tipos'
 import { t } from '../i18n'
 
@@ -54,7 +55,7 @@ const cobrosPaginados = computed(() => {
 const totalProcesado = computed(() => {
   const moneda = cobrosFiltrados.value[0]?.monto.moneda ?? 'COP'
   const suma = cobrosFiltrados.value.reduce((acc, c) => acc + Number(c.monto.valor), 0)
-  return formatearMonto({ valor: String(suma), moneda })
+  return montoVisible({ valor: String(suma), moneda })
 })
 
 const INSIGNIA: Record<
@@ -205,7 +206,7 @@ onUnmounted(() => {
                   <td class="py-[24px] pl-4 pr-[14px] text-[13px] text-tinta">{{ cobro.cliente?.nombre ?? '—' }}</td>
                   <td class="py-[24px] pr-[14px] font-mono text-[13px] text-tinta-suave">{{ cobro.polizaId }}</td>
                   <td class="py-[24px] pr-[14px] text-right text-[13px] text-tinta">
-                    {{ formatearMonto(cobro.monto) }}
+                    {{ montoVisible(cobro.monto) }}
                   </td>
                   <td class="py-[18px] pr-[14px] text-[13px] text-tinta" data-prueba="medio-pago">
                     <template v-if="cobro.medio">
@@ -243,12 +244,6 @@ onUnmounted(() => {
                         estado.reintentando === cobro.id ? t('conciliacion.reintentando') : t('conciliacion.reintentar')
                       }}
                     </Boton>
-                    <span
-                      v-else-if="cobro.estado === 'RECHAZADO' && enLinea(cobro)"
-                      class="text-[11px] text-tinta-suave"
-                    >
-                      {{ t('conciliacion.loResuelveCliente') }}
-                    </span>
                     <span v-else-if="cobro.estado === 'RECHAZADO'" class="text-[11px] text-error">
                       {{ t('conciliacion.otroMedio') }}
                     </span>
@@ -262,36 +257,14 @@ onUnmounted(() => {
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-4 border-t border-borde bg-[#f6f3f2] px-4 py-3">
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="rounded border border-borde bg-white px-3 py-1 text-[12px] font-medium text-tinta hover:bg-fondo disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="paginaActual <= 1"
-                @click="paginaActual--"
-              >
-                {{ t('conciliacion.anterior') }}
-              </button>
-              <span class="text-[12px] text-tinta-suave">
-                {{ t('conciliacion.pagina') }} <strong class="font-semibold text-tinta">{{ paginaActual }}</strong>
-                {{ t('conciliacion.de') }}
-                <strong class="font-semibold text-tinta">{{ totalPaginas }}</strong>
-              </span>
-              <button
-                type="button"
-                class="rounded border border-borde bg-white px-3 py-1 text-[12px] font-medium text-tinta hover:bg-fondo disabled:cursor-not-allowed disabled:opacity-40"
-                :disabled="paginaActual >= totalPaginas"
-                @click="paginaActual++"
-              >
-                {{ t('conciliacion.siguiente') }}
-              </button>
-            </div>
+            <Paginador v-model:pagina="paginaActual" :total-paginas="totalPaginas" />
             <div class="flex items-center gap-4 text-[11px] text-tinta-suave">
               <span class="flex items-center gap-1">
                 <IconoMaterial nombre="sync" class="h-[18px] w-[18px]" />
                 {{ t('conciliacion.mostrando', { visibles: cobrosPaginados.length, total: cobrosFiltrados.length }) }}
               </span>
               <span>
-                {{ t('conciliacion.total') }} <strong class="font-semibold text-tinta">{{ totalProcesado }} COP</strong>
+                {{ t('conciliacion.total') }} <strong class="font-semibold text-tinta">{{ totalProcesado }}</strong>
               </span>
             </div>
           </div>

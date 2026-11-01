@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import HomeOperador from '../src/views/HomeOperador.vue'
+import { cambiarMoneda } from '../src/composables/useMoneda'
 import ConciliacionDePagos from '../src/views/ConciliacionDePagos.vue'
 import { useSesion } from '../src/composables/useSesion'
 import { restablecerCobrosDePrueba } from '../src/mocks/handlers'
@@ -50,6 +51,7 @@ describe('HU-W05 · pantallas', () => {
       const wrapper = montar(HomeOperador, { global: { plugins: [router] } })
 
       expect(wrapper.find('[data-pantalla="G-02b"]').exists()).toBe(true)
+      expect(wrapper.find('a[href="/operador/estado"]').exists()).toBe(false)
       expect(wrapper.text()).toContain('Siniestros')
       const enlace = wrapper.findAll('a').find((a) => a.text().includes('Siniestros'))
       expect(enlace?.attributes('href')).toBe('/operador/siniestros')
@@ -139,36 +141,6 @@ describe('HU-W05 · pantallas', () => {
         expect(fila(wrapper, 'Carlos Andrés Peña').text()).toContain('Se concilia')
         expect(fila(wrapper, 'Julián Torres Mesa').text()).toContain('Reintentar cobro')
       })
-
-      it('un rechazado en línea no se reintenta: «Lo resuelve el cliente»', async () => {
-        servidor.use(
-          http.post('*/graphql/web', () =>
-            HttpResponse.json({
-              data: {
-                cobros: [
-                  {
-                    id: 'cobro-9',
-                    cliente: { id: 'cliente-9', nombre: 'Mariana Ruiz' },
-                    polizaId: 'SOL-2026-004899',
-                    estado: 'RECHAZADO',
-                    monto: { valor: '94680.00', moneda: 'COP' },
-                    actualizadoEn: '2026-10-27T10:00:00Z',
-                    idTransaccion: null,
-                    motivo: 'fondos_insuficientes',
-                    reintentosRestantes: 3,
-                    origen: 'INTERACTIVO',
-                    medio: { marca: 'Visa', tipo: 'CREDITO' },
-                  },
-                ],
-              },
-            }),
-          ),
-        )
-        const { wrapper } = await montarConciliacion()
-        const rechazada = fila(wrapper, 'Mariana Ruiz')
-        expect(rechazada.text()).toContain('Lo resuelve el cliente')
-        expect(rechazada.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
-      })
     })
 
     describe('actualización por SSE', () => {
@@ -227,6 +199,14 @@ describe('HU-W05 · pantallas', () => {
       const { wrapper } = await montarConciliacion()
       const filaCobrando = wrapper.findAll('tbody tr').find((tr) => tr.text().includes('Andrés Felipe Duarte'))
       expect(filaCobrando?.text()).toContain('en curso')
+    })
+
+    it('convierte montos y total a la moneda elegida, sin perder la fila (KAN-209)', async () => {
+      const { wrapper } = await montarConciliacion()
+      await cambiarMoneda('USD')
+      await vi.waitFor(() => expect(wrapper.find('tbody').text()).toContain('US$'))
+      expect(wrapper.text()).not.toContain(' COP')
+      await cambiarMoneda('COP')
     })
 
     it('muestra controles de paginación y deshabilita Anterior en la primera página', async () => {

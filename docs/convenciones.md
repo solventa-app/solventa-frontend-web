@@ -53,6 +53,16 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
   leer de su `develop` en vez de esperar al release (decisión pendiente de confirmar entre los dos repos, igual
   que señala la ADR-08 del backend).
 
+## Moneda en pantalla
+
+Regla única de la web (KAN-209), definida en `solventa-backend/docs/plan-revision-qa-2026-10-31.md`:
+
+- **Lo que se consulta se convierte:** ofertas, siniestros, conciliación, pólizas y ventas. Usa `montoVisible` de
+  `useMoneda.ts`, nunca `formatearMonto` directo.
+- **Lo que se firma, cobra o captura sigue en su moneda original:** contrato, autorización de cobro, pago, póliza emitida
+  y monto del crédito. Usa `formatearMonto` y `monedaFija` en `HeaderPantalla`, que deshabilita el selector.
+- Las tasas son de referencia: si la conversión falla, se muestra el valor original y el header lo avisa.
+
 ## Commits y PR
 
 - **Conventional Commits** con alcance y clave de Jira: `feat(web): KAN-24 formulario de captura con consentimiento`.

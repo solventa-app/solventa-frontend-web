@@ -1,7 +1,28 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import vue from '@vitejs/plugin-vue'
-import { loadEnv } from 'vite'
+import { appendFileSync, mkdirSync } from 'node:fs'
+import { loadEnv, type Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
+
+// T22 · Solo en desarrollo: el navegador manda sus logs a /__log y se anexan a logs/web-local.log (ignorado por git).
+function logsLocales(): Plugin {
+  return {
+    name: 'logs-web-local',
+    apply: 'serve',
+    configureServer(server) {
+      mkdirSync('logs', { recursive: true })
+      server.middlewares.use('/__log', (req, res) => {
+        let cuerpo = ''
+        req.on('data', (c) => (cuerpo += c))
+        req.on('end', () => {
+          appendFileSync('logs/web-local.log', `${new Date().toISOString()} ${cuerpo.slice(0, 2000)}\n`)
+          res.statusCode = 204
+          res.end()
+        })
+      })
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -15,6 +36,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       vue(),
+      logsLocales(),
       process.env.SENTRY_AUTH_TOKEN
         ? sentryVitePlugin({
             org: process.env.SENTRY_ORG ?? 'uniandes-xm',

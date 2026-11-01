@@ -17,7 +17,7 @@ import { Boton, FooterPantalla, HeaderPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import FirmaTresModos from '../components/FirmaTresModos.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
-import { useEnlaceFirma, type FirmaCapturada, type PasoEnlace } from '../composables/useEnlaceFirma'
+import { rutaDe, useEnlaceFirma, type FirmaCapturada, type PasoEnlace } from '../composables/useEnlaceFirma'
 import { t } from '../i18n'
 import { formatearHora, formatearMonto } from '../utils/formato'
 
@@ -39,7 +39,7 @@ async function abrir() {
 function continuar() {
   if (!puedeFirmar.value) return
   estado.firmaCapturada = firma.value
-  router.push('/firma/confirmar')
+  router.push(rutaDe('/confirmar'))
 }
 
 onMounted(abrir)
@@ -170,10 +170,6 @@ onBeforeUnmount(() => {
             {{ t('firma.firmar') }}
           </Boton>
           <p v-if="!puedeFirmar" class="text-[11px] italic text-tinta-suave">{{ t('firma.deshabilitado') }}</p>
-          <p class="flex items-center gap-2 text-[11px] text-tinta-suave">
-            <IconoMaterial nombre="lock" class="h-4 w-4" />
-            {{ t('firma.nota') }}
-          </p>
         </div>
       </div>
     </main>

@@ -13,22 +13,29 @@
 
   El selector de idioma está conectado al idioma global (src/i18n): antes cada pantalla lo montaba sin
   v-model, así que el clic en EN no cambiaba nada ni movía el resaltado. Sigue emitiendo `update:idioma`.
+
+  El selector de moneda está conectado a la moneda global (useMoneda.ts). `monedaFija` lo deshabilita en las pantallas
+  donde se firma, cobra o captura (docs/convenciones.md). Con otra moneda, el header avisa que los valores son de
+  referencia o, si falló la conversión, que se muestran los originales.
 -->
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AvatarPerfil from './AvatarPerfil.vue'
 import SelectorIdioma from './SelectorIdioma.vue'
 import SelectorMoneda from './SelectorMoneda.vue'
-import { cambiarIdioma, idioma, type Idioma } from '../../i18n'
+import { cambiarMoneda, conversionFallida, MONEDA_BASE, moneda } from '../../composables/useMoneda'
+import { cambiarIdioma, idioma, t, type Idioma } from '../../i18n'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     titulo?: string
-    moneda?: string
+    /** Deshabilita el selector y muestra esta moneda: la pantalla firma, cobra o captura un valor. */
+    monedaFija?: string
     /** Sin avatar de perfil: en el login todavía no hay nadie con perfil (pedido de felipe, 2026-10-19). */
     sinPerfil?: boolean
   }>(),
-  { titulo: undefined, moneda: 'COP', sinPerfil: false },
+  { titulo: undefined, monedaFija: undefined, sinPerfil: false },
 )
 
 const emit = defineEmits<{
@@ -43,6 +50,15 @@ function elegirIdioma(valor: Idioma) {
   cambiarIdioma(valor)
   emit('update:idioma', valor)
 }
+function elegirMoneda(valor: string) {
+  void cambiarMoneda(valor)
+  emit('update:moneda', valor)
+}
+const avisoMoneda = computed(() => {
+  if (props.monedaFija) return null
+  if (conversionFallida.value) return t('moneda.sinConversion')
+  return moneda.value === MONEDA_BASE ? null : t('moneda.referencia')
+})
 function abrirPerfil() {
   emit('perfil')
   router?.push('/perfil')
@@ -60,8 +76,16 @@ function abrirPerfil() {
     </div>
     <div class="flex shrink-0 items-center gap-3">
       <SelectorIdioma :model-value="idioma" @update:model-value="elegirIdioma" />
-      <SelectorMoneda :model-value="moneda" @update:model-value="$emit('update:moneda', $event)" />
+      <SelectorMoneda :model-value="monedaFija ?? moneda" :disabled="!!monedaFija" @update:model-value="elegirMoneda" />
       <AvatarPerfil v-if="!sinPerfil" @click="abrirPerfil" />
     </div>
+    <p
+      v-if="avisoMoneda"
+      role="status"
+      data-prueba="aviso-moneda"
+      class="w-full text-right text-[11px] text-tinta-suave"
+    >
+      {{ avisoMoneda }}
+    </p>
   </header>
 </template>

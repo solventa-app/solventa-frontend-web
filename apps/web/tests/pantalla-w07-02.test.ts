@@ -3,6 +3,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { HttpResponse, http } from 'msw'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cambiarMoneda } from '../src/composables/useMoneda'
 import { reiniciarPanelSocio } from '../src/composables/usePanelSocio'
 import { useSesionSocio } from '../src/composables/useSesionSocio'
 import { servidor } from '../src/mocks/node'
@@ -62,12 +63,20 @@ afterAll(() => {
 })
 
 describe('W07-02 · Panel del socio', () => {
-  it('muestra el nombre del socio con «Cerrar sesión» y el botón a la documentación', async () => {
+  it('muestra el nombre del socio con «Cerrar sesión» y la barra lleva a la documentación', async () => {
     const wrapper = await montarPanel()
     expect(wrapper.text()).toContain('Retail Fintech S.A.S. · Socio de distribución')
-    await boton(wrapper, 'Documentación de la API').trigger('click')
-    await esperar(() => router.currentRoute.value.path === '/socios/documentacion')
-    expect(router.currentRoute.value.path).toBe('/socios/documentacion')
+    expect(wrapper.findAll('[role="tab"]').map((p) => p.text())).toEqual([
+      'Panel',
+      'Guía de integración',
+      'API Pruebas',
+      'API Producción',
+      'Perfil',
+    ])
+    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toBe('Panel')
+    await wrapper.findAll('[role="tab"]')[2].trigger('click')
+    // La ruta carga en diferido: se le da tiempo real.
+    await vi.waitFor(() => expect(router.currentRoute.value.query.pestana).toBe('pruebas'), { timeout: 3000 })
   })
 
   it('CA-W07-05: credenciales del entorno con la clave enmascarada, «Mostrar» y «Copiar»; cambian con el entorno', async () => {
@@ -80,7 +89,7 @@ describe('W07-02 · Panel del socio', () => {
     await boton(credenciales, 'Copiar').trigger('click')
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('retail-fintech-042')
 
-    await wrapper.findAll('[role="tab"]')[1].trigger('click')
+    await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
     await flushPromises()
     expect(credenciales.get('[data-prueba="socio-id"]').text()).toBe('retail-fintech-042-pruebas')
     expect(credenciales.get('[data-prueba="clave"]').text()).toMatch(/^sk_test_•+$/)
@@ -142,7 +151,7 @@ describe('W07-02 · Panel del socio', () => {
     expect(estado.get('[data-prueba="metricas"]').text()).toContain('Sin tráfico en la ventana')
   })
 
-  it('CA-W07-10: consumo por API con gráfico y ventas en pesos; en pruebas, «Datos simulados»', async () => {
+  it('CA-W07-10: consumo por API con gráfico y ventas en pesos; en pruebas, «Entorno de pruebas»', async () => {
     const wrapper = await montarPanel()
     expect(wrapper.find('[data-prueba="grafico-llamadas"]').exists()).toBe(true)
     expect(wrapper.get('[data-prueba="rango-consumo"]').text()).toBe('Del 30 sep 2026 al 29 oct 2026')
@@ -153,11 +162,11 @@ describe('W07-02 · Panel del socio', () => {
     expect(indicadores).toMatch(/77\s?%/) // 126 emitidas / 164 propuestas
     expect(indicadores).toMatch(/Tasa de comisión: 10\s?%/)
     expect(wrapper.text()).toContain('Octubre de 2026')
-    expect(wrapper.text()).not.toContain('Datos simulados')
+    expect(wrapper.text()).not.toContain('Entorno de pruebas')
 
-    await wrapper.findAll('[role="tab"]')[1].trigger('click')
-    await esperar(() => wrapper.text().includes('Datos simulados'))
-    expect(wrapper.text()).toContain('Datos simulados')
+    await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
+    await esperar(() => wrapper.text().includes('Entorno de pruebas'))
+    expect(wrapper.text()).toContain('Entorno de pruebas')
   })
 
   it('una sección que falla muestra su error con reintento sin tumbar las demás, nunca un 5xx', async () => {
@@ -185,5 +194,14 @@ describe('W07-02 · Panel del socio', () => {
     await esperar(() => router.currentRoute.value.path === '/socios/ingreso')
     expect(useSesionSocio().sesionActiva()).toBe(false)
     expect(useSesionSocio().estado.aviso).toBeNull()
+  })
+
+  it('las ventas se convierten con la API de socios y el marco no se sale de main (SO-01, SO-02)', async () => {
+    const wrapper = await montarPanel()
+    await esperar(() => wrapper.text().includes('Ventas') && wrapper.find('tbody').exists())
+    expect(wrapper.get('main').classes()).toContain('relative')
+    await cambiarMoneda('USD')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('US$'))
+    await cambiarMoneda('COP')
   })
 })

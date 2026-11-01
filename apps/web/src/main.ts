@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/vue'
 import { createApp } from 'vue'
 import App from './App.vue'
+import { alSesionVencida } from './composables/useSesion'
 import { limpiar } from './observabilidad/limpiar'
 import { crearRouter } from './router'
 import './styles/twind'
@@ -18,6 +19,8 @@ async function arrancar() {
   }
   const app = createApp(App)
   const router = crearRouter()
+  // T22: si el refresh venció o falló, la persona vuelve al ingreso (G-01 muestra el aviso).
+  alSesionVencida(() => void router.push('/login'))
   const dsn = import.meta.env.VITE_SENTRY_DSN
   if (dsn) {
     Sentry.init({

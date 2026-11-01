@@ -119,6 +119,31 @@ describe('lado del asesor (W03-01 y su modal)', () => {
     expect(suscripcion.estado.propuesta?.estado).toBe('IDENTIDAD_VERIFICADA')
   })
 
+  it('al recargar la página recupera la propuesta de la oferta y retoma donde iba', async () => {
+    const suscripcion = await asesorConOferta()
+    expect(await suscripcion.aceptar('oferta-completa')).toBe(true)
+    expect(await suscripcion.enviarCodigo()).toBeNull()
+    expect(await suscripcion.verificarCodigo(CODIGO_DEMO)).toBeNull()
+    const id = suscripcion.estado.propuesta?.id
+
+    suscripcion.reiniciar() // como una recarga: la memoria queda vacía
+    expect(suscripcion.estado.propuesta).toBeNull()
+    await suscripcion.recuperarPropuesta('oferta-completa')
+
+    expect(suscripcion.estado.propuesta?.id).toBe(id)
+    expect(suscripcion.estado.propuesta?.estado).toBe('IDENTIDAD_VERIFICADA')
+    // Con la identidad verificada ya se puede emitir, sin repetir el código.
+    const emision = await suscripcion.emitir()
+    expect(esEnlaceEnviado(emision)).toBe(true)
+  })
+
+  it('recuperar la propuesta de una oferta sin propuesta no inventa nada', async () => {
+    const suscripcion = await asesorConOferta()
+    await suscripcion.recuperarPropuesta('oferta-completa')
+    expect(suscripcion.estado.propuesta).toBeNull()
+    expect(suscripcion.estado.error).toBeNull()
+  })
+
   it('al 5.º código errado se agotan los intentos', async () => {
     const suscripcion = await asesorConOferta()
     await suscripcion.aceptar('oferta-completa')

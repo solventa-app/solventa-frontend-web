@@ -340,6 +340,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/conversiones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convierte montos a otra moneda, solo para mostrar
+         * @description Tasas de referencia: no cambia lo cobrado ni descuenta presupuesto. Hasta 50 montos por llamada. Con un token de PRUEBAS usa tasas fijas.
+         */
+        post: operations["convertirMontos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/credenciales": {
         parameters: {
             query?: never;
@@ -617,6 +637,14 @@ export interface components {
                 nombre: string;
             };
             credenciales: components["schemas"]["Credencial"][];
+        };
+        SolicitudConversion: {
+            montos: components["schemas"]["Monto"][];
+            /** @example USD */
+            moneda: string;
+        };
+        Conversion: {
+            montos: components["schemas"]["Monto"][];
         };
     };
     responses: {
@@ -1330,6 +1358,41 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    convertirMontos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudConversion"];
+            };
+        };
+        responses: {
+            /** @description Los montos convertidos, en el mismo orden. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversion"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
             503: components["responses"]["NoDisponible"];
         };
     };

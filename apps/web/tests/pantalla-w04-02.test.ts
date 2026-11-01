@@ -105,28 +105,28 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(items[2].text()).toContain('· No cumple')
   })
 
-  it('tiempo restante "{h}h {mm}m" que se recalcula cada minuto y pasa a "Vencido"', async () => {
+  it('tiempo restante "{h} h {m} min" que se recalcula y pasa a "Vencido"', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
     const { wrapper } = await montar()
     const { estado } = useSiniestros()
     estado.detalle!.venceDictamenEn = new Date(Date.now() + (2 * 60 + 5) * 60_000 + 30_000).toISOString()
     await flushPromises()
     const caja = () => wrapper.get('[data-prueba="tiempo-restante"]')
-    expect(caja().get('time').text()).toBe('2h 05m')
+    expect(caja().get('time').text()).toBe('2 h 5 min')
     vi.advanceTimersByTime(60_000)
     await flushPromises()
-    expect(caja().get('time').text()).toBe('2h 04m')
+    expect(caja().get('time').text()).toBe('2 h 4 min')
     vi.advanceTimersByTime(3 * 3_600_000)
     await flushPromises()
     expect(caja().get('time').text()).toBe('Vencido')
     expect(caja().classes()).toContain('border-error')
   })
 
-  it('con más de 24 h muestra "{d} d {h}h"', async () => {
+  it('con más de 24 h también muestra los minutos"', async () => {
     const { wrapper } = await montar()
-    useSiniestros().estado.detalle!.venceDictamenEn = new Date(Date.now() + 50 * 3_600_000 + 60_000).toISOString()
+    useSiniestros().estado.detalle!.venceDictamenEn = new Date(Date.now() + 50 * 3_600_000 + 90_000).toISOString()
     await flushPromises()
-    expect(wrapper.get('[data-prueba="tiempo-restante"] time').text()).toBe('2 d 2h')
+    expect(wrapper.get('[data-prueba="tiempo-restante"] time').text()).toBe('2 d 2 h 1 min')
   })
 
   it('PENDIENTE: Derivar (enlace), Rechazar y Aprobar activos; Aprobar es el único primario', async () => {
@@ -157,6 +157,24 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(wrapper.get('[data-prueba="aprobar"]').attributes('disabled')).toBeUndefined()
     expect(wrapper.get('[data-prueba="rechazar"]').attributes('disabled')).toBeUndefined()
     expect(wrapper.find('[data-prueba="tiempo-restante"]').exists()).toBe(true)
+  })
+
+  it('derivado: el dictamen queda en pausa y cuenta el informe del perito (D-3b)', async () => {
+    const { wrapper } = await montar('sin-02')
+    const { estado } = useSiniestros()
+    estado.detalle!.resolucion!.vencimientoInforme = new Date(Date.now() + 3 * 3_600_000 + 30_000).toISOString()
+    await flushPromises()
+    const caja = wrapper.get('[data-prueba="tiempo-restante"]')
+    expect(caja.text()).toContain('informe del perito')
+    expect(caja.get('time').text()).toBe('3 h 0 min')
+  })
+
+  it('una aprobación por vencimiento se identifica como automática', async () => {
+    const { wrapper } = await montar('sin-03')
+    expect(wrapper.find('[data-prueba="automatica"]').exists()).toBe(false)
+    useSiniestros().estado.detalle!.resolucion!.automatica = true
+    await flushPromises()
+    expect(wrapper.get('[data-prueba="automatica"]').text()).toBe('Aprobado automáticamente por vencimiento')
   })
 
   it('APROBADO: solo lectura con la resolución y sin tiempo restante', async () => {

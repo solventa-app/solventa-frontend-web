@@ -1,6 +1,7 @@
 import { HttpResponse } from 'msw'
 import { graphql } from 'msw/graphql'
 import { leerClaims } from '../composables/useSesion'
+import { LISTA_JURISDICCIONES } from '../utils/jurisdicciones'
 import type { Cobro } from '../graphql/tipos'
 import type {
   ConfirmacionContacto,
@@ -12,8 +13,11 @@ import type {
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
+  Jurisdiccion as JurisdiccionBff,
+  Monto,
   Oferta,
   QueryCobrosArgs,
+  QueryConvertirMontosArgs,
   ResultadoOferta,
   ResultadoSesion,
   RolUsuario,
@@ -200,6 +204,10 @@ function usuarioDeDemo(usuario: string, rol: RolUsuario): Usuario {
     idioma: 'ES',
     moneda: 'COP',
     tieneContacto: rol === 'CLIENTE',
+    // v0.24: el BFF real entrega cédula y correo solo al propio usuario. En demo, el correo es de todo CLIENTE y la
+    // cédula solo de quien se llama «registrado» (así los demás flujos de W01 siguen digitando el documento).
+    documentoEnmascarado: rol === 'CLIENTE' && usuario.includes('registrado') ? '10••••3040' : null,
+    correo: rol === 'CLIENTE' ? `${usuario}@correo.com` : null,
   }
 }
 
@@ -212,24 +220,89 @@ const RESUMEN_CANAL: Record<MutationContactarAsesorArgs['canal'], string> = {
 // MSW 3 quitó graphql.query y graphql.mutation: se cuelgan de un enlace. '*' conserva lo de antes (cualquier endpoint).
 const bff = graphql.link('*')
 
+// Tasas de demostración: pesos colombianos por unidad, como la tabla del ACL Worker.
+const COP_POR_UNIDAD: Record<string, number> = { COP: 1, USD: 4100, EUR: 4450, MXN: 225, BRL: 750, CLP: 4.4, PEN: 1100 }
+
+// Quién tiene «la cookie» en los mocks (T22).
+let ultimoUsuarioDemo: string | null = null
+
 export const handlers = [
   bff.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
-    const { usuario, clave } = variables.entrada
-    // Mismo mensaje genérico que el BFF: no revela si el alias existe.
-    if (clave === 'clave-erronea') {
+    const { usuario, clave, rol: rolPedido } = variables.entrada
+    // Mismo mensaje genérico que el BFF: no revela si el alias existe ni qué rol tiene (T17).
+    if (clave === 'clave-erronea' || (rolPedido && rolPedido !== rolDeDemo(usuario))) {
       return HttpResponse.json({ data: { iniciarSesion: { mensaje: 'Usuario o clave incorrectos.' } } })
     }
     const rol = rolDeDemo(usuario)
+    ultimoUsuarioDemo = usuario
     return HttpResponse.json({
       data: {
         iniciarSesion: {
           token: tokenDeDemo(usuario, rol),
           expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+          // T22: la web no recibe el refresh (viaja en una cookie httpOnly); solo cuándo vence.
+          refreshExpiraEn: new Date(Date.now() + 8 * 24 * 3600_000).toISOString(),
           usuario: usuarioDeDemo(usuario, rol),
         },
       },
     })
   }),
+
+  // T22: con los mocks no hay cookie que leer; renueva el último usuario que inició sesión.
+  bff.mutation<{ renovarSesion: ResultadoSesion }>('renovarSesion', () => {
+    const usuario = ultimoUsuarioDemo
+    if (!usuario) {
+      return HttpResponse.json({
+        data: {
+          renovarSesion: { mensaje: 'Tu sesión ya no es válida. Inicia sesión de nuevo.', codigo: 'SESION_VENCIDA' },
+        },
+      })
+    }
+    const rol = rolDeDemo(usuario)
+    return HttpResponse.json({
+      data: {
+        renovarSesion: {
+          token: tokenDeDemo(usuario, rol),
+          expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+          refreshExpiraEn: new Date(Date.now() + 8 * 24 * 3600_000).toISOString(),
+          usuario: usuarioDeDemo(usuario, rol),
+        },
+      },
+    })
+  }),
+
+  bff.mutation<{ cerrarSesion: boolean }>('cerrarSesion', () => {
+    ultimoUsuarioDemo = null
+    return HttpResponse.json({ data: { cerrarSesion: true } })
+  }),
+
+  bff.query<{ convertirMontos: Monto[] }, QueryConvertirMontosArgs>('convertirMontos', ({ variables }) => {
+    const montos = [variables.montos].flat().map(({ valor, moneda }) => ({
+      valor: ((Number(valor) * COP_POR_UNIDAD[moneda]) / COP_POR_UNIDAD[variables.moneda]).toFixed(2),
+      moneda: variables.moneda,
+    }))
+    return HttpResponse.json({ data: { convertirMontos: montos } })
+  }),
+
+  // T18: límites por país (mismo catálogo que el contrato).
+  bff.query<{ jurisdicciones: JurisdiccionBff[] }>('jurisdicciones', () =>
+    HttpResponse.json({
+      data: {
+        jurisdicciones: LISTA_JURISDICCIONES.map((j) => ({
+          codigo: j.codigo,
+          nombre: j.nombre,
+          moneda: j.moneda,
+          tipoDocumento: j.tipo_documento,
+          plazoMin: j.plazo_min,
+          plazoMax: j.plazo_max,
+        })),
+      },
+    }),
+  ),
+
+  bff.mutation('actualizarPreferencias', () =>
+    HttpResponse.json({ data: { actualizarPreferencias: { __typename: 'Usuario' } } }),
+  ),
 
   bff.query<{ yo: Usuario | null }>('yo', ({ request }) => {
     const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')

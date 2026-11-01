@@ -4,26 +4,74 @@
   - "Consultar oferta" queda deshabilitado hasta marcar el consentimiento de Habeas Data (regla 6).
   - `validar()` muestra los errores con el estado "Error" del campo (nodo 2001:1057) solo después de
     un intento de envío. El formulario lleva `novalidate` para que mouse y Enter validen igual.
-  - Los dos enlaces del pie son los disparadores de demo de los mocks (documento terminado en 999 →
-    oferta preliminar, en 000 → error).
   - "Inicio" vuelve al home del rol de la sesión: Cliente y Asesor comparten esta pantalla.
   - Solo un ASESOR ve "Nombre completo del cliente" y "Correo del cliente" (W01-A1, sin Figma): viven en
     memoria y cotizar no los envía; se usan al aceptar la oferta (W03-01). Un CLIENTE no los ve porque su
-    contacto ya está en AUTH.
+    contacto ya está en AUTH. En cambio el CLIENTE ve su nombre y su correo bloqueados, junto con su cédula (T24).
 -->
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
+import {
+  Boton,
+  CampoDireccion,
+  CampoFormulario,
+  CampoSeleccion,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+  TituloPantalla,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import { ejecutar } from '../graphql/cliente'
 import { correoClienteValido, esErrorOferta, nombreClienteValido, useCotizacion } from '../composables/useCotizacion'
+import { useLimitesPlazo } from '../composables/useLimitesPlazo'
 import { useSesion } from '../composables/useSesion'
-import { t, type Clave } from '../i18n'
+import { idioma, t, type Clave } from '../i18n'
+import { cambiarPais, pais, tipoDocumento } from '../composables/usePais'
+import { nombrePais, PAISES, tiposDocumento } from '../utils/documentos'
+import { validarDocumento } from '../utils/jurisdicciones'
 
 const router = useRouter()
 const { estado, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
+// T20: el asesor elige país y tipo de documento (el tipo no viaja al backend hasta que el contrato lo traiga).
+const opcionesPais = computed(() => PAISES.map((c) => ({ valor: c, texto: nombrePais(c, idioma.value) })))
+const opcionesTipo = computed(() =>
+  tiposDocumento(pais.value, idioma.value).map((x) => ({ valor: x.codigo, texto: x.etiqueta })),
+)
+function elegirPais(v: string) {
+  cambiarPais(v)
+}
+// T18: los límites del plazo salen del contrato (jurisdicciones), no de la pantalla.
+const { limites, cargarLimitesPlazo } = useLimitesPlazo()
+onMounted(() => void cargarLimitesPlazo())
+
+// T6 (W03-34): el CLIENTE ya tiene su documento en la cuenta. Se muestra enmascarado y de solo lectura, y a la
+// cotización viaja `null` para que el BFF use el de la cuenta. Solo vive en esta pantalla (nunca en el navegador).
+// Sin documento en la cuenta (o si la consulta falla) el campo sigue editable como siempre.
+const documentoDeCuenta = ref<string | null>(null)
+// T24: nombre y correo de la cuenta, solo para verlos (candado). Nunca entran a `captura` ni al navegador.
+const SIN_DATO = '—'
+const nombreDeCuenta = ref<string | null>(null)
+const correoDeCuenta = ref<string | null>(null)
+onMounted(async () => {
+  if (sesion.rol !== 'CLIENTE') return
+  try {
+    const datos = await ejecutar<{
+      yo: { documentoEnmascarado?: string | null; nombre?: string | null; correo?: string | null } | null
+    }>('query yoDocumento { yo { documentoEnmascarado nombre correo } }')
+    if (datos.yo) {
+      nombreDeCuenta.value = datos.yo.nombre?.trim() || SIN_DATO
+      correoDeCuenta.value = datos.yo.correo?.trim() || SIN_DATO
+    }
+    documentoDeCuenta.value = datos.yo?.documentoEnmascarado?.trim() || null
+    if (documentoDeCuenta.value) captura.documentoIdentidad = ''
+  } catch {
+    /* se queda editable */
+  }
+})
 
 const avisoConsentimiento = computed(() =>
   esErrorOferta(estado.resultado) && estado.resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE'
@@ -43,8 +91,16 @@ function validar(): boolean {
     if (!captura.correoCliente.trim()) nuevosErrores.correoCliente = 'solicitud.errorCorreoClienteVacio'
     else if (!correoClienteValido(captura.correoCliente)) nuevosErrores.correoCliente = 'solicitud.errorCorreoCliente'
   }
-  if (!captura.documentoIdentidad.trim()) {
+  if (documentoDeCuenta.value) {
+    // El documento lo pone el BFF desde la cuenta.
+  } else if (!captura.documentoIdentidad.trim()) {
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumentoVacio'
+  } else if (esAsesor.value && tipoDocumento.value === 'PAS') {
+    if (!/^[A-Za-z0-9]{5,20}$/.test(captura.documentoIdentidad.trim()))
+      nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
+  } else if (esAsesor.value && tipoDocumento.value !== 'CC' && tipoDocumento.value !== 'CE') {
+    if (!validarDocumento(pais.value, captura.documentoIdentidad).valido)
+      nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
   } else if (captura.documentoIdentidad.replace(/\D/g, '').length < 6) {
     // Solo descarta valores claramente incompletos; el contrato no exige dígito de verificación.
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
@@ -54,7 +110,7 @@ function validar(): boolean {
     nuevosErrores.valorCredito = 'solicitud.errorMonto'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 60) {
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < limites.min || plazo > limites.max) {
     nuevosErrores.plazoMeses = 'solicitud.errorPlazo'
   }
   if (!captura.direccionInmueble.trim()) {
@@ -73,20 +129,6 @@ function enviar() {
   intentoEnvio.value = true
   if (!captura.consentimiento) return
   if (!validar()) return
-  irAConsultar()
-}
-
-/** Disparadores de demo (ver nota de los mocks): completan datos válidos y fuerzan el sufijo del documento. */
-function simular(sufijo: '999' | '000') {
-  captura.documentoIdentidad = `CC10203040${sufijo === '999' ? '999' : '000'}`
-  captura.valorCredito = captura.valorCredito || '185000000'
-  captura.plazoMeses = captura.plazoMeses || '60'
-  captura.direccionInmueble = captura.direccionInmueble || 'Cra 45 # 22-18, Bogotá D.C.'
-  if (esAsesor.value) {
-    captura.nombreCliente = captura.nombreCliente || 'Carlos Restrepo Gómez'
-    captura.correoCliente = captura.correoCliente || 'cliente@correo.com'
-  }
-  captura.consentimiento = true
   irAConsultar()
 }
 </script>
@@ -118,14 +160,58 @@ function simular(sufijo: '999' | '000') {
               required
             />
           </template>
+          <template v-if="nombreDeCuenta !== null && correoDeCuenta !== null">
+            <CampoFormulario
+              :model-value="nombreDeCuenta"
+              :label="t('solicitud.nombreCuenta')"
+              :hint="t('solicitud.datoDeCuenta')"
+              icono="person"
+              data-prueba="nombre-de-cuenta"
+              disabled
+            />
+            <CampoFormulario
+              :model-value="correoDeCuenta"
+              :label="t('solicitud.correoCuenta')"
+              :hint="t('solicitud.datoDeCuenta')"
+              icono="mail"
+              data-prueba="correo-de-cuenta"
+              disabled
+            />
+          </template>
           <CampoFormulario
-            v-model="captura.documentoIdentidad"
+            v-if="documentoDeCuenta"
+            :model-value="documentoDeCuenta"
             :label="t('solicitud.documento')"
-            :placeholder="t('solicitud.documentoEjemplo')"
+            :hint="t('solicitud.documentoDeCuenta')"
             icono="badge"
-            :error="intentoEnvio && errores.documentoIdentidad ? t(errores.documentoIdentidad) : undefined"
-            required
+            data-prueba="documento-de-cuenta"
+            disabled
           />
+          <template v-else>
+            <template v-if="esAsesor">
+              <CampoSeleccion
+                :model-value="pais"
+                :label="t('solicitud.pais')"
+                :opciones="opcionesPais"
+                data-prueba="pais"
+                @update:model-value="elegirPais"
+              />
+              <CampoSeleccion
+                v-model="tipoDocumento"
+                :label="t('solicitud.tipoDocumento')"
+                :opciones="opcionesTipo"
+                data-prueba="tipo-documento"
+              />
+            </template>
+            <CampoFormulario
+              v-model="captura.documentoIdentidad"
+              :label="t('solicitud.documento')"
+              :placeholder="t('solicitud.documentoEjemplo')"
+              icono="badge"
+              :error="intentoEnvio && errores.documentoIdentidad ? t(errores.documentoIdentidad) : undefined"
+              required
+            />
+          </template>
           <CampoFormulario
             v-model="captura.valorCredito"
             :label="t('solicitud.monto')"
@@ -140,16 +226,19 @@ function simular(sufijo: '999' | '000') {
             :label="t('solicitud.plazo')"
             type="number"
             :placeholder="t('solicitud.plazoEjemplo')"
-            :error="intentoEnvio && errores.plazoMeses ? t(errores.plazoMeses) : undefined"
+            :error="
+              intentoEnvio && errores.plazoMeses
+                ? t(errores.plazoMeses, { min: limites.min, max: limites.max })
+                : undefined
+            "
             required
           />
-          <CampoFormulario
+          <CampoDireccion
             v-model="captura.direccionInmueble"
             :label="t('solicitud.direccion')"
             :placeholder="t('solicitud.direccionEjemplo')"
-            icono="home"
+            :pais="pais"
             :error="intentoEnvio && errores.direccionInmueble ? t(errores.direccionInmueble) : undefined"
-            required
           />
 
           <div class="flex flex-col gap-2 pt-2">
@@ -181,23 +270,6 @@ function simular(sufijo: '999' | '000') {
             <p v-if="!captura.consentimiento" class="text-[11px] italic leading-[16.5px] text-tinta-suave">
               {{ t('solicitud.deshabilitado') }}
             </p>
-          </div>
-
-          <div class="flex flex-col items-start gap-1.5 border-t border-borde pt-4">
-            <button
-              type="button"
-              class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline"
-              @click="simular('999')"
-            >
-              {{ t('solicitud.simularDegradada') }}
-            </button>
-            <button
-              type="button"
-              class="text-left text-[11px] leading-[16.5px] text-tinta-suave underline"
-              @click="simular('000')"
-            >
-              {{ t('solicitud.simularFallo') }}
-            </button>
           </div>
         </form>
       </div>

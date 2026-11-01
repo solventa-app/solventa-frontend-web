@@ -1,20 +1,31 @@
 <!--
   G-05 · Mi perfil (Figma "Solventa-web-Final", nodo 2001:518). Para los tres roles, con datos reales de
-  `yo` (BFF): nombre, alias, rol, estado de la cuenta y fecha de registro.
-  Desviación: el prototipo muestra documento, correo, celular, dirección, entidad financiera y la
-  verificación biométrica; el backend todavía no guarda esos datos de los usuarios (solo alias, nombre y
-  rol), así que no se inventan: se muestra lo que existe y una nota. Solo lectura, como en Figma.
+  `yo` (BFF): nombre, cédula enmascarada, correo (solo el propio), rol, estado y fecha de registro. Sin alias (T10).
+  Desviación: el prototipo muestra además celular, dirección, entidad financiera y la verificación biométrica;
+  el backend no los entrega, así que no se inventan. Nada se edita: los campos llevan candado (T24).
   Responsive: las tarjetas se apilan y los datos pasan a una columna en pantallas angostas.
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Divisor, FooterPantalla, HeaderPantalla, ModalCerrarSesion, TituloPantalla } from '../components/ui'
+import {
+  CampoSeleccion,
+  Divisor,
+  FooterPantalla,
+  HeaderPantalla,
+  ModalCerrarSesion,
+  SelectorIdioma,
+  SelectorMoneda,
+  TituloPantalla,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { ejecutar } from '../graphql/cliente'
 import type { Usuario } from '../graphql/tipos'
 import { useCierreDeSesion } from '../composables/useCierreDeSesion'
 import { etiquetaRol, useSesion } from '../composables/useSesion'
-import { t, type Clave } from '../i18n'
+import { cambiarIdioma, idioma, t, type Clave } from '../i18n'
+import { cambiarMoneda, moneda } from '../composables/useMoneda'
+import { cambiarPais, pais } from '../composables/usePais'
+import { nombrePais, PAISES } from '../utils/documentos'
 import { formatearFecha } from '../utils/formato'
 
 const props = withDefaults(defineProps<{ fetchFn?: typeof fetch }>(), { fetchFn: undefined })
@@ -24,7 +35,7 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
 
 const CONSULTA_YO = `
   query yo {
-    yo { id usuario nombre rol estado creadoEn }
+    yo { id nombre documentoEnmascarado correo rol estado creadoEn }
   }
 `
 
@@ -32,11 +43,17 @@ const perfil = ref<Usuario | null>(null)
 const cargando = ref(true)
 const error = ref<Clave | null>(null)
 
+const opcionesPais = computed(() => PAISES.map((c) => ({ valor: c, texto: nombrePais(c, idioma.value) })))
+
 const portal = computed(() => (estado.rol ? t(`perfil.portal.${estado.rol}` as Clave) : t('perfil.portal')))
 
-const nombre = computed(() => perfil.value?.nombre?.trim() || perfil.value?.usuario || estado.nombre)
+// Sin alias de respaldo (T10): si la cuenta no tiene nombre se ve «—». Nombre, cédula y correo son de solo lectura (T24).
+const SIN_DATO = '—'
+const nombre = computed(() => perfil.value?.nombre?.trim() || SIN_DATO)
+const documento = computed(() => perfil.value?.documentoEnmascarado?.trim() || SIN_DATO)
+const correo = computed(() => perfil.value?.correo?.trim() || SIN_DATO)
 const iniciales = computed(() =>
-  nombre.value
+  (nombre.value === SIN_DATO ? '' : nombre.value)
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -130,18 +147,37 @@ onMounted(async () => {
           </h2>
           <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="flex flex-col gap-1">
-              <dt class="text-[11px] text-tinta-suave">{{ t('perfil.usuario') }}</dt>
-              <dd class="rounded border border-borde bg-fondo px-3 py-2 text-[13px] text-tinta" data-dato="usuario">
-                {{ perfil.usuario }}
+              <dt class="flex items-center gap-1 text-[11px] text-tinta-suave">
+                {{ t('perfil.nombre') }}<IconoMaterial nombre="lock" class="h-3 w-3" />
+              </dt>
+              <dd
+                class="rounded border border-borde bg-fondo px-3 py-2 text-[13px] text-tinta"
+                data-dato="nombre-campo"
+              >
+                {{ nombre }}
               </dd>
             </div>
             <div class="flex flex-col gap-1">
-              <dt class="text-[11px] text-tinta-suave">{{ t('perfil.rol') }}</dt>
-              <dd class="rounded border border-borde bg-fondo px-3 py-2 text-[13px] text-tinta">{{ rol }}</dd>
+              <dt class="flex items-center gap-1 text-[11px] text-tinta-suave">
+                {{ t('perfil.documento') }}<IconoMaterial nombre="lock" class="h-3 w-3" />
+              </dt>
+              <dd
+                class="rounded border border-borde bg-fondo px-3 py-2 text-[13px] text-tinta"
+                data-dato="documento-campo"
+              >
+                {{ documento }}
+              </dd>
             </div>
             <div class="flex flex-col gap-1">
-              <dt class="text-[11px] text-tinta-suave">{{ t('perfil.nombre') }}</dt>
-              <dd class="rounded border border-borde bg-fondo px-3 py-2 text-[13px] text-tinta">{{ nombre }}</dd>
+              <dt class="flex items-center gap-1 text-[11px] text-tinta-suave">
+                {{ t('perfil.correo') }}<IconoMaterial nombre="lock" class="h-3 w-3" />
+              </dt>
+              <dd
+                class="rounded border border-borde bg-fondo px-3 py-2 text-[13px] text-tinta"
+                data-dato="correo-campo"
+              >
+                {{ correo }}
+              </dd>
             </div>
             <div class="flex flex-col gap-1">
               <dt class="text-[11px] text-tinta-suave">{{ t('perfil.sesionIniciada') }}</dt>
@@ -150,6 +186,29 @@ onMounted(async () => {
               </dd>
             </div>
           </dl>
+        </section>
+
+        <section class="flex flex-col gap-4 rounded-lg border border-borde bg-white p-5" data-dato="preferencias">
+          <h2 class="flex items-center gap-2 border-b border-borde pb-3 text-[16px] font-bold text-tinta">
+            <IconoMaterial nombre="badge" class="h-5 w-5 text-primario" />{{ t('perfil.preferencias') }}
+          </h2>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="flex flex-col gap-1">
+              <span class="text-[11px] text-tinta-suave">{{ t('perfil.prefIdioma') }}</span>
+              <SelectorIdioma :model-value="idioma" @update:model-value="cambiarIdioma" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[11px] text-tinta-suave">{{ t('perfil.prefMoneda') }}</span>
+              <SelectorMoneda :model-value="moneda" @update:model-value="(v: string) => cambiarMoneda(v)" />
+            </div>
+            <CampoSeleccion
+              :model-value="pais"
+              :label="t('perfil.prefPais')"
+              :opciones="opcionesPais"
+              data-prueba="pref-pais"
+              @update:model-value="cambiarPais"
+            />
+          </div>
         </section>
 
         <p class="flex items-start gap-2 rounded-lg border border-borde bg-white p-4 text-[11px] text-tinta-suave">

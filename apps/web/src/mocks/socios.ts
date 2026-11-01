@@ -202,6 +202,14 @@ export const handlersSocios = [
   }),
 
   // Del entorno del token; con uno de PRUEBAS el contrato responde datos simulados (aquí, los mismos).
+  http.post('*/v1/conversiones', async ({ request }) => {
+    const { montos, moneda } = (await request.json()) as Esquemas['SolicitudConversion']
+    const tasa = moneda === 'COP' ? 1 : 4100
+    return HttpResponse.json({
+      montos: montos.map((m) => ({ valor: (Number(m.valor) / tasa).toFixed(2), moneda })),
+    })
+  }),
+
   http.get('*/v1/ventas', ({ request }) => {
     if (!claimsDe(request)) return sinSesion()
     const mes = (m: string, propuestas: number, emitidas: number, primas: string, comision: string) => ({

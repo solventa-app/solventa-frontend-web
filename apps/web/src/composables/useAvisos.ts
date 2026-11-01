@@ -2,7 +2,7 @@
 // un solo uso por GraphQL y va en la URL. Sin datos personales. Si el ticket falla o el stream se cae, la pantalla sigue
 // con lo que tiene: la consulta al reabrir es la que la pone al día.
 import { ejecutar } from '../graphql/cliente'
-import type { EstadoCobro, TicketAvisos } from '../graphql/tipos'
+import type { EstadoCobro, EstadoPropuesta, EstadoVisible, TicketAvisos } from '../graphql/tipos'
 
 const TICKET = `mutation ticketAvisos { ticketAvisos { ticket url } }`
 
@@ -15,12 +15,23 @@ export interface AvisoCobro {
   estado: EstadoCobro
 }
 
+/** Cambio de una propuesta (HU-W03): llega al asesor que la creó y al titular, sin datos personales. */
+export interface AvisoPropuesta {
+  tipo?: string
+  propuestaId: string
+  estado: EstadoPropuesta
+  estadoVisible?: EstadoVisible | null
+  polizaId?: string | null
+  numero?: string | null
+}
+
 type CrearFuente = (url: string) => EventSource
 
 export function useAvisos(
-  alCobro: (aviso: AvisoCobro) => void,
+  alCobro: ((aviso: AvisoCobro) => void) | null,
   fetchFn: typeof fetch = fetch,
   crearFuente: CrearFuente = (url) => new EventSource(url),
+  alPropuesta?: (aviso: AvisoPropuesta) => void,
 ) {
   let fuente: EventSource | null = null
   let silencio: ReturnType<typeof setTimeout> | undefined
@@ -51,7 +62,11 @@ export function useAvisos(
     }
     fuente.addEventListener('cobro', (evento) => {
       vigilarSilencio()
-      alCobro(JSON.parse((evento as MessageEvent<string>).data) as AvisoCobro)
+      alCobro?.(JSON.parse((evento as MessageEvent<string>).data) as AvisoCobro)
+    })
+    fuente.addEventListener('propuesta', (evento) => {
+      vigilarSilencio()
+      alPropuesta?.(JSON.parse((evento as MessageEvent<string>).data) as AvisoPropuesta)
     })
     // El ticket no sirve dos veces, así que la reconexión automática del navegador fallaría.
     fuente.onerror = cerrar

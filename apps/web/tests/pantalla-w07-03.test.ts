@@ -94,8 +94,8 @@ describe('W07-03 · Documentación de la API', () => {
 
   it('la pestaña va en la URL y se puede abrir por enlace', async () => {
     const wrapper = await montarDocs('pruebas')
-    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toContain('Pruebas (sandbox)')
-    await wrapper.findAll('[role="tab"]')[2].trigger('click')
+    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toContain('API Pruebas')
+    await wrapper.findAll('[role="tab"]')[3].trigger('click')
     await esperar(() => router.currentRoute.value.query.pestana === 'produccion')
     expect(router.currentRoute.value.query.pestana).toBe('produccion')
   })
@@ -161,5 +161,28 @@ describe('contrato de socios de la web', () => {
     const raiz = readFileSync(resolve(__dirname, '../../../contrato/socios-v1.json'), 'utf8')
     const web = readFileSync(resolve(__dirname, '../src/contrato/socios-v1.json'), 'utf8')
     expect(web.trimEnd()).toBe(raiz.trimEnd())
+  })
+
+  it('la barra del portal queda fuera de main, sin migas, y vuelve al panel', async () => {
+    const wrapper = await montarDocs('pruebas')
+    expect(wrapper.find('main [role="tablist"]').exists()).toBe(false)
+    expect(wrapper.find('main nav').exists()).toBe(false)
+    await wrapper.findAll('[role="tab"]')[0].trigger('click')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/socios/panel'), { timeout: 3000 })
+  })
+
+  it('SO-04: dice con qué clave se autentica y hasta cuándo', async () => {
+    const wrapper = await montarDocs('pruebas')
+    await esperar(() => wrapper.find('[data-prueba="token-activo"]').exists())
+    expect(wrapper.get('[data-prueba="token-activo"]').text()).toMatch(
+      /Autenticado con la clave de Pruebas \(sandbox\) · vence \d+:\d{2}/,
+    )
+  })
+
+  it('SO-04: si no se obtiene el token lo avisa, en vez de dejar un 401 sin explicación', async () => {
+    servidor.use(http.post('*/v1/token', () => new HttpResponse(null, { status: 503 })))
+    const wrapper = await montarDocs('pruebas')
+    await esperar(() => wrapper.find('[data-prueba="sin-token"]').exists())
+    expect(wrapper.get('[data-prueba="sin-token"]').text()).toContain('401')
   })
 })

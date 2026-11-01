@@ -73,9 +73,7 @@ export const pantallas: Pantalla[] = [
     criterios: [],
     componente: () => import('../views/MiPerfil.vue'),
   },
-  // G-06 no tiene pantalla propia todavía (ninguna HU de este sprint cubre consultar pólizas
-  // emitidas): se registra solo como destino honesto de las tarjetas "Mis pólizas"/"Pólizas
-  // emitidas" de los homes (G-02/G-02a), que sin esto no tenían a dónde llevar al hacer clic.
+  // G-06: «Mis pólizas» (cliente) y «Pólizas emitidas» (asesor); mismo componente, según el rol de la sesión.
   {
     id: 'G-06',
     ruta: '/polizas',
@@ -84,6 +82,7 @@ export const pantallas: Pantalla[] = [
     sprint: 1,
     roles: CLIENTE_O_ASESOR,
     criterios: [],
+    componente: () => import('../views/PolizasEmitidas.vue'),
   },
   {
     id: 'W01-01',
@@ -141,7 +140,7 @@ export const pantallas: Pantalla[] = [
     nombre: 'Detalle de fuentes consultadas',
     historia: 'HU-W01',
     sprint: 1,
-    roles: CLIENTE_O_ASESOR,
+    roles: ['ASESOR'],
     criterios: ['CA-W01-06'],
     componente: () => import('../views/DetalleDeFuentes.vue'),
   },
@@ -208,7 +207,8 @@ export const pantallas: Pantalla[] = [
   },
   {
     id: 'W03-R',
-    ruta: '/pago/retorno',
+    // El BFF devuelve a la persona a `/pago/retorno/{propuestaId}?sesion=…`; sin el id (el retorno de la pasarela simulada) también entra.
+    ruta: '/pago/retorno/:propuestaId?',
     nombre: 'Retorno de la pasarela',
     historia: 'HU-W03',
     sprint: 2,
@@ -334,13 +334,13 @@ export const pantallas: Pantalla[] = [
     componente: () => import('../views/DocumentacionApi.vue'),
   },
   {
-    id: 'W07-04',
-    ruta: '/operador/estado',
-    nombre: 'Estado del sistema',
+    id: 'W07-05',
+    ruta: '/socios/perfil',
+    nombre: 'Perfil del socio',
     historia: 'HU-W07',
     sprint: 2,
-    roles: ['BACKOFFICE'],
-    criterios: ['CA-W07-14', 'CA-W07-15'],
-    componente: () => import('../views/EstadoSistema.vue'),
+    socio: true,
+    criterios: [],
+    componente: () => import('../views/PerfilSocio.vue'),
   },
 ]

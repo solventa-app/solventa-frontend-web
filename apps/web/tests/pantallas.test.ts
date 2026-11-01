@@ -37,7 +37,7 @@ const HU_W04 = ['W04-01', 'W04-02', 'W04-02b', 'W04-03a', 'W04-03b', 'W04-03c']
 const HU_W03 = ['W03-01', 'W03-02', 'W03-02b', 'W03-03', 'W03-R', 'W03-04']
 
 // HU-W07 (Sprint 2, KAN-30): el portal de socios, registrado en las piezas comunes; sus vistas llegan una por PR.
-const HU_W07 = ['W07-01', 'W07-02', 'W07-03', 'W07-04']
+const HU_W07 = ['W07-01', 'W07-02', 'W07-03', 'W07-05']
 
 describe('catálogo de pantallas', () => {
   it('cubre las 12 pantallas del Sprint 1, las rutas honestas fuera de sprint y las de HU-W04, HU-W03 y HU-W07', () => {
@@ -51,7 +51,7 @@ describe('catálogo de pantallas', () => {
   })
 
   it('las del portal de socios no usan roles y, salvo el ingreso, exigen la sesión del socio', () => {
-    for (const p of pantallas.filter((x) => x.historia === 'HU-W07' && x.id !== 'W07-04')) {
+    for (const p of pantallas.filter((x) => x.historia === 'HU-W07')) {
       expect(p.roles).toBeUndefined()
       expect(p.ruta.startsWith('/socios/')).toBe(true)
       expect(!!p.socio).toBe(p.ruta !== '/socios/ingreso')
