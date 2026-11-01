@@ -223,6 +223,9 @@ const bff = graphql.link('*')
 // Tasas de demostración: pesos colombianos por unidad, como la tabla del ACL Worker.
 const COP_POR_UNIDAD: Record<string, number> = { COP: 1, USD: 4100, EUR: 4450, MXN: 225, BRL: 750, CLP: 4.4, PEN: 1100 }
 
+// Quién tiene «la cookie» en los mocks (T22).
+let ultimoUsuarioDemo: string | null = null
+
 export const handlers = [
   bff.mutation<{ iniciarSesion: ResultadoSesion }, MutationIniciarSesionArgs>('iniciarSesion', ({ variables }) => {
     const { usuario, clave } = variables.entrada
@@ -231,15 +234,46 @@ export const handlers = [
       return HttpResponse.json({ data: { iniciarSesion: { mensaje: 'Usuario o clave incorrectos.' } } })
     }
     const rol = rolDeDemo(usuario)
+    ultimoUsuarioDemo = usuario
     return HttpResponse.json({
       data: {
         iniciarSesion: {
           token: tokenDeDemo(usuario, rol),
           expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+          // T22: la web no recibe el refresh (viaja en una cookie httpOnly); solo cuándo vence.
+          refreshExpiraEn: new Date(Date.now() + 8 * 24 * 3600_000).toISOString(),
           usuario: usuarioDeDemo(usuario, rol),
         },
       },
     })
+  }),
+
+  // T22: con los mocks no hay cookie que leer; renueva el último usuario que inició sesión.
+  bff.mutation<{ renovarSesion: ResultadoSesion }>('renovarSesion', () => {
+    const usuario = ultimoUsuarioDemo
+    if (!usuario) {
+      return HttpResponse.json({
+        data: {
+          renovarSesion: { mensaje: 'Tu sesión ya no es válida. Inicia sesión de nuevo.', codigo: 'SESION_VENCIDA' },
+        },
+      })
+    }
+    const rol = rolDeDemo(usuario)
+    return HttpResponse.json({
+      data: {
+        renovarSesion: {
+          token: tokenDeDemo(usuario, rol),
+          expiraEn: new Date(Date.now() + 3600_000).toISOString(),
+          refreshExpiraEn: new Date(Date.now() + 8 * 24 * 3600_000).toISOString(),
+          usuario: usuarioDeDemo(usuario, rol),
+        },
+      },
+    })
+  }),
+
+  bff.mutation<{ cerrarSesion: boolean }>('cerrarSesion', () => {
+    ultimoUsuarioDemo = null
+    return HttpResponse.json({ data: { cerrarSesion: true } })
   }),
 
   bff.query<{ convertirMontos: Monto[] }, QueryConvertirMontosArgs>('convertirMontos', ({ variables }) => {

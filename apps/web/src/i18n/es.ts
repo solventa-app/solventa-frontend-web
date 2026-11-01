@@ -61,6 +61,7 @@ export const es = {
   'ingreso.otroRol': 'Tu rol es {rol}. Selecciónalo e ingresa de nuevo.',
   'ingreso.sinRol': 'Tu usuario no tiene un rol habilitado en esta web.',
   'ingreso.falla': 'No pudimos iniciar sesión en este momento. Intenta de nuevo.',
+  'ingreso.sesionVencida': 'Tu sesión venció. Inicia sesión de nuevo para continuar.',
 
   // G-02 · Home del Cliente
   'homeCliente.titulo': 'Home del Cliente',

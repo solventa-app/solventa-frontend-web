@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw, type RouterHistory } from 'vue-router'
-import { useSesion } from '../composables/useSesion'
+import { esperarRestauracion, useSesion } from '../composables/useSesion'
 import { useSesionSocio } from '../composables/useSesionSocio'
 import { pantallas, type Pantalla } from './pantallas'
 
@@ -50,7 +50,7 @@ export function crearRouter(history: RouterHistory = createWebHistory()) {
 
   // Sin sesión vigente se vuelve a G-01; con un rol sin acceso, al home de ese rol. El BFF aplica los
   // mismos permisos del lado del servidor: esto solo evita mostrar pantallas que van a fallar.
-  router.beforeEach((destino) => {
+  router.beforeEach(async (destino) => {
     // Portal de socios (HU-W07): sin sesión técnica vigente se vuelve a su login, con el aviso si venció.
     if (destino.meta.pantalla?.socio) {
       const sesionSocio = useSesionSocio()
@@ -61,6 +61,8 @@ export function crearRouter(history: RouterHistory = createWebHistory()) {
     const roles = destino.meta.pantalla?.roles
     if (!roles) return true
     const { estado, sesionActiva, cerrarSesion, rutaInicio } = useSesion()
+    // Al abrir la web puede estar renovándose el acceso con el refresh (T22): se espera antes de decidir.
+    await esperarRestauracion()
     if (!sesionActiva()) {
       cerrarSesion()
       return '/login'

@@ -62,6 +62,7 @@ export const en: Record<Clave, string> = {
   'ingreso.otroRol': 'Your role is {rol}. Select it and sign in again.',
   'ingreso.sinRol': 'Your user does not have a role enabled on this site.',
   'ingreso.falla': "We couldn't sign you in right now. Please try again.",
+  'ingreso.sesionVencida': 'Your session has expired. Please sign in again to continue.',
 
   // G-02 · Customer home
   'homeCliente.titulo': 'Customer Home',

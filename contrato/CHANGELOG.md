@@ -155,3 +155,12 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
   del token, con `desde`/`hasta` (la serie diaria cuenta llamadas); el estado es plano (`porcentaje`, `apis[].nombre`,
   `calculadoEn`); las ventas traen totales, `meses` y `tasaComision`. El contrato no define documentos de prueba: solo el
   código `000000` y que el modo prueba responde datos simulados.
+
+## v0.26 — sincronizado el 2026-11-01
+
+- KAN-26 (T22): `contrato/schema.graphql` copiado del backend (v0.26, PR solventa-backend#490). Suma `Sesion.refreshToken` y
+  `Sesion.refreshExpiraEn`, `renovarSesion(refreshToken)` y `cerrarSesion(refreshToken)`, y el código `SESION_VENCIDA` de
+  `ErrorAutenticacion`. En la web el refresh viaja en la cookie `solventa_refresh` (httpOnly) que pone el BFF: `refreshToken`
+  llega null y solo se usa `refreshExpiraEn`.
+- Lo que cambia para la web: `useSesion` renueva antes del vencimiento (temporizador) y ante «sin sesión», con la cabecera
+  `X-Solventa-Csrf: 1`; al fallar vuelve a G-01 con el aviso de sesión vencida.
