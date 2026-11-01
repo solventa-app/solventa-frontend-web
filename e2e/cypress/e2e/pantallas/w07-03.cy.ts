@@ -25,14 +25,14 @@ describeConMocks("W07-03 · Documentación de la API (pantalla aislada)", () => 
     cy.location("pathname").should("eq", "/socios/documentacion");
   });
 
-  it("abre en la guía (aún sin PDF publicado) y recorre las tres pestañas con la URL", () => {
+  it("abre en la guía en PDF y recorre las pestañas con la URL", () => {
     cy.get('[data-pantalla="W07-03"]').within(() => {
       cy.contains('[role="tab"]', "Guía de integración").should(
         "have.attr",
         "aria-selected",
         "true",
       );
-      cy.get('[data-prueba="guia-pendiente"]').should("be.visible");
+      cy.get('[data-prueba="guia-pdf"]').should("be.visible");
       cy.contains('[role="tab"]', "API Pruebas").click();
       cy.get('[data-prueba="caja-pruebas"]').should("contain.text", "000000");
       cy.contains('[role="tab"]', "API Producción").click();
