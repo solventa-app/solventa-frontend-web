@@ -235,7 +235,7 @@ export const en: Record<Clave, string> = {
   'conciliacion.estado.COBRANDO': 'Charging',
   'conciliacion.estado.COBRADO': 'Charged',
   'conciliacion.estado.RECHAZADO': 'Declined',
-  'conciliacion.estado.PENDIENTE': 'Pending',
+  'conciliacion.estado.PENDIENTE': 'Pending retry',
   'conciliacion.cliente': 'Customer',
   'conciliacion.poliza': 'Policy no.',
   'conciliacion.prima': 'Premium',
@@ -246,7 +246,6 @@ export const en: Record<Clave, string> = {
   'conciliacion.tipoMedio.DEBITO': 'Debit',
   'conciliacion.origen.INTERACTIVO': 'Online',
   'conciliacion.origen.RECURRENTE': 'Recurring',
-  'conciliacion.loResuelveCliente': 'The customer resolves it',
   'conciliacion.seConcilia': 'Being reconciled',
   'conciliacion.controlRecurrente':
     'The premium is charged every cycle with the payment method saved when the policy was issued, with no action from the customer.',

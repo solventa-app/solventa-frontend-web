@@ -141,36 +141,6 @@ describe('HU-W05 · pantallas', () => {
         expect(fila(wrapper, 'Carlos Andrés Peña').text()).toContain('Se concilia')
         expect(fila(wrapper, 'Julián Torres Mesa').text()).toContain('Reintentar cobro')
       })
-
-      it('un rechazado en línea no se reintenta: «Lo resuelve el cliente»', async () => {
-        servidor.use(
-          http.post('*/graphql/web', () =>
-            HttpResponse.json({
-              data: {
-                cobros: [
-                  {
-                    id: 'cobro-9',
-                    cliente: { id: 'cliente-9', nombre: 'Mariana Ruiz' },
-                    polizaId: 'SOL-2026-004899',
-                    estado: 'RECHAZADO',
-                    monto: { valor: '94680.00', moneda: 'COP' },
-                    actualizadoEn: '2026-10-27T10:00:00Z',
-                    idTransaccion: null,
-                    motivo: 'fondos_insuficientes',
-                    reintentosRestantes: 3,
-                    origen: 'INTERACTIVO',
-                    medio: { marca: 'Visa', tipo: 'CREDITO' },
-                  },
-                ],
-              },
-            }),
-          ),
-        )
-        const { wrapper } = await montarConciliacion()
-        const rechazada = fila(wrapper, 'Mariana Ruiz')
-        expect(rechazada.text()).toContain('Lo resuelve el cliente')
-        expect(rechazada.findAll('button').some((b) => b.text().includes('Reintentar cobro'))).toBe(false)
-      })
     })
 
     describe('actualización por SSE', () => {
