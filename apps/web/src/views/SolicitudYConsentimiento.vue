@@ -16,6 +16,7 @@ import { Boton, CampoFormulario, FooterPantalla, HeaderPantalla, MigasDePan, Tit
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { ejecutar } from '../graphql/cliente'
 import { correoClienteValido, esErrorOferta, nombreClienteValido, useCotizacion } from '../composables/useCotizacion'
+import { useLimitesPlazo } from '../composables/useLimitesPlazo'
 import { useSesion } from '../composables/useSesion'
 import { t, type Clave } from '../i18n'
 
@@ -23,6 +24,9 @@ const router = useRouter()
 const { estado, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
+// T18: los límites del plazo salen del contrato (jurisdicciones), no de la pantalla.
+const { limites, cargarLimitesPlazo } = useLimitesPlazo()
+onMounted(() => void cargarLimitesPlazo())
 
 // T6 (W03-34): el CLIENTE ya tiene su documento en la cuenta. Se muestra enmascarado y de solo lectura, y a la
 // cotización viaja `null` para que el BFF use el de la cuenta. Solo vive en esta pantalla (nunca en el navegador).
@@ -72,7 +76,7 @@ function validar(): boolean {
     nuevosErrores.valorCredito = 'solicitud.errorMonto'
   }
   const plazo = Number(captura.plazoMeses)
-  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < 1 || plazo > 60) {
+  if (!captura.plazoMeses.trim() || !Number.isInteger(plazo) || plazo < limites.min || plazo > limites.max) {
     nuevosErrores.plazoMeses = 'solicitud.errorPlazo'
   }
   if (!captura.direccionInmueble.trim()) {
@@ -154,7 +158,11 @@ function enviar() {
             :label="t('solicitud.plazo')"
             type="number"
             :placeholder="t('solicitud.plazoEjemplo')"
-            :error="intentoEnvio && errores.plazoMeses ? t(errores.plazoMeses) : undefined"
+            :error="
+              intentoEnvio && errores.plazoMeses
+                ? t(errores.plazoMeses, { min: limites.min, max: limites.max })
+                : undefined
+            "
             required
           />
           <CampoFormulario

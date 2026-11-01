@@ -131,7 +131,7 @@ export const es = {
   'solicitud.errorDocumentoVacio': 'Ingresa tu documento de identidad.',
   'solicitud.errorDocumento': 'Ingresa un número de documento válido',
   'solicitud.errorMonto': 'Ingresa un monto válido, mayor a cero.',
-  'solicitud.errorPlazo': 'Ingresa un plazo válido, entre 1 y 60 meses.',
+  'solicitud.errorPlazo': 'Ingresa un plazo válido, entre {min} y {max} meses.',
   'solicitud.errorDireccion': 'Ingresa la dirección del inmueble a asegurar.',
   'solicitud.nombreCliente': 'Nombre completo del cliente',
   'solicitud.nombreClienteEjemplo': 'Ej: Carlos Restrepo Gómez',
