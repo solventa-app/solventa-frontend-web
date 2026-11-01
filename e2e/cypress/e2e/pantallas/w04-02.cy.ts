@@ -32,7 +32,7 @@ describeConMocks("W04-02 · Detalle del siniestro (pantalla aislada)", () => {
       cy.get('[data-prueba="verificaciones"] li').should("have.length", 3);
       cy.get('[data-prueba="tiempo-restante"] time')
         .invoke("text")
-        .should("match", /\d+h \d{2}m|\d+ d \d+h|Vencido/);
+        .should("match", /\d+ h \d+ min|\d+ d \d+ h \d+ min|Vencido/);
       cy.get('[data-prueba="derivar"]').should(
         "have.attr",
         "href",

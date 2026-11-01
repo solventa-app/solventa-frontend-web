@@ -158,6 +158,26 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
     expect(wrapper.get('[data-prueba="mostrando"]').text()).toContain('Mostrando 0 de 3')
   })
 
+  it('muestra el plazo solo en los PENDIENTE y lo marca al vencer', async () => {
+    const { wrapper } = await montarBandeja()
+    const { estado } = useSiniestros()
+    const [base] = estado.siniestros
+    estado.siniestros = [
+      {
+        ...base,
+        id: 'a',
+        estado: 'PENDIENTE',
+        venceDictamenEn: new Date(Date.now() + 90 * 60_000 + 5_000).toISOString(),
+      },
+      { ...base, id: 'b', estado: 'PENDIENTE', venceDictamenEn: new Date(Date.now() - 60_000).toISOString() },
+      { ...base, id: 'c', estado: 'EN_REVISION', venceDictamenEn: new Date(Date.now() - 60_000).toISOString() },
+    ]
+    await nextTick()
+    const plazos = wrapper.findAll('[data-prueba="plazo"]')
+    expect(plazos.map((p) => p.text())).toEqual(['Plazo: 1 h 30 min', 'Plazo: Vencido'])
+    expect(plazos[1].classes()).toContain('text-error')
+  })
+
   it('pagina de a 10, y cambiar de filtro vuelve a la página 1', async () => {
     const { wrapper } = await montarBandeja()
     const { estado } = useSiniestros()
