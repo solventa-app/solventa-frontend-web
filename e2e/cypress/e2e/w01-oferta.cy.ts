@@ -6,6 +6,15 @@ import { ingresar } from '../support/sesion'
 // accesibles, nunca por clases CSS (ver e2e/README.md). Corre contra los mocks de MSW
 // (`npm run web:dev:mock`, ver handlers.ts): el documento termina en 999 → oferta preliminar, en
 // 000 → error; cualquier otro → oferta completa.
+const llenarYConsultar = (documento: string) => {
+  cy.contains('label', 'Documento de identidad').parent().find('input').type(documento)
+  cy.contains('label', 'Monto del crédito hipotecario').parent().find('input').type('185000000')
+  cy.contains('label', 'Plazo (meses)').parent().find('input').type('60')
+  cy.contains('label', 'Dirección del inmueble a asegurar').parent().find('input').type('Cra 45 # 22-18, Bogotá D.C.')
+  cy.get('input[type="checkbox"]').check()
+  cy.contains('button', 'Consultar oferta').click()
+}
+
 describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
   beforeEach(() => ingresar('CLIENTE'))
 
@@ -46,7 +55,7 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
   it('W01-01 → W01-02 → W01-03b: oferta preliminar (fuente degradada, documento terminado en 999)', () => {
     cy.contains('a', 'Nueva cotización').click()
     cy.get('[data-pantalla="W01-01"]').within(() => {
-      cy.contains('button', 'Simular oferta degradada: timeout de fuentes con valor en caché').click()
+      llenarYConsultar('CC10203040999')
     })
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta-preliminar')
@@ -59,7 +68,7 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
   it('W01-01 → W01-02 → W01-03c → W01-05: fallo total y contacto con un asesor', () => {
     cy.contains('a', 'Nueva cotización').click()
     cy.get('[data-pantalla="W01-01"]').within(() => {
-      cy.contains('button', 'Simular fallo total de la consulta de fuentes').click()
+      llenarYConsultar('CC10203040000')
     })
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/error')

@@ -170,10 +170,6 @@ onBeforeUnmount(() => {
             {{ t('firma.firmar') }}
           </Boton>
           <p v-if="!puedeFirmar" class="text-[11px] italic text-tinta-suave">{{ t('firma.deshabilitado') }}</p>
-          <p class="flex items-center gap-2 text-[11px] text-tinta-suave">
-            <IconoMaterial nombre="lock" class="h-4 w-4" />
-            {{ t('firma.nota') }}
-          </p>
         </div>
       </div>
     </main>
