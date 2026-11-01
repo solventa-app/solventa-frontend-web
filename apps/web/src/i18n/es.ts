@@ -119,6 +119,7 @@ export const es = {
   'solicitud.header': 'Solicitud y consentimiento',
   'solicitud.titulo': 'Solicitud de seguro de vida hipotecario',
   'solicitud.documento': 'Documento de identidad',
+  'solicitud.documentoDeCuenta': 'Es el documento de tu cuenta; no se puede cambiar aquí.',
   'solicitud.documentoEjemplo': 'Ej: 1020304050',
   'solicitud.monto': 'Monto del crédito hipotecario',
   'solicitud.montoEjemplo': 'Ej: 185000000',

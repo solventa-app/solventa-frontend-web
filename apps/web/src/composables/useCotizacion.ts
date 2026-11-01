@@ -124,7 +124,7 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         entrada: {
           finalidad: 'perfilamiento',
           versionTexto: 'v1',
-          documentoIdentidad: estado.captura.documentoIdentidad,
+          documentoIdentidad: estado.captura.documentoIdentidad.trim() || null,
           tipoDato: 'FINANCIEROS_Y_ABIERTOS',
           fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
           canal: 'WEB',
@@ -151,7 +151,7 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         {
           entrada: {
             consentimientoId: estado.consentimientoId,
-            documentoIdentidad: estado.captura.documentoIdentidad,
+            documentoIdentidad: estado.captura.documentoIdentidad.trim() || null,
             valorCredito: estado.captura.valorCredito,
             plazoMeses: Number(estado.captura.plazoMeses),
             direccionInmueble: estado.captura.direccionInmueble,

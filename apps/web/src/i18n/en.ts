@@ -120,6 +120,7 @@ export const en: Record<Clave, string> = {
   'solicitud.header': 'Application and consent',
   'solicitud.titulo': 'Mortgage life insurance application',
   'solicitud.documento': 'ID number',
+  'solicitud.documentoDeCuenta': "This is your account's ID; it can't be changed here.",
   'solicitud.documentoEjemplo': 'E.g.: 1020304050',
   'solicitud.monto': 'Mortgage loan amount',
   'solicitud.montoEjemplo': 'E.g.: 185000000',
