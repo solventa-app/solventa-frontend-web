@@ -2,18 +2,19 @@
   W04-03a · Confirmación de aprobación (Figma "Solventa-web-Final", frame 2001:2865). CA-W04-28 y CA-W04-29.
   Lee el resultado de `aprobarSiniestro` en memoria (useResultadoReciente); sin él, estado vacío.
   Diferencias con el frame (especificación, sección I): migas de 3 niveles, insignia con glifo, monto con
-  formatearMonto y filas sin dato (método o plazo nulos) que no se pintan.
+  montoVisible y filas sin dato (método o plazo nulos) que no se pintan.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import TarjetaConfirmacion from '../components/TarjetaConfirmacion.vue'
 import { useResultadoReciente } from '../composables/useResultadoReciente'
 import { t, tPiezas } from '../i18n'
-import { formatearMonto, sinPuntoFinal } from '../utils/formato'
+import { montoVisible } from '../composables/useMoneda'
+import { sinPuntoFinal } from '../utils/formato'
 
 const resultado = useResultadoReciente('APROBACION')
 const aprobacion = computed(() => resultado.value?.resolucion ?? null)
-const monto = computed(() => (aprobacion.value?.indemnizacion ? formatearMonto(aprobacion.value.indemnizacion) : ''))
+const monto = computed(() => (aprobacion.value?.indemnizacion ? montoVisible(aprobacion.value.indemnizacion) : ''))
 
 const subtitulo = computed(() => {
   if (!resultado.value || !aprobacion.value) return []
