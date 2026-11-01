@@ -4,7 +4,7 @@
 import { ejecutar } from '../graphql/cliente'
 import type { EstadoCobro, TicketAvisos } from '../graphql/tipos'
 
-const TICKET = `query ticketAvisos { ticketAvisos { ticket url } }`
+const TICKET = `mutation ticketAvisos { ticketAvisos { ticket url } }`
 
 /** Sin eventos en este tiempo se cierra la conexión: no vale la pena sostenerla. */
 export const SILENCIO_MAXIMO_MS = 15 * 60_000

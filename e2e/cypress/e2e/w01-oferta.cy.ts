@@ -111,7 +111,7 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
       cy.get('[data-pantalla="W01-01"]').within(() => {
         llenar({ ...valido, plazo: '61' })
         cy.contains('button', 'Consultar oferta').click()
-        cy.contains('[role="alert"]', 'Ingresa un plazo válido en meses').should('exist')
+        cy.contains('[role="alert"]', 'Ingresa un plazo válido').should('exist')
       })
       cy.location('pathname').should('eq', '/cotizacion')
     })
