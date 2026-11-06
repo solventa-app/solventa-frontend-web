@@ -51,6 +51,33 @@ export function revisarImagenFirma(ancho: number, alto: number, pixeles: Uint8Cl
   return null
 }
 
+/**
+ * Resolución interna del lienzo de «Dibujar» para un tamaño en pantalla: la misma proporción, pero nunca más ancha
+ * que 1200 ni más alta que 600 (POLICY rechaza la imagen por DIMENSIONES; en pantallas anchas el lienzo mide más).
+ */
+export function resolucionLienzo(anchoPantalla: number, altoPantalla: number): { ancho: number; alto: number } {
+  const ancho = anchoPantalla > 0 ? anchoPantalla : 560
+  const alto = altoPantalla > 0 ? altoPantalla : 180
+  const escala = Math.min(1, MAX_ANCHO_FIRMA / ancho, MAX_ALTO_FIRMA / alto)
+  return { ancho: Math.round(ancho * escala), alto: Math.round(alto * escala) }
+}
+
+/**
+ * Punto del puntero en coordenadas del lienzo. La caja es el tamaño en pantalla y puede no coincidir con la resolución
+ * interna (tope de 1200 px, o el lienzo se preparó antes de tener su ancho real): sin escalar, el trazo sale corrido.
+ */
+export function puntoEnLienzo(
+  clienteX: number,
+  clienteY: number,
+  caja: { left: number; top: number; width: number; height: number },
+  ancho: number,
+  alto: number,
+): { x: number; y: number } {
+  const escalaX = caja.width > 0 ? ancho / caja.width : 1
+  const escalaY = caja.height > 0 ? alto / caja.height : 1
+  return { x: (clienteX - caja.left) * escalaX, y: (clienteY - caja.top) * escalaY }
+}
+
 /** El inverso de `base64DeBytes`: los bytes de la imagen para el PUT directo al bucket. */
 export function bytesDeBase64(base64: string): Uint8Array {
   const binario = atob(base64)
