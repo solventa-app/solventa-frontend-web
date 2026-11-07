@@ -307,7 +307,8 @@ export const handlers = [
   bff.query<{ yo: Usuario | null }>('yo', ({ request }) => {
     const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
     const claims = token ? leerClaims(token) : null
-    if (!claims) return HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.' }] })
+    if (!claims)
+      return HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.', extensions: { code: 'SIN_SESION' } }] })
     return HttpResponse.json({
       data: { yo: usuarioDeDemo(claims.usuario, claims.rol) },
     })

@@ -25,13 +25,18 @@ export function usarToken(nuevo: string | null): void {
 /** Cabecera anti-CSRF que el BFF exige a `renovarSesion` y `cerrarSesion` en la web (T22). */
 export const CABECERA_CSRF = { 'X-Solventa-Csrf': '1' }
 
-// Mensajes con que el BFF dice que el token venció o falta (en español y en inglés, según Accept-Language).
-const MENSAJES_SIN_SESION = [
-  'Tu sesión no es válida o venció. Inicia sesión de nuevo.',
-  'Your session is invalid or has expired. Please sign in again.',
-  'Debes iniciar sesión.',
-  'You must sign in.',
-]
+// Códigos con que el BFF dice que el token venció o falta (contrato v0.34: `extensions.code`). Se compara el código y no
+// el texto, que cambia con el idioma y puede cambiar de redacción.
+const CODIGOS_SIN_SESION = new Set(['SIN_SESION', 'SESION_INVALIDA'])
+
+/** True si el error es del BFF por un token vencido o ausente (v0.34). */
+export function esErrorSinSesion(e: unknown): boolean {
+  if (!(e instanceof ErrorGraphQL)) return false
+  return e.errores.some((x) => {
+    const codigo = (x as { extensions?: { code?: unknown } } | null)?.extensions?.code
+    return typeof codigo === 'string' && CODIGOS_SIN_SESION.has(codigo)
+  })
+}
 
 // Renueva la sesión con el refresh (lo fija useSesion.ts). Devuelve true si quedó un token nuevo.
 let renovador: (() => Promise<boolean>) | null = null
@@ -81,8 +86,7 @@ export async function ejecutar<T>(
     return await ejecutarUnaVez<T>(consulta, variables, fetchFn, opciones, endpoint, conToken)
   } catch (e) {
     // Token vencido entre dos renovaciones programadas: se renueva una vez y se reintenta (T22).
-    const sinSesion = e instanceof ErrorGraphQL && MENSAJES_SIN_SESION.includes(e.message)
-    if (conToken && token && sinSesion && renovador && (await renovador())) {
+    if (conToken && token && esErrorSinSesion(e) && renovador && (await renovador())) {
       return await ejecutarUnaVez<T>(consulta, variables, fetchFn, opciones, endpoint, conToken)
     }
     throw e
