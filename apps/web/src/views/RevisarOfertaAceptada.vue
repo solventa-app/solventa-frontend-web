@@ -7,16 +7,18 @@
     se inventan. El texto de la caja de alerta cambia al flujo nuevo (código y enlace de firma, no certificado aquí).
   - Errores de `aceptarOferta`: una PRELIMINAR o vencida se recalcula (D-11); un consentimiento no vigente vuelve a
     W01-01 con el aviso de re-autorización (bloque 4 de W01). Una falla técnica nunca muestra un 5xx (regla 5).
-  - Con el enlace enviado, la tarjeta muestra el estado de la propuesta; «Actualizar estado» la vuelve a consultar.
+  - Con el enlace enviado, la tarjeta muestra el estado de la propuesta y se actualiza sola por SSE (F-F5, W03-37: avisos
+    `propuesta` de `useAvisos`). La conexión vive con la pestaña visible; al volver se consulta una vez.
   - Al recargar se recupera la propuesta de la oferta (`propuestas`) y se retoma donde iba: con la identidad verificada
     aparece «Continuar con la emisión»; la tarjeta usa la prima y la cobertura de la propuesta si la oferta ya venció.
 -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Badge, Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalVerificacionAsesor from '../components/ModalVerificacionAsesor.vue'
+import { useAvisos } from '../composables/useAvisos'
 import { esOferta, exigirNuevoConsentimiento, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import { useSuscripcion } from '../composables/useSuscripcion'
@@ -29,7 +31,9 @@ const route = useRoute()
 const router = useRouter()
 const { estado: cotizacion, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
-const { estado, cargarOferta, aceptar, consultarPropuesta, recuperarPropuesta } = useSuscripcion()
+const { estado, cargarOferta, aceptar, consultarPropuesta, aplicarAvisoPropuesta, recuperarPropuesta } =
+  useSuscripcion()
+const avisos = useAvisos(null, fetch, undefined, (aviso) => void aplicarAvisoPropuesta(aviso))
 
 const ofertaId = computed(() => String(route.params.ofertaId))
 const modalAbierto = ref(false)
@@ -57,12 +61,38 @@ const TIPO_BADGE: Partial<Record<EstadoPropuesta, 'exito' | 'alerta' | 'error' |
   CANCELADA: 'error',
 }
 
+// F-F5: el estado de la propuesta llega en vivo mientras está en curso. Una propuesta que ya terminó no cambia más.
+const TERMINADA: EstadoPropuesta[] = ['EMITIDA', 'NO_EMITIDA', 'CANCELADA']
+const escuchar = computed(() => enCurso.value && !TERMINADA.includes(propuesta.value!.estado))
+
+watch(escuchar, (si) => {
+  if (si && document.visibilityState !== 'hidden') void avisos.abrir()
+  else if (!si) avisos.cerrar()
+})
+
+// La conexión solo vive con la pestaña visible; al volver se consulta una vez lo que pasó mientras tanto.
+function alCambiarVisibilidad() {
+  if (document.visibilityState === 'hidden') {
+    avisos.cerrar()
+    return
+  }
+  if (!escuchar.value) return
+  void avisos.abrir()
+  void consultarPropuesta({ silencioso: true })
+}
+
 onMounted(async () => {
+  document.addEventListener('visibilitychange', alCambiarVisibilidad)
   // Recargar la página no pierde el proceso: se recupera la propuesta de esta oferta y se retoma donde iba.
   await Promise.all([
     oferta.value ? Promise.resolve() : cargarOferta(ofertaId.value),
     recuperarPropuesta(ofertaId.value),
   ])
+  if (escuchar.value) void avisos.abrir()
+})
+onUnmounted(() => {
+  avisos.cerrar()
+  document.removeEventListener('visibilitychange', alCambiarVisibilidad)
 })
 
 async function aceptarYContinuar() {
@@ -177,11 +207,11 @@ function recalcular() {
                 })
               }}
             </p>
+            <p v-if="escuchar" class="flex items-center gap-1.5 text-[12px] text-tinta-suave" data-prueba="en-vivo">
+              <IconoMaterial nombre="sync" class="h-4 w-4" />
+              {{ t('revisarOferta.enVivo') }}
+            </p>
             <div class="flex flex-wrap gap-3">
-              <Boton variante="secundario" :disabled="estado.cargando" @click="consultarPropuesta">
-                <template #icono><IconoMaterial nombre="refresh" class="h-4 w-4" /></template>
-                {{ t('revisarOferta.actualizar') }}
-              </Boton>
               <Boton
                 v-if="propuesta.estado === 'IDENTIDAD_VERIFICADA'"
                 data-prueba="continuar-emision"

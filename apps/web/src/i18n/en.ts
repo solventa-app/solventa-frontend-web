@@ -534,7 +534,7 @@ export const en: Record<Clave, string> = {
   'revisarOferta.recalcular': 'Recalculate',
   'revisarOferta.sinOferta': 'This offer is no longer available. Get a new quote to continue.',
   'revisarOferta.estadoTitulo': 'Proposal status',
-  'revisarOferta.actualizar': 'Refresh status',
+  'revisarOferta.enVivo': 'The status updates automatically.',
   'revisarOferta.continuarEmision': 'Continue with issuance',
   'revisarOferta.estado.ACEPTADA': 'Accepted',
   'revisarOferta.estado.IDENTIDAD_VERIFICADA': 'Identity verified',

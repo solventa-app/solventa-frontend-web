@@ -19,6 +19,7 @@ import type {
   ResultadoEnvioCodigo,
   ResultadoVerificacion,
 } from '../graphql/tipos'
+import type { AvisoPropuesta } from './useAvisos'
 import { t } from '../i18n'
 import { contactoCapturado } from './useCotizacion'
 import { alCerrarSesion } from './useSesion'
@@ -244,13 +245,36 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
   }
 
   /** El asesor actualiza el estado mientras el cliente firma y paga (sin recarga automática: no hay webhooks). */
-  async function consultarPropuesta(): Promise<void> {
+  async function consultarPropuesta(opciones: { silencioso?: boolean } = {}): Promise<void> {
     if (!estado.propuesta) return
     const id = estado.propuesta.id
-    await conCarga(async () => {
+    const consultar = async () => {
       const datos = await ejecutar<{ propuesta: Propuesta | null }>(CONSULTA_PROPUESTA, { id }, fetchFn)
-      if (datos.propuesta) estado.propuesta = datos.propuesta
-    })
+      // Si mientras tanto se cambió de propuesta, la respuesta vieja no la pisa.
+      if (datos.propuesta && estado.propuesta?.id === id) estado.propuesta = datos.propuesta
+    }
+    if (!opciones.silencioso) {
+      await conCarga(consultar)
+      return
+    }
+    // F-F5: la actualización en vivo no muestra «Cargando…» ni borra lo que hay si falla.
+    try {
+      await consultar()
+    } catch {
+      // Se queda con el estado del aviso; la próxima consulta lo pone al día.
+    }
+  }
+
+  /**
+   * F-F5 (W03-37): aviso SSE de la propuesta. Si es la que se está viendo, el estado cambia de inmediato y se consulta
+   * una vez en silencio para traer lo que el aviso no lleva (mensaje del estado, póliza). Los de otras se ignoran.
+   */
+  async function aplicarAvisoPropuesta(aviso: AvisoPropuesta): Promise<void> {
+    const actual = estado.propuesta
+    if (!actual || actual.id !== aviso.propuestaId) return
+    actual.estado = aviso.estado
+    if (aviso.estadoVisible) actual.estadoVisible = aviso.estadoVisible
+    await consultarPropuesta({ silencioso: true })
   }
 
   return {
@@ -262,6 +286,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     emitir,
     reenviarEnlace,
     consultarPropuesta,
+    aplicarAvisoPropuesta,
     recuperarPropuesta,
     reiniciar,
   }
