@@ -19,7 +19,14 @@ import { useSuscripcion } from '../src/composables/useSuscripcion'
 import { crearRutas } from '../src/router'
 import { servidor } from '../src/mocks/node'
 import { CODIGO_DEMO, restablecerSuscripcionDePrueba } from '../src/mocks/suscripcion'
-import { bordeLimpio, revisarArchivoFirma, revisarImagenFirma, tipoRealImagen } from '../src/utils/firma'
+import {
+  bordeLimpio,
+  puntoEnLienzo,
+  resolucionLienzo,
+  revisarArchivoFirma,
+  revisarImagenFirma,
+  tipoRealImagen,
+} from '../src/utils/firma'
 
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 // Las vistas usan el `fetch` global: en jsdom las rutas relativas no resuelven, así que se le da un origen. Se envuelve
@@ -374,5 +381,21 @@ describe('validación previa de la imagen de firma', () => {
     expect(bordeLimpio(lienzo([255, 255, 255, 255]), 10, 10)).toBe(true)
     expect(bordeLimpio(lienzo([0, 0, 0, 0]), 10, 10)).toBe(true)
     expect(bordeLimpio(lienzo([120, 100, 80, 255]), 10, 10)).toBe(false)
+  })
+
+  it('el lienzo de «Dibujar» nunca pasa de 1200×600 y conserva la proporción', () => {
+    expect(resolucionLienzo(880, 180)).toEqual({ ancho: 880, alto: 180 })
+    expect(resolucionLienzo(1700, 180)).toEqual({ ancho: 1200, alto: 127 })
+    expect(resolucionLienzo(0, 0)).toEqual({ ancho: 560, alto: 180 })
+  })
+
+  it('el trazo cae donde está el puntero aunque el lienzo y la pantalla midan distinto', () => {
+    const caja = { left: 100, top: 50, width: 1700, height: 180 }
+    // Lienzo de 1200×127 mostrado a 1700×180: el centro de la pantalla es el centro del lienzo.
+    const centro = puntoEnLienzo(950, 140, caja, 1200, 127)
+    expect(centro.x).toBeCloseTo(600)
+    expect(centro.y).toBeCloseTo(63.5)
+    // Sin diferencia de tamaño, el punto no cambia.
+    expect(puntoEnLienzo(110, 60, { left: 100, top: 50, width: 880, height: 180 }, 880, 180)).toEqual({ x: 10, y: 10 })
   })
 })
