@@ -179,6 +179,53 @@ describe('lado del asesor (W03-01 y su modal)', () => {
   })
 })
 
+describe('W03-01 en vivo (F-F5): avisos SSE de la propuesta', () => {
+  it('un aviso de la propuesta abierta cambia el estado y consulta en silencio, sin «Cargando…»', async () => {
+    await enlaceEnviado()
+    const suscripcion = useSuscripcion(fetchPrueba)
+    const id = suscripcion.estado.propuesta!.id
+    llamadas.length = 0
+
+    const pendiente = suscripcion.aplicarAvisoPropuesta({
+      propuestaId: id,
+      estado: 'FIRMADA',
+      estadoVisible: 'EMITIENDO',
+    })
+    // El aviso se ve de inmediato, antes de que vuelva la consulta.
+    expect(suscripcion.estado.propuesta?.estado).toBe('FIRMADA')
+    expect(suscripcion.estado.cargando).toBe(false)
+    await pendiente
+
+    expect(llamadas.filter((l) => l.cuerpo.includes('propuesta(')).length).toBe(1)
+    expect(suscripcion.estado.cargando).toBe(false)
+    expect(suscripcion.estado.error).toBeNull()
+  })
+
+  it('el aviso de otra propuesta no toca la que se está viendo ni consulta', async () => {
+    await enlaceEnviado()
+    const suscripcion = useSuscripcion(fetchPrueba)
+    const antes = suscripcion.estado.propuesta!.estado
+    llamadas.length = 0
+
+    await suscripcion.aplicarAvisoPropuesta({ propuestaId: 'otra', estado: 'EMITIDA' })
+
+    expect(suscripcion.estado.propuesta?.estado).toBe(antes)
+    expect(llamadas).toHaveLength(0)
+  })
+
+  it('si la consulta silenciosa falla, se queda con el estado del aviso y sin error en pantalla', async () => {
+    await enlaceEnviado()
+    const suscripcion = useSuscripcion(fetchPrueba)
+    const id = suscripcion.estado.propuesta!.id
+    servidor.use(http.post('*/graphql/web', () => HttpResponse.error()))
+
+    await suscripcion.aplicarAvisoPropuesta({ propuestaId: id, estado: 'PENDIENTE_PAGO' })
+
+    expect(suscripcion.estado.propuesta?.estado).toBe('PENDIENTE_PAGO')
+    expect(suscripcion.estado.error).toBeNull()
+  })
+})
+
 describe('cuidado del token del enlace (D-3)', () => {
   it('se toma del fragmento, se quita de la barra de direcciones y no toca ningún almacenamiento', () => {
     window.history.replaceState(null, '', '/firma#t=demo')
