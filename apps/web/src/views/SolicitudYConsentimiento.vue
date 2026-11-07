@@ -29,20 +29,55 @@ import { useLimitesPlazo } from '../composables/useLimitesPlazo'
 import { useSesion } from '../composables/useSesion'
 import { idioma, t, type Clave } from '../i18n'
 import { cambiarPais, pais, tipoDocumento } from '../composables/usePais'
-import { nombrePais, PAISES, tiposDocumento } from '../utils/documentos'
-import { validarDocumento } from '../utils/jurisdicciones'
+import { documentoCumpleFormato, nombrePais, PAISES, tiposDocumento } from '../utils/documentos'
 
 const router = useRouter()
 const { estado, captura } = useCotizacion()
 const { estado: sesion, rutaInicio } = useSesion()
 const esAsesor = computed(() => sesion.rol === 'ASESOR')
-// T20: el asesor elige país y tipo de documento (el tipo no viaja al backend hasta que el contrato lo traiga).
+// T20 (v0.38): el asesor elige país y tipo de documento; ambos viajan con el documento al consentimiento y la cotización.
 const opcionesPais = computed(() => PAISES.map((c) => ({ valor: c, texto: nombrePais(c, idioma.value) })))
 const opcionesTipo = computed(() =>
   tiposDocumento(pais.value, idioma.value).map((x) => ({ valor: x.codigo, texto: x.etiqueta })),
 )
 function elegirPais(v: string) {
-  cambiarPais(v)
+  void cambiarPais(v)
+  void revisarPaisDeLaDireccion()
+}
+
+// T19: al elegir una sugerencia, el `placeId` viaja a la cotización (el BFF normaliza la dirección). Si el lugar está en
+// otro país que el elegido se avisa, sin bloquear: el BFF rechaza solo un país no soportado.
+const paisDeLaDireccion = ref<string | null>(null)
+const avisoPaisDistinto = computed(() =>
+  paisDeLaDireccion.value && paisDeLaDireccion.value !== pais.value
+    ? t('solicitud.paisDistinto', {
+        paisDireccion: nombrePais(paisDeLaDireccion.value, idioma.value),
+        pais: nombrePais(pais.value, idioma.value),
+      })
+    : null,
+)
+let consultaLugar = 0
+async function revisarPaisDeLaDireccion() {
+  const placeId = captura.placeId
+  const esta = ++consultaLugar
+  if (!placeId) {
+    paisDeLaDireccion.value = null
+    return
+  }
+  try {
+    const datos = await ejecutar<{ validarDireccion: { verificado: boolean; pais?: string | null } }>(
+      'query validarDireccion($placeId: String!) { validarDireccion(placeId: $placeId) { verificado pais } }',
+      { placeId },
+    )
+    if (esta !== consultaLugar) return
+    paisDeLaDireccion.value = datos.validarDireccion.verificado ? (datos.validarDireccion.pais ?? null) : null
+  } catch {
+    if (esta === consultaLugar) paisDeLaDireccion.value = null // sin Places no se avisa nada
+  }
+}
+function elegirLugar(placeId: string | null) {
+  captura.placeId = placeId
+  void revisarPaisDeLaDireccion()
 }
 // T18: los límites del plazo salen del contrato (jurisdicciones), no de la pantalla.
 const { limites, cargarLimitesPlazo } = useLimitesPlazo()
@@ -95,14 +130,8 @@ function validar(): boolean {
     // El documento lo pone el BFF desde la cuenta.
   } else if (!captura.documentoIdentidad.trim()) {
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumentoVacio'
-  } else if (esAsesor.value && tipoDocumento.value === 'PAS') {
-    if (!/^[A-Za-z0-9]{5,20}$/.test(captura.documentoIdentidad.trim()))
-      nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
-  } else if (esAsesor.value && tipoDocumento.value !== 'CC' && tipoDocumento.value !== 'CE') {
-    if (!validarDocumento(pais.value, captura.documentoIdentidad).valido)
-      nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
-  } else if (captura.documentoIdentidad.replace(/\D/g, '').length < 6) {
-    // Solo descarta valores claramente incompletos; el contrato no exige dígito de verificación.
+  } else if (!documentoCumpleFormato(pais.value, tipoDocumento.value, captura.documentoIdentidad)) {
+    // T20: el mismo formato del catálogo con que valida el BFF (`documentoValido`).
     nuevosErrores.documentoIdentidad = 'solicitud.errorDocumento'
   }
   const credito = Number(captura.valorCredito)
@@ -239,7 +268,16 @@ function enviar() {
             :placeholder="t('solicitud.direccionEjemplo')"
             :pais="pais"
             :error="intentoEnvio && errores.direccionInmueble ? t(errores.direccionInmueble) : undefined"
+            @lugar="elegirLugar"
           />
+          <p
+            v-if="avisoPaisDistinto"
+            role="status"
+            class="rounded-md border border-alerta bg-alerta-fondo px-3 py-2 text-[12px] leading-[16px] text-tinta"
+            data-prueba="pais-distinto"
+          >
+            {{ avisoPaisDistinto }}
+          </p>
 
           <div class="flex flex-col gap-2 pt-2">
             <p
@@ -262,6 +300,9 @@ function enviar() {
             </label>
             <p class="pl-7 text-[11px] leading-[18px] text-tinta-suave">
               {{ t('solicitud.consentimientoNota') }}
+            </p>
+            <p class="pl-7 text-[11px] leading-[18px] text-tinta-suave" data-prueba="aviso-privacidad-direccion">
+              {{ t('solicitud.avisoPrivacidadDireccion') }}
             </p>
           </div>
 

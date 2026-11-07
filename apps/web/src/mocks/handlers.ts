@@ -295,6 +295,11 @@ export const handlers = [
           tipoDocumento: j.tipo_documento,
           plazoMin: j.plazo_min,
           plazoMax: j.plazo_max,
+          tiposDocumento: j.tipos_documento.map((x) => ({
+            codigo: x.codigo,
+            etiquetaEs: x.etiqueta_es,
+            etiquetaEn: x.etiqueta_en,
+          })),
         })),
       },
     }),

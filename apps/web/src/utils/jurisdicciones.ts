@@ -13,6 +13,8 @@ export interface Jurisdiccion {
   dti_maximo: number
   paso_monto?: number
   regimen_open_finance: string
+  /** T20 (v0.33): tipos de documento del país, con su formato (regex) y etiquetas. */
+  tipos_documento: { codigo: string; etiqueta_es: string; etiqueta_en: string; formato: string }[]
 }
 
 export const LISTA_JURISDICCIONES: Jurisdiccion[] = catalogoJson as Jurisdiccion[]

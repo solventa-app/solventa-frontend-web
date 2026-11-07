@@ -4,6 +4,7 @@ import { buildSchema, graphql } from 'graphql'
 import { http, HttpResponse } from 'msw'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { esErrorOferta, esOferta, useCotizacion } from '../src/composables/useCotizacion'
+import { cambiarPais } from '../src/composables/usePais'
 import { servidor } from '../src/mocks/node'
 
 // El cliente GraphQL usa una URL relativa (/graphql/web); en Node se resuelve contra un origen de
@@ -152,6 +153,7 @@ describe('useCotizacion', () => {
         return HttpResponse.json(resultado)
       }),
     )
+    await cambiarPais('CO')
     const cotizacion = useCotizacion(fetchPrueba)
     cotizacion.captura.documentoIdentidad = '1020304050'
 
@@ -162,8 +164,10 @@ describe('useCotizacion', () => {
     expect(variablesRecibidas).toEqual({
       entrada: {
         finalidad: 'perfilamiento',
-        versionTexto: 'v1',
+        versionTexto: 'v2',
         documentoIdentidad: '1020304050',
+        tipoDocumento: 'CC',
+        pais: 'CO',
         tipoDato: 'FINANCIEROS_Y_ABIERTOS',
         fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
         canal: 'WEB',
