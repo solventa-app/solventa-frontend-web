@@ -35,6 +35,10 @@ input ConsentimientoInput {
   tipoDato: String = null
   fuenteDatos: String = null
   canal: String = null
+  # v0.38 (T20): tipo del documento (de `Jurisdiccion.tiposDocumento`) y país (uno de los siete). Con alguno de
+  # los dos, el número se valida con el formato del país y ambos entran al titular; sin ninguno, cédula colombiana.
+  tipoDocumento: String = null
+  pais: String = null
 }
 
 # ---------- Oferta (CA-W01-03/04/05/06) ----------
@@ -120,6 +124,13 @@ input SolicitudOfertaInput {
   # Obligatorio para un ASESOR. Un CLIENTE con documento en su cuenta no lo manda: el BFF lo toma de AUTH y valida que
   # coincida con el titular del consentimiento (v0.18, W03-34).
   documentoIdentidad: String = null
+  # v0.38 (T20): como en `ConsentimientoInput`; deben ser los mismos del consentimiento. El CLIENTE con documento en
+  # su cuenta tampoco los manda.
+  tipoDocumento: String = null
+  pais: String = null
+  # v0.39 (T19): el `placeId` elegido en `autocompletarDireccion`. Con él, la dirección se normaliza con Places y una de
+  # un país no soportado se rechaza; sin él, o si Places no responde, la dirección escrita se usa «sin verificar».
+  placeId: String = null
   valorCredito: String!
   plazoMeses: Int!
   direccionInmueble: String!
@@ -517,13 +528,18 @@ type Usuario {
   # Solo dice si el usuario ya dejó un contacto (correo o teléfono) para el aviso de su póliza (HU-W03, bloque 8);
   # nunca cuál es: el contacto se escribe con `crearUsuario` o `actualizarContacto` y no vuelve por GraphQL.
   tieneContacto: Boolean!
-  # v0.18 (W03-34): el documento del CLIENTE enmascarado (p. ej. •••• 5678), solo en `iniciarSesion` y `yo`; null si
+  # v0.18 (W03-34): el documento del CLIENTE enmascarado (p. ej. 10••••5678; T24: longitud conservada, 2 iniciales y 4 finales), solo en `iniciarSesion` y `yo`; null si
   # no tiene documento o no es CLIENTE. El documento completo nunca vuelve por GraphQL.
   documentoEnmascarado: String
   # v0.24 (perfil común): el correo del propio usuario, solo en `iniciarSesion` y `yo` (cada quien ve el suyo); en
   # `usuarios`, `crearUsuario` y los demás cambios va en null, y null si no tiene (solo los CLIENTE guardan correo).
   # Nunca viaja dentro del JWT. El teléfono sigue sin volver por GraphQL.
   correo: String
+  # v0.38 (T20): tipo del documento del CLIENTE (CC, CE, CURP...; nunca el número), null si no tiene documento.
+  tipoDocumento: String
+  # v0.38 (T20): país de la cuenta (uno de los siete); el CLIENTE lo trae de su documento y cualquiera lo cambia en
+  # `actualizarPreferencias`. Null si nunca se fijó.
+  pais: String
 }
 
 type Sesion {
@@ -541,9 +557,10 @@ type ErrorAutenticacion {
   mensaje: String!
   # v0.20 (HU-M01): null en credenciales incorrectas. VERIFICACION_PENDIENTE: la clave es correcta pero la identidad
   # aún no se verificó y el canal no es la app (la web no admite esas cuentas).
+  # v0.29 (T17): CLAVE_DEBIL en `registrarCuenta` cuando la clave no cumple la regla; el mensaje dice qué falta.
+
   # v0.26 (T22): SESION_VENCIDA en `renovarSesion`: refresh inexistente, vencido, ya usado, revocado, de otro canal o de
   # una cuenta que ya no puede renovar; nunca dice cuál (mismo mensaje siempre).
-  # v0.29 (T17): CLAVE_DEBIL en `registrarCuenta` cuando la clave no cumple la regla; el mensaje dice qué falta.
   codigo: String
 }
 
@@ -574,11 +591,15 @@ input CrearUsuarioInput {
   # v0.18 (W03-27): obligatorio para un CLIENTE, junto con el correo. Se guarda cifrado y como titular (el mismo HMAC
   # del consentimiento): el BACKOFFICE da por verificada la identidad al crearlo.
   documentoIdentidad: String = null
+  # v0.38 (T20): tipo del documento del CLIENTE (del catálogo del país) y país de la cuenta (cualquier rol).
+  tipoDocumento: String = null
+  pais: String = null
 }
 
 input PreferenciasInput {
   idioma: String! # ES | EN
   moneda: String! # COP | USD | EUR | MXN | BRL | CLP | PEN
+  pais: String = null # v0.38 (T20): uno de los siete; si no llega, se conserva
 }
 
 # Al menos uno de los dos; lo que no llega se conserva (HU-W03, bloque 8).
@@ -718,10 +739,12 @@ type CodigoOnboardingEnviado {
 
 # `codigo` es estable: TOKEN_INVALIDO, SIN_CONSENTIMIENTO, ESTADO_INVALIDO, PIEZAS_INCOMPLETAS, SIN_INTENTOS,
 # SESION_CON_CUENTA, CORREO_YA_REGISTRADO, DATO_INVALIDO, JURISDICCION_NO_SOPORTADA, NO_DISPONIBLE (con reintento)
+# ESPERA_REQUERIDA (v0.31: reenvío del código antes de 60 s; trae `segundosRestantes`),
 # o un código del almacenamiento (TIPO_CONTENIDO_NO_ADMITIDO, TAMANO_NO_ADMITIDO, OBJETO_NO_SUBIDO, ...).
 type ErrorOnboarding {
   codigo: String!
   mensaje: String!
+  segundosRestantes: Int # solo con ESPERA_REQUERIDA
 }
 
 union ResultadoInicioOnboarding = InicioOnboarding | ErrorOnboarding
@@ -854,6 +877,67 @@ type ErrorSiniestro {
 
 union ResultadoResolucion = Siniestro | ErrorSiniestro
 
+# ---------- Reporte del cliente (v0.35, HU-M05, servicio CLAIMS) ----------
+# El CLIENTE reporta desde el móvil y el caso llega PENDIENTE a la mesa de siniestros (W04-01). Orden:
+# solicitarSubidaEvidenciaSiniestro + PUT + confirmarSubidaArchivo por cada foto -> reportarSiniestro.
+# `idReporte` lo genera la app (UUID) y es el id del siniestro: las fotos quedan a nombre del caso y reenviar con el
+# mismo id devuelve el mismo caso. El nombre y el documento del asegurado salen de AUTH, nunca de la app.
+
+# Lo que ve el CLIENTE de un caso que reportó: sin datos del operador ni del perito.
+# v0.37 (HU-M05): lo que el CLIENTE ve de la resolución de su caso. Sin datos del operador ni del perito: ni el
+# comentario (texto libre del BACKOFFICE), ni el perito, ni sus instrucciones.
+type ResolucionCliente {
+  tipo: TipoResolucion! # APROBACION, RECHAZO o DERIVACION (en revisión con un perito)
+  resueltaEn: DateTime!
+  motivo: MotivoRechazo # solo RECHAZO
+  viaRecurso: String # solo RECHAZO: cómo pedir que lo revisen
+  indemnizacion: Monto # solo APROBACION
+  plazoDispersion: String # solo APROBACION
+}
+
+type SiniestroReportado {
+  id: ID!
+  radicado: String!
+  estado: EstadoSiniestro!
+  polizaId: ID!
+  ocurridoEn: DateTime!
+  notificadoEn: DateTime!
+  venceDictamenEn: DateTime!
+  fotos: Int!
+  # v0.37: null mientras el caso está PENDIENTE.
+  resolucion: ResolucionCliente
+}
+
+# El error trae el mensaje para el cliente (póliza ajena o fuera de vigencia, foto inválida, relato muy corto, sin
+# identidad verificada o servicio caído con reintento).
+union ResultadoReporteSiniestro = SiniestroReportado | ErrorSiniestro
+
+input UbicacionReporteInput {
+  descripcion: String!
+  ciudad: String!
+  latitud: Float!
+  longitud: Float!
+}
+
+input FotoReporteInput {
+  archivoId: ID!
+  tomadaEn: DateTime!
+  # Donde se tomó la foto (GPS del teléfono); null si el cliente no dio permiso: la foto queda sin geoetiqueta.
+  latitud: Float = null
+  longitud: Float = null
+}
+
+input ReporteSiniestroInput {
+  idReporte: ID!
+  polizaId: ID!
+  ocurridoEn: DateTime!
+  # De 10 a 1000 caracteres.
+  descripcion: String!
+  ubicacion: UbicacionReporteInput!
+  # De 1 a 3 fotos `siniestro-foto`, ya confirmadas.
+  fotos: [FotoReporteInput!]!
+}
+
 # ---------- Estado del sistema (v0.22, HU-W07) ----------
 # Solo BACKOFFICE. Los pesos, los objetivos de latencia y los umbrales viven en contracts/salud.json. El socio ve una
 # versión sin micros internos en `GET /v1/estado` (contracts/openapi/socios-v1.json).
@@ -907,6 +991,7 @@ type EstadoSistema {
   micros: [SaludMicro!]!
 }
 
+# v0.34: los errores de sesión llevan extensions.code = SIN_SESION o SESION_INVALIDA (no comparar el mensaje).
 # v0.25 (T18): límites y datos de cada país soportado, leídos de contracts/jurisdicciones.json. La web y el
 # móvil los usan para validar (plazo mínimo y máximo) sin llevarlos escritos.
 type Jurisdiccion {
@@ -916,9 +1001,62 @@ type Jurisdiccion {
   tipoDocumento: String!
   plazoMin: Int!
   plazoMax: Int!
+  # v0.33 (T20): tipos de documento del país (el nacional y el pasaporte; en Colombia, CC, CE y pasaporte).
+  tiposDocumento: [TipoDocumentoPais!]!
+}
+
+# v0.33 (T20). Los códigos (CC, CPF...) no se traducen; las etiquetas sí.
+type TipoDocumentoPais {
+  codigo: String!
+  etiquetaEs: String!
+  etiquetaEn: String!
+}
+
+# v0.32 (T19)
+type SugerenciaDireccion {
+  placeId: String!
+  descripcion: String!
+}
+
+# v0.32 (T19). verificado = false: Google no respondió, el lugar no es válido o el país no está soportado;
+# la dirección escrita se permite «sin verificar» y no bloquea la cotización.
+type DireccionValidada {
+  verificado: Boolean!
+  direccion: String
+  ciudad: String
+  pais: String
+}
+
+# v0.36 (HU-M06, KAN-263). Catálogo maestro de prestadores para la asistencia en sitio. Sin datos personales: la app
+# guarda una copia, calcula la cercanía con la ubicación del teléfono (que no viaja) y solo descarga si cambia la versión.
+# La app descarta los tipos que no conoce, así que agregar uno no la rompe.
+enum TipoPrestador {
+  MEDICO
+  MECANICO
+}
+
+type Prestador {
+  id: ID!
+  nombre: String!
+  tipo: TipoPrestador!
+  ciudad: String!
+  latitud: Float! # WGS84
+  longitud: Float!
+  activo: Boolean! # false = dado de baja; la app lo descarta
+}
+
+type CatalogoPrestadores {
+  version: String! # versión vigente en el backend (AAAA-MM-DD.n)
+  vigente: Boolean! # true si versionLocal ya es la vigente: entonces prestadores viene vacía
+  prestadores: [Prestador!]! # completa (activos e inactivos) cuando vigente = false
 }
 
 type Query {
+  # v0.32 (T19). Places detrás del ACL Worker (timeout 700 ms; sin llave, un stub). Lista vacía si no responde.
+  autocompletarDireccion(texto: String!, pais: String = null): [SugerenciaDireccion!]!
+  validarDireccion(placeId: String!): DireccionValidada!
+  # v0.33 (T20). Pública. True si el tipo existe en el país y el número cumple su formato.
+  documentoValido(pais: String!, tipoDocumento: String!, numero: String!): Boolean!
   # v0.25 (T18). Pública: son parámetros del producto, sin datos personales.
   jurisdicciones: [Jurisdiccion!]!
   # El archivo si existe y quien pregunta puede leerlo; si no, null.
@@ -949,9 +1087,14 @@ type Query {
   siniestro(id: ID!): Siniestro
   # Peritos disponibles para derivar este caso, cada uno con su fecha límite de informe si se le deriva hoy.
   peritos(siniestroId: ID!): [Perito!]!
+  # v0.35 (HU-M05): los casos que reportó el CLIENTE del token, del más reciente al más antiguo.
+  misSiniestros: [SiniestroReportado!]!
   # ---------- v0.22 (HU-W07) ----------
   # Solo BACKOFFICE. `ventana`: 15m, 1h, 24h o 7d.
   estadoSistema(ventana: String = "1h"): EstadoSistema!
+  # ---------- v0.36 (HU-M06) ----------
+  # Sesión de CLIENTE (SIN_SESION si no hay). versionLocal null o distinta de la vigente: la lista completa.
+  catalogoPrestadores(versionLocal: String = null): CatalogoPrestadores!
 }
 
 type Mutation {
@@ -1055,4 +1198,8 @@ type Mutation {
   aprobarSiniestro(id: ID!): ResultadoResolucion!
   rechazarSiniestro(id: ID!, motivo: MotivoRechazo!, comentario: String = null): ResultadoResolucion!
   derivarSiniestro(id: ID!, peritoId: ID!, instrucciones: String = null): ResultadoResolucion!
+  # ---------- v0.35 (HU-M05): reporte del cliente, solo CLIENTE ----------
+  # URL firmada para una foto del caso que va a reportar (tipo `siniestro-foto`, a nombre de `idReporte`).
+  solicitarSubidaEvidenciaSiniestro(idReporte: ID!, tipoContenido: String!, tamanoBytes: Int!): ResultadoSubidaArchivo!
+  reportarSiniestro(entrada: ReporteSiniestroInput!): ResultadoReporteSiniestro!
 }

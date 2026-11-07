@@ -157,6 +157,10 @@ export const en: Record<Clave, string> = {
     'I authorize the processing of my data (Law 1581 of 2012, Habeas Data) and consented access to my Open Finance and Open Data sources.',
   'solicitud.consentimientoNota':
     'Open Finance and Open Data are sources that already exist about you (payment behavior, public property records). Using them means we don’t have to ask for your income, employer or history.',
+  'solicitud.avisoPrivacidadDireccion':
+    'To validate the property address we look it up in Google Maps (Google Places). We only send the address, never your name or ID.',
+  'solicitud.paisDistinto':
+    'The address is in {paisDireccion}, but you chose {pais}. Check the country or the address before continuing.',
   'solicitud.consultar': 'Get offer',
   'solicitud.deshabilitado': '(disabled until you check the consent)',
   'solicitud.consentimientoVencido': 'Your authorization expired or was revoked. Authorize again to continue.',

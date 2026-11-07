@@ -42,6 +42,12 @@ export type CanalContacto =
   | 'CHAT'
   | 'LLAMAR';
 
+export type CatalogoPrestadores = {
+  prestadores: Array<Prestador>;
+  version: Scalars['String']['output'];
+  vigente: Scalars['Boolean']['output'];
+};
+
 export type ClienteCobro = {
   id: Scalars['ID']['output'];
   nombre?: Maybe<Scalars['String']['output']>;
@@ -99,7 +105,9 @@ export type ConsentimientoInput = {
   documentoIdentidad?: InputMaybe<Scalars['String']['input']>;
   finalidad: Scalars['String']['input'];
   fuenteDatos?: InputMaybe<Scalars['String']['input']>;
+  pais?: InputMaybe<Scalars['String']['input']>;
   tipoDato?: InputMaybe<Scalars['String']['input']>;
+  tipoDocumento?: InputMaybe<Scalars['String']['input']>;
   versionTexto: Scalars['String']['input'];
 };
 
@@ -126,8 +134,10 @@ export type CrearUsuarioInput = {
   correo?: InputMaybe<Scalars['String']['input']>;
   documentoIdentidad?: InputMaybe<Scalars['String']['input']>;
   nombre?: InputMaybe<Scalars['String']['input']>;
+  pais?: InputMaybe<Scalars['String']['input']>;
   rol: RolUsuario;
   telefono?: InputMaybe<Scalars['String']['input']>;
+  tipoDocumento?: InputMaybe<Scalars['String']['input']>;
   usuario: Scalars['String']['input'];
 };
 
@@ -150,6 +160,13 @@ export type CuentaOnboardingInput = {
 export type DescargaArchivo = {
   url: Scalars['String']['output'];
   venceEn: Scalars['DateTime']['output'];
+};
+
+export type DireccionValidada = {
+  ciudad?: Maybe<Scalars['String']['output']>;
+  direccion?: Maybe<Scalars['String']['output']>;
+  pais?: Maybe<Scalars['String']['output']>;
+  verificado: Scalars['Boolean']['output'];
 };
 
 export type DocumentoFirma = {
@@ -229,6 +246,7 @@ export type ErrorOferta = {
 export type ErrorOnboarding = {
   codigo: Scalars['String']['output'];
   mensaje: Scalars['String']['output'];
+  segundosRestantes?: Maybe<Scalars['Int']['output']>;
 };
 
 export type ErrorPago = {
@@ -364,6 +382,13 @@ export type FirmarPropuestaInput = {
   versionDocumento: Scalars['String']['input'];
 };
 
+export type FotoReporteInput = {
+  archivoId: Scalars['ID']['input'];
+  latitud?: InputMaybe<Scalars['Float']['input']>;
+  longitud?: InputMaybe<Scalars['Float']['input']>;
+  tomadaEn: Scalars['DateTime']['input'];
+};
+
 export type FuenteConsultada = {
   capturadoEn?: Maybe<Scalars['DateTime']['output']>;
   estado: EstadoFuente;
@@ -390,6 +415,7 @@ export type Jurisdiccion = {
   plazoMax: Scalars['Int']['output'];
   plazoMin: Scalars['Int']['output'];
   tipoDocumento: Scalars['String']['output'];
+  tiposDocumento: Array<TipoDocumentoPais>;
 };
 
 export type MedioPago = {
@@ -503,9 +529,11 @@ export type Mutation = {
   reintentarCobro: Cobro;
   reintentarOnboarding: ResultadoOnboarding;
   renovarSesion: ResultadoSesion;
+  reportarSiniestro: ResultadoReporteSiniestro;
   revocarConsentimiento: Consentimiento;
   solicitarOferta: ResultadoOferta;
   solicitarSubidaArchivo: ResultadoSubidaArchivo;
+  solicitarSubidaEvidenciaSiniestro: ResultadoSubidaArchivo;
   solicitarSubidaFirma: ResultadoSubidaArchivo;
   solicitarSubidaOnboarding: ResultadoSubidaOnboarding;
   suspenderUsuario: ResultadoUsuario;
@@ -689,6 +717,11 @@ export type MutationRenovarSesionArgs = {
 };
 
 
+export type MutationReportarSiniestroArgs = {
+  entrada: ReporteSiniestroInput;
+};
+
+
 export type MutationRevocarConsentimientoArgs = {
   id: Scalars['ID']['input'];
 };
@@ -701,6 +734,13 @@ export type MutationSolicitarOfertaArgs = {
 
 export type MutationSolicitarSubidaArchivoArgs = {
   entrada: SolicitudSubidaArchivoInput;
+};
+
+
+export type MutationSolicitarSubidaEvidenciaSiniestroArgs = {
+  idReporte: Scalars['ID']['input'];
+  tamanoBytes: Scalars['Int']['input'];
+  tipoContenido: Scalars['String']['input'];
 };
 
 
@@ -811,6 +851,17 @@ export type Poliza = {
 export type PreferenciasInput = {
   idioma: Scalars['String']['input'];
   moneda: Scalars['String']['input'];
+  pais?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Prestador = {
+  activo: Scalars['Boolean']['output'];
+  ciudad: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  latitud: Scalars['Float']['output'];
+  longitud: Scalars['Float']['output'];
+  nombre: Scalars['String']['output'];
+  tipo: TipoPrestador;
 };
 
 export type Propuesta = {
@@ -835,13 +886,17 @@ export type Propuesta = {
 
 export type Query = {
   archivo?: Maybe<Archivo>;
+  autocompletarDireccion: Array<SugerenciaDireccion>;
+  catalogoPrestadores: CatalogoPrestadores;
   cobros: Array<Cobro>;
   convertirMontos: Array<Monto>;
   documentoFirma?: Maybe<DocumentoFirma>;
+  documentoValido: Scalars['Boolean']['output'];
   estadoSistema: EstadoSistema;
   firmaPorEnlace?: Maybe<EnlaceFirma>;
   jurisdicciones: Array<Jurisdiccion>;
   miVerificacion?: Maybe<Onboarding>;
+  misSiniestros: Array<SiniestroReportado>;
   oferta?: Maybe<Oferta>;
   onboarding?: Maybe<Onboarding>;
   peritos: Array<Perito>;
@@ -851,12 +906,24 @@ export type Query = {
   siniestro?: Maybe<Siniestro>;
   siniestros: Array<Siniestro>;
   usuarios: Array<Usuario>;
+  validarDireccion: DireccionValidada;
   yo?: Maybe<Usuario>;
 };
 
 
 export type QueryArchivoArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryAutocompletarDireccionArgs = {
+  pais?: InputMaybe<Scalars['String']['input']>;
+  texto: Scalars['String']['input'];
+};
+
+
+export type QueryCatalogoPrestadoresArgs = {
+  versionLocal?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -876,6 +943,13 @@ export type QueryConvertirMontosArgs = {
 
 export type QueryDocumentoFirmaArgs = {
   propuestaId: Scalars['ID']['input'];
+};
+
+
+export type QueryDocumentoValidoArgs = {
+  numero: Scalars['String']['input'];
+  pais: Scalars['String']['input'];
+  tipoDocumento: Scalars['String']['input'];
 };
 
 
@@ -935,9 +1009,23 @@ export type QueryUsuariosArgs = {
   rol?: InputMaybe<RolUsuario>;
 };
 
+
+export type QueryValidarDireccionArgs = {
+  placeId: Scalars['String']['input'];
+};
+
 export type RangoPrima = {
   maxima: Monto;
   minima: Monto;
+};
+
+export type ReporteSiniestroInput = {
+  descripcion: Scalars['String']['input'];
+  fotos: Array<FotoReporteInput>;
+  idReporte: Scalars['ID']['input'];
+  ocurridoEn: Scalars['DateTime']['input'];
+  polizaId: Scalars['ID']['input'];
+  ubicacion: UbicacionReporteInput;
 };
 
 export type Resolucion = {
@@ -953,6 +1041,15 @@ export type Resolucion = {
   resueltaEn: Scalars['DateTime']['output'];
   tipo: TipoResolucion;
   vencimientoInforme?: Maybe<Scalars['DateTime']['output']>;
+  viaRecurso?: Maybe<Scalars['String']['output']>;
+};
+
+export type ResolucionCliente = {
+  indemnizacion?: Maybe<Monto>;
+  motivo?: Maybe<MotivoRechazo>;
+  plazoDispersion?: Maybe<Scalars['String']['output']>;
+  resueltaEn: Scalars['DateTime']['output'];
+  tipo: TipoResolucion;
   viaRecurso?: Maybe<Scalars['String']['output']>;
 };
 
@@ -983,6 +1080,8 @@ export type ResultadoOferta = ErrorOferta | Oferta;
 export type ResultadoOnboarding = ErrorOnboarding | Onboarding;
 
 export type ResultadoPago = ErrorPago | Poliza;
+
+export type ResultadoReporteSiniestro = ErrorSiniestro | SiniestroReportado;
 
 export type ResultadoResolucion = ErrorSiniestro | Siniestro;
 
@@ -1059,11 +1158,26 @@ export type Siniestro = {
   verificaciones: Array<Verificacion>;
 };
 
+export type SiniestroReportado = {
+  estado: EstadoSiniestro;
+  fotos: Scalars['Int']['output'];
+  id: Scalars['ID']['output'];
+  notificadoEn: Scalars['DateTime']['output'];
+  ocurridoEn: Scalars['DateTime']['output'];
+  polizaId: Scalars['ID']['output'];
+  radicado: Scalars['String']['output'];
+  resolucion?: Maybe<ResolucionCliente>;
+  venceDictamenEn: Scalars['DateTime']['output'];
+};
+
 export type SolicitudOfertaInput = {
   consentimientoId: Scalars['ID']['input'];
   direccionInmueble: Scalars['String']['input'];
   documentoIdentidad?: InputMaybe<Scalars['String']['input']>;
+  pais?: InputMaybe<Scalars['String']['input']>;
+  placeId?: InputMaybe<Scalars['String']['input']>;
   plazoMeses: Scalars['Int']['input'];
+  tipoDocumento?: InputMaybe<Scalars['String']['input']>;
   valorCredito: Scalars['String']['input'];
 };
 
@@ -1083,6 +1197,11 @@ export type SubidaArchivo = {
   venceEn: Scalars['DateTime']['output'];
 };
 
+export type SugerenciaDireccion = {
+  descripcion: Scalars['String']['output'];
+  placeId: Scalars['String']['output'];
+};
+
 export type TicketAvisos = {
   ticket: Scalars['String']['output'];
   url: Scalars['String']['output'];
@@ -1092,6 +1211,12 @@ export type TicketAvisos = {
 export type TipoDocumentoOnboarding =
   | 'CC'
   | 'CE';
+
+export type TipoDocumentoPais = {
+  codigo: Scalars['String']['output'];
+  etiquetaEn: Scalars['String']['output'];
+  etiquetaEs: Scalars['String']['output'];
+};
 
 export type TipoEvidencia =
   | 'DOCUMENTO'
@@ -1105,6 +1230,10 @@ export type TipoOferta =
   | 'COMPLETA'
   | 'PRELIMINAR';
 
+export type TipoPrestador =
+  | 'MECANICO'
+  | 'MEDICO';
+
 export type TipoResolucion =
   | 'APROBACION'
   | 'DERIVACION'
@@ -1117,6 +1246,13 @@ export type Ubicacion = {
   longitud: Scalars['Float']['output'];
 };
 
+export type UbicacionReporteInput = {
+  ciudad: Scalars['String']['input'];
+  descripcion: Scalars['String']['input'];
+  latitud: Scalars['Float']['input'];
+  longitud: Scalars['Float']['input'];
+};
+
 export type Usuario = {
   correo?: Maybe<Scalars['String']['output']>;
   creadoEn: Scalars['DateTime']['output'];
@@ -1126,8 +1262,10 @@ export type Usuario = {
   idioma: Scalars['String']['output'];
   moneda: Scalars['String']['output'];
   nombre?: Maybe<Scalars['String']['output']>;
+  pais?: Maybe<Scalars['String']['output']>;
   rol: RolUsuario;
   tieneContacto: Scalars['Boolean']['output'];
+  tipoDocumento?: Maybe<Scalars['String']['output']>;
   usuario: Scalars['String']['output'];
 };
 

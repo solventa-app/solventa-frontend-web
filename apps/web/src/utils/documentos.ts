@@ -1,40 +1,38 @@
-// T20 · Países (los siete de jurisdicciones) y tipos de documento por país.
-// El catálogo de tipos vive aquí hasta que el backend publique `tipos_documento` en contracts/jurisdicciones.json;
-// el documento nacional de cada país sale de `jurisdicciones` (`tipo_documento`), así no hay dos fuentes del país.
+// T20 · Países (los siete de jurisdicciones) y tipos de documento por país, del catálogo del contrato
+// (`contrato/jurisdicciones.json`, `tipos_documento` desde la v0.33): código, etiqueta en español e inglés y el formato
+// con que el backend valida el número (`documentoValido`). Así la web y el BFF validan igual.
 import { LISTA_JURISDICCIONES } from './jurisdicciones'
 
 export const PAISES: string[] = LISTA_JURISDICCIONES.map((j) => j.codigo.toUpperCase())
-
-/** Etiquetas de los tipos que no son el documento nacional (códigos sin traducir). */
-const ETIQUETAS: Record<string, { es: string; en: string }> = {
-  CC: { es: 'Cédula de ciudadanía', en: 'Citizenship ID (CC)' },
-  CE: { es: 'Cédula de extranjería', en: 'Foreigner ID (CE)' },
-  CURP: { es: 'CURP', en: 'CURP' },
-  CPF: { es: 'CPF', en: 'CPF' },
-  RUT: { es: 'RUT', en: 'RUT' },
-  DNI: { es: 'DNI', en: 'DNI' },
-  SSN: { es: 'SSN', en: 'SSN' },
-  PAS: { es: 'Pasaporte', en: 'Passport' },
-}
 
 export interface TipoDocumento {
   codigo: string
   etiqueta: string
 }
 
-/** Código nacional de jurisdicciones → clave de etiqueta. */
-function claveNacional(pais: string): string {
+function tiposDelPais(pais: string) {
   const j = LISTA_JURISDICCIONES.find((x) => x.codigo.toUpperCase() === pais.toUpperCase())
-  return (j?.tipo_documento ?? 'DNI').toUpperCase()
+  return j?.tipos_documento ?? []
 }
 
-/** Tipos válidos del país: el documento nacional (más CE en Colombia) y el pasaporte. */
+/** Tipos válidos del país, en el orden del catálogo: el nacional primero (más CE en Colombia) y el pasaporte. */
 export function tiposDocumento(pais: string, idioma: 'ES' | 'EN'): TipoDocumento[] {
-  const codigos = [claveNacional(pais)]
-  if (pais.toUpperCase() === 'CO') codigos.push('CE')
-  codigos.push('PAS')
-  const l = idioma === 'EN' ? 'en' : 'es'
-  return codigos.map((codigo) => ({ codigo, etiqueta: ETIQUETAS[codigo]?.[l] ?? codigo }))
+  return tiposDelPais(pais).map((x) => ({
+    codigo: x.codigo,
+    etiqueta: idioma === 'EN' ? x.etiqueta_en : x.etiqueta_es,
+  }))
+}
+
+/** Sin espacios, puntos ni guiones y en mayúsculas, como el BFF antes de validar y guardar. */
+export function limpiarDocumento(numero: string): string {
+  return numero.replace(/[\s.-]/g, '').toUpperCase()
+}
+
+/** True si el tipo existe en el país y el número cumple su formato (la misma regla de `documentoValido`). */
+export function documentoCumpleFormato(pais: string, tipo: string, numero: string): boolean {
+  const definicion = tiposDelPais(pais).find((x) => x.codigo === tipo.toUpperCase())
+  if (!definicion) return false
+  return new RegExp(definicion.formato).test(limpiarDocumento(numero))
 }
 
 /** Nombre del país en el idioma elegido (Intl.DisplayNames), con el código por delante. */
