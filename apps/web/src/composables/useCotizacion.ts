@@ -5,6 +5,7 @@ import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import { t } from '../i18n'
 import { alCerrarSesion } from './useSesion'
+import { pais, tipoDocumento } from './usePais'
 import type {
   CanalContacto,
   ConfirmacionContacto,
@@ -19,6 +20,8 @@ export interface CapturaCotizacion {
   valorCredito: string
   plazoMeses: string
   direccionInmueble: string
+  /** T19: lugar elegido en el autocompletado; null si la dirección se escribió («sin verificar»). */
+  placeId: string | null
   consentimiento: boolean
   // Solo los pide un ASESOR (W01-A1). Cotizar no los envía: viajan en `aceptarOferta` (W03-01).
   nombreCliente: string
@@ -40,6 +43,7 @@ function capturaVacia(): CapturaCotizacion {
     valorCredito: '',
     plazoMeses: '',
     direccionInmueble: '',
+    placeId: null,
     consentimiento: false,
     nombreCliente: '',
     correoCliente: '',
@@ -112,6 +116,22 @@ const MUTACION_CONTACTAR_ASESOR = `
 `
 
 /**
+ * Versión del texto del consentimiento (W01-01). v2 (T19): declara que la dirección del inmueble se consulta en Google
+ * para validarla. Cambiar el texto exige subir la versión: el consentimiento guarda cuál aceptó la persona.
+ */
+export const VERSION_TEXTO_CONSENTIMIENTO = 'v2'
+
+/**
+ * T20 (v0.38): el documento con su tipo y país. Sin documento (CLIENTE con el de su cuenta) no se manda nada: el BFF
+ * toma los tres de AUTH.
+ */
+function documentoTipado() {
+  const documento = estado.captura.documentoIdentidad.trim()
+  if (!documento) return { documentoIdentidad: null, tipoDocumento: null, pais: null }
+  return { documentoIdentidad: documento, tipoDocumento: tipoDocumento.value, pais: pais.value }
+}
+
+/**
  * `fetchFn` es la misma vía de inyección que ya usa `ejecutar` en `graphql/cliente.ts`: por
  * defecto pega contra `fetch` global (la app real), y las pruebas pueden pasar un fetch que
  * resuelva la URL relativa del BFF contra un origen de prueba, sin tener que mockear globals.
@@ -123,8 +143,8 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
       {
         entrada: {
           finalidad: 'perfilamiento',
-          versionTexto: 'v1',
-          documentoIdentidad: estado.captura.documentoIdentidad.trim() || null,
+          versionTexto: VERSION_TEXTO_CONSENTIMIENTO,
+          ...documentoTipado(),
           tipoDato: 'FINANCIEROS_Y_ABIERTOS',
           fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
           canal: 'WEB',
@@ -151,10 +171,11 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
         {
           entrada: {
             consentimientoId: estado.consentimientoId,
-            documentoIdentidad: estado.captura.documentoIdentidad.trim() || null,
+            ...documentoTipado(),
             valorCredito: estado.captura.valorCredito,
             plazoMeses: Number(estado.captura.plazoMeses),
             direccionInmueble: estado.captura.direccionInmueble,
+            placeId: estado.captura.placeId,
           },
         },
         fetchFn,

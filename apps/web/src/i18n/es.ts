@@ -156,6 +156,10 @@ export const es = {
     'Autorizo el tratamiento de mis datos (Ley 1581 de 2012, Habeas Data) y el acceso consentido a mis fuentes de Open Finance y Open Data.',
   'solicitud.consentimientoNota':
     'Open Finance y Open Data son fuentes que ya existen sobre ti (comportamiento de pago, datos públicos del inmueble). Consultarlas evita pedirte ingresos, empleador ni historial.',
+  'solicitud.avisoPrivacidadDireccion':
+    'Para validar la dirección del inmueble la consultamos en Google Maps (Google Places). Solo enviamos la dirección, nunca tu nombre ni tu documento.',
+  'solicitud.paisDistinto':
+    'La dirección está en {paisDireccion}, pero elegiste {pais}. Revisa el país o la dirección antes de continuar.',
   'solicitud.consultar': 'Consultar oferta',
   'solicitud.deshabilitado': '(deshabilitado hasta marcar el consentimiento)',
   'solicitud.consentimientoVencido': 'Tu autorización venció o fue revocada. Autoriza de nuevo para continuar.',

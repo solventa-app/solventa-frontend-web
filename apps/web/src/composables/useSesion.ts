@@ -16,6 +16,7 @@ import type { ResultadoSesion, RolUsuario } from '../graphql/tipos'
 import { t } from '../i18n'
 import { log } from '../log'
 import { adoptarMonedaDeCuenta } from './useMoneda'
+import { adoptarPaisDeCuenta } from './usePais'
 
 export type Rol = RolUsuario
 
@@ -47,7 +48,7 @@ export const RUTA_INICIO: Record<Rol, string> = {
 const MUTACION_INICIAR_SESION = `
   mutation iniciarSesion($entrada: CredencialesInput!) {
     iniciarSesion(entrada: $entrada) {
-      ... on Sesion { token refreshExpiraEn usuario { nombre moneda } }
+      ... on Sesion { token refreshExpiraEn usuario { nombre moneda pais } }
       ... on ErrorAutenticacion { mensaje }
     }
   }
@@ -71,7 +72,7 @@ const MUTACION_CERRAR_SESION = `
 
 const CONSULTA_YO = `
   query yo {
-    yo { nombre moneda }
+    yo { nombre moneda pais }
   }
 `
 
@@ -307,10 +308,17 @@ async function cargarNombre(fetchFn: typeof fetch = fetch): Promise<void> {
   // Se compara el usuario, no el token: una renovación a mitad de camino cambia el token pero no la sesión.
   const usuario = estado.usuario
   try {
-    const datos = await ejecutar<{ yo: { nombre?: string | null; moneda?: string } | null }>(CONSULTA_YO, {}, fetchFn)
+    const datos = await ejecutar<{ yo: { nombre?: string | null; moneda?: string; pais?: string | null } | null }>(
+      CONSULTA_YO,
+      {},
+      fetchFn,
+    )
     const nombre = datos.yo?.nombre?.trim()
     if (nombre && estado.token && estado.usuario === usuario) estado.nombre = nombre
-    if (estado.token && estado.usuario === usuario) adoptarMonedaDeCuenta(datos.yo?.moneda)
+    if (estado.token && estado.usuario === usuario) {
+      adoptarMonedaDeCuenta(datos.yo?.moneda)
+      adoptarPaisDeCuenta(datos.yo?.pais)
+    }
   } catch {
     /* se queda el alias */
   }
@@ -360,6 +368,7 @@ export function useSesion(fetchFn: typeof fetch = fetch) {
       estado.aviso = null
       guardarRefreshHasta(resultado.refreshExpiraEn)
       adoptarMonedaDeCuenta(resultado.usuario.moneda)
+      adoptarPaisDeCuenta(resultado.usuario.pais)
       return null
     } catch {
       return t('ingreso.falla')
