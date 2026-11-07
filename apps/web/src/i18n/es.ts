@@ -533,7 +533,7 @@ export const es = {
   'revisarOferta.recalcular': 'Volver a calcular',
   'revisarOferta.sinOferta': 'Esta oferta ya no está disponible. Cotiza de nuevo para continuar.',
   'revisarOferta.estadoTitulo': 'Estado de la propuesta',
-  'revisarOferta.actualizar': 'Actualizar estado',
+  'revisarOferta.enVivo': 'El estado se actualiza solo.',
   'revisarOferta.continuarEmision': 'Continuar con la emisión',
   'revisarOferta.estado.ACEPTADA': 'Aceptada',
   'revisarOferta.estado.IDENTIDAD_VERIFICADA': 'Identidad verificada',
