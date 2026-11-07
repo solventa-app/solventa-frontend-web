@@ -222,7 +222,14 @@ describe('petición con acceso vencido (sin sesión del BFF)', () => {
       }
       if (operacion === 'renovarSesion') return renovacionOk()
       return ++yoIntento === 1
-        ? Response.json({ errors: [{ message: 'Tu sesión no es válida o venció. Inicia sesión de nuevo.' }] })
+        ? Response.json({
+            errors: [
+              {
+                message: 'Tu sesión no es válida o venció. Inicia sesión de nuevo.',
+                extensions: { code: 'SESION_INVALIDA' },
+              },
+            ],
+          })
         : Response.json({ data: { yo: { nombre: 'Ana', moneda: 'COP' } } })
     }
     const sesion = useSesion(fetchFalso)
