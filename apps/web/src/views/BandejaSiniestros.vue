@@ -9,7 +9,7 @@
   - "Abrir" lleva al detalle por el `id` del siniestro (W04-02), no por el radicado.
 -->
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   Badge,
   Boton,
@@ -80,6 +80,11 @@ const ahora = ref(Date.now())
 const reloj = setInterval(() => (ahora.value = Date.now()), 30_000)
 onBeforeUnmount(() => clearInterval(reloj))
 const restanteDe = (s: { venceDictamenEn: string }) => Date.parse(s.venceDictamenEn) - ahora.value
+// Q-03: con un PENDIENTE vencido en pantalla, cada tic vuelve a pedir la bandeja en silencio hasta ver su aprobación.
+watch(ahora, () => {
+  const hayVencidos = estado.siniestros.some((s) => s.estado === 'PENDIENTE' && s.venceDictamenEn && restanteDe(s) <= 0)
+  if (hayVencidos && !estado.cargando) void cargarSiniestros(undefined, { silencioso: true })
+})
 
 onMounted(() => void cargarSiniestros())
 </script>

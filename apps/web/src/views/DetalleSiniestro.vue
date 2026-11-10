@@ -74,6 +74,18 @@ const plazo = computed(() => derivacion.value?.vencimientoInforme ?? s.value?.ve
 const restanteMs = computed(() => (plazo.value ? Date.parse(plazo.value) - ahora.value : null))
 const vencido = computed(() => restanteMs.value !== null && restanteMs.value <= 0)
 const restante = computed(() => (restanteMs.value === null ? '' : textoRestante(restanteMs.value)))
+// Q-03: el tic de 30 s llegaría tarde al cero; un disparo justo al vencer cambia el contador a tiempo.
+let alVencer: ReturnType<typeof setTimeout> | undefined
+watch(
+  plazo,
+  (fecha) => {
+    clearTimeout(alVencer)
+    const falta = fecha ? Date.parse(fecha) - Date.now() : 0
+    if (falta > 0 && falta < 2 ** 31 - 1) alVencer = setTimeout(() => (ahora.value = Date.now()), falta + 500)
+  },
+  { immediate: true },
+)
+onBeforeUnmount(() => clearTimeout(alVencer))
 
 // Acciones.
 const modalRechazoAbierto = ref(false)
@@ -83,6 +95,15 @@ const bannerAccion = ref<HTMLElement | null>(null)
 const errorRechazo = ref<string | null>(null)
 /** Qué acción está en curso: "Aprobando…" solo se muestra al aprobar, no mientras el modal rechaza. */
 const accion = ref<'aprobar' | 'rechazar' | null>(null)
+
+// Q-03 (D-3): vencido y PENDIENTE, CLAIMS lo aprueba en su siguiente pasada (cada minuto). Mientras tanto se pide el
+// caso en cada tic, sin vaciar la pantalla, hasta verlo resuelto. Un caso derivado no se aprueba solo (D-3b).
+const esperandoAutomatica = computed(
+  () => vencido.value && s.value?.estado === 'PENDIENTE' && !derivacion.value && accion.value === null,
+)
+watch(ahora, () => {
+  if (esperandoAutomatica.value) void cargarSiniestro(id.value, { silencioso: true })
+})
 
 function abrirRechazo() {
   estado.errorAccion = null
@@ -362,6 +383,14 @@ watch(
                   >
                 </span>
               </div>
+              <p
+                v-if="esperandoAutomatica"
+                data-prueba="aprobando-automatica"
+                role="status"
+                class="text-[11px] text-tinta-suave"
+              >
+                {{ t('siniestros.detalle.aprobandoAutomatica') }}
+              </p>
             </aside>
           </div>
 
