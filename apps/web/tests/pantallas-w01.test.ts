@@ -232,6 +232,28 @@ describe('ConsultandoFuentes (W01-02)', () => {
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
   })
 
+  // QA 2026-11-10 (Q-01): el CLIENTE con documento en la cuenta no lo digita (T6) y la guarda lo rechazaba con
+  // «No hay una solicitud en curso», así que no podía cotizar. Ahora basta la marca: el BFF pone el documento.
+  it('consulta sin documento digitado cuando el CLIENTE cotiza con el de su cuenta', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    cotizacion.captura.documentoDeCuenta = true
+    cotizacion.captura.valorCredito = '185000000'
+    cotizacion.captura.plazoMeses = '60'
+    cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18'
+    cotizacion.captura.consentimiento = true
+
+    const router = crearRouterDePrueba()
+    router.push('/cotizacion/consulta')
+    await router.isReady()
+
+    const wrapper = montar(ConsultandoFuentes, router)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.text()).not.toContain('No hay una solicitud en curso para consultar.')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
+  })
+
   // CA-W01-02 exige mostrar progreso mientras se consulta, no solo navegar al terminar: las dos
   // pruebas de arriba cubren el guard y la navegación final, pero ninguna observaba el estado
   // intermedio. Se retrasa la respuesta del BFF a propósito para poder verlo antes de que la

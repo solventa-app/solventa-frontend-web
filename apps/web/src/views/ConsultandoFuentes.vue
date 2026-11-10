@@ -17,11 +17,11 @@ const router = useRouter()
 const { estado, captura, solicitarOferta } = useCotizacion()
 const { rutaInicio } = useSesion()
 
-// Se llegó sin pasar por W01-01: no hay nada que consultar.
+// Se llegó sin pasar por W01-01: no hay nada que consultar. El CLIENTE con documento en la cuenta no lo digita (T6).
 const sinDatosCapturados = ref(false)
 
 onMounted(async () => {
-  if (!captura.documentoIdentidad || !captura.consentimiento) {
+  if ((!captura.documentoIdentidad && !captura.documentoDeCuenta) || !captura.consentimiento) {
     sinDatosCapturados.value = true
     return
   }

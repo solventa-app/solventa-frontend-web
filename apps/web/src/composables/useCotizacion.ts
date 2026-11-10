@@ -17,6 +17,8 @@ import type {
 
 export interface CapturaCotizacion {
   documentoIdentidad: string
+  /** T6 (W03-34): el CLIENTE cotiza con el documento de su cuenta (lo pone el BFF). Solo la marca, nunca el número. */
+  documentoDeCuenta: boolean
   valorCredito: string
   plazoMeses: string
   direccionInmueble: string
@@ -40,6 +42,7 @@ interface EstadoCotizacion {
 function capturaVacia(): CapturaCotizacion {
   return {
     documentoIdentidad: '',
+    documentoDeCuenta: false,
     valorCredito: '',
     plazoMeses: '',
     direccionInmueble: '',
