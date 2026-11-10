@@ -13,7 +13,13 @@ import { BarraDeCerrarSesion, FooterPantalla, HeaderPantalla, Pestanas, type Pes
 
 export type SeccionPortal = 'panel' | 'guia' | 'pruebas' | 'produccion' | 'perfil'
 
-const props = defineProps<{ pantalla: string; titulo: string; activa: SeccionPortal }>()
+const props = defineProps<{
+  pantalla: string
+  titulo: string
+  activa: SeccionPortal
+  /** QA 2026-11-10: la guía con su visor de PDF. `main` no se desplaza: el visor ocupa el alto y es el único scroll. */
+  sinDesplazar?: boolean
+}>()
 
 const router = useRouter()
 const sesion = useSesionSocio()
@@ -52,9 +58,15 @@ function cerrarSesion() {
       :etiqueta="t('socios.portal.navegacion')"
       @update:model-value="ir"
     />
-    <main class="relative min-h-0 flex-1 overflow-y-auto bg-fondo">
+    <main
+      class="relative min-h-0 flex-1 bg-fondo"
+      :class="sinDesplazar ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'"
+      data-prueba="portal-main"
+    >
       <slot :id-panel="barra?.idPanel(activa)" :id-pestana="barra?.idPestana(activa)" />
+      <!-- QA 2026-11-10: en móvil el footer fijo se comía el alto; va al final del contenido. -->
+      <div v-if="!sinDesplazar" class="sm:hidden"><FooterPantalla /></div>
     </main>
-    <FooterPantalla />
+    <div :class="sinDesplazar ? '' : 'hidden sm:block'"><FooterPantalla /></div>
   </div>
 </template>

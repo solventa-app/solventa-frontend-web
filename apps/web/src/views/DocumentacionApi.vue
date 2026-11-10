@@ -41,6 +41,8 @@ const TITULO_ICONO = { guia: 'menu_book', pruebas: 'science', produccion: 'rocke
 const urlGuia = computed(() => `/socios/guia-integracion-${idioma.value === 'EN' ? 'en' : 'es'}.pdf`)
 const guiaDisponible = ref<boolean | null>(null)
 const visorPdf = typeof navigator === 'undefined' || navigator.pdfViewerEnabled !== false
+// QA 2026-11-10: con el visor del PDF, el visor es el único scroll de la página (sin el de `main` alrededor).
+const conVisor = computed(() => activa.value === 'guia' && guiaDisponible.value === true && visorPdf)
 
 async function comprobarGuia() {
   guiaDisponible.value = null
@@ -69,13 +71,19 @@ onMounted(() => {
 </script>
 
 <template>
-  <PortalSocio v-slot="{ idPanel, idPestana }" pantalla="W07-03" :titulo="t('socios.docs.titulo')" :activa="activa">
-    <div class="mx-auto flex w-full max-w-[1020px] flex-col gap-5 px-4 py-8 sm:px-10">
+  <PortalSocio
+    v-slot="{ idPanel, idPestana }"
+    pantalla="W07-03"
+    :titulo="t('socios.docs.titulo')"
+    :activa="activa"
+    :sin-desplazar="conVisor"
+  >
+    <div class="mx-auto flex min-h-0 w-full max-w-[1020px] flex-1 flex-col gap-5 px-4 py-8 sm:px-10">
       <div
         :id="idPanel"
         role="tabpanel"
         :aria-labelledby="idPestana"
-        class="flex flex-col gap-5"
+        class="flex min-h-0 flex-1 flex-col gap-5"
         :data-prueba="`panel-${activa}`"
       >
         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -135,7 +143,7 @@ onMounted(() => {
               :src="urlGuia"
               :title="t('socios.docs.pestana.guia')"
               data-prueba="guia-pdf"
-              class="h-[70vh] w-full rounded-[8px] border border-borde bg-white"
+              class="min-h-[320px] w-full flex-1 rounded-[8px] border border-borde bg-white"
             />
             <p v-else class="rounded-[8px] border border-borde bg-white p-4 text-[13px] text-tinta">
               {{ t('socios.docs.sinVisorPdf') }}

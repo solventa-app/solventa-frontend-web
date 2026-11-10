@@ -27,7 +27,9 @@ const sesion = useSesionSocio()
 const { estado, cargarTodo, cambiarEntorno, cambiarVentana, cargarEstado, cargarConsumo, cargarVentas } =
   usePanelSocio()
 
-const ENTORNOS: Entorno[] = ['PRODUCCION', 'PRUEBAS']
+// QA 2026-11-10 (D-5): el mismo orden que la barra del portal (API Pruebas, API Producción). El panel sigue abriendo
+// en Producción.
+const ENTORNOS: Entorno[] = ['PRUEBAS', 'PRODUCCION']
 const ventas = computed(() => estado.ventas)
 /** Conversión de propuesta a póliza emitida (el contrato da los dos totales, no la tasa). */
 const conversion = computed(() =>

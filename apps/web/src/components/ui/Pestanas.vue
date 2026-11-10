@@ -61,7 +61,7 @@ function teclado(evento: KeyboardEvent, indice: number) {
   <div
     role="tablist"
     :aria-label="etiqueta"
-    class="flex h-[44px] w-full items-center gap-6 overflow-x-auto border-b border-borde bg-[#f6f3f2] px-6"
+    class="flex h-[44px] w-full items-center gap-6 overflow-x-auto overflow-y-hidden border-b border-borde bg-[#f6f3f2] px-4 [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden"
   >
     <button
       v-for="(pestana, indice) in pestanas"
