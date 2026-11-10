@@ -1,5 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { CLAVE_INICIO, leerClaims, restaurarSesion, RUTA_INICIO, useSesion } from '../src/composables/useSesion'
+import {
+  CLAVE_INICIO,
+  alSesionVencida,
+  leerClaims,
+  restaurarSesion,
+  RUTA_INICIO,
+  useSesion,
+} from '../src/composables/useSesion'
 import { tokenDeDemo } from '../src/mocks/handlers'
 import { servidor } from '../src/mocks/node'
 
@@ -160,5 +167,24 @@ describe('el token vive solo en memoria', () => {
     restaurarSesion()
 
     expect(useSesion().sesionActiva()).toBe(false)
+  })
+})
+
+describe('cierre entre pestañas', () => {
+  it('al llegar «cerrada» de otra pestaña limpia la sesión y avisa para volver al ingreso', async () => {
+    const { iniciarSesion, estado, sesionActiva } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('andrés.duarte', 'cualquiera')).toBeNull()
+    expect(sesionActiva()).toBe(true)
+    let volvio = false
+    alSesionVencida(() => (volvio = true))
+    // Otra pestaña (otro objeto BroadcastChannel con el mismo nombre) cierra la sesión.
+    const otra = new BroadcastChannel('solventa-sesion')
+    otra.postMessage('cerrada')
+    await new Promise((r) => setTimeout(r, 50))
+    otra.close()
+    expect(estado.token).toBeNull()
+    expect(sesionActiva()).toBe(false)
+    expect(volvio).toBe(true)
+    alSesionVencida(null)
   })
 })

@@ -205,7 +205,35 @@ function programarRenovacion(retardo?: number): void {
 function vencerSesion(): void {
   cerrarSesion()
   estado.aviso = 'vencida'
+  avisarAOtrasPestanas()
   alVencerSesion?.()
+}
+
+// ---------- Cierre de sesión entre pestañas ----------
+// Cuando una pestaña cierra la sesión (a mano o porque venció), las demás pestañas de este navegador limpian su
+// estado y vuelven al ingreso, sin esperar a su próxima renovación. El mensaje no lleva datos: solo la palabra «cerrada».
+
+const CANAL_SESION = 'solventa-sesion'
+let canalSesion: BroadcastChannel | null = null
+
+function canal(): BroadcastChannel | null {
+  if (canalSesion) return canalSesion
+  if (typeof BroadcastChannel === 'undefined') return null
+  canalSesion = new BroadcastChannel(CANAL_SESION)
+  canalSesion.onmessage = (evento: MessageEvent) => {
+    if (evento.data !== 'cerrada' || !estado.token) return
+    cerrarSesion()
+    alVencerSesion?.()
+  }
+  return canalSesion
+}
+
+function avisarAOtrasPestanas(): void {
+  try {
+    canal()?.postMessage('cerrada')
+  } catch {
+    /* sin canal: las otras pestañas se enteran al renovar */
+  }
 }
 
 /** Una sola renovación a la vez: el temporizador, un 401 y la restauración comparten la misma promesa. */
@@ -283,6 +311,7 @@ function cerrarSesion(): void {
  */
 export async function terminarSesion(fetchFn: typeof fetch = fetch): Promise<void> {
   cerrarSesion()
+  avisarAOtrasPestanas()
   try {
     await ejecutar(MUTACION_CERRAR_SESION, {}, fetchFn, { conToken: false, cabeceras: CABECERA_CSRF })
   } catch {
@@ -341,6 +370,7 @@ export function esperarRestauracion(): Promise<void> {
 }
 
 restaurarSesion()
+canal() // empieza a escuchar el cierre de sesión de otras pestañas
 
 export function useSesion(fetchFn: typeof fetch = fetch) {
   if (fetchFn !== globalThis.fetch) fetchRenovacion = fetchFn
