@@ -49,6 +49,20 @@ export const en: Record<Clave, string> = {
   'fuente.camara-comercio': 'Chamber of Commerce',
   'fuente.antecedentes-judiciales': 'Criminal records',
 
+  // G-04b · Inactivity
+  'inactividad.titulo': 'Are you still there?',
+  'inactividad.texto': 'For your security, we will sign you out if you do nothing.',
+  'inactividad.cuenta': 'Your session will close in {segundos} s.',
+  'inactividad.seguir': 'Stay signed in',
+  'inactividad.cerrar': 'Sign out',
+  'ingreso.sesionInactividad': 'We signed you out for inactivity. Sign in again to continue.',
+  'ingreso.sinSesion': 'Sign in to continue.',
+
+  // G-09 · No access
+  'sinAcceso.titulo': 'You do not have access to this screen',
+  'sinAcceso.texto': 'Your role cannot see this section. If you think this is a mistake, contact your administrator.',
+  'sinAcceso.volver': 'Go to my home',
+
   // G-01 · Sign in
   'ingreso.titulo': 'Sign in',
   'ingreso.usuario': 'Email',

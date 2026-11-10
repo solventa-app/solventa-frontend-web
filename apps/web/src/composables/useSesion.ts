@@ -31,7 +31,7 @@ interface EstadoSesion {
   /** Cuándo se inició la sesión, en milisegundos (se muestra en el modal de cerrar sesión, G-04). */
   iniciadaEn: number
   /** `vencida` cuando la sesión terminó porque el refresh venció o falló: G-01 muestra el aviso (T22). */
-  aviso: 'vencida' | null
+  aviso: 'vencida' | 'inactividad' | 'sinSesion' | null
 }
 
 /** Cómo se llama cada rol en pantalla (chips de G-01, perfil y modal de cierre), en el idioma activo. */
@@ -95,21 +95,16 @@ export function leerClaims(token: string): ClaimsSesion | null {
   }
 }
 
-/** Dónde se guarda el token para que la sesión sobreviva a recargar la página. */
-export const CLAVE_TOKEN = 'solventa.token'
 /** Cuándo empezó la sesión: sin datos personales, solo una marca de tiempo. */
 export const CLAVE_INICIO = 'solventa.sesionIniciadaEn'
 
+// El token de acceso vive solo en memoria: no se guarda en el navegador. Al recargar se pide uno nuevo con la cookie
+// httpOnly del refresh (`restaurarSesion`). Solo se recuerda cuándo empezó la sesión (una marca de tiempo).
 // `sessionStorage` puede no existir o fallar (modo privado, cuota): la sesión sigue funcionando en memoria.
-function guardarToken(token: string | null, iniciadaEn = 0): void {
+function guardarInicio(token: string | null, iniciadaEn = 0): void {
   try {
-    if (token) {
-      sessionStorage.setItem(CLAVE_TOKEN, token)
-      sessionStorage.setItem(CLAVE_INICIO, String(iniciadaEn))
-    } else {
-      sessionStorage.removeItem(CLAVE_TOKEN)
-      sessionStorage.removeItem(CLAVE_INICIO)
-    }
+    if (token) sessionStorage.setItem(CLAVE_INICIO, String(iniciadaEn))
+    else sessionStorage.removeItem(CLAVE_INICIO)
   } catch {
     /* sin almacenamiento disponible: solo en memoria */
   }
@@ -147,14 +142,6 @@ function leerRefreshHasta(): number {
   }
 }
 
-function leerTokenGuardado(): string | null {
-  try {
-    return sessionStorage.getItem(CLAVE_TOKEN)
-  } catch {
-    return null
-  }
-}
-
 const estado = reactive<EstadoSesion>({
   token: null,
   rol: null,
@@ -183,7 +170,7 @@ function abrirSesion(token: string, nombre?: string | null, iniciadaEn = Date.no
   estado.expiraEn = claims.exp * 1000
   estado.iniciadaEn = iniciadaEn
   usarToken(token)
-  guardarToken(token, iniciadaEn)
+  guardarInicio(token, iniciadaEn)
   programarRenovacion()
   return true
 }
@@ -315,7 +302,7 @@ function cerrarSesion(): void {
   estado.expiraEn = 0
   estado.iniciadaEn = 0
   usarToken(null)
-  guardarToken(null)
+  guardarInicio(null)
 }
 
 /**
@@ -330,6 +317,18 @@ export async function terminarSesion(fetchFn: typeof fetch = fetch): Promise<voi
   } catch {
     /* sin red: la sesión local ya se cerró y el refresh vence solo */
   }
+}
+
+/** Sesión cerrada por no usar la web: se avisa en G-01 y la persona vuelve al ingreso (G-04b). */
+export async function cerrarPorInactividad(fetchFn: typeof fetch = fetch): Promise<void> {
+  await terminarSesion(fetchFn)
+  estado.aviso = 'inactividad'
+  alVencerSesion?.()
+}
+
+/** La persona llegó a una pantalla protegida sin sesión: G-01 le avisa que inicie sesión para continuar. */
+export function avisarSinSesion(): void {
+  estado.aviso = 'sinSesion'
 }
 
 /** Pide el nombre del usuario autenticado; si falla, queda el alias (nunca se muestra un error). */
@@ -353,18 +352,10 @@ async function cargarNombre(fetchFn: typeof fetch = fetch): Promise<void> {
   }
 }
 
-/** Recupera la sesión guardada si sigue vigente. Se llama al cargar el módulo, es decir, al recargar. */
+/** Al recargar no hay token en memoria: si el refresh sigue valiendo se renueva en silencio. */
 export function restaurarSesion(): void {
-  const token = leerTokenGuardado()
-  if (token && abrirSesion(token, null, leerInicioGuardado()) && sesionActiva()) {
-    void cargarNombre()
-    restauracion = null
-    return
-  }
-  const refreshVigente = leerRefreshHasta() > Date.now() // antes de cerrar, que borra la marca
-  if (token) cerrarSesion()
-  // Sin token vigente pero con un refresh que sigue valiendo (otra pestaña, el acceso de 60 min ya venció): se renueva
-  // en silencio. Si falla no se avisa nada: simplemente se queda sin sesión y el ingreso la pide.
+  const refreshVigente = leerRefreshHasta() > Date.now()
+  // Si falla no se avisa nada: simplemente se queda sin sesión y el ingreso la pide.
   restauracion = refreshVigente
     ? renovar().then((r) => {
         if (r !== 'ok') guardarRefreshHasta(null)

@@ -638,6 +638,48 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     ).toBe('true')
   })
 
+  async function ingresarComoCliente(ruta: string) {
+    const router = crearRouterDePrueba()
+    router.push(ruta)
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+    await wrapper
+      .findAll('input')
+      .find((i) => i.attributes('type') !== 'password')!
+      .setValue('cliente.demo')
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Ingresar')!
+      .trigger('click')
+    await flushPromises()
+    return router
+  }
+
+  it('G-01 tras ingresar vuelve a la pantalla a la que iba (volver)', async () => {
+    const router = await ingresarComoCliente('/login?volver=/cotizacion')
+    expect(router.currentRoute.value.path).toBe('/cotizacion')
+  })
+
+  it('G-01 ignora un volver hacia otro sitio y va al inicio del rol', async () => {
+    const router = await ingresarComoCliente('/login?volver=//otro-sitio.com')
+    expect(router.currentRoute.value.path).toBe('/inicio')
+  })
+
+  it('G-01 muestra el aviso «inicia sesión para continuar» y el de inactividad', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const sesion = useSesion()
+    sesion.estado.aviso = 'sinSesion'
+    const wrapper = montar(IngresoConRol, router)
+    expect(wrapper.get('[data-testid="aviso-sesion-vencida"]').text()).toContain('Inicia sesión para continuar')
+    sesion.estado.aviso = 'inactividad'
+    await flushPromises()
+    expect(wrapper.get('[data-testid="aviso-sesion-vencida"]').text()).toContain('inactividad')
+    sesion.estado.aviso = null
+  })
+
   it('G-01 el botón del ojo muestra y oculta la contraseña', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')

@@ -12,14 +12,15 @@
   Pendiente: el `role="radiogroup"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
 -->
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Boton, CampoFormulario, Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { etiquetaRol, useSesion, type Rol } from '../composables/useSesion'
 import { t } from '../i18n'
 
 const router = useRouter()
+const route = useRoute()
 const { estado, iniciarSesion, cerrarSesion, rutaInicio } = useSesion()
 
 const usuario = ref('')
@@ -27,6 +28,19 @@ const clave = ref('')
 const rol = ref<Rol>('CLIENTE')
 const error = ref<string | null>(null)
 const ingresando = ref(false)
+
+const textoAviso = computed(() => {
+  if (estado.aviso === 'vencida') return t('ingreso.sesionVencida')
+  if (estado.aviso === 'inactividad') return t('ingreso.sesionInactividad')
+  if (estado.aviso === 'sinSesion') return t('ingreso.sinSesion')
+  return null
+})
+
+/** A dónde volver tras ingresar: solo una ruta interna (nada de `//otro-sitio` ni `https://…`). */
+function rutaDeRegreso(): string | null {
+  const volver = route.query.volver
+  return typeof volver === 'string' && /^\/(?!\/)/.test(volver) && !volver.startsWith('/login') ? volver : null
+}
 
 const CHIPS: Rol[] = ['CLIENTE', 'ASESOR', 'BACKOFFICE']
 
@@ -44,7 +58,7 @@ async function ingresar() {
     clave.value = ''
     return
   }
-  router.push(rutaInicio())
+  router.push(rutaDeRegreso() ?? rutaInicio())
 }
 </script>
 
@@ -55,13 +69,13 @@ async function ingresar() {
       <div class="flex w-full max-w-[464px] flex-col gap-5">
         <Divisor />
         <p
-          v-if="estado.aviso === 'vencida'"
+          v-if="textoAviso"
           role="status"
           data-testid="aviso-sesion-vencida"
           class="flex items-start gap-2 rounded-[8px] border border-info bg-info-fondo p-3 text-[13px] text-tinta"
         >
           <IconoMaterial nombre="timer" class="h-5 w-5 shrink-0 text-info" />
-          {{ t('ingreso.sesionVencida') }}
+          {{ textoAviso }}
         </p>
         <div class="w-full rounded-[8px] border border-borde bg-white p-[17px]">
           <TituloPantalla class="mb-6">{{ t('ingreso.titulo') }}</TituloPantalla>

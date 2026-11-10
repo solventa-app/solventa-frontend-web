@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   alSesionVencida,
   CLAVE_REFRESH_HASTA,
-  CLAVE_TOKEN,
   esperarRestauracion,
   restaurarSesion,
   useSesion,
@@ -162,7 +161,6 @@ describe('restaurar al abrir la web', () => {
   it('con el acceso vencido y un refresh vigente renueva en silencio', async () => {
     const { fetchFalso, llamadas } = bffFalso(renovacionOk)
     const sesion = useSesion(fetchFalso)
-    sessionStorage.setItem(CLAVE_TOKEN, token(-10))
     localStorage.setItem(CLAVE_REFRESH_HASTA, String(Date.now() + 86_400_000))
 
     restaurarSesion()
