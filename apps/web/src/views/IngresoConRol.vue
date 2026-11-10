@@ -33,6 +33,7 @@ const textoAviso = computed(() => {
   if (estado.aviso === 'vencida') return t('ingreso.sesionVencida')
   if (estado.aviso === 'inactividad') return t('ingreso.sesionInactividad')
   if (estado.aviso === 'sinSesion') return t('ingreso.sinSesion')
+  if (route.query.clave === 'cambiada') return t('ingreso.claveCambiada')
   return null
 })
 
@@ -127,6 +128,10 @@ async function ingresar() {
             >
               {{ t('ingreso.ingresar') }}
             </Boton>
+
+            <RouterLink to="/olvide-clave" class="text-[13px] text-enlace hover:underline">
+              {{ t('ingreso.olvide') }}
+            </RouterLink>
 
             <p class="text-[11px] leading-[14px] text-tinta-suave">
               {{ t('ingreso.nota') }}
