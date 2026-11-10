@@ -65,6 +65,8 @@ function siniestroBase(n: number, estado: Siniestro['estado']): Siniestro {
       cobertura: { valor: '52000000', moneda: 'COP' },
       documentoUrl: `/mock/polizas/pol-0${n}/documento.pdf`,
       ramo: 'Vida grupo deudor con amparo de daños al bien financiado',
+      producto: 'VIDA_DEUDOR',
+      coberturas: [],
     },
     coberturaAplicada: 'Vida grupo deudor · Amparo de daños materiales al bien financiado',
     entidadAcreedora: 'Banco Aliado S.A.',

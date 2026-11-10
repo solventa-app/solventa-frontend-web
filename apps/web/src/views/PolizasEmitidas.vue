@@ -182,6 +182,12 @@ onUnmounted(() => {
                   </td>
                   <td class="py-[20px] pr-[14px] font-mono text-[13px] text-tinta-suave" :class="{ 'pl-4': !esAsesor }">
                     {{ p.poliza?.numero ?? '—' }}
+                    <span class="block font-sans text-[11px]" data-prueba="producto">
+                      {{ t(`auto.producto.${p.producto ?? 'VIDA_DEUDOR'}`)
+                      }}<template v-if="p.vehiculo">
+                        · {{ p.vehiculo.marca }} {{ p.vehiculo.placaEnmascarada }}</template
+                      >
+                    </span>
                   </td>
                   <td class="py-[20px] pr-[14px] text-right text-[13px] text-tinta">{{ montoVisible(p.prima) }}</td>
                   <td class="py-[20px] pr-[14px] text-right text-[13px] text-tinta">
