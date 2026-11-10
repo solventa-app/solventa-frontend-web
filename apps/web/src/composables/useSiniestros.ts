@@ -140,34 +140,41 @@ export function reiniciarEstadoSiniestros(): void {
 }
 
 export function useSiniestros(fetchFn: typeof fetch = fetch) {
-  async function cargarSiniestros(filtro?: EstadoSiniestro) {
-    estado.cargando = true
-    estado.error = null
+  /** `silencioso` (Q-03): vuelve a pedir la bandeja sin spinner ni error, para ver la aprobación automática. */
+  async function cargarSiniestros(filtro?: EstadoSiniestro, { silencioso = false } = {}) {
+    if (!silencioso) {
+      estado.cargando = true
+      estado.error = null
+    }
     try {
       const variables = filtro ? { estado: filtro } : {}
       const r = await ejecutar<{ siniestros: SiniestroBandeja[] }>(CONSULTA_SINIESTROS, variables, fetchFn, SINIESTROS)
       estado.siniestros = r.siniestros
     } catch {
-      // Nunca el error técnico ni un 5xx crudo (regla 5).
-      estado.error = t('siniestros.errorCarga')
+      // Nunca el error técnico ni un 5xx crudo (regla 5). En silencio se queda lo que ya se ve.
+      if (!silencioso) estado.error = t('siniestros.errorCarga')
     } finally {
-      estado.cargando = false
+      if (!silencioso) estado.cargando = false
     }
   }
 
-  async function cargarSiniestro(id: string) {
-    estado.cargandoDetalle = true
-    estado.errorDetalle = null
-    estado.noEncontrado = false
-    estado.detalle = null
+  /** `silencioso` (Q-03): refresca el caso que ya se ve, sin vaciarlo ni mostrar error si falla. */
+  async function cargarSiniestro(id: string, { silencioso = false } = {}) {
+    if (!silencioso) {
+      estado.cargandoDetalle = true
+      estado.errorDetalle = null
+      estado.noEncontrado = false
+      estado.detalle = null
+    }
     try {
       const r = await ejecutar<{ siniestro: Siniestro | null }>(CONSULTA_SINIESTRO, { id }, fetchFn, SINIESTROS)
+      if (silencioso && (!r.siniestro || r.siniestro.id !== estado.detalle?.id)) return
       estado.detalle = r.siniestro
       estado.noEncontrado = r.siniestro === null
     } catch {
-      estado.errorDetalle = t('siniestros.errorDetalle')
+      if (!silencioso) estado.errorDetalle = t('siniestros.errorDetalle')
     } finally {
-      estado.cargandoDetalle = false
+      if (!silencioso) estado.cargandoDetalle = false
     }
   }
 

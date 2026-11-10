@@ -403,6 +403,7 @@ export const es = {
   'siniestros.detalle.tiempoDias': '{d} d {h} h {m} min',
   'siniestros.detalle.aprobadaAutomatica': 'Aprobado automáticamente por vencimiento',
   'siniestros.detalle.vencido': 'Vencido',
+  'siniestros.detalle.aprobandoAutomatica': 'Se aprobará automáticamente en el próximo minuto.',
   'siniestros.detalle.accionesSr': 'Acciones del operador',
   'siniestros.detalle.notaNotificacion': 'La decisión adoptada notificará de inmediato a la entidad financiera.',
   'siniestros.detalle.derivar': 'Derivar a perito',

@@ -122,6 +122,50 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(caja().classes()).toContain('border-error')
   })
 
+  // QA 2026-11-10 (Q-03): al llegar a cero el caso cambiaba en CLAIMS, pero la pantalla se quedaba en «Vencido».
+  it('al vencer sigue pidiendo el caso en silencio y muestra la aprobación automática sin recargar', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] })
+    const { wrapper } = await montar()
+    const { estado } = useSiniestros()
+    const original = JSON.parse(JSON.stringify(estado.detalle))
+    let aprobado = false
+    servidor.use(
+      bff.query('siniestro', () =>
+        HttpResponse.json({
+          data: {
+            siniestro: aprobado
+              ? {
+                  ...original,
+                  estado: 'APROBADO',
+                  resolucion: {
+                    ...(original.resolucion ?? {}),
+                    tipo: 'APROBACION',
+                    automatica: true,
+                    resueltaEn: new Date().toISOString(),
+                  },
+                }
+              : { ...original, venceDictamenEn: estado.detalle!.venceDictamenEn },
+          },
+        }),
+      ),
+    )
+    estado.detalle!.venceDictamenEn = new Date(Date.now() + 10_000).toISOString()
+    await flushPromises()
+
+    vi.advanceTimersByTime(11_000)
+    await flushPromises()
+    expect(wrapper.get('[data-prueba="tiempo-restante"] time').text()).toBe('Vencido')
+    expect(wrapper.get('[data-prueba="aprobando-automatica"]').text()).toBe(
+      'Se aprobará automáticamente en el próximo minuto.',
+    )
+
+    aprobado = true
+    vi.advanceTimersByTime(30_000)
+    await vi.waitFor(() => expect(wrapper.find('[data-prueba="automatica"]').exists()).toBe(true))
+    expect(wrapper.find('[data-prueba="tiempo-restante"]').exists()).toBe(false)
+    expect(wrapper.find('[data-prueba="acciones"]').exists()).toBe(false)
+  })
+
   it('con más de 24 h también muestra los minutos"', async () => {
     const { wrapper } = await montar()
     useSiniestros().estado.detalle!.venceDictamenEn = new Date(Date.now() + 50 * 3_600_000 + 90_000).toISOString()
