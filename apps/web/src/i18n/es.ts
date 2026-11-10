@@ -48,6 +48,20 @@ export const es = {
   'fuente.camara-comercio': 'Cámara de Comercio',
   'fuente.antecedentes-judiciales': 'Antecedentes judiciales',
 
+  // G-04b · Inactividad
+  'inactividad.titulo': '¿Sigues ahí?',
+  'inactividad.texto': 'Por tu seguridad, cerraremos tu sesión si no haces nada.',
+  'inactividad.cuenta': 'Tu sesión se cerrará en {segundos} s.',
+  'inactividad.seguir': 'Seguir conectado',
+  'inactividad.cerrar': 'Cerrar sesión',
+  'ingreso.sesionInactividad': 'Cerramos tu sesión por inactividad. Inicia sesión de nuevo para continuar.',
+  'ingreso.sinSesion': 'Inicia sesión para continuar.',
+
+  // G-09 · Sin acceso
+  'sinAcceso.titulo': 'No tienes acceso a esta pantalla',
+  'sinAcceso.texto': 'Tu rol no puede ver esta sección. Si crees que es un error, comunícate con tu administrador.',
+  'sinAcceso.volver': 'Ir a mi inicio',
+
   // G-01 · Ingreso
   'ingreso.titulo': 'Iniciar sesión',
   'ingreso.usuario': 'Usuario',

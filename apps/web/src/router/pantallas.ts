@@ -73,6 +73,16 @@ export const pantallas: Pantalla[] = [
     criterios: [],
     componente: () => import('../views/MiPerfil.vue'),
   },
+  {
+    id: 'G-09',
+    ruta: '/sin-acceso',
+    nombre: 'Sin acceso',
+    historia: 'Global',
+    sprint: 1,
+    roles: ['CLIENTE', 'ASESOR', 'BACKOFFICE'],
+    criterios: [],
+    componente: () => import('../views/SinAcceso.vue'),
+  },
   // G-06: «Mis pólizas» (cliente) y «Pólizas emitidas» (asesor); mismo componente, según el rol de la sesión.
   {
     id: 'G-06',
