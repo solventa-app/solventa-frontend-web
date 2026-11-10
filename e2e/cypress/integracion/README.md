@@ -11,3 +11,8 @@ Estos specs usan el backend de verdad: el CI no los corre.
 
 `operador-socio.cy.ts` necesita además el usuario `operador.demo` con clave `Operador-local-0001` (BACKOFFICE), los socios
 demo y la semilla de siniestros.
+
+`w08-auto.cy.ts` (HU-W08, KAN-290) necesita `stub-vehiculos`, el CLIENTE demo `cliente.siniestros` (clave `Cliente-local-1`, tarea
+`crear-cliente-siniestros-demo`) con su póliza de auto (tarea `sembrar-polizas-demo`) y el BACKOFFICE local. Corre con
+`CYPRESS_USUARIO_CLIENTE=cliente.siniestros CYPRESS_CLAVE_CLIENTE=Cliente-local-1 CYPRESS_USUARIO_BACKOFFICE=admin.solventa
+CYPRESS_CLAVE_BACKOFFICE=Admin-local-solventa`.
