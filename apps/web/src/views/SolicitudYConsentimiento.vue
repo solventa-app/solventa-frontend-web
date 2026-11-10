@@ -102,6 +102,7 @@ onMounted(async () => {
       correoDeCuenta.value = datos.yo.correo?.trim() || SIN_DATO
     }
     documentoDeCuenta.value = datos.yo?.documentoEnmascarado?.trim() || null
+    captura.documentoDeCuenta = documentoDeCuenta.value !== null
     if (documentoDeCuenta.value) captura.documentoIdentidad = ''
   } catch {
     /* se queda editable */
