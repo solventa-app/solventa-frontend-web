@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import {
   CLAVE_INICIO,
+  alSesionVencida,
   CLAVE_TOKEN,
   leerClaims,
   restaurarSesion,
@@ -189,5 +190,24 @@ describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
     expect(() => restaurarSesion()).not.toThrow()
     expect(useSesion().sesionActiva()).toBe(false)
     expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
+  })
+})
+
+describe('cierre entre pestañas', () => {
+  it('al llegar «cerrada» de otra pestaña limpia la sesión y avisa para volver al ingreso', async () => {
+    const { iniciarSesion, estado, sesionActiva } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('andrés.duarte', 'cualquiera')).toBeNull()
+    expect(sesionActiva()).toBe(true)
+    let volvio = false
+    alSesionVencida(() => (volvio = true))
+    // Otra pestaña (otro objeto BroadcastChannel con el mismo nombre) cierra la sesión.
+    const otra = new BroadcastChannel('solventa-sesion')
+    otra.postMessage('cerrada')
+    await new Promise((r) => setTimeout(r, 50))
+    otra.close()
+    expect(estado.token).toBeNull()
+    expect(sesionActiva()).toBe(false)
+    expect(volvio).toBe(true)
+    alSesionVencida(null)
   })
 })
