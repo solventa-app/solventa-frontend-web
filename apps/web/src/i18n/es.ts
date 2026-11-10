@@ -50,8 +50,8 @@ export const es = {
 
   // G-01 · Ingreso
   'ingreso.titulo': 'Iniciar sesión',
-  'ingreso.usuario': 'Usuario',
-  'ingreso.usuarioEjemplo': 'tu.usuario',
+  'ingreso.usuario': 'Correo',
+  'ingreso.usuarioEjemplo': 'tu@correo.com',
   'ingreso.clave': 'Contraseña',
   'ingreso.ingresasComo': 'Ingresas como',
   'ingreso.ingresar': 'Ingresar',

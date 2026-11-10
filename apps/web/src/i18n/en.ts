@@ -51,8 +51,8 @@ export const en: Record<Clave, string> = {
 
   // G-01 · Sign in
   'ingreso.titulo': 'Sign in',
-  'ingreso.usuario': 'Username',
-  'ingreso.usuarioEjemplo': 'your.username',
+  'ingreso.usuario': 'Email',
+  'ingreso.usuarioEjemplo': 'you@email.com',
   'ingreso.clave': 'Password',
   'ingreso.ingresasComo': 'Signing in as',
   'ingreso.ingresar': 'Sign in',
