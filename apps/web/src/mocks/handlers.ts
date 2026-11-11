@@ -115,7 +115,13 @@ export const ofertaAutoDeDemo = (tipo: Oferta['tipo']): Oferta => {
         estado: tipo === 'COMPLETA' ? 'OK' : 'FALLO',
         capturadoEn: null,
       },
-      { id: 'siniestralidad-placa', nombre: 'siniestralidad-placa', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+      {
+        id: 'siniestralidad-placa',
+        nombre: 'siniestralidad-placa',
+        origen: 'OPEN_DATA',
+        estado: 'OK',
+        capturadoEn: null,
+      },
     ],
     perfilRiesgo: null,
     vehiculo: {
