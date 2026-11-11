@@ -42,7 +42,7 @@ import type {
   ResultadoVerificacion,
   TipoMedioPago,
 } from '../graphql/tipos'
-import { ofertaDeDemo } from './handlers'
+import { ofertaDeDemo, ofertaPorId } from './handlers'
 
 export const CODIGO_DEMO = '000000'
 const CODIGO_VENCIDO = '999999'
@@ -80,6 +80,8 @@ interface PropuestaMock {
   firma: FirmaRegistrada | null
   poliza: Poliza | null
   fallosSeguidos: number
+  /** KAN-290: las coberturas de la oferta de auto, para la póliza que se emita. */
+  coberturas?: Poliza['coberturas']
 }
 
 export interface CorreoSimulado {
@@ -131,7 +133,11 @@ function crearPropuesta(oferta: Oferta, correo: string, ofertaId = oferta.id): P
       motivoEstado: null,
       mensajeEstado: null,
       accionSugerida: null,
+      // KAN-290: el producto, el vehículo y las coberturas de la oferta (auto) o vida deudor.
+      producto: oferta.producto ?? 'VIDA_DEUDOR',
+      vehiculo: oferta.vehiculo ?? null,
     },
+    coberturas: oferta.coberturas ?? [],
     correo,
     codigo: null,
     token: null,
@@ -195,7 +201,13 @@ function emitirPoliza(registro: PropuestaMock): Poliza {
     prima: registro.propuesta.prima,
     cobertura: registro.propuesta.cobertura,
     documentoUrl: `/mock/polizas/${id}/documento.pdf`,
-    ramo: 'Vida grupo deudor con amparo de daños al bien financiado',
+    ramo:
+      registro.propuesta.producto === 'AUTO'
+        ? 'Automóviles todo riesgo'
+        : 'Vida grupo deudor con amparo de daños al bien financiado',
+    producto: registro.propuesta.producto,
+    vehiculo: registro.propuesta.vehiculo ?? null,
+    coberturas: registro.coberturas ?? [],
   }
   // El enlace sigue sirviendo con la póliza emitida: cubre también la descarga del PDF (W03-22).
   cambiarEstado(registro, 'EMITIDA', { polizaId: id })
@@ -332,9 +344,7 @@ const bff = graphql.link('*')
 
 export const handlersSuscripcion = [
   bff.query<{ oferta: Oferta | null }, QueryOfertaArgs>('oferta', ({ variables }) => {
-    const tipo =
-      variables.id === 'oferta-preliminar' ? 'PRELIMINAR' : variables.id === 'oferta-completa' ? 'COMPLETA' : null
-    return HttpResponse.json({ data: { oferta: tipo ? ofertaDeDemo(tipo) : null } })
+    return HttpResponse.json({ data: { oferta: ofertaPorId(String(variables.id)) } })
   }),
 
   bff.mutation<
@@ -371,7 +381,8 @@ export const handlersSuscripcion = [
     }
     // Aceptar dos veces la misma oferta devuelve la misma propuesta.
     const existente = [...propuestas.values()].find((r) => r.propuesta.ofertaId === ofertaId && !r.poliza)
-    const registro = existente ?? crearPropuesta(ofertaDeDemo('COMPLETA'), contacto?.correo ?? 'cliente@correo.com')
+    const oferta = ofertaPorId(String(ofertaId)) ?? ofertaDeDemo('COMPLETA')
+    const registro = existente ?? crearPropuesta(oferta, contacto?.correo ?? 'cliente@correo.com', String(ofertaId))
     return HttpResponse.json({ data: { aceptarOferta: registro.propuesta } })
   }),
 

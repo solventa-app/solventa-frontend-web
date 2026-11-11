@@ -42,6 +42,7 @@ const CAMPOS_SINIESTRO = `
   descripcion
   sumaReclamada { valor moneda }
   venceDictamenEn
+  tipoSiniestroAuto
   evidencias { id tipo titulo archivo url registradaEn geoetiquetada nota }
   verificaciones { descripcion cumple }
   resolucion {
@@ -64,8 +65,8 @@ const CONSULTA_PERITOS = `query peritos($siniestroId: ID!) {
   peritos(siniestroId: $siniestroId) { ${CAMPOS_PERITO} }
 }`
 const RESULTADO = `__typename ... on Siniestro { ${CAMPOS_SINIESTRO} } ... on ErrorSiniestro { mensaje }`
-const MUTACION_APROBAR = `mutation aprobarSiniestro($id: ID!) {
-  aprobarSiniestro(id: $id) { ${RESULTADO} }
+const MUTACION_APROBAR = `mutation aprobarSiniestro($id: ID!, $valorDano: String) {
+  aprobarSiniestro(id: $id, valorDano: $valorDano) { ${RESULTADO} }
 }`
 const MUTACION_RECHAZAR = `mutation rechazarSiniestro($id: ID!, $motivo: MotivoRechazo!, $comentario: String) {
   rechazarSiniestro(id: $id, motivo: $motivo, comentario: $comentario) { ${RESULTADO} }
@@ -219,7 +220,9 @@ export function useSiniestros(fetchFn: typeof fetch = fetch) {
     }
   }
 
-  const aprobar = (id: string) => resolver('aprobarSiniestro', MUTACION_APROBAR, { id })
+  /** KAN-290: `valorDano` solo en un siniestro de auto parcial o de RC (lo pide CLAIMS para la indemnización). */
+  const aprobar = (id: string, valorDano: string | null = null) =>
+    resolver('aprobarSiniestro', MUTACION_APROBAR, { id, valorDano })
   const rechazar = (id: string, motivo: MotivoRechazo, comentario?: string) =>
     resolver('rechazarSiniestro', MUTACION_RECHAZAR, { id, motivo, comentario: comentario || null })
   const derivar = (id: string, peritoId: string, instrucciones?: string) =>

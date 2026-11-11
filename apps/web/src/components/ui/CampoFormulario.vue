@@ -23,7 +23,7 @@ const props = withDefaults(
      * Ícono final dentro del campo (Figma: Documento → badge, Monto → payments, Dirección → home; nombre y correo
      * del cliente en W01-01 con un ASESOR → person y mail).
      */
-    icono?: 'badge' | 'payments' | 'home' | 'lock' | 'person' | 'mail'
+    icono?: 'badge' | 'payments' | 'home' | 'lock' | 'person' | 'mail' | 'directions_car' | 'location_on'
   }>(),
   {
     type: 'text',

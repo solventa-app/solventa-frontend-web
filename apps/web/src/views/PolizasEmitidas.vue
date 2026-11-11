@@ -178,6 +178,10 @@ onUnmounted(() => {
                 </RouterLink>
                 <InsigniaEstadoPoliza :estado="visible(p)" />
               </div>
+              <p class="text-[12px] text-tinta-suave" data-prueba="producto-tarjeta">
+                {{ t(`auto.producto.${p.producto ?? 'VIDA_DEUDOR'}`)
+                }}<template v-if="p.vehiculo"> · {{ p.vehiculo.marca }} {{ p.vehiculo.placaEnmascarada }}</template>
+              </p>
               <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
                 <div v-if="esAsesor" class="col-span-2">
                   <dt class="text-[11px] text-tinta-suave">{{ t('polizas.titular') }}</dt>
@@ -236,6 +240,12 @@ onUnmounted(() => {
                     >
                       {{ p.poliza?.numero ?? '—' }}
                     </RouterLink>
+                    <span class="block font-sans text-[11px]" data-prueba="producto">
+                      {{ t(`auto.producto.${p.producto ?? 'VIDA_DEUDOR'}`)
+                      }}<template v-if="p.vehiculo">
+                        · {{ p.vehiculo.marca }} {{ p.vehiculo.placaEnmascarada }}</template
+                      >
+                    </span>
                   </td>
                   <td class="py-[20px] pr-[14px] text-right text-[13px] text-tinta">{{ montoVisible(p.prima) }}</td>
                   <td class="py-[20px] pr-[14px] text-right text-[13px] text-tinta">

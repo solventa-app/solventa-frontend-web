@@ -13,6 +13,7 @@ import type {
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
+  MutationSolicitarOfertaAutoArgs,
   Jurisdiccion as JurisdiccionBff,
   Monto,
   Oferta,
@@ -80,7 +81,91 @@ export const ofertaDeDemo = (tipo: Oferta['tipo']): Oferta => ({
     nivelRiesgo: tipo === 'PRELIMINAR' ? 'MEDIO' : 'BAJO',
     fechaVigencia: enTreintaDias(),
   },
+  producto: 'VIDA_DEUDOR',
+  vehiculo: null,
+  coberturas: [],
+  factoresTarifa: [],
 })
+
+/**
+ * KAN-290: la oferta de auto de demo, con la forma que devuelve el BFF (RATING): el Mazda 3 2024 de la placa de demo
+ * ABC123 de stub-vehiculos, sus 6 coberturas y los factores de la tarifa. La PRELIMINAR es la de una guía Fasecolda
+ * caída (valor de referencia y rango).
+ */
+export const ofertaAutoDeDemo = (tipo: Oferta['tipo']): Oferta => {
+  const valor = { valor: tipo === 'COMPLETA' ? '118500000.00' : '64800000.00', moneda: 'COP' }
+  const deducible = '10 % mín. 1 SMMLV'
+  return {
+    id: `oferta-auto-${tipo.toLowerCase()}`,
+    tipo,
+    producto: 'AUTO',
+    prima: tipo === 'COMPLETA' ? { valor: '332198.00', moneda: 'COP' } : null,
+    rangoPrima:
+      tipo === 'PRELIMINAR'
+        ? { minima: { valor: '151171.84', moneda: 'COP' }, maxima: { valor: '226757.76', moneda: 'COP' } }
+        : null,
+    cobertura: valor,
+    desgloseScore: [],
+    fuentes: [
+      { id: 'runt-vehiculo', nombre: 'runt-vehiculo', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+      {
+        id: 'fasecolda-valor',
+        nombre: 'fasecolda-valor',
+        origen: 'OPEN_DATA',
+        estado: tipo === 'COMPLETA' ? 'OK' : 'FALLO',
+        capturadoEn: null,
+      },
+      {
+        id: 'siniestralidad-placa',
+        nombre: 'siniestralidad-placa',
+        origen: 'OPEN_DATA',
+        estado: 'OK',
+        capturadoEn: null,
+      },
+    ],
+    perfilRiesgo: null,
+    vehiculo: {
+      placaEnmascarada: 'ABC•••',
+      marca: 'MAZDA',
+      linea: '3 GRAND TOURING',
+      modelo: 2024,
+      clase: 'AUTOMOVIL',
+      uso: 'PARTICULAR',
+      valorComercial: valor,
+      ciudadCirculacion: 'Bogotá',
+      kilometrajeAnual: 12000,
+      deducible: 'DIEZ_POR_CIENTO',
+    },
+    coberturas: [
+      { tipo: 'RESPONSABILIDAD_CIVIL', valorAsegurado: { valor: '1000000000.00', moneda: 'COP' }, deducible: null },
+      { tipo: 'PERDIDA_TOTAL_DANOS', valorAsegurado: valor, deducible },
+      { tipo: 'PERDIDA_PARCIAL_DANOS', valorAsegurado: valor, deducible },
+      { tipo: 'PERDIDA_TOTAL_HURTO', valorAsegurado: valor, deducible },
+      { tipo: 'PERDIDA_PARCIAL_HURTO', valorAsegurado: valor, deducible },
+      { tipo: 'ASISTENCIA', valorAsegurado: null, deducible: null },
+    ],
+    factoresTarifa: [
+      { nombre: 'USO', factor: 1, detalle: 'particular' },
+      { nombre: 'ANTIGUEDAD', factor: 0.95, detalle: '2 años' },
+      { nombre: 'KILOMETRAJE', factor: 1, detalle: '12.000 km/año' },
+      { nombre: 'INDICE_HURTO', factor: 1, detalle: 'índice MEDIO' },
+      { nombre: 'SINIESTRALIDAD', factor: 0.9, detalle: '0 en 3 años' },
+      { nombre: 'CIUDAD', factor: 1.1, detalle: 'Bogotá' },
+      { nombre: 'DEDUCIBLE', factor: 1, detalle: 'DIEZ_POR_CIENTO' },
+    ],
+  }
+}
+
+/** La oferta de demo por su id (vida o auto): la usan `oferta(id)` y `aceptarOferta` del mock de suscripción. */
+export const ofertaPorId = (id: string): Oferta | null => {
+  const porId: Record<string, () => Oferta> = {
+    'oferta-completa': () => ofertaDeDemo('COMPLETA'),
+    'oferta-preliminar': () => ofertaDeDemo('PRELIMINAR'),
+    'oferta-auto-completa': () => ofertaAutoDeDemo('COMPLETA'),
+    'oferta-auto-preliminar': () => ofertaAutoDeDemo('PRELIMINAR'),
+  }
+  return porId[id]?.() ?? null
+}
 
 const consentimiento = (revocado: boolean): Consentimiento => ({
   id: 'consentimiento-1',
@@ -380,6 +465,30 @@ export const handlers = [
               }
             : ofertaDeDemo(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
+    },
+  ),
+
+  // KAN-290: la oferta de auto. Placas de demo como las de stub-vehiculos: NOX000 no existe, STU901 está hurtado y
+  // YZA456 deja la oferta preliminar.
+  bff.mutation<{ solicitarOfertaAuto: ResultadoOferta }, MutationSolicitarOfertaAutoArgs>(
+    'solicitarOfertaAuto',
+    ({ variables }) => {
+      const placa = variables.entrada.placa.replace(/[\s-]/g, '').toUpperCase()
+      const resultado: ResultadoOferta =
+        placa === 'NOX000'
+          ? {
+              mensaje: 'No encontramos esa placa en el RUNT. Revísala e intenta de nuevo.',
+              puedeReintentar: false,
+              motivo: 'VEHICULO_NO_ENCONTRADO',
+            }
+          : placa === 'STU901'
+            ? {
+                mensaje: 'El vehículo tiene una denuncia de hurto vigente en el RUNT.',
+                puedeReintentar: false,
+                motivo: 'VEHICULO_NO_ASEGURABLE',
+              }
+            : ofertaAutoDeDemo(placa === 'YZA456' ? 'PRELIMINAR' : 'COMPLETA')
+      return HttpResponse.json({ data: { solicitarOfertaAuto: resultado } })
     },
   ),
 
