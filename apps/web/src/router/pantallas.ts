@@ -112,6 +112,17 @@ export const pantallas: Pantalla[] = [
     criterios: [],
     componente: () => import('../views/PolizasEmitidas.vue'),
   },
+  // G-06b: detalle de una póliza (QA 2026-11-10, Q-09). La abre la fila de G-06, o G-06 si hay una sola.
+  {
+    id: 'G-06b',
+    ruta: '/polizas/:propuestaId',
+    nombre: 'Detalle de la póliza',
+    historia: 'Global',
+    sprint: 1,
+    roles: CLIENTE_O_ASESOR,
+    criterios: [],
+    componente: () => import('../views/DetallePoliza.vue'),
+  },
   {
     id: 'W01-01',
     ruta: '/cotizacion',
