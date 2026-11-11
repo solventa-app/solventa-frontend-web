@@ -1,4 +1,5 @@
 import { describeConMocks } from '../../support/entorno'
+import { responderBff, irARuta } from '../../support/msw'
 import { ingresar, type Rol } from '../../support/sesion'
 
 // G-06 «Mis pólizas» (cliente) y «Pólizas emitidas» (asesor) y G-06b «Detalle de la póliza» (QA 2026-11-10, Q-09).
@@ -36,46 +37,24 @@ function propuesta(n: number, extra: Fila = {}): Fila {
   }
 }
 
-type Msw = {
-  worker: { use: (...handlers: unknown[]) => void }
-  graphql: {
-    link: (url: string) => {
-      query: (nombre: string, resolver: (info: { variables: Record<string, unknown> }) => unknown) => unknown
-    }
-  }
-  HttpResponse: { json: (cuerpo: unknown) => unknown }
-}
-
-/**
- * Cambia lo que responde el BFF simulado: `propuestas` pagina de 10 en 10 y `propuesta(id)` busca por id. Las atiende
- * el service worker de MSW (la web lo expone en `window.__msw` solo con mocks), por eso no sirve `cy.intercept`.
- */
+/** Las pólizas que devuelve el BFF simulado: `propuestas` pagina de 10 en 10 y `propuesta(id)` busca por id. */
 function conPolizas(win: Window, lista: Fila[], rol: Rol) {
-  const { worker, graphql, HttpResponse } = (win as unknown as { __msw: Msw }).__msw
-  const bff = graphql.link('*')
-  worker.use(
-    bff.query('propuestas', ({ variables }) => {
-      const tamano = Number(variables.tamano ?? 10)
-      const pagina = Number(variables.pagina ?? 1)
-      return HttpResponse.json({
+  responderBff(win, {
+    propuestas: ({ pagina, tamano }) => {
+      const t = Number(tamano ?? 10)
+      const p = Number(pagina ?? 1)
+      return {
         data: {
-          propuestas: {
-            propuestas: lista.slice((pagina - 1) * tamano, pagina * tamano),
-            total: lista.length,
-            pagina,
-            tamano,
-          },
+          propuestas: { propuestas: lista.slice((p - 1) * t, p * t), total: lista.length, pagina: p, tamano: t },
         },
-      })
-    }),
-    bff.query('propuesta', ({ variables }) => {
-      const fila = lista.find((p) => p.id === variables.id)
+      }
+    },
+    propuesta: ({ id }) => {
+      const fila = lista.find((p) => p.id === id)
       // El BFF solo manda el nombre del titular al asesor.
-      return HttpResponse.json({
-        data: { propuesta: fila ? { ...fila, ...(rol === 'CLIENTE' ? { nombreTitular: null } : {}) } : null },
-      })
-    }),
-  )
+      return { data: { propuesta: fila ? { ...fila, ...(rol === 'CLIENTE' ? { nombreTitular: null } : {}) } : null } }
+    },
+  })
 }
 
 /** Inicia sesión, fija las pólizas y abre `ruta` sin recargar (no espera la ruta: con una sola salta al detalle). */
@@ -83,8 +62,7 @@ function abrirPolizas(rol: Rol, lista: Fila[], ruta = '/polizas') {
   ingresar(rol)
   cy.window().then((win) => {
     conPolizas(win, lista, rol)
-    win.history.pushState(null, '', ruta)
-    win.dispatchEvent(new PopStateEvent('popstate'))
+    irARuta(win, ruta)
   })
 }
 
