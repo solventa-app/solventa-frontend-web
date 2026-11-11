@@ -89,7 +89,10 @@ describe('W07-02 · Panel del socio', () => {
     await boton(credenciales, 'Copiar').trigger('click')
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('retail-fintech-042')
 
-    await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
+    await wrapper
+      .findAll('[role="radiogroup"] [role="radio"]')
+      .find((r) => r.text().includes('Pruebas'))!
+      .trigger('click')
     await flushPromises()
     expect(credenciales.get('[data-prueba="socio-id"]').text()).toBe('retail-fintech-042-pruebas')
     expect(credenciales.get('[data-prueba="clave"]').text()).toMatch(/^sk_test_•+$/)
@@ -164,7 +167,10 @@ describe('W07-02 · Panel del socio', () => {
     expect(wrapper.text()).toContain('Octubre de 2026')
     expect(wrapper.text()).not.toContain('Entorno de pruebas')
 
-    await wrapper.get('[role="radiogroup"] [role="radio"]:nth-of-type(2)').trigger('click')
+    await wrapper
+      .findAll('[role="radiogroup"] [role="radio"]')
+      .find((r) => r.text().includes('Pruebas'))!
+      .trigger('click')
     await esperar(() => wrapper.text().includes('Entorno de pruebas'))
     expect(wrapper.text()).toContain('Entorno de pruebas')
   })

@@ -67,7 +67,7 @@ function abrirPerfil() {
 
 <template>
   <header
-    class="flex w-full flex-wrap items-center justify-between gap-3 border-b border-borde bg-white px-10 pb-[17px] pt-4"
+    class="flex w-full flex-wrap items-center justify-between gap-3 border-b border-borde bg-white px-4 pb-[17px] pt-4 sm:px-10"
   >
     <div class="flex min-w-0 items-center gap-3">
       <span class="shrink-0 text-[24px] font-bold tracking-[-0.6px] text-enlace">Solventa</span>
