@@ -15,7 +15,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Badge, Boton, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import {
+  Badge,
+  Boton,
+  CampoFormulario,
+  EstadoOperador,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
@@ -132,9 +140,23 @@ async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: stri
   estado.errorAccion = null
 }
 
+// KAN-290: en un siniestro de auto parcial o de responsabilidad civil el operador digita el valor del daño; CLAIMS
+// lo acota a la cobertura y le resta el deducible. En pérdida total no se pide: es el valor asegurado.
+const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
+const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
+const valorDano = ref('')
+const errorValorDano = ref<string | null>(null)
+watch(valorDano, () => (errorValorDano.value = null))
+
 async function aprobarSiniestro() {
+  errorValorDano.value = null
+  const valor = valorDano.value.replace(/[.\s$]/g, '').trim()
+  if (necesitaValorDano.value && !/^\d{1,13}$/.test(valor)) {
+    errorValorDano.value = t('siniestros.detalle.valorDanoError')
+    return
+  }
   accion.value = 'aprobar'
-  const resultado = await aprobar(id.value)
+  const resultado = await aprobar(id.value, necesitaValorDano.value ? valor : null)
   accion.value = null
   if (resultado) {
     await router.replace(`/operador/siniestros/${id.value}/aprobado`)
@@ -560,6 +582,17 @@ watch(
                   {{ t('siniestros.detalle.rechazar') }}
                 </Boton>
 
+                <CampoFormulario
+                  v-if="necesitaValorDano"
+                  v-model="valorDano"
+                  class="w-full sm:w-[220px]"
+                  :label="t('siniestros.detalle.valorDano')"
+                  :placeholder="t('siniestros.detalle.valorDanoEjemplo')"
+                  :hint="errorValorDano ? undefined : t('siniestros.detalle.valorDanoAyuda')"
+                  :error="errorValorDano ?? undefined"
+                  icono="payments"
+                  data-prueba="valor-dano"
+                />
                 <Boton
                   variante="primario"
                   data-prueba="aprobar"

@@ -9,6 +9,7 @@
     la firma en su sesión; «Contactar a un asesor» (W01-05) queda como acción secundaria.
 -->
 <script setup lang="ts">
+import DetalleOfertaAuto from '../components/DetalleOfertaAuto.vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
@@ -86,7 +87,8 @@ async function firmar() {
             {{ t('comun.cobertura', { monto: montoVisible(oferta.cobertura) }) }}
           </p>
         </div>
-        <div class="flex w-full flex-col gap-2 border-y border-borde py-4">
+        <DetalleOfertaAuto v-if="oferta.producto === 'AUTO'" :oferta="oferta" />
+        <div v-else class="flex w-full flex-col gap-2 border-y border-borde py-4">
           <div class="flex items-center justify-between px-1">
             <span class="text-[13px] text-tinta-suave">{{ t('comun.plazo') }}</span>
             <span class="text-[13px] font-semibold text-tinta">{{
