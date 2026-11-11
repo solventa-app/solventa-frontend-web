@@ -16,7 +16,7 @@ export function ingresar(rol: Rol = 'CLIENTE'): void {
   // Cypress 16 quitó `Cypress.env()`; las credenciales de staging son sensibles, así que se leen con `cy.env()`.
   cy.env([`USUARIO_${rol}`, `CLAVE_${rol}`]).then((vars) => {
     cy.get('[data-pantalla="G-01"]').within(() => {
-      cy.contains('label', 'Usuario')
+      cy.contains('label', 'Correo')
         .parent()
         .find('input')
         .type(vars[`USUARIO_${rol}`] ?? USUARIO_DEMO[rol])

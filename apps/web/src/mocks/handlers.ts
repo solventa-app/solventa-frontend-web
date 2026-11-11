@@ -308,6 +308,10 @@ const bff = graphql.link('*')
 // Tasas de demostración: pesos colombianos por unidad, como la tabla del ACL Worker.
 const COP_POR_UNIDAD: Record<string, number> = { COP: 1, USD: 4100, EUR: 4450, MXN: 225, BRL: 750, CLP: 4.4, PEN: 1100 }
 
+function enlaceDeClaveVigente(token: string | null): boolean {
+  return !!token && !token.startsWith('TokenVencido')
+}
+
 // Quién tiene «la cookie» en los mocks (T22).
 let ultimoUsuarioDemo: string | null = null
 
@@ -331,6 +335,31 @@ export const handlers = [
         },
       },
     })
+  }),
+
+  // «Olvidé mi contraseña» (KAN-26, v0.43): siempre `true`, exista o no la cuenta. Con los mocks el «correo» de /dev/correo
+  // no existe: el enlace de demo es `/restablecer-clave#t=TokenDeDemo-restablecer-123`; uno que empiece por
+  // `TokenVencido` simula un enlace vencido o ya usado.
+  bff.mutation<{ solicitarRestablecimientoClave: boolean }>('solicitarRestablecimientoClave', () =>
+    HttpResponse.json({ data: { solicitarRestablecimientoClave: true } }),
+  ),
+  bff.query<{ enlaceRestablecimientoVigente: boolean }>('enlaceRestablecimientoVigente', ({ request }) =>
+    HttpResponse.json({
+      data: { enlaceRestablecimientoVigente: enlaceDeClaveVigente(request.headers.get('x-enlace-clave')) },
+    }),
+  ),
+  bff.mutation<{ restablecerClave: unknown }, { clave: string }>('restablecerClave', ({ request }) => {
+    if (!enlaceDeClaveVigente(request.headers.get('x-enlace-clave'))) {
+      return HttpResponse.json({
+        data: {
+          restablecerClave: {
+            mensaje: 'El enlace no es válido o ya venció. Pide uno nuevo.',
+            codigo: 'ENLACE_INVALIDO',
+          },
+        },
+      })
+    }
+    return HttpResponse.json({ data: { restablecerClave: { ok: true } } })
   }),
 
   // T22: con los mocks no hay cookie que leer; renueva el último usuario que inició sesión.

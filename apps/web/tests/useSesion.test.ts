@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import {
   CLAVE_INICIO,
-  CLAVE_TOKEN,
+  alSesionVencida,
   leerClaims,
   restaurarSesion,
   RUTA_INICIO,
@@ -133,61 +133,58 @@ describe('nombre del usuario al restaurar la sesión (yo)', () => {
     expect(estado.nombre).toBe('maria.restrepo')
   })
 
-  it('el nombre no se guarda en sessionStorage', async () => {
-    await useSesion(fetchPrueba).iniciarSesion('maria.restrepo', 'x')
-    const guardado = sessionStorage.getItem(CLAVE_TOKEN) ?? ''
+  it('el nombre y el token no se guardan en el navegador', async () => {
+    const { estado, iniciarSesion } = useSesion(fetchPrueba)
+    await iniciarSesion('maria.restrepo', 'x')
+    const guardado = JSON.stringify({ ...sessionStorage }) + JSON.stringify({ ...localStorage })
     expect(guardado).not.toContain('Maria')
-    // Solo el token y la marca de tiempo del inicio de sesión (sin datos personales).
-    expect(sessionStorage.length).toBe(2)
+    expect(guardado).not.toContain(estado.token ?? 'sin-token')
+    // Solo la marca de tiempo del inicio de sesión (sin datos personales).
+    expect(sessionStorage.length).toBe(1)
     expect(Number(sessionStorage.getItem(CLAVE_INICIO))).toBeGreaterThan(0)
   })
 })
 
-describe('la sesión sobrevive a recargar la página (sessionStorage)', () => {
-  const enUnMinuto = () => Math.floor(Date.now() / 1000) + 60
-
+describe('el token vive solo en memoria', () => {
   afterEach(() => sessionStorage.clear())
 
-  it('iniciarSesion guarda el token y la hora de inicio, y cerrarSesion los borra', async () => {
+  it('iniciarSesion guarda solo la hora de inicio y cerrarSesion la borra', async () => {
     const { iniciarSesion, cerrarSesion, estado } = useSesion(fetchPrueba)
     await iniciarSesion('asesor.pena', 'secreta123')
 
-    expect(sessionStorage.length).toBe(2)
-    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBe(estado.token)
+    expect(sessionStorage.length).toBe(1)
     expect(Number(sessionStorage.getItem(CLAVE_INICIO))).toBe(estado.iniciadaEn)
     expect(estado.usuario).toBe('asesor.pena')
 
     cerrarSesion()
-    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
     expect(sessionStorage.getItem(CLAVE_INICIO)).toBeNull()
   })
 
-  it('al recargar, un token vigente reabre la sesión con su rol', () => {
-    sessionStorage.setItem(CLAVE_TOKEN, token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: enUnMinuto() }))
+  it('un token que alguien deje en sessionStorage no reabre la sesión al recargar', () => {
+    const enUnMinuto = Math.floor(Date.now() / 1000) + 60
+    sessionStorage.setItem('solventa.token', token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: enUnMinuto }))
 
     restaurarSesion()
 
-    const { estado, sesionActiva, rutaInicio } = useSesion()
+    expect(useSesion().sesionActiva()).toBe(false)
+  })
+})
+
+describe('cierre entre pestañas', () => {
+  it('al llegar «cerrada» de otra pestaña limpia la sesión y avisa para volver al ingreso', async () => {
+    const { iniciarSesion, estado, sesionActiva } = useSesion(fetchPrueba)
+    expect(await iniciarSesion('andrés.duarte', 'cualquiera')).toBeNull()
     expect(sesionActiva()).toBe(true)
-    expect(estado.rol).toBe('BACKOFFICE')
-    expect(rutaInicio()).toBe('/operador')
-  })
-
-  it('un token vencido no se restaura y se borra', () => {
-    const vencido = Math.floor(Date.now() / 1000) - 10
-    sessionStorage.setItem(CLAVE_TOKEN, token({ usuario: 'admin.solventa', rol: 'BACKOFFICE', exp: vencido }))
-
-    restaurarSesion()
-
-    expect(useSesion().sesionActiva()).toBe(false)
-    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
-  })
-
-  it('un token ilegible no rompe la app y se borra', () => {
-    sessionStorage.setItem(CLAVE_TOKEN, 'basura')
-
-    expect(() => restaurarSesion()).not.toThrow()
-    expect(useSesion().sesionActiva()).toBe(false)
-    expect(sessionStorage.getItem(CLAVE_TOKEN)).toBeNull()
+    let volvio = false
+    alSesionVencida(() => (volvio = true))
+    // Otra pestaña (otro objeto BroadcastChannel con el mismo nombre) cierra la sesión.
+    const otra = new BroadcastChannel('solventa-sesion')
+    otra.postMessage('cerrada')
+    await new Promise((r) => setTimeout(r, 50))
+    otra.close()
+    expect(estado.token).toBeNull()
+    expect(sesionActiva()).toBe(false)
+    expect(volvio).toBe(true)
+    alSesionVencida(null)
   })
 })

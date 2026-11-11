@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw, type RouterHistory } from 'vue-router'
-import { esperarRestauracion, useSesion } from '../composables/useSesion'
+import { avisarSinSesion, esperarRestauracion, useSesion } from '../composables/useSesion'
 import { useSesionSocio } from '../composables/useSesionSocio'
 import { pantallas, type Pantalla } from './pantallas'
 
@@ -65,14 +65,17 @@ export function crearRouter(history: RouterHistory = createWebHistory()) {
     }
     const roles = destino.meta.pantalla?.roles
     if (!roles) return true
-    const { estado, sesionActiva, cerrarSesion, rutaInicio } = useSesion()
+    const { estado, sesionActiva, cerrarSesion } = useSesion()
     // Al abrir la web puede estar renovándose el acceso con el refresh (T22): se espera antes de decidir.
     await esperarRestauracion()
     if (!sesionActiva()) {
       cerrarSesion()
-      return '/login'
+      // Quien llega sin sesión a una pantalla protegida ve el ingreso con el aviso, y vuelve a ella al entrar.
+      if (!estado.aviso) avisarSinSesion()
+      return { path: '/login', query: { volver: destino.fullPath } }
     }
-    return estado.rol && roles.includes(estado.rol) ? true : rutaInicio()
+    // Con sesión pero sin permiso para esta pantalla: G-09 (el BFF aplica los mismos permisos).
+    return estado.rol && roles.includes(estado.rol) ? true : '/sin-acceso'
   })
 
   return router

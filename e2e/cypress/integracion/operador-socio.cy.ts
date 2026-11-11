@@ -6,7 +6,7 @@ const SOCIO = { clientId: 'sol_prod_demo1', clave: 'solo-local-socio-demo-1-prod
 function ingresarOperador() {
   cy.visit('/login')
   cy.get('[data-pantalla="G-01"]').within(() => {
-    cy.contains('label', 'Usuario').parent().find('input').type(OPERADOR.usuario)
+    cy.contains('label', 'Correo').parent().find('input').type(OPERADOR.usuario)
     cy.get('input[type="password"]').type(OPERADOR.clave, { log: false })
     cy.contains('[role="radio"]', 'Operador').click()
     cy.contains('button', 'Ingresar').click()
