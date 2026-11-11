@@ -4,6 +4,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { useAvisos, type AvisoPropuesta } from '../src/composables/useAvisos'
 import { usePolizas } from '../src/composables/usePolizas'
 import { useSesion } from '../src/composables/useSesion'
+import DetallePoliza from '../src/views/DetallePoliza.vue'
 import PolizasEmitidas from '../src/views/PolizasEmitidas.vue'
 import type { Propuesta } from '../src/graphql/tipos'
 
@@ -123,7 +124,7 @@ describe('G-06 · PolizasEmitidas', () => {
     return (await montarConRouter(rol, lista)).w
   }
 
-  async function montarConRouter(rol: 'ASESOR' | 'CLIENTE', lista: Propuesta[]) {
+  async function montarConRouter(rol: 'ASESOR' | 'CLIENTE', lista: Propuesta[], ruta = '/polizas') {
     const { fetchFn } = bff([lista])
     globalThis.fetch = ((url: string, init: RequestInit) =>
       String(url).includes('graphql') && String(init.body).includes('ticketAvisos')
@@ -134,10 +135,11 @@ describe('G-06 · PolizasEmitidas', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/polizas', component: PolizasEmitidas },
-        { path: '/propuestas/:propuestaId/firma/poliza', component: { template: '<div />' } },
+        { path: '/polizas/:propuestaId', component: { template: '<div />' } },
+        { path: '/suscripcion/:ofertaId', component: { template: '<div />' } },
       ],
     })
-    router.push('/polizas')
+    router.push(ruta)
     await router.isReady()
     const w = mount(PolizasEmitidas, { global: { plugins: [router] } })
     await flushPromises()
@@ -151,9 +153,9 @@ describe('G-06 · PolizasEmitidas', () => {
       poliza: { id: `pol-${id}`, numero: `POL-${id}`, documentoUrl: '/d' } as Propuesta['poliza'],
     })
 
-  it('el cliente con una sola póliza emitida pasa a W03-04 en su sesión', async () => {
+  it('el cliente con una sola póliza emitida pasa a su detalle', async () => {
     const { w, router } = await montarConRouter('CLIENTE', [emitida('p9')])
-    expect(router.currentRoute.value.fullPath).toBe('/propuestas/p9/firma/poliza')
+    expect(router.currentRoute.value.fullPath).toBe('/polizas/p9')
     w.unmount()
   })
 
@@ -164,9 +166,42 @@ describe('G-06 · PolizasEmitidas', () => {
     w.unmount()
   })
 
-  it('el asesor con una sola póliza conserva la tabla', async () => {
+  it('el asesor con una sola póliza emitida también pasa a su detalle', async () => {
     const { w, router } = await montarConRouter('ASESOR', [emitida('p9')])
+    expect(router.currentRoute.value.fullPath).toBe('/polizas/p9')
+    w.unmount()
+  })
+
+  it('con ?lista=1 (el «Volver» del detalle) una sola póliza conserva la tabla', async () => {
+    const { w, router } = await montarConRouter('ASESOR', [emitida('p9')], '/polizas?lista=1')
+    expect(router.currentRoute.value.fullPath).toBe('/polizas?lista=1')
+    expect(w.text()).toContain('POL-p9')
+    w.unmount()
+  })
+
+  it('una sola póliza que aún no está emitida conserva la tabla', async () => {
+    const { w, router } = await montarConRouter('ASESOR', [propuesta('p1')])
     expect(router.currentRoute.value.fullPath).toBe('/polizas')
+    w.unmount()
+  })
+
+  it('tocar una fila abre el detalle, y el botón de la fila no lo abre además de su acción', async () => {
+    const { w, router } = await montarConRouter('ASESOR', [emitida('a'), propuesta('b')])
+    const filas = w.findAll('[data-prueba="fila-poliza"]')
+    expect(filas).toHaveLength(2)
+    await filas[0]!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/polizas/a')
+    await router.push('/polizas')
+    await filas[1]!.find('a[href^="/suscripcion/"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/suscripcion/of-b')
+    w.unmount()
+  })
+
+  it('el número de póliza es un enlace al detalle (se alcanza con el teclado)', async () => {
+    const w = await montar('CLIENTE', [emitida('a'), emitida('b')])
+    expect(w.find('a[href="/polizas/a"]').text()).toBe('POL-a')
     w.unmount()
   })
 
@@ -182,7 +217,7 @@ describe('G-06 · PolizasEmitidas', () => {
     await vi.advanceTimersByTimeAsync(1_500)
     vi.useRealTimers()
     await flushPromises()
-    expect(router.currentRoute.value.fullPath).toBe('/propuestas/p7/firma/poliza')
+    expect(router.currentRoute.value.fullPath).toBe('/polizas/p7')
     w.unmount()
   })
 
@@ -210,6 +245,116 @@ describe('G-06 · PolizasEmitidas', () => {
     expect(w.text()).toContain('POL-1')
     expect(w.text()).toContain('Ver PDF')
     expect(w.text()).not.toContain('Ana Pérez')
+    w.unmount()
+  })
+})
+
+describe('G-06b · DetallePoliza', () => {
+  const originalFetch = globalThis.fetch
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    vi.unstubAllGlobals()
+  })
+
+  const emitida = propuesta('p1', {
+    estado: 'EMITIDA',
+    estadoVisible: 'EMITIDA',
+    poliza: {
+      id: 'pol-1',
+      numero: 'POL-0001',
+      estado: 'VIGENTE',
+      vigenciaDesde: '2026-11-01T15:00:00Z',
+      vigenciaHasta: '2027-11-01T15:00:00Z',
+      documentoUrl: '/polizas/pol-1/documento',
+    } as unknown as Propuesta['poliza'],
+  })
+
+  async function montar(rol: 'ASESOR' | 'CLIENTE', respuesta: Propuesta | null | 'falla', id = 'p1') {
+    const consultas: unknown[] = []
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      if (String(init.body).includes('ticketAvisos')) throw new TypeError('sin sse')
+      consultas.push(JSON.parse(String(init.body)).variables)
+      if (respuesta === 'falla') throw new TypeError('sin red')
+      return new Response(JSON.stringify({ data: { propuesta: respuesta } }))
+    }) as typeof fetch
+    useSesion().estado.rol = rol
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/polizas', component: { template: '<div />' } },
+        { path: '/polizas/:propuestaId', component: DetallePoliza },
+        { path: '/suscripcion/:ofertaId', component: { template: '<div />' } },
+      ],
+    })
+    router.push(`/polizas/${id}`)
+    await router.isReady()
+    const w = mount(DetallePoliza, { global: { plugins: [router] } })
+    await flushPromises()
+    return { w, consultas }
+  }
+
+  it('el asesor ve el titular, la prima, la cobertura, el plazo, la vigencia y el PDF', async () => {
+    const { w, consultas } = await montar('ASESOR', emitida)
+    expect(consultas).toEqual([{ id: 'p1' }])
+    expect(w.find('[data-prueba="detalle-numero"]').text()).toBe('POL-0001')
+    expect(w.find('[data-prueba="detalle-titular"]').text()).toContain('Ana Pérez')
+    expect(w.text()).toContain('12 meses')
+    expect(w.find('[data-prueba="detalle-vigencia"]').exists()).toBe(true)
+    expect(w.find('[data-prueba="detalle-pdf"]').exists()).toBe(true)
+    expect(w.find('[data-prueba="detalle-mensaje"]').exists()).toBe(false)
+    w.unmount()
+  })
+
+  it('el cliente no ve el titular', async () => {
+    const { w } = await montar('CLIENTE', { ...emitida, nombreTitular: null })
+    expect(w.find('[data-prueba="detalle-titular"]').exists()).toBe(false)
+    expect(w.text()).not.toContain('Ana Pérez')
+    w.unmount()
+  })
+
+  it('una propuesta en emisión explica el estado y no ofrece el PDF; el asesor puede retomarla', async () => {
+    const enEmision = propuesta('p1', { mensajeEstado: null })
+    const asesor = await montar('ASESOR', enEmision)
+    expect(asesor.w.find('[data-prueba="detalle-mensaje"]').text()).toContain('Estamos emitiendo')
+    expect(asesor.w.find('[data-prueba="detalle-pdf"]').exists()).toBe(false)
+    expect(asesor.w.find('[data-prueba="detalle-vigencia"]').exists()).toBe(false)
+    expect(asesor.w.find('[data-prueba="detalle-retomar"]').exists()).toBe(true)
+    asesor.w.unmount()
+    const cliente = await montar('CLIENTE', enEmision)
+    expect(cliente.w.find('[data-prueba="detalle-retomar"]').exists()).toBe(false)
+    cliente.w.unmount()
+  })
+
+  it('el mensaje del estado que manda el backend tiene prioridad sobre el genérico', async () => {
+    const { w } = await montar(
+      'CLIENTE',
+      propuesta('p1', {
+        estadoVisible: 'NO_EMITIDA',
+        estado: 'NO_EMITIDA',
+        mensajeEstado: 'Pago rechazado por el banco.',
+      }),
+    )
+    expect(w.find('[data-prueba="detalle-mensaje"]').text()).toBe('Pago rechazado por el banco.')
+    w.unmount()
+  })
+
+  it('una póliza inexistente o ajena muestra «No encontramos esta póliza» con camino a la lista', async () => {
+    const { w } = await montar('CLIENTE', null)
+    expect(w.find('[data-prueba="poliza-no-encontrada"]').exists()).toBe(true)
+    expect(w.html()).toContain('/polizas?lista=1')
+    w.unmount()
+  })
+
+  it('una falla de red muestra el error genérico, nunca el técnico', async () => {
+    const { w } = await montar('ASESOR', 'falla')
+    expect(w.find('[role="alert"]').text()).toBe('No pudimos cargar la póliza. Intenta nuevamente.')
+    expect(w.text()).not.toContain('sin red')
+    w.unmount()
+  })
+
+  it('«Volver» lleva a la tabla con ?lista=1, para no rebotar al detalle', async () => {
+    const { w } = await montar('CLIENTE', emitida)
+    expect(w.find('a[href="/polizas?lista=1"]').exists()).toBe(true)
     w.unmount()
   })
 })
