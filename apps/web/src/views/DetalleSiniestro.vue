@@ -181,7 +181,7 @@ watch(
 </script>
 
 <template>
-  <div data-pantalla="W04-02" class="relative flex h-screen flex-col overflow-hidden bg-fondo">
+  <div data-pantalla="W04-02" class="flex h-screen flex-col overflow-hidden bg-fondo">
     <HeaderPantalla :titulo="t('siniestros.detalle.titulo')" :moneda-fija="monedaFija" />
     <MigasDePan :niveles="niveles" a-inicio="/operador">
       <template #derecha><EstadoOperador /></template>
