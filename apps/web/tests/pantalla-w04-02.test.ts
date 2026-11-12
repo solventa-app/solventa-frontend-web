@@ -10,6 +10,7 @@ import { restablecerSiniestrosDePrueba } from '../src/mocks/siniestros'
 import { servidor } from '../src/mocks/node'
 import type { Siniestro, TipoSiniestroAuto } from '../src/graphql/tipos'
 import { cambiarIdioma } from '../src/i18n'
+import { cambiarMoneda } from '../src/composables/useMoneda'
 
 const bff = graphql.link('*/v1/graphql/web')
 
@@ -295,21 +296,30 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
   describe('KAN-290 · valor del daño en un siniestro de auto parcial', () => {
     const selectorMoneda = (wrapper: VueWrapper) => wrapper.get('header select').element as HTMLSelectElement
 
-    it('va en su propio bloque (no entre las acciones), con la moneda del dato y el selector de moneda fijo', async () => {
+    it('va en su propio bloque (no entre las acciones), con la moneda del dato', async () => {
       const { wrapper } = await montarSiniestroDeAuto('CHOQUE_PARCIAL', 'USD')
       const campo = wrapper.get('[data-prueba="valor-dano"]')
       expect(campo.text()).toContain('Valor del daño (USD)')
       expect(campo.text()).toContain('Se le resta el deducible de la póliza.')
       // La fila de botones (Derivar, Rechazar, Aprobar) no lleva el campo adentro.
       expect(wrapper.get('[data-prueba="aprobar"]').element.parentElement!.contains(campo.element)).toBe(false)
-      // Lo que se captura sigue en su moneda: el selector queda en ella y deshabilitado.
-      expect(selectorMoneda(wrapper).value).toBe('USD')
-      expect(selectorMoneda(wrapper).disabled).toBe(true)
+      // El selector sigue libre; el campo sigue en la moneda de la póliza.
+      expect(selectorMoneda(wrapper).disabled).toBe(false)
     })
 
-    it('la suma reclamada se ve en la moneda de la póliza mientras se captura', async () => {
+    it('la suma reclamada se ve en la moneda de la póliza si el selector está en ella', async () => {
       const { wrapper } = await montarSiniestroDeAuto()
       expect(wrapper.get('[data-prueba="suma"]').text()).toMatch(/\$\s8\.650\.000/)
+    })
+
+    it('con el selector en otra moneda el campo avisa que se digita en la de la póliza', async () => {
+      const { wrapper } = await montarSiniestroDeAuto('CHOQUE_PARCIAL', 'USD')
+      await cambiarMoneda('COP')
+      await wrapper.vm.$nextTick()
+      const campo = wrapper.get('[data-prueba="valor-dano"]')
+      expect(campo.text()).toContain('Valor del daño (USD)')
+      expect(campo.text()).toContain('Se digita en la moneda de la póliza (USD)')
+      await cambiarMoneda('USD')
     })
 
     it('en pérdida total no se pide el valor y el selector de moneda sigue libre', async () => {
