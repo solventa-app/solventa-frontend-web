@@ -4,7 +4,7 @@
 // pantalla. Cuando una acción navega a otra pantalla, se verifica solo la ruta resultante
 // (cy.location) — nunca el contenido de la pantalla de destino: eso es responsabilidad del E2E de
 // su propia historia.
-describe('G-01 · Ingreso con selector de rol (pantalla aislada)', () => {
+describe('G-01 · Ingreso (pantalla aislada)', () => {
   beforeEach(() => cy.visit('/login'))
 
   it('existe con su data-pantalla y el formulario de ingreso', () => {
@@ -25,31 +25,25 @@ describe('G-01 · Ingreso con selector de rol (pantalla aislada)', () => {
     })
   })
 
-  it('el chip de rol seleccionado marca aria-checked y por defecto es "Cliente"', () => {
+  it('no pide elegir el rol: no hay chips de rol', () => {
     cy.get('[data-pantalla="G-01"]').within(() => {
-      cy.contains('[role="radio"]', 'Cliente').should('have.attr', 'aria-checked', 'true')
-      cy.contains('[role="radio"]', 'Operador').should('have.attr', 'aria-checked', 'false')
-      cy.contains('[role="radio"]', 'Operador').click()
-      cy.contains('[role="radio"]', 'Operador').should('have.attr', 'aria-checked', 'true')
-      cy.contains('[role="radio"]', 'Cliente').should('have.attr', 'aria-checked', 'false')
+      cy.get('[role="radio"], [role="radiogroup"]').should('not.exist')
     })
   })
 
-  it('con el rol "Asesor comercial" y credenciales válidas, ingresar navega a /asesor', () => {
+  it('con credenciales válidas, el rol viene en el token y ingresar navega al inicio de ese rol (/asesor)', () => {
     cy.get('[data-pantalla="G-01"]').within(() => {
       cy.contains('label', 'Correo').parent().find('input').type('asesor.demo')
       cy.get('input[type="password"]').type('secreta123')
-      cy.contains('[role="radio"]', 'Asesor comercial').click()
       cy.contains('button', 'Ingresar').click()
     })
     cy.location('pathname').should('eq', '/asesor')
   })
 
-  it('con el chip equivocado muestra el mismo error que una clave errada y no abre sesión (T17)', () => {
+  it('con una clave errada muestra el error del BFF y no abre sesión', () => {
     cy.get('[data-pantalla="G-01"]').within(() => {
       cy.contains('label', 'Correo').parent().find('input').type('asesor.demo')
-      cy.get('input[type="password"]').type('secreta123')
-      cy.contains('[role="radio"]', 'Operador').click()
+      cy.get('input[type="password"]').type('clave-erronea')
       cy.contains('button', 'Ingresar').click()
       cy.get('[role="alert"]').should('have.text', 'Usuario o clave incorrectos.')
     })
