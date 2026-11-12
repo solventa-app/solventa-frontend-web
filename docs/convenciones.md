@@ -64,7 +64,7 @@ Regla única de la web (KAN-209), definida en `solventa-backend/docs/plan-revisi
 - Las tasas son de referencia: si la conversión falla, se muestra el valor original y el header lo avisa.
 - **Un monto que se captura usa `CampoMonto`** (`components/ui`): el modelo guarda solo dígitos, el campo los muestra con
   los separadores del idioma activo y la moneda sale del dato (`Monto.moneda`), nunca escrita en el catálogo. Ejemplo:
-  el valor del daño de W04-02 (KAN-290), en la moneda de la póliza con el selector del header fijo.
+  el valor del daño de W04-02 (KAN-290), que se digita en la moneda de la póliza con el selector del header libre y un aviso en el campo.
 
 ## Commits y PR
 

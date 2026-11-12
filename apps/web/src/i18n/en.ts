@@ -193,6 +193,8 @@ export const en: Record<Clave, string> = {
   'siniestros.detalle.valorDano': 'Damage amount ({moneda})',
   'siniestros.detalle.valorDanoEjemplo': 'E.g. {ejemplo}',
   'siniestros.detalle.valorDanoAyuda': 'The policy deductible is subtracted.',
+  'siniestros.detalle.valorDanoEnMonedaPoliza':
+    'Enter it in the policy currency ({moneda}), even if you view values in another one.',
   'siniestros.detalle.valorDanoError': 'Enter the damage amount using numbers, greater than zero.',
   'solicitud.consentimientoNotaAuto':
     "The vehicle registry, the Fasecolda guide and the claims history already hold your vehicle's records. Checking them saves you sending the registration card and an appraisal.",
