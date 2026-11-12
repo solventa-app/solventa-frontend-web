@@ -190,10 +190,10 @@ export const es = {
   'auto.anual': '12 meses',
   'auto.producto.AUTO': 'Auto todo riesgo',
   'auto.producto.VIDA_DEUDOR': 'Vida hipotecario',
-  'siniestros.detalle.valorDano': 'Valor del daño (COP)',
-  'siniestros.detalle.valorDanoEjemplo': 'Ej: 8000000',
+  'siniestros.detalle.valorDano': 'Valor del daño ({moneda})',
+  'siniestros.detalle.valorDanoEjemplo': 'Ej: {ejemplo}',
   'siniestros.detalle.valorDanoAyuda': 'Se le resta el deducible de la póliza.',
-  'siniestros.detalle.valorDanoError': 'Digita el valor del daño en pesos, sin puntos.',
+  'siniestros.detalle.valorDanoError': 'Digita el valor del daño con números, mayor a cero.',
   'solicitud.consentimientoNotaAuto':
     'El RUNT, la guía Fasecolda y el historial de siniestros son registros que ya existen sobre el vehículo. Consultarlos evita pedirte la tarjeta de propiedad y el avalúo.',
   'solicitud.producto': 'Producto',

@@ -190,10 +190,10 @@ export const en: Record<Clave, string> = {
   'auto.anual': '12 months',
   'auto.producto.AUTO': 'Comprehensive car',
   'auto.producto.VIDA_DEUDOR': 'Mortgage life',
-  'siniestros.detalle.valorDano': 'Damage amount (COP)',
-  'siniestros.detalle.valorDanoEjemplo': 'E.g. 8000000',
+  'siniestros.detalle.valorDano': 'Damage amount ({moneda})',
+  'siniestros.detalle.valorDanoEjemplo': 'E.g. {ejemplo}',
   'siniestros.detalle.valorDanoAyuda': 'The policy deductible is subtracted.',
-  'siniestros.detalle.valorDanoError': 'Enter the damage amount in pesos, without dots.',
+  'siniestros.detalle.valorDanoError': 'Enter the damage amount using numbers, greater than zero.',
   'solicitud.consentimientoNotaAuto':
     "The vehicle registry, the Fasecolda guide and the claims history already hold your vehicle's records. Checking them saves you sending the registration card and an appraisal.",
   'solicitud.producto': 'Product',
