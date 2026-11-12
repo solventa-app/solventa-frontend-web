@@ -13,7 +13,7 @@
 // 4. Nunca va a `localStorage`, a un log, a la consola ni a la URL de una petición.
 import { reactive } from 'vue'
 import type { Router } from 'vue-router'
-import { ErrorGraphQL, ejecutar, pdfDeSesion, type OpcionesEjecucion } from '../graphql/cliente'
+import { ErrorGraphQL, ejecutarSuscripcion, pdfDeSesion, type OpcionesEjecucion } from '../graphql/cliente'
 import type {
   EnlaceFirma,
   ErrorFirma,
@@ -279,7 +279,7 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     estado.cargando = true
     estado.error = null
     try {
-      return await ejecutar<T>(consulta, conPropuesta(variables), fetchFn, opciones())
+      return await ejecutarSuscripcion<T>(consulta, conPropuesta(variables), fetchFn, opciones())
     } catch (error) {
       estado.error = mensajeSeguro(error)
       return null

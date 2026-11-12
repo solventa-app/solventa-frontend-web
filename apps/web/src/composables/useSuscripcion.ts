@@ -5,7 +5,7 @@
 // Nunca guarda el correo completo: el modal lo muestra enmascarado (`correoEnmascarado`) y el contacto vive en
 // useCotizacion hasta aceptar. Todo se borra al cerrar sesión (regla 7).
 import { reactive } from 'vue'
-import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
+import { ErrorGraphQL, ejecutarSuscripcion } from '../graphql/cliente'
 import type {
   CodigoEnviado,
   EnlaceEnviado,
@@ -147,7 +147,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
 
   async function cargarOferta(id: string): Promise<void> {
     await conCarga(async () => {
-      const datos = await ejecutar<{ oferta: Oferta | null }>(CONSULTA_OFERTA, { id }, fetchFn)
+      const datos = await ejecutarSuscripcion<{ oferta: Oferta | null }>(CONSULTA_OFERTA, { id }, fetchFn)
       estado.oferta = datos.oferta
     })
   }
@@ -156,7 +156,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
   async function aceptar(ofertaId: string): Promise<boolean> {
     estado.errorAceptacion = null
     const resultado = await conCarga(() =>
-      ejecutar<{ aceptarOferta: ConTipo<ResultadoAceptacion> }>(
+      ejecutarSuscripcion<{ aceptarOferta: ConTipo<ResultadoAceptacion> }>(
         MUTACION_ACEPTAR,
         { ofertaId, contacto: contactoCapturado() },
         fetchFn,
@@ -176,7 +176,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     if (!estado.propuesta) return null
     const propuestaId = estado.propuesta.id
     const resultado = await conCarga(() =>
-      ejecutar<{ enviarCodigoVerificacion: ResultadoEnvioCodigo }>(
+      ejecutarSuscripcion<{ enviarCodigoVerificacion: ResultadoEnvioCodigo }>(
         MUTACION_ENVIAR_CODIGO,
         { propuestaId, correo },
         fetchFn,
@@ -193,7 +193,11 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     if (!estado.propuesta) return null
     const propuestaId = estado.propuesta.id
     const resultado = await conCarga(() =>
-      ejecutar<{ verificarCodigo: ResultadoVerificacion }>(MUTACION_VERIFICAR, { propuestaId, codigo }, fetchFn),
+      ejecutarSuscripcion<{ verificarCodigo: ResultadoVerificacion }>(
+        MUTACION_VERIFICAR,
+        { propuestaId, codigo },
+        fetchFn,
+      ),
     )
     if (!resultado) return null
     const respuesta = resultado.verificarCodigo
@@ -206,7 +210,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     if (!estado.propuesta) return null
     const propuestaId = estado.propuesta.id
     const resultado = await conCarga(() =>
-      ejecutar<Record<typeof campo, ResultadoEmision>>(operacion, { propuestaId }, fetchFn),
+      ejecutarSuscripcion<Record<typeof campo, ResultadoEmision>>(operacion, { propuestaId }, fetchFn),
     )
     if (!resultado) return null
     const respuesta = resultado[campo]
@@ -232,7 +236,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
   async function recuperarPropuesta(ofertaId: string): Promise<void> {
     if (estado.propuesta?.ofertaId === ofertaId) return
     try {
-      const datos = await ejecutar<{ propuestas: { propuestas: Propuesta[] } }>(
+      const datos = await ejecutarSuscripcion<{ propuestas: { propuestas: Propuesta[] } }>(
         CONSULTA_PROPUESTAS,
         { pagina: 1, tamano: TAMANO_BUSQUEDA },
         fetchFn,
@@ -249,7 +253,7 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     if (!estado.propuesta) return
     const id = estado.propuesta.id
     const consultar = async () => {
-      const datos = await ejecutar<{ propuesta: Propuesta | null }>(CONSULTA_PROPUESTA, { id }, fetchFn)
+      const datos = await ejecutarSuscripcion<{ propuesta: Propuesta | null }>(CONSULTA_PROPUESTA, { id }, fetchFn)
       // Si mientras tanto se cambió de propuesta, la respuesta vieja no la pisa.
       if (datos.propuesta && estado.propuesta?.id === id) estado.propuesta = datos.propuesta
     }

@@ -72,6 +72,13 @@ export interface OpcionesEjecucion {
   cabeceras?: Record<string, string>
 }
 
+/**
+ * Ruta del flujo de suscripción (aceptar, código, emitir, firmar y pagar). Es el mismo canal web del BFF, pero el gateway
+ * le da 5 s en lugar de los 700 ms del resto: firmar con imagen, pagar y emitir tardan de 1,5 a 3,5 s, y a los 700 ms el
+ * gateway devolvía 504 con la firma ya registrada (la persona veía un error y al volver estaba firmada).
+ */
+export const ENDPOINT_SUSCRIPCION = '/v1/graphql/web-suscripcion'
+
 /** Tiempo máximo de espera de una operación: pasado esto se corta y la pantalla muestra error con reintento, nunca «Cargando…» sin fin. */
 export const TIEMPO_MAXIMO_MS = 30_000
 
@@ -91,6 +98,16 @@ export async function ejecutar<T>(
     }
     throw e
   }
+}
+
+/** Igual que `ejecutar`, por la ruta del flujo de suscripción (`ENDPOINT_SUSCRIPCION`). */
+export function ejecutarSuscripcion<T>(
+  consulta: string,
+  variables: Record<string, unknown> = {},
+  fetchFn: typeof fetch = fetch,
+  opciones: OpcionesEjecucion = {},
+): Promise<T> {
+  return ejecutar<T>(consulta, variables, fetchFn, { ...opciones, endpoint: ENDPOINT_SUSCRIPCION })
 }
 
 async function ejecutarUnaVez<T>(
