@@ -193,7 +193,11 @@ export function useSuscripcion(fetchFn: typeof fetch = fetch) {
     if (!estado.propuesta) return null
     const propuestaId = estado.propuesta.id
     const resultado = await conCarga(() =>
-      ejecutarSuscripcion<{ verificarCodigo: ResultadoVerificacion }>(MUTACION_VERIFICAR, { propuestaId, codigo }, fetchFn),
+      ejecutarSuscripcion<{ verificarCodigo: ResultadoVerificacion }>(
+        MUTACION_VERIFICAR,
+        { propuestaId, codigo },
+        fetchFn,
+      ),
     )
     if (!resultado) return null
     const respuesta = resultado.verificarCodigo
