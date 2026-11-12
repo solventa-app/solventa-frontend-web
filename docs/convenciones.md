@@ -62,6 +62,9 @@ Regla única de la web (KAN-209), definida en `solventa-backend/docs/plan-revisi
 - **Lo que se firma, cobra o captura sigue en su moneda original:** contrato, autorización de cobro, pago, póliza emitida
   y monto del crédito. Usa `formatearMonto` y `monedaFija` en `HeaderPantalla`, que deshabilita el selector.
 - Las tasas son de referencia: si la conversión falla, se muestra el valor original y el header lo avisa.
+- **Un monto que se captura usa `CampoMonto`** (`components/ui`): el modelo guarda solo dígitos, el campo los muestra con
+  los separadores del idioma activo y la moneda sale del dato (`Monto.moneda`), nunca escrita en el catálogo. Ejemplo:
+  el valor del daño de W04-02 (KAN-290), en la moneda de la póliza con el selector del header fijo.
 
 ## Commits y PR
 

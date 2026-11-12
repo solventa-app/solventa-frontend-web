@@ -124,8 +124,10 @@ describe('HU-W08 · póliza de auto contra el backend real', () => {
       })
       cy.get('[data-prueba="valor-dano"] input', { timeout: 15000 }).should('be.visible')
       cy.get('[data-prueba="aprobar"]').click()
-      cy.contains('Digita el valor del daño en pesos').should('be.visible')
+      cy.contains('Digita el valor del daño con números, mayor a cero.').should('be.visible')
       cy.get('[data-prueba="valor-dano"] input').type('8000000')
+      // Se ve con los separadores del idioma; al BFF viaja «8000000».
+      cy.get('[data-prueba="valor-dano"] input').should('have.value', '8.000.000')
       cy.get('[data-prueba="aprobar"]').click()
       cy.location('pathname', { timeout: 15000 }).should('match', /\/aprobado$/)
       // 8.000.000 − 1 SMMLV de deducible.

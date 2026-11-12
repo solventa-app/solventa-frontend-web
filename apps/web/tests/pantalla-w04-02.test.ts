@@ -8,6 +8,8 @@ import Boton from '../src/components/ui/Boton.vue'
 import { reiniciarEstadoSiniestros, useSiniestros } from '../src/composables/useSiniestros'
 import { restablecerSiniestrosDePrueba } from '../src/mocks/siniestros'
 import { servidor } from '../src/mocks/node'
+import type { Siniestro, TipoSiniestroAuto } from '../src/graphql/tipos'
+import { cambiarIdioma } from '../src/i18n'
 
 const bff = graphql.link('*/v1/graphql/web')
 
@@ -37,6 +39,16 @@ async function montar(id = 'sin-01') {
   return { wrapper, router }
 }
 
+/** W04-02 de un siniestro de auto (KAN-290): parte de sin-01 y le pone el tipo y la moneda de la póliza. */
+async function montarSiniestroDeAuto(tipo: TipoSiniestroAuto = 'CHOQUE_PARCIAL', moneda = 'COP') {
+  await montar()
+  const dato = JSON.parse(JSON.stringify(useSiniestros().estado.detalle)) as Siniestro
+  dato.tipoSiniestroAuto = tipo
+  dato.sumaReclamada = { ...dato.sumaReclamada, moneda }
+  servidor.use(bff.query('siniestro', () => HttpResponse.json({ data: { siniestro: dato } })))
+  return montar()
+}
+
 describe('HU-W04 · W04-02 Detalle del siniestro', () => {
   beforeAll(() => servidor.listen({ onUnhandledFrame: 'error' }))
   beforeEach(() => {
@@ -44,6 +56,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     restablecerSiniestrosDePrueba()
   })
   afterEach(() => {
+    cambiarIdioma('ES')
     wrappers.forEach((w) => w.unmount())
     wrappers.length = 0
     servidor.resetHandlers()
@@ -277,6 +290,83 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     await wrapper.get('[data-prueba="aprobar"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(true))
     expect(wrapper.get('[role="alert"]').text()).not.toMatch(/50\d/)
+  })
+
+  describe('KAN-290 · valor del daño en un siniestro de auto parcial', () => {
+    const selectorMoneda = (wrapper: VueWrapper) => wrapper.get('header select').element as HTMLSelectElement
+
+    it('va en su propio bloque (no entre las acciones), con la moneda del dato y el selector de moneda fijo', async () => {
+      const { wrapper } = await montarSiniestroDeAuto('CHOQUE_PARCIAL', 'USD')
+      const campo = wrapper.get('[data-prueba="valor-dano"]')
+      expect(campo.text()).toContain('Valor del daño (USD)')
+      expect(campo.text()).toContain('Se le resta el deducible de la póliza.')
+      // La fila de botones (Derivar, Rechazar, Aprobar) no lleva el campo adentro.
+      expect(wrapper.get('[data-prueba="aprobar"]').element.parentElement!.contains(campo.element)).toBe(false)
+      // Lo que se captura sigue en su moneda: el selector queda en ella y deshabilitado.
+      expect(selectorMoneda(wrapper).value).toBe('USD')
+      expect(selectorMoneda(wrapper).disabled).toBe(true)
+    })
+
+    it('la suma reclamada se ve en la moneda de la póliza mientras se captura', async () => {
+      const { wrapper } = await montarSiniestroDeAuto()
+      expect(wrapper.get('[data-prueba="suma"]').text()).toMatch(/\$\s8\.650\.000/)
+    })
+
+    it('en pérdida total no se pide el valor y el selector de moneda sigue libre', async () => {
+      const { wrapper } = await montarSiniestroDeAuto('PERDIDA_TOTAL_DANOS')
+      expect(wrapper.find('[data-prueba="valor-dano"]').exists()).toBe(false)
+      expect(selectorMoneda(wrapper).disabled).toBe(false)
+    })
+
+    it('se digita con los separadores del idioma y al BFF viaja solo con dígitos', async () => {
+      let valorDano: unknown = null
+      servidor.use(
+        bff.mutation('aprobarSiniestro', ({ variables }) => {
+          valorDano = variables.valorDano
+          return HttpResponse.json({
+            data: { aprobarSiniestro: { __typename: 'ErrorSiniestro', mensaje: 'Detenido en la prueba.' } },
+          })
+        }),
+      )
+      const { wrapper } = await montarSiniestroDeAuto()
+      const entrada = wrapper.get('[data-prueba="valor-dano"] input')
+      expect(entrada.attributes('placeholder')).toBe('Ej: 8.000.000')
+      await entrada.setValue('8000000')
+      expect((entrada.element as HTMLInputElement).value).toBe('8.000.000')
+      await wrapper.get('[data-prueba="aprobar"]').trigger('click')
+      await vi.waitFor(() => expect(valorDano).toBe('8000000'))
+    })
+
+    it('en inglés la etiqueta, el ejemplo y los separadores cambian con el idioma', async () => {
+      cambiarIdioma('EN')
+      const { wrapper } = await montarSiniestroDeAuto()
+      const campo = wrapper.get('[data-prueba="valor-dano"]')
+      expect(campo.text()).toContain('Damage amount (COP)')
+      expect(campo.text()).toContain('The policy deductible is subtracted.')
+      const entrada = campo.get('input')
+      expect(entrada.attributes('placeholder')).toBe('E.g. 8,000,000')
+      await entrada.setValue('8000000')
+      expect((entrada.element as HTMLInputElement).value).toBe('8,000,000')
+    })
+
+    it('sin valor, o en cero, muestra el error y no llama a aprobar', async () => {
+      let llamadas = 0
+      servidor.use(
+        bff.mutation('aprobarSiniestro', () => {
+          llamadas++
+          return HttpResponse.json({ data: { aprobarSiniestro: { __typename: 'ErrorSiniestro', mensaje: 'x' } } })
+        }),
+      )
+      const { wrapper } = await montarSiniestroDeAuto()
+      await wrapper.get('[data-prueba="aprobar"]').trigger('click')
+      const mensaje = 'Digita el valor del daño con números, mayor a cero.'
+      expect(wrapper.get('[data-prueba="valor-dano"]').text()).toContain(mensaje)
+      await wrapper.get('[data-prueba="valor-dano"] input').setValue('0')
+      expect(wrapper.get('[data-prueba="valor-dano"]').text()).not.toContain(mensaje)
+      await wrapper.get('[data-prueba="aprobar"]').trigger('click')
+      expect(wrapper.get('[data-prueba="valor-dano"]').text()).toContain(mensaje)
+      expect(llamadas).toBe(0)
+    })
   })
 
   it('id inexistente: "No encontramos este siniestro." con regreso a la bandeja', async () => {
