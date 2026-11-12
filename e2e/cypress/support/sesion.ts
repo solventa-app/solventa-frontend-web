@@ -7,7 +7,6 @@
 
 export type Rol = 'CLIENTE' | 'ASESOR' | 'BACKOFFICE'
 
-const CHIP: Record<Rol, string> = { CLIENTE: 'Cliente', ASESOR: 'Asesor comercial', BACKOFFICE: 'Operador' }
 const HOME: Record<Rol, string> = { CLIENTE: '/inicio', ASESOR: '/asesor', BACKOFFICE: '/operador' }
 const USUARIO_DEMO: Record<Rol, string> = { CLIENTE: 'cliente.demo', ASESOR: 'asesor.demo', BACKOFFICE: 'admin.solventa' }
 
@@ -21,7 +20,6 @@ export function ingresar(rol: Rol = 'CLIENTE'): void {
         .find('input')
         .type(vars[`USUARIO_${rol}`] ?? USUARIO_DEMO[rol])
       cy.get('input[type="password"]').type(vars[`CLAVE_${rol}`] ?? 'clave-demo-0001', { log: false })
-      cy.contains('[role="radio"]', CHIP[rol]).click()
       cy.contains('button', 'Ingresar').click()
     })
   })

@@ -1,31 +1,29 @@
 <!--
-  G-01 · Ingreso con selector de rol (Figma "Solventa-web-Final", nodo 2001:431).
+  G-01 · Ingreso (Figma "Solventa-web-Final", nodo 2001:431, que lo dibuja "con selector de rol").
 
-  Inicia sesión contra el BFF (`iniciarSesion`, ver useSesion.ts); el rol real lo decide el JWT.
+  Inicia sesión contra el BFF (`iniciarSesion`, ver useSesion.ts); el rol lo decide el JWT que devuelve el
+  backend y a él se va el usuario (`rutaInicio`): no se le pregunta.
   Desviaciones del prototipo:
   - El campo es "Usuario", no "Correo electrónico": el backend prohíbe que el alias sea un correo.
-  - Los chips de rol se conservan y el elegido viaja como `rol` en `iniciarSesion` (T17): si no es el de la
-    cuenta, el BFF responde igual que con una clave errada. Nunca se dice cuál es el rol real ni se
-    preselecciona.
+  - Sin los chips de rol del prototipo (cliente / asesor / operador): el backend ya manda el rol en el token,
+    así que elegirlo a mano era redundante. El campo `rol` de `CredencialesInput` es opcional y no se envía.
   - Sin avatar de perfil en el header (todavía no hay sesión) y con botón para ver la contraseña.
   - "Portal de socios" lleva al ingreso del portal de socios (W07-01, HU-W07).
-  Pendiente: el `role="radiogroup"` no implementa el patrón completo de WAI-ARIA (roving tabindex).
 -->
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Boton, CampoFormulario, Divisor, FooterPantalla, HeaderPantalla, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
-import { etiquetaRol, useSesion, type Rol } from '../composables/useSesion'
+import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
 
 const router = useRouter()
 const route = useRoute()
-const { estado, iniciarSesion, cerrarSesion, rutaInicio } = useSesion()
+const { estado, iniciarSesion, rutaInicio } = useSesion()
 
 const usuario = ref('')
 const clave = ref('')
-const rol = ref<Rol>('CLIENTE')
 const error = ref<string | null>(null)
 const ingresando = ref(false)
 
@@ -43,22 +41,12 @@ function rutaDeRegreso(): string | null {
   return typeof volver === 'string' && /^\/(?!\/)/.test(volver) && !volver.startsWith('/login') ? volver : null
 }
 
-const CHIPS: Rol[] = ['CLIENTE', 'ASESOR', 'BACKOFFICE']
-
 async function ingresar() {
   if (!usuario.value.trim() || !clave.value || ingresando.value) return
   ingresando.value = true
-  error.value = await iniciarSesion(usuario.value.trim(), clave.value, rol.value)
+  error.value = await iniciarSesion(usuario.value.trim(), clave.value)
   ingresando.value = false
   if (error.value) return
-  if (estado.rol !== rol.value) {
-    // Respaldo por si el BFF aún no filtra por rol: se cierra la sesión y se muestra el mismo mensaje que
-    // con una clave errada, sin decir cuál es el rol real.
-    cerrarSesion()
-    error.value = t('ingreso.incorrecto')
-    clave.value = ''
-    return
-  }
   router.push(rutaDeRegreso() ?? rutaInicio())
 }
 </script>
@@ -95,28 +83,6 @@ async function ingresar() {
               icono="lock"
               required
             />
-
-            <div class="flex flex-col gap-2">
-              <span class="text-[13px] text-tinta">{{ t('ingreso.ingresasComo') }}</span>
-              <div role="radiogroup" :aria-label="t('ingreso.ingresasComo')" class="flex flex-wrap items-center gap-2">
-                <button
-                  v-for="chip in CHIPS"
-                  :key="chip"
-                  type="button"
-                  role="radio"
-                  :aria-checked="rol === chip"
-                  class="flex h-[44px] items-center justify-center rounded-xl px-4 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
-                  :class="
-                    rol === chip
-                      ? 'bg-primario text-white'
-                      : 'border border-borde bg-white text-tinta-suave hover:bg-fondo'
-                  "
-                  @click="rol = chip"
-                >
-                  {{ etiquetaRol(chip) }}
-                </button>
-              </div>
-            </div>
 
             <p v-if="error" role="alert" class="text-[13px] text-error">{{ error }}</p>
 

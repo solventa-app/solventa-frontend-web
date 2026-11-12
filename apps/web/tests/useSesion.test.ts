@@ -84,6 +84,18 @@ describe('useSesion', () => {
     expect(cabecera).toMatch(/^Bearer ey/)
   })
 
+  it('iniciarSesion manda solo usuario y clave: el rol lo decide el backend y llega en el token', async () => {
+    let entrada: unknown = null
+    const fetchQueCaptura: typeof fetch = async (url, init) => {
+      entrada = (JSON.parse(String(init?.body)) as { variables?: { entrada?: unknown } }).variables?.entrada
+      return fetchPrueba(url, init)
+    }
+    const { estado, iniciarSesion } = useSesion(fetchQueCaptura)
+    expect(await iniciarSesion('admin.solventa', 'x')).toBeNull()
+    expect(entrada).toEqual({ usuario: 'admin.solventa', clave: 'x' })
+    expect(estado.rol).toBe('BACKOFFICE')
+  })
+
   it('devuelve el mensaje genérico del BFF con credenciales incorrectas y no abre sesión', async () => {
     const { iniciarSesion, sesionActiva } = useSesion(fetchPrueba)
     expect(await iniciarSesion('cliente.demo', 'clave-erronea')).toBe('Usuario o clave incorrectos.')
