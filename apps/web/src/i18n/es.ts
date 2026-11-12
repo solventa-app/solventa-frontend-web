@@ -193,6 +193,8 @@ export const es = {
   'siniestros.detalle.valorDano': 'Valor del daño ({moneda})',
   'siniestros.detalle.valorDanoEjemplo': 'Ej: {ejemplo}',
   'siniestros.detalle.valorDanoAyuda': 'Se le resta el deducible de la póliza.',
+  'siniestros.detalle.valorDanoEnMonedaPoliza':
+    'Se digita en la moneda de la póliza ({moneda}), aunque veas los valores en otra.',
   'siniestros.detalle.valorDanoError': 'Digita el valor del daño con números, mayor a cero.',
   'solicitud.consentimientoNotaAuto':
     'El RUNT, la guía Fasecolda y el historial de siniestros son registros que ya existen sobre el vehículo. Consultarlos evita pedirte la tarjeta de propiedad y el avalúo.',

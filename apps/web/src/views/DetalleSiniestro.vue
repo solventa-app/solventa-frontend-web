@@ -19,10 +19,10 @@ import { Badge, Boton, CampoMonto, EstadoOperador, FooterPantalla, HeaderPantall
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
-import type { EstadoSiniestro, Evidencia, Monto, MotivoRechazo } from '../graphql/tipos'
+import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
-import { montoVisible } from '../composables/useMoneda'
-import { formatearFecha, formatearMonto, formatearNumero } from '../utils/formato'
+import { moneda, montoVisible } from '../composables/useMoneda'
+import { formatearFecha, formatearNumero } from '../utils/formato'
 import { textoRestante } from '../utils/plazo'
 
 const route = useRoute()
@@ -134,15 +134,20 @@ async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: stri
 
 // KAN-290: en un siniestro de auto parcial o de responsabilidad civil el operador digita el valor del daño; CLAIMS
 // lo acota a la cobertura y le resta el deducible. En pérdida total no se pide: es el valor asegurado.
-// El valor se captura en la moneda de la póliza (la del dato, contrato v0.42), no en la que elija el selector: lo que se
-// captura sigue en su moneda original (docs/convenciones.md). Mientras se pide, el selector del header queda fijo en
-// esa moneda y la suma reclamada se ve en ella, para compararlas en la misma unidad.
+// El valor se captura siempre en la moneda de la póliza (la del dato, contrato v0.42): CLAIMS lo acota a la cobertura y le
+// resta el deducible en esa moneda, y lo capturado sigue en su moneda original (docs/convenciones.md). El selector del
+// header queda libre: convierte lo que se consulta (la suma reclamada) y el campo avisa en qué moneda se digita.
 const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
 const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
-const pideValorDano = computed(() => necesitaValorDano.value && !resuelto.value)
 const monedaPoliza = computed(() => s.value?.sumaReclamada.moneda)
-const monedaFija = computed(() => (pideValorDano.value ? monedaPoliza.value : undefined))
-const verMonto = (monto: Monto) => (monedaFija.value ? formatearMonto(monto) : montoVisible(monto))
+const notaMoneda = computed(() =>
+  monedaPoliza.value && monedaPoliza.value !== moneda.value
+    ? t('siniestros.detalle.valorDanoEnMonedaPoliza', { moneda: monedaPoliza.value })
+    : null,
+)
+const ayudaValorDano = computed(() =>
+  [t('siniestros.detalle.valorDanoAyuda'), notaMoneda.value].filter(Boolean).join(' '),
+)
 const ejemploValorDano = computed(() =>
   t('siniestros.detalle.valorDanoEjemplo', { ejemplo: formatearNumero(8_000_000) }),
 )
@@ -182,7 +187,7 @@ watch(
 
 <template>
   <div data-pantalla="W04-02" class="flex h-screen flex-col overflow-hidden bg-fondo">
-    <HeaderPantalla :titulo="t('siniestros.detalle.titulo')" :moneda-fija="monedaFija" />
+    <HeaderPantalla :titulo="t('siniestros.detalle.titulo')" />
     <MigasDePan :niveles="niveles" a-inicio="/operador">
       <template #derecha><EstadoOperador /></template>
     </MigasDePan>
@@ -331,7 +336,7 @@ watch(
                   <div class="mt-2 rounded bg-fondo px-6 py-2">
                     <dt class="text-[11px] text-tinta-suave">{{ t('siniestros.detalle.sumaReclamada') }}</dt>
                     <dd data-prueba="suma" class="text-[18px] font-semibold text-primario">
-                      {{ verMonto(s.sumaReclamada) }}
+                      {{ montoVisible(s.sumaReclamada) }}
                     </dd>
                   </div>
                   <div class="py-1.5">
@@ -546,7 +551,7 @@ watch(
                 class="mt-4 sm:max-w-[360px]"
                 :label="t('siniestros.detalle.valorDano', { moneda: monedaPoliza ?? '' })"
                 :placeholder="ejemploValorDano"
-                :hint="errorValorDano ? undefined : t('siniestros.detalle.valorDanoAyuda')"
+                :hint="errorValorDano ? undefined : ayudaValorDano"
                 :error="errorValorDano ?? undefined"
                 required
                 data-prueba="valor-dano"
