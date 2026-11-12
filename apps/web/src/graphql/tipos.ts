@@ -134,6 +134,16 @@ export type ConsentimientoInput = {
   versionTexto: Scalars['String']['input'];
 };
 
+export type ConsultaFuentes = {
+  creadaEn: Scalars['DateTime']['output'];
+  documentoEnmascarado: Scalars['String']['output'];
+  fuentes: Array<FuenteConsultada>;
+  id: Scalars['ID']['output'];
+  ofertaId?: Maybe<Scalars['ID']['output']>;
+  producto: Producto;
+  tipoOferta: TipoOferta;
+};
+
 export type ContactoInput = {
   correo?: InputMaybe<Scalars['String']['input']>;
   telefono?: InputMaybe<Scalars['String']['input']>;
@@ -884,6 +894,13 @@ export type OrigenFuente =
   | 'OPEN_DATA'
   | 'OPEN_FINANCE';
 
+export type PaginaConsultasFuentes = {
+  consultas: Array<ConsultaFuentes>;
+  pagina: Scalars['Int']['output'];
+  tamano: Scalars['Int']['output'];
+  total: Scalars['Int']['output'];
+};
+
 export type PaginaPropuestas = {
   pagina: Scalars['Int']['output'];
   propuestas: Array<Propuesta>;
@@ -975,6 +992,8 @@ export type Query = {
   autocompletarDireccion: Array<SugerenciaDireccion>;
   catalogoPrestadores: CatalogoPrestadores;
   cobros: Array<Cobro>;
+  consultaFuentes?: Maybe<ConsultaFuentes>;
+  consultasFuentes: PaginaConsultasFuentes;
   convertirMontos: Array<Monto>;
   documentoFirma?: Maybe<DocumentoFirma>;
   documentoValido: Scalars['Boolean']['output'];
@@ -1017,6 +1036,17 @@ export type QueryCobrosArgs = {
   estado?: InputMaybe<EstadoCobro>;
   pagina?: InputMaybe<Scalars['Int']['input']>;
   polizaId?: InputMaybe<Scalars['ID']['input']>;
+  tamano?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryConsultaFuentesArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryConsultasFuentesArgs = {
+  pagina?: InputMaybe<Scalars['Int']['input']>;
   tamano?: InputMaybe<Scalars['Int']['input']>;
 };
 

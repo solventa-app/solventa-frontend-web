@@ -29,7 +29,7 @@ const SPRINT_1 = [
 // roto). Se cuenta aparte en vez de inflar el catálogo de 12 pantallas del Sprint 1.
 // G-05 (Mi perfil) llegó antes del Sprint 2 por pedido de felipe (2026-10-19).
 // G-07 y G-08 (olvidé mi contraseña, KAN-26) son públicas y globales.
-const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06', 'G-06b', 'G-07', 'G-08', 'G-09']
+const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06', 'G-06b', 'W01-04b', 'G-07', 'G-08', 'G-09']
 
 // HU-W04 (Sprint 2, KAN-27): registradas en el bloque 1; sus vistas llegan en los bloques 2 a 5.
 const HU_W04 = ['W04-01', 'W04-02', 'W04-02b', 'W04-03a', 'W04-03b', 'W04-03c']

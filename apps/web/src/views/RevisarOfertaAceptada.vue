@@ -270,7 +270,7 @@ function recalcular() {
 
           <RouterLink
             v-if="esOferta(cotizacion.resultado) && sesion.rol !== 'CLIENTE'"
-            to="/cotizacion/fuentes"
+            to="/cotizacion/fuentes/oferta"
             class="flex items-center justify-center gap-2 text-[13px] font-semibold text-enlace hover:underline"
           >
             <IconoMaterial nombre="account_balance" class="h-5 w-5" />

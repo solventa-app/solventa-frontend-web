@@ -6,6 +6,7 @@ import type { Cobro } from '../graphql/tipos'
 import type {
   ConfirmacionContacto,
   Consentimiento,
+  ConsultaFuentes,
   FuenteConsultada,
   MutationContactarAsesorArgs,
   MutationIniciarSesionArgs,
@@ -17,6 +18,9 @@ import type {
   Jurisdiccion as JurisdiccionBff,
   Monto,
   Oferta,
+  PaginaConsultasFuentes,
+  QueryConsultaFuentesArgs,
+  QueryConsultasFuentesArgs,
   QueryCobrosArgs,
   QueryConvertirMontosArgs,
   ResultadoOferta,
@@ -246,6 +250,40 @@ export function restablecerCobrosDePrueba(): void {
   cobros = cobrosIniciales()
 }
 
+// Historial de fuentes consultadas (v0.45, Q-08): cada cotización de un ASESOR deja su consulta; el BFF real la guarda
+// en RISK y solo devuelve las del asesor del token. Aquí, en memoria; las pruebas la reinician.
+type ConsultaDeDemo = ConsultaFuentes & { actor: string }
+let consultas: ConsultaDeDemo[] = []
+let secuenciaConsultas = 0
+
+/** Solo para pruebas: reinicia el historial de fuentes entre casos. */
+export function restablecerConsultasDePrueba(): void {
+  consultas = []
+  secuenciaConsultas = 0
+}
+
+// Mismo formato que el BFF: 2 iniciales y 4 finales visibles, el resto `•`.
+function documentoEnmascarado(documento: string): string {
+  const limpio = documento.replace(/[\s.-]/g, '').toUpperCase()
+  const n = limpio.length
+  if (n < 7) return n > 4 ? '•'.repeat(n - 4) + limpio.slice(-4) : limpio
+  return limpio.slice(0, 2) + '•'.repeat(n - 6) + limpio.slice(-4)
+}
+
+function actorDeLaPeticion(request: Request): { usuario: string; rol: RolUsuario } | null {
+  const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
+  const claims = token ? leerClaims(token) : null
+  return claims ? { usuario: claims.usuario, rol: claims.rol } : null
+}
+
+type RespuestaConError = HttpResponse<{ errors: { message: string; extensions?: { code: string } }[] }>
+
+const sinPermiso = (): RespuestaConError =>
+  HttpResponse.json({ errors: [{ message: 'No tienes permiso para esta operación.' }] })
+
+const sinSesion = (): RespuestaConError =>
+  HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.', extensions: { code: 'SIN_SESION' } }] })
+
 // Sesión de demo (convención de los mocks, NO del backend real): cualquier clave sirve salvo
 // `clave-erronea`; el rol sale del alias (`asesor…` → ASESOR, `admin…`/`operador…` → BACKOFFICE, otro →
 // CLIENTE). El token es un JWT sin firma con los mismos claims que emite AUTH, más `nombre`, que el
@@ -445,7 +483,7 @@ export const handlers = [
 
   bff.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
     'solicitarOferta',
-    ({ variables }) => {
+    ({ variables, request }) => {
       const { consentimientoId, documentoIdentidad } = variables.entrada
       const documento = documentoIdentidad ?? ''
       const resultado: ResultadoOferta =
@@ -464,7 +502,53 @@ export const handlers = [
                 motivo: 'DATOS_INSUFICIENTES',
               }
             : ofertaDeDemo(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
+      const actor = actorDeLaPeticion(request)
+      if (actor?.rol === 'ASESOR' && 'fuentes' in resultado) {
+        consultas.push({
+          id: `consulta-${++secuenciaConsultas}`,
+          actor: actor.usuario,
+          creadaEn: ahora(),
+          documentoEnmascarado: documentoEnmascarado(documento),
+          tipoOferta: resultado.tipo,
+          producto: 'VIDA_DEUDOR',
+          ofertaId: resultado.id,
+          fuentes: resultado.fuentes,
+        })
+      }
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
+    },
+  ),
+
+  bff.query<{ consultasFuentes: PaginaConsultasFuentes }, QueryConsultasFuentesArgs>(
+    'consultasFuentes',
+    ({ variables, request }) => {
+      const actor = actorDeLaPeticion(request)
+      if (!actor) return sinSesion()
+      if (actor.rol !== 'ASESOR') return sinPermiso()
+      const tamano = Math.min(Math.max(variables.tamano ?? 10, 1), 50)
+      const pagina = Math.max(variables.pagina ?? 1, 1)
+      const suyas = consultas.filter((c) => c.actor === actor.usuario).reverse()
+      return HttpResponse.json({
+        data: {
+          consultasFuentes: {
+            consultas: suyas.slice((pagina - 1) * tamano, pagina * tamano),
+            total: suyas.length,
+            pagina,
+            tamano,
+          },
+        },
+      })
+    },
+  ),
+
+  bff.query<{ consultaFuentes: ConsultaFuentes | null }, QueryConsultaFuentesArgs>(
+    'consultaFuentes',
+    ({ variables, request }) => {
+      const actor = actorDeLaPeticion(request)
+      if (!actor) return sinSesion()
+      if (actor.rol !== 'ASESOR') return sinPermiso()
+      const propia = consultas.find((c) => c.id === variables.id && c.actor === actor.usuario)
+      return HttpResponse.json({ data: { consultaFuentes: propia ?? null } })
     },
   ),
 

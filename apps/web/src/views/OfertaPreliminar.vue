@@ -75,7 +75,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('comun.fueraSprint') }}</p>
         <RouterLink
           v-if="sesion.rol !== 'CLIENTE'"
-          to="/cotizacion/fuentes"
+          to="/cotizacion/fuentes/oferta"
           class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"
         >
           {{ t('comun.verFuentes') }}
