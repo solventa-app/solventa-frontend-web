@@ -11,7 +11,7 @@ Catálogo en `apps/web/src/router/pantallas.ts` (fuente de verdad de rutas; una 
 
 | Pantalla | Ruta | Qué se construye | Criterios |
 |---|---|---|---|
-| G-01 | `/login` | Correo/contraseña, selector de rol (cliente / asesor comercial / operador), enlace al portal de socios API | — |
+| G-01 | `/login` | Correo/contraseña (el rol lo decide el token del backend y de él sale la pantalla de inicio; el selector de rol del prototipo se quitó), enlace al portal de socios API | — |
 | G-02 | `/inicio` | Tarjeta "Nueva cotización" y cerrar sesión | — |
 | G-02a | `/asesor` | Tarjeta "Nueva cotización para un cliente" (mismo formulario y flujo que el cliente) | CA-W01-11 |
 | G-02b | `/operador` | Tarjetas "Siniestros" y "Conciliación de pagos" | CA-W05-01 |

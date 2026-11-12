@@ -590,10 +590,6 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     await wrapper.find('input[type="password"]').setValue('secreta123')
     await wrapper
       .findAll('button')
-      .find((b) => b.text() === 'Asesor comercial')!
-      .trigger('click')
-    await wrapper
-      .findAll('button')
       .find((b) => b.text() === 'Ingresar')!
       .trigger('click')
     await flushPromises()
@@ -604,38 +600,15 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     expect(useSesion().estado.nombre).toBe('Asesor Demo')
   })
 
-  it('G-01 con el chip equivocado muestra el mismo error que una clave errada y no abre sesión', async () => {
+  it('G-01 no pide el rol: no muestra los chips y cada cuenta llega a su inicio por el token', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')
     await router.isReady()
     const wrapper = montar(IngresoConRol, router)
 
-    await wrapper
-      .findAll('input')
-      .find((i) => i.attributes('type') !== 'password')!
-      .setValue('cliente.demo')
-    await wrapper.find('input[type="password"]').setValue('secreta123')
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Operador')!
-      .trigger('click')
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Ingresar')!
-      .trigger('click')
-    await flushPromises()
-
-    expect(router.currentRoute.value.path).toBe('/login')
-    expect(wrapper.get('[role="alert"]').text()).toBe('Usuario o clave incorrectos.')
-    expect(useSesion().sesionActiva()).toBe(false)
-    expect(sessionStorage.getItem('solventa.token')).toBeNull()
-    // No se revela el rol real: el chip elegido sigue siendo el mismo.
-    expect(
-      wrapper
-        .findAll('[role="radio"]')
-        .find((b) => b.text() === 'Operador')!
-        .attributes('aria-checked'),
-    ).toBe('true')
+    expect(wrapper.find('[role="radiogroup"]').exists()).toBe(false)
+    expect(wrapper.find('[role="radio"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Ingresas como')
   })
 
   async function ingresarComoCliente(ruta: string) {
@@ -792,7 +765,7 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
     expect(wrapper.find('a[href="/cotizacion"]').exists()).toBe(true)
   })
 
-  it('G-01: un usuario BACKOFFICE con el chip "Operador" navega a /operador', async () => {
+  it('G-01: un usuario BACKOFFICE navega a /operador por el rol del token, sin elegir rol', async () => {
     const router = crearRouterDePrueba()
     router.push('/login')
     await router.isReady()
@@ -803,10 +776,6 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
       .find((i) => i.attributes('type') !== 'password')!
       .setValue('admin.solventa')
     await wrapper.find('input[type="password"]').setValue('secreta123')
-    await wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Operador')!
-      .trigger('click')
     await wrapper
       .findAll('button')
       .find((b) => b.text() === 'Ingresar')!

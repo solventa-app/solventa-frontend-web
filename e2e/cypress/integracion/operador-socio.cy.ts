@@ -8,7 +8,6 @@ function ingresarOperador() {
   cy.get('[data-pantalla="G-01"]').within(() => {
     cy.contains('label', 'Correo').parent().find('input').type(OPERADOR.usuario)
     cy.get('input[type="password"]').type(OPERADOR.clave, { log: false })
-    cy.contains('[role="radio"]', 'Operador').click()
     cy.contains('button', 'Ingresar').click()
   })
   cy.location('pathname').should('eq', '/operador')

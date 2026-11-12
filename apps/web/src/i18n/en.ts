@@ -68,12 +68,10 @@ export const en: Record<Clave, string> = {
   'ingreso.usuario': 'Email',
   'ingreso.usuarioEjemplo': 'you@email.com',
   'ingreso.clave': 'Password',
-  'ingreso.ingresasComo': 'Signing in as',
   'ingreso.ingresar': 'Sign in',
   'ingreso.nota':
     'Each of the 3 roles has its own home — Customer and Sales advisor reach the same quote form, with a different header depending on who signs in.',
   'ingreso.socio': 'Are you a distribution partner? Go to the API partner portal',
-  'ingreso.incorrecto': 'Incorrect username or password.',
   'ingreso.falla': "We couldn't sign you in right now. Please try again.",
   'ingreso.sesionVencida': 'Your session has expired. Please sign in again to continue.',
 
