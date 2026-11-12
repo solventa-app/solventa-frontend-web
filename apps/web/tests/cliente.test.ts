@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   ErrorGraphQL,
   TIEMPO_MAXIMO_MS,
+  ENDPOINT_SUSCRIPCION,
   ejecutar,
+  ejecutarSuscripcion,
   esErrorSinSesion,
   usarRenovador,
   usarToken,
@@ -32,6 +34,36 @@ describe('ejecutar · opciones', () => {
     expect((f.mock.calls[0] as unknown as [string])[0]).toBe('/v1/graphql/web')
     expect(cabeceras(f).Authorization).toBeUndefined()
     expect(cabeceras(f)['Accept-Language']).toBeTruthy()
+  })
+})
+
+describe('ejecutarSuscripcion · ruta del flujo de suscripción', () => {
+  afterEach(() => usarToken(null))
+
+  it('va a /v1/graphql/web-suscripcion (5 s en el gateway) con el JWT de la sesión', async () => {
+    usarToken('jwt')
+    const f = fetchFalso()
+    await ejecutarSuscripcion('{ ok }', {}, f as unknown as typeof fetch)
+    expect(ENDPOINT_SUSCRIPCION).toBe('/v1/graphql/web-suscripcion')
+    expect((f.mock.calls[0] as unknown as [string])[0]).toBe('/v1/graphql/web-suscripcion')
+    expect(cabeceras(f).Authorization).toBe('Bearer jwt')
+  })
+
+  it('conserva las cabeceras del enlace de firma y el modo sin token', async () => {
+    usarToken('jwt')
+    const f = fetchFalso()
+    await ejecutarSuscripcion('{ ok }', {}, f as unknown as typeof fetch, {
+      conToken: false,
+      cabeceras: { 'X-Enlace-Firma': 'abc' },
+    })
+    expect(cabeceras(f).Authorization).toBeUndefined()
+    expect(cabeceras(f)['X-Enlace-Firma']).toBe('abc')
+  })
+
+  it('`ejecutar` sigue yendo al canal web de 700 ms', async () => {
+    const f = fetchFalso()
+    await ejecutar('{ ok }', {}, f as unknown as typeof fetch)
+    expect((f.mock.calls[0] as unknown as [string])[0]).toBe('/graphql/web')
   })
 })
 

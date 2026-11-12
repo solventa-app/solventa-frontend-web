@@ -16,6 +16,7 @@ import {
 import { useCotizacion } from '../src/composables/useCotizacion'
 import { useSesion } from '../src/composables/useSesion'
 import { esEnlaceEnviado, useSuscripcion } from '../src/composables/useSuscripcion'
+import { ENDPOINT_SUSCRIPCION } from '../src/graphql/cliente'
 import { servidor } from '../src/mocks/node'
 import { base64DeBytes } from '../src/utils/firma'
 import {
@@ -217,7 +218,7 @@ describe('W03-01 en vivo (F-F5): avisos SSE de la propuesta', () => {
     await enlaceEnviado()
     const suscripcion = useSuscripcion(fetchPrueba)
     const id = suscripcion.estado.propuesta!.id
-    servidor.use(http.post('*/graphql/web', () => HttpResponse.error()))
+    servidor.use(http.post(`*${ENDPOINT_SUSCRIPCION}`, () => HttpResponse.error()))
 
     await suscripcion.aplicarAvisoPropuesta({ propuestaId: id, estado: 'PENDIENTE_PAGO' })
 
@@ -299,6 +300,41 @@ describe('cuidado del token del enlace (D-3)', () => {
     tomarTokenDelFragmento()
     expect(await useEnlaceFirma(fetchPrueba).cargar()).toBe('vencido')
     expect(hayToken()).toBe(false)
+  })
+})
+
+describe('ruta del flujo de suscripción (5 s en el gateway)', () => {
+  it('aceptar, el código, emitir, firmar y pagar van por /v1/graphql/web-suscripcion; cotizar sigue en /graphql/web', async () => {
+    const suscripcion = await asesorConOferta()
+    const cotizacion = llamadas.map((l) => l.url)
+    expect(cotizacion.length).toBeGreaterThan(0)
+    expect(cotizacion).not.toContain(ENDPOINT_SUSCRIPCION)
+
+    llamadas.length = 0
+    expect(await suscripcion.aceptar('oferta-completa')).toBe(true)
+    expect(await suscripcion.enviarCodigo()).toBeNull()
+    expect(await suscripcion.verificarCodigo(CODIGO_DEMO)).toBeNull()
+    expect(esEnlaceEnviado(await suscripcion.emitir())).toBe(true)
+    const token = buzonSimulado().find((c) => c.tipo === 'enlace')!.valor
+
+    window.history.replaceState(null, '', `/firma#t=${token}`)
+    tomarTokenDelFragmento()
+    const enlace = useEnlaceFirma(fetchPrueba)
+    expect(await enlace.cargar()).toBe('firmar')
+    enlace.estado.aceptaTerminos = true
+    enlace.estado.firmaCapturada = { modo: 'NOMBRE', contenido: 'Carlos Restrepo Gómez' }
+    expect(await enlace.firmar()).toMatchObject({ estado: 'FIRMADA' })
+    const sesion = await enlace.iniciarPago()
+    if (!esSesionPago(sesion)) throw new Error('sin sesión')
+    pagarSesionSimulada(sesion.sesionId, '4242 4242 4242 4242')
+    expect(await enlace.confirmarPago(sesion.sesionId)).toMatchObject({ estado: 'EMITIDA' })
+
+    const graphql = llamadas.filter((l) => l.url.includes('graphql'))
+    expect(graphql.length).toBeGreaterThanOrEqual(8)
+    expect(graphql.every((l) => l.url === ENDPOINT_SUSCRIPCION)).toBe(true)
+    for (const operacion of ['aceptarOferta', 'firmarPorEnlace', 'iniciarPago', 'confirmarPago']) {
+      expect(graphql.some((l) => l.cuerpo.includes(operacion))).toBe(true)
+    }
   })
 })
 
