@@ -7,6 +7,7 @@
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
+import DetalleOfertaAuto from '../components/DetalleOfertaAuto.vue'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { esOferta, useCotizacion } from '../composables/useCotizacion'
@@ -51,7 +52,8 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
             {{ t('preliminar.cache') }}
           </p>
         </div>
-        <div class="flex w-full flex-col gap-2 border-y border-borde py-4">
+        <DetalleOfertaAuto v-if="oferta.producto === 'AUTO'" :oferta="oferta" />
+        <div v-else class="flex w-full flex-col gap-2 border-y border-borde py-4">
           <div
             v-for="factor in oferta.desgloseScore"
             :key="factor.nombre"
@@ -73,7 +75,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
         <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('comun.fueraSprint') }}</p>
         <RouterLink
           v-if="sesion.rol !== 'CLIENTE'"
-          to="/cotizacion/fuentes"
+          to="/cotizacion/fuentes/oferta"
           class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"
         >
           {{ t('comun.verFuentes') }}

@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { TIEMPO_MAXIMO_MS, ejecutar, usarToken } from '../src/graphql/cliente'
+import {
+  ErrorGraphQL,
+  TIEMPO_MAXIMO_MS,
+  ejecutar,
+  esErrorSinSesion,
+  usarRenovador,
+  usarToken,
+} from '../src/graphql/cliente'
 
 function fetchFalso() {
   return vi.fn(async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200 }))
@@ -40,5 +47,57 @@ describe('ejecutar: tiempo máximo', () => {
     await vi.advanceTimersByTimeAsync(TIEMPO_MAXIMO_MS + 1)
     await afirmacion
     vi.useRealTimers()
+  })
+})
+
+describe('ejecutar · sesión vencida (v0.34: extensions.code)', () => {
+  afterEach(() => {
+    usarToken(null)
+    usarRenovador(null)
+  })
+
+  const sinSesion = (code: string, message = 'Texto que puede cambiar') =>
+    new Response(JSON.stringify({ data: null, errors: [{ message, extensions: { code } }] }), { status: 200 })
+
+  it('reconoce SIN_SESION y SESION_INVALIDA por el código, no por el texto', () => {
+    expect(esErrorSinSesion(new ErrorGraphQL('x', [{ message: 'x', extensions: { code: 'SIN_SESION' } }]))).toBe(true)
+    expect(esErrorSinSesion(new ErrorGraphQL('x', [{ message: 'x', extensions: { code: 'SESION_INVALIDA' } }]))).toBe(
+      true,
+    )
+    // El texto de antes, sin código, ya no cuenta.
+    expect(esErrorSinSesion(new ErrorGraphQL('Debes iniciar sesión.', [{ message: 'Debes iniciar sesión.' }]))).toBe(
+      false,
+    )
+    expect(esErrorSinSesion(new Error('SIN_SESION'))).toBe(false)
+  })
+
+  it('con SESION_INVALIDA renueva una vez y reintenta', async () => {
+    usarToken('viejo')
+    const renovador = vi.fn(async () => {
+      usarToken('nuevo')
+      return true
+    })
+    usarRenovador(renovador)
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(
+        sinSesion('SESION_INVALIDA', 'Your session is invalid or has expired. Please sign in again.'),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: { ok: true } }), { status: 200 }))
+
+    await expect(ejecutar('{ ok }', {}, f as unknown as typeof fetch)).resolves.toEqual({ ok: true })
+    expect(renovador).toHaveBeenCalledTimes(1)
+    const segunda = (f.mock.calls[1] as unknown as [string, RequestInit])[1].headers as Record<string, string>
+    expect(segunda.Authorization).toBe('Bearer nuevo')
+  })
+
+  it('otro error con el mismo texto no renueva', async () => {
+    usarToken('jwt')
+    const renovador = vi.fn(async () => true)
+    usarRenovador(renovador)
+    const f = vi.fn(async () => sinSesion('OTRO', 'Debes iniciar sesión.'))
+
+    await expect(ejecutar('{ ok }', {}, f as unknown as typeof fetch)).rejects.toThrow('Debes iniciar sesión.')
+    expect(renovador).not.toHaveBeenCalled()
   })
 })

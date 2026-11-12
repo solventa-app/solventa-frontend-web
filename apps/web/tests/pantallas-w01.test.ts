@@ -232,6 +232,28 @@ describe('ConsultandoFuentes (W01-02)', () => {
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
   })
 
+  // QA 2026-11-10 (Q-01): el CLIENTE con documento en la cuenta no lo digita (T6) y la guarda lo rechazaba con
+  // «No hay una solicitud en curso», así que no podía cotizar. Ahora basta la marca: el BFF pone el documento.
+  it('consulta sin documento digitado cuando el CLIENTE cotiza con el de su cuenta', async () => {
+    const cotizacion = useCotizacion(fetchPrueba)
+    cotizacion.reiniciar()
+    cotizacion.captura.documentoDeCuenta = true
+    cotizacion.captura.valorCredito = '185000000'
+    cotizacion.captura.plazoMeses = '60'
+    cotizacion.captura.direccionInmueble = 'Cra 45 # 22-18'
+    cotizacion.captura.consentimiento = true
+
+    const router = crearRouterDePrueba()
+    router.push('/cotizacion/consulta')
+    await router.isReady()
+
+    const wrapper = montar(ConsultandoFuentes, router)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(wrapper.text()).not.toContain('No hay una solicitud en curso para consultar.')
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe('/cotizacion/oferta'))
+  })
+
   // CA-W01-02 exige mostrar progreso mientras se consulta, no solo navegar al terminar: las dos
   // pruebas de arriba cubren el guard y la navegación final, pero ninguna observaba el estado
   // intermedio. Se retrasa la respuesta del BFF a propósito para poder verlo antes de que la
@@ -614,6 +636,48 @@ describe('Pantallas globales: G-01 (login), G-02 (home cliente), G-02a (home ase
         .find((b) => b.text() === 'Operador')!
         .attributes('aria-checked'),
     ).toBe('true')
+  })
+
+  async function ingresarComoCliente(ruta: string) {
+    const router = crearRouterDePrueba()
+    router.push(ruta)
+    await router.isReady()
+    const wrapper = montar(IngresoConRol, router)
+    await wrapper
+      .findAll('input')
+      .find((i) => i.attributes('type') !== 'password')!
+      .setValue('cliente.demo')
+    await wrapper.find('input[type="password"]').setValue('secreta123')
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Ingresar')!
+      .trigger('click')
+    await flushPromises()
+    return router
+  }
+
+  it('G-01 tras ingresar vuelve a la pantalla a la que iba (volver)', async () => {
+    const router = await ingresarComoCliente('/login?volver=/cotizacion')
+    expect(router.currentRoute.value.path).toBe('/cotizacion')
+  })
+
+  it('G-01 ignora un volver hacia otro sitio y va al inicio del rol', async () => {
+    const router = await ingresarComoCliente('/login?volver=//otro-sitio.com')
+    expect(router.currentRoute.value.path).toBe('/inicio')
+  })
+
+  it('G-01 muestra el aviso «inicia sesión para continuar» y el de inactividad', async () => {
+    const router = crearRouterDePrueba()
+    router.push('/login')
+    await router.isReady()
+    const sesion = useSesion()
+    sesion.estado.aviso = 'sinSesion'
+    const wrapper = montar(IngresoConRol, router)
+    expect(wrapper.get('[data-testid="aviso-sesion-vencida"]').text()).toContain('Inicia sesión para continuar')
+    sesion.estado.aviso = 'inactividad'
+    await flushPromises()
+    expect(wrapper.get('[data-testid="aviso-sesion-vencida"]').text()).toContain('inactividad')
+    sesion.estado.aviso = null
   })
 
   it('G-01 el botón del ojo muestra y oculta la contraseña', async () => {

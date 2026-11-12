@@ -28,7 +28,8 @@ const SPRINT_1 = [
 // que de otro modo no tenían a dónde llevar al hacer clic (cae en PantallaPendiente, no un enlace
 // roto). Se cuenta aparte en vez de inflar el catálogo de 12 pantallas del Sprint 1.
 // G-05 (Mi perfil) llegó antes del Sprint 2 por pedido de felipe (2026-10-19).
-const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06']
+// G-07 y G-08 (olvidé mi contraseña, KAN-26) son públicas y globales.
+const RUTAS_FUERA_DE_SPRINT_1 = ['G-05', 'G-06', 'G-06b', 'W01-04b', 'G-07', 'G-08', 'G-09']
 
 // HU-W04 (Sprint 2, KAN-27): registradas en el bloque 1; sus vistas llegan en los bloques 2 a 5.
 const HU_W04 = ['W04-01', 'W04-02', 'W04-02b', 'W04-03a', 'W04-03b', 'W04-03c']
@@ -100,11 +101,18 @@ describe('guardia de sesión (crearRouter)', () => {
     expect(router.currentRoute.value.path).toBe('/login')
   })
 
-  it('con un rol sin acceso, redirige al home de ese rol', async () => {
+  it('con un rol sin acceso, muestra G-09 (sin acceso)', async () => {
     await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'x')
     const router = crearRouter(createMemoryHistory())
     await router.push('/operador/conciliacion')
-    expect(router.currentRoute.value.path).toBe('/inicio')
+    expect(router.currentRoute.value.path).toBe('/sin-acceso')
+  })
+
+  it('sin sesión recuerda a dónde iba (volver) y avisa que inicie sesión', async () => {
+    const router = crearRouter(createMemoryHistory())
+    await router.push('/cotizacion')
+    expect(router.currentRoute.value.query.volver).toBe('/cotizacion')
+    expect(useSesion().estado.aviso).toBe('sinSesion')
   })
 
   it('con el rol correcto, deja pasar', async () => {

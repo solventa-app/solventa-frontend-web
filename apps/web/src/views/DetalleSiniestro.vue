@@ -15,7 +15,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Badge, Boton, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
+import {
+  Badge,
+  Boton,
+  CampoFormulario,
+  EstadoOperador,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
@@ -74,6 +82,18 @@ const plazo = computed(() => derivacion.value?.vencimientoInforme ?? s.value?.ve
 const restanteMs = computed(() => (plazo.value ? Date.parse(plazo.value) - ahora.value : null))
 const vencido = computed(() => restanteMs.value !== null && restanteMs.value <= 0)
 const restante = computed(() => (restanteMs.value === null ? '' : textoRestante(restanteMs.value)))
+// Q-03: el tic de 30 s llegaría tarde al cero; un disparo justo al vencer cambia el contador a tiempo.
+let alVencer: ReturnType<typeof setTimeout> | undefined
+watch(
+  plazo,
+  (fecha) => {
+    clearTimeout(alVencer)
+    const falta = fecha ? Date.parse(fecha) - Date.now() : 0
+    if (falta > 0 && falta < 2 ** 31 - 1) alVencer = setTimeout(() => (ahora.value = Date.now()), falta + 500)
+  },
+  { immediate: true },
+)
+onBeforeUnmount(() => clearTimeout(alVencer))
 
 // Acciones.
 const modalRechazoAbierto = ref(false)
@@ -83,6 +103,15 @@ const bannerAccion = ref<HTMLElement | null>(null)
 const errorRechazo = ref<string | null>(null)
 /** Qué acción está en curso: "Aprobando…" solo se muestra al aprobar, no mientras el modal rechaza. */
 const accion = ref<'aprobar' | 'rechazar' | null>(null)
+
+// Q-03 (D-3): vencido y PENDIENTE, CLAIMS lo aprueba en su siguiente pasada (cada minuto). Mientras tanto se pide el
+// caso en cada tic, sin vaciar la pantalla, hasta verlo resuelto. Un caso derivado no se aprueba solo (D-3b).
+const esperandoAutomatica = computed(
+  () => vencido.value && s.value?.estado === 'PENDIENTE' && !derivacion.value && accion.value === null,
+)
+watch(ahora, () => {
+  if (esperandoAutomatica.value) void cargarSiniestro(id.value, { silencioso: true })
+})
 
 function abrirRechazo() {
   estado.errorAccion = null
@@ -111,9 +140,23 @@ async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: stri
   estado.errorAccion = null
 }
 
+// KAN-290: en un siniestro de auto parcial o de responsabilidad civil el operador digita el valor del daño; CLAIMS
+// lo acota a la cobertura y le resta el deducible. En pérdida total no se pide: es el valor asegurado.
+const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
+const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
+const valorDano = ref('')
+const errorValorDano = ref<string | null>(null)
+watch(valorDano, () => (errorValorDano.value = null))
+
 async function aprobarSiniestro() {
+  errorValorDano.value = null
+  const valor = valorDano.value.replace(/[.\s$]/g, '').trim()
+  if (necesitaValorDano.value && !/^\d{1,13}$/.test(valor)) {
+    errorValorDano.value = t('siniestros.detalle.valorDanoError')
+    return
+  }
   accion.value = 'aprobar'
-  const resultado = await aprobar(id.value)
+  const resultado = await aprobar(id.value, necesitaValorDano.value ? valor : null)
   accion.value = null
   if (resultado) {
     await router.replace(`/operador/siniestros/${id.value}/aprobado`)
@@ -362,6 +405,14 @@ watch(
                   >
                 </span>
               </div>
+              <p
+                v-if="esperandoAutomatica"
+                data-prueba="aprobando-automatica"
+                role="status"
+                class="text-[11px] text-tinta-suave"
+              >
+                {{ t('siniestros.detalle.aprobandoAutomatica') }}
+              </p>
             </aside>
           </div>
 
@@ -531,6 +582,17 @@ watch(
                   {{ t('siniestros.detalle.rechazar') }}
                 </Boton>
 
+                <CampoFormulario
+                  v-if="necesitaValorDano"
+                  v-model="valorDano"
+                  class="w-full sm:w-[220px]"
+                  :label="t('siniestros.detalle.valorDano')"
+                  :placeholder="t('siniestros.detalle.valorDanoEjemplo')"
+                  :hint="errorValorDano ? undefined : t('siniestros.detalle.valorDanoAyuda')"
+                  :error="errorValorDano ?? undefined"
+                  icono="payments"
+                  data-prueba="valor-dano"
+                />
                 <Boton
                   variante="primario"
                   data-prueba="aprobar"

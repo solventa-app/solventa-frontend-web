@@ -246,11 +246,11 @@ describe('HU-W04 · W04-01 Bandeja de siniestros', () => {
       expect(router.currentRoute.value.path).toBe('/operador/siniestros')
     })
 
-    it('otro rol no entra: vuelve a su home', async () => {
+    it('otro rol no entra: ve la pantalla de sin acceso', async () => {
       await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'x')
       const router = crearRouter(createMemoryHistory())
       await router.push('/operador/siniestros')
-      expect(router.currentRoute.value.path).toBe('/inicio')
+      expect(router.currentRoute.value.path).toBe('/sin-acceso')
     })
   })
 })

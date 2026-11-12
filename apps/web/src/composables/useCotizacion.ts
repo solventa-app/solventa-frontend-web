@@ -5,6 +5,7 @@ import { reactive } from 'vue'
 import { ErrorGraphQL, ejecutar } from '../graphql/cliente'
 import { t } from '../i18n'
 import { alCerrarSesion } from './useSesion'
+import { pais, tipoDocumento } from './usePais'
 import type {
   CanalContacto,
   ConfirmacionContacto,
@@ -14,15 +15,29 @@ import type {
   ResultadoOferta,
 } from '../graphql/tipos'
 
+/** KAN-290 (v0.42): qué se cotiza. Vida deudor es el producto de siempre. */
+export type ProductoCotizacion = 'VIDA_DEUDOR' | 'AUTO'
+
 export interface CapturaCotizacion {
+  producto: ProductoCotizacion
   documentoIdentidad: string
+  /** T6 (W03-34): el CLIENTE cotiza con el documento de su cuenta (lo pone el BFF). Solo la marca, nunca el número. */
+  documentoDeCuenta: boolean
   valorCredito: string
   plazoMeses: string
   direccionInmueble: string
+  /** T19: lugar elegido en el autocompletado; null si la dirección se escribió («sin verificar»). */
+  placeId: string | null
   consentimiento: boolean
   // Solo los pide un ASESOR (W01-A1). Cotizar no los envía: viajan en `aceptarOferta` (W03-01).
   nombreCliente: string
   correoCliente: string
+  // KAN-290: los datos de la póliza de auto. La placa solo viaja al BFF y nunca se guarda en el navegador.
+  placa: string
+  kilometrajeAnual: string
+  ciudadCirculacion: string
+  uso: 'PARTICULAR' | 'COMERCIAL'
+  deducible: 'DIEZ_POR_CIENTO' | 'SIN_DEDUCIBLE'
 }
 
 interface EstadoCotizacion {
@@ -36,13 +51,21 @@ interface EstadoCotizacion {
 
 function capturaVacia(): CapturaCotizacion {
   return {
+    producto: 'VIDA_DEUDOR',
     documentoIdentidad: '',
+    documentoDeCuenta: false,
     valorCredito: '',
     plazoMeses: '',
     direccionInmueble: '',
+    placeId: null,
     consentimiento: false,
     nombreCliente: '',
     correoCliente: '',
+    placa: '',
+    kilometrajeAnual: '',
+    ciudadCirculacion: '',
+    uso: 'PARTICULAR',
+    deducible: 'DIEZ_POR_CIENTO',
   }
 }
 
@@ -80,25 +103,43 @@ const MUTACION_REGISTRAR_CONSENTIMIENTO = `
   }
 `
 
-const MUTACION_SOLICITAR_OFERTA = `
-  mutation solicitarOferta($entrada: SolicitudOfertaInput!) {
-    solicitarOferta(entrada: $entrada) {
+// Los campos de la oferta de los dos productos (v0.42): la de vida trae el score; la de auto, el vehículo, las
+// coberturas y los factores de la tarifa.
+const CAMPOS_OFERTA = `
       ... on Oferta {
         id
         tipo
+        producto
         prima { valor moneda }
         rangoPrima { minima { valor moneda } maxima { valor moneda } }
         cobertura { valor moneda }
         desgloseScore { nombre peso }
         fuentes { id nombre origen estado capturadoEn }
         perfilRiesgo { score nivelRiesgo fechaVigencia }
+        vehiculo {
+          placaEnmascarada marca linea modelo clase uso
+          valorComercial { valor moneda }
+          ciudadCirculacion kilometrajeAnual deducible
+        }
+        coberturas { tipo valorAsegurado { valor moneda } deducible }
+        factoresTarifa { nombre factor detalle }
       }
       ... on ErrorOferta {
         mensaje
         puedeReintentar
         motivo
       }
-    }
+`
+
+const MUTACION_SOLICITAR_OFERTA = `
+  mutation solicitarOferta($entrada: SolicitudOfertaInput!) {
+    solicitarOferta(entrada: $entrada) {${CAMPOS_OFERTA}}
+  }
+`
+
+const MUTACION_SOLICITAR_OFERTA_AUTO = `
+  mutation solicitarOfertaAuto($entrada: SolicitudOfertaAutoInput!) {
+    solicitarOfertaAuto(entrada: $entrada) {${CAMPOS_OFERTA}}
   }
 `
 
@@ -112,6 +153,22 @@ const MUTACION_CONTACTAR_ASESOR = `
 `
 
 /**
+ * Versión del texto del consentimiento (W01-01). v2 (T19): declara que la dirección del inmueble se consulta en Google
+ * para validarla. Cambiar el texto exige subir la versión: el consentimiento guarda cuál aceptó la persona.
+ */
+export const VERSION_TEXTO_CONSENTIMIENTO = 'v2'
+
+/**
+ * T20 (v0.38): el documento con su tipo y país. Sin documento (CLIENTE con el de su cuenta) no se manda nada: el BFF
+ * toma los tres de AUTH.
+ */
+function documentoTipado() {
+  const documento = estado.captura.documentoIdentidad.trim()
+  if (!documento) return { documentoIdentidad: null, tipoDocumento: null, pais: null }
+  return { documentoIdentidad: documento, tipoDocumento: tipoDocumento.value, pais: pais.value }
+}
+
+/**
  * `fetchFn` es la misma vía de inyección que ya usa `ejecutar` en `graphql/cliente.ts`: por
  * defecto pega contra `fetch` global (la app real), y las pruebas pueden pasar un fetch que
  * resuelva la URL relativa del BFF contra un origen de prueba, sin tener que mockear globals.
@@ -121,14 +178,25 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
     const datos = await ejecutar<{ registrarConsentimiento: Consentimiento }>(
       MUTACION_REGISTRAR_CONSENTIMIENTO,
       {
-        entrada: {
-          finalidad: 'perfilamiento',
-          versionTexto: 'v1',
-          documentoIdentidad: estado.captura.documentoIdentidad.trim() || null,
-          tipoDato: 'FINANCIEROS_Y_ABIERTOS',
-          fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
-          canal: 'WEB',
-        },
+        entrada:
+          estado.captura.producto === 'AUTO'
+            ? {
+                // KAN-290: se consultan los datos del vehículo (RUNT, Fasecolda y siniestralidad), no los financieros.
+                finalidad: 'cotizacion-auto',
+                versionTexto: VERSION_TEXTO_CONSENTIMIENTO,
+                ...documentoTipado(),
+                tipoDato: 'VEHICULO',
+                fuenteDatos: 'RUNT_FASECOLDA_SINIESTRALIDAD',
+                canal: 'WEB',
+              }
+            : {
+                finalidad: 'perfilamiento',
+                versionTexto: VERSION_TEXTO_CONSENTIMIENTO,
+                ...documentoTipado(),
+                tipoDato: 'FINANCIEROS_Y_ABIERTOS',
+                fuenteDatos: 'OPEN_FINANCE_OPEN_DATA',
+                canal: 'WEB',
+              },
       },
       fetchFn,
     )
@@ -146,20 +214,42 @@ export function useCotizacion(fetchFn: typeof fetch = fetch) {
     estado.cargando = true
     try {
       if (!estado.consentimientoId) await registrarConsentimiento()
-      const datos = await ejecutar<{ solicitarOferta: ResultadoOferta }>(
-        MUTACION_SOLICITAR_OFERTA,
-        {
-          entrada: {
-            consentimientoId: estado.consentimientoId,
-            documentoIdentidad: estado.captura.documentoIdentidad.trim() || null,
-            valorCredito: estado.captura.valorCredito,
-            plazoMeses: Number(estado.captura.plazoMeses),
-            direccionInmueble: estado.captura.direccionInmueble,
-          },
-        },
-        fetchFn,
-      )
-      const resultado = datos.solicitarOferta
+      const c = estado.captura
+      const resultado =
+        c.producto === 'AUTO'
+          ? (
+              await ejecutar<{ solicitarOfertaAuto: ResultadoOferta }>(
+                MUTACION_SOLICITAR_OFERTA_AUTO,
+                {
+                  entrada: {
+                    consentimientoId: estado.consentimientoId,
+                    ...documentoTipado(),
+                    placa: c.placa.trim(),
+                    kilometrajeAnual: Number(c.kilometrajeAnual),
+                    ciudadCirculacion: c.ciudadCirculacion.trim(),
+                    uso: c.uso,
+                    deducible: c.deducible,
+                  },
+                },
+                fetchFn,
+              )
+            ).solicitarOfertaAuto
+          : (
+              await ejecutar<{ solicitarOferta: ResultadoOferta }>(
+                MUTACION_SOLICITAR_OFERTA,
+                {
+                  entrada: {
+                    consentimientoId: estado.consentimientoId,
+                    ...documentoTipado(),
+                    valorCredito: c.valorCredito,
+                    plazoMeses: Number(c.plazoMeses),
+                    direccionInmueble: c.direccionInmueble,
+                    placeId: c.placeId,
+                  },
+                },
+                fetchFn,
+              )
+            ).solicitarOferta
       if (esErrorOferta(resultado) && resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE') {
         exigirNuevoConsentimiento()
       } else {

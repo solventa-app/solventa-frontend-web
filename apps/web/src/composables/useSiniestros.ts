@@ -42,6 +42,7 @@ const CAMPOS_SINIESTRO = `
   descripcion
   sumaReclamada { valor moneda }
   venceDictamenEn
+  tipoSiniestroAuto
   evidencias { id tipo titulo archivo url registradaEn geoetiquetada nota }
   verificaciones { descripcion cumple }
   resolucion {
@@ -64,8 +65,8 @@ const CONSULTA_PERITOS = `query peritos($siniestroId: ID!) {
   peritos(siniestroId: $siniestroId) { ${CAMPOS_PERITO} }
 }`
 const RESULTADO = `__typename ... on Siniestro { ${CAMPOS_SINIESTRO} } ... on ErrorSiniestro { mensaje }`
-const MUTACION_APROBAR = `mutation aprobarSiniestro($id: ID!) {
-  aprobarSiniestro(id: $id) { ${RESULTADO} }
+const MUTACION_APROBAR = `mutation aprobarSiniestro($id: ID!, $valorDano: String) {
+  aprobarSiniestro(id: $id, valorDano: $valorDano) { ${RESULTADO} }
 }`
 const MUTACION_RECHAZAR = `mutation rechazarSiniestro($id: ID!, $motivo: MotivoRechazo!, $comentario: String) {
   rechazarSiniestro(id: $id, motivo: $motivo, comentario: $comentario) { ${RESULTADO} }
@@ -140,34 +141,41 @@ export function reiniciarEstadoSiniestros(): void {
 }
 
 export function useSiniestros(fetchFn: typeof fetch = fetch) {
-  async function cargarSiniestros(filtro?: EstadoSiniestro) {
-    estado.cargando = true
-    estado.error = null
+  /** `silencioso` (Q-03): vuelve a pedir la bandeja sin spinner ni error, para ver la aprobación automática. */
+  async function cargarSiniestros(filtro?: EstadoSiniestro, { silencioso = false } = {}) {
+    if (!silencioso) {
+      estado.cargando = true
+      estado.error = null
+    }
     try {
       const variables = filtro ? { estado: filtro } : {}
       const r = await ejecutar<{ siniestros: SiniestroBandeja[] }>(CONSULTA_SINIESTROS, variables, fetchFn, SINIESTROS)
       estado.siniestros = r.siniestros
     } catch {
-      // Nunca el error técnico ni un 5xx crudo (regla 5).
-      estado.error = t('siniestros.errorCarga')
+      // Nunca el error técnico ni un 5xx crudo (regla 5). En silencio se queda lo que ya se ve.
+      if (!silencioso) estado.error = t('siniestros.errorCarga')
     } finally {
-      estado.cargando = false
+      if (!silencioso) estado.cargando = false
     }
   }
 
-  async function cargarSiniestro(id: string) {
-    estado.cargandoDetalle = true
-    estado.errorDetalle = null
-    estado.noEncontrado = false
-    estado.detalle = null
+  /** `silencioso` (Q-03): refresca el caso que ya se ve, sin vaciarlo ni mostrar error si falla. */
+  async function cargarSiniestro(id: string, { silencioso = false } = {}) {
+    if (!silencioso) {
+      estado.cargandoDetalle = true
+      estado.errorDetalle = null
+      estado.noEncontrado = false
+      estado.detalle = null
+    }
     try {
       const r = await ejecutar<{ siniestro: Siniestro | null }>(CONSULTA_SINIESTRO, { id }, fetchFn, SINIESTROS)
+      if (silencioso && (!r.siniestro || r.siniestro.id !== estado.detalle?.id)) return
       estado.detalle = r.siniestro
       estado.noEncontrado = r.siniestro === null
     } catch {
-      estado.errorDetalle = t('siniestros.errorDetalle')
+      if (!silencioso) estado.errorDetalle = t('siniestros.errorDetalle')
     } finally {
-      estado.cargandoDetalle = false
+      if (!silencioso) estado.cargandoDetalle = false
     }
   }
 
@@ -212,7 +220,9 @@ export function useSiniestros(fetchFn: typeof fetch = fetch) {
     }
   }
 
-  const aprobar = (id: string) => resolver('aprobarSiniestro', MUTACION_APROBAR, { id })
+  /** KAN-290: `valorDano` solo en un siniestro de auto parcial o de RC (lo pide CLAIMS para la indemnización). */
+  const aprobar = (id: string, valorDano: string | null = null) =>
+    resolver('aprobarSiniestro', MUTACION_APROBAR, { id, valorDano })
   const rechazar = (id: string, motivo: MotivoRechazo, comentario?: string) =>
     resolver('rechazarSiniestro', MUTACION_RECHAZAR, { id, motivo, comentario: comentario || null })
   const derivar = (id: string, peritoId: string, instrucciones?: string) =>

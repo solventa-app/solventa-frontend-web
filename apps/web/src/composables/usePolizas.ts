@@ -9,7 +9,8 @@ import type { AvisoPropuesta } from './useAvisos'
 
 const CAMPOS = `id ofertaId estado estadoVisible polizaId nombreTitular actualizadoEn plazoMeses
   prima { valor moneda } cobertura { valor moneda }
-  poliza { id numero estado vigenciaDesde vigenciaHasta documentoUrl }`
+  poliza { id numero estado vigenciaDesde vigenciaHasta documentoUrl }
+  producto vehiculo { placaEnmascarada marca }`
 const CONSULTA = `query propuestas($estado: EstadoVisible, $pagina: Int, $tamano: Int) {
   propuestas(estado: $estado, pagina: $pagina, tamano: $tamano) { propuestas { ${CAMPOS} } total pagina tamano }
 }`

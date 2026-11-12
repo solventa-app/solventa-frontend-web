@@ -135,6 +135,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cotizaciones-auto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cotiza la póliza de auto (descuenta presupuesto)
+         * @description v0.42. Como `/v1/cotizaciones`, para la póliza de auto todo riesgo: consulta RUNT, la guía Fasecolda y la siniestralidad de la placa por el ACL. Descuenta presupuesto. Si una fuente falla, la oferta es PRELIMINAR. Un vehículo que no se puede asegurar responde 422 (`VEHICULO_NO_ASEGURABLE` o `VEHICULO_NO_ENCONTRADO`). Con un token de PRUEBAS responde el modo prueba.
+         */
+        post: operations["cotizarAuto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/propuestas": {
         parameters: {
             query?: never;
@@ -482,6 +502,10 @@ export interface components {
             cobertura: components["schemas"]["Monto"];
             nivelRiesgo?: ("BAJO" | "MEDIO" | "ALTO") | null;
             fuentes: components["schemas"]["FuenteConsultada"][];
+            producto?: components["schemas"]["Producto"];
+            vehiculo?: components["schemas"]["Vehiculo"] | null;
+            /** @description v0.42: solo AUTO; vacía en VIDA_DEUDOR. */
+            coberturas?: components["schemas"]["CoberturaAuto"][];
         };
         Cotizacion: {
             oferta: components["schemas"]["Oferta"];
@@ -554,6 +578,10 @@ export interface components {
             vigenciaHasta: string;
             prima: components["schemas"]["Monto"];
             cobertura: components["schemas"]["Monto"];
+            producto?: components["schemas"]["Producto"];
+            vehiculo?: components["schemas"]["Vehiculo"] | null;
+            /** @description v0.42: solo AUTO; vacía en VIDA_DEUDOR. */
+            coberturas?: components["schemas"]["CoberturaAuto"][];
         };
         /** @enum {string} */
         Color: "VERDE" | "AMARILLO" | "ROJO";
@@ -645,6 +673,58 @@ export interface components {
         };
         Conversion: {
             montos: components["schemas"]["Monto"][];
+        };
+        /**
+         * @description v0.42: el producto de la oferta o la póliza.
+         * @enum {string}
+         */
+        Producto: "VIDA_DEUDOR" | "AUTO";
+        /** @description v0.42: cotización de la póliza de auto todo riesgo. El consentimiento se registra antes, como en `/v1/cotizaciones`. */
+        SolicitudCotizacionAuto: {
+            consentimientoId: string;
+            /** @description Al menos 6 dígitos. */
+            documentoIdentidad: string;
+            /**
+             * @description Placa colombiana: ABC123 o, en motos, ABC12D.
+             * @example ABC123
+             */
+            placa: string;
+            kilometrajeAnual: number;
+            ciudadCirculacion: string;
+            /**
+             * @default PARTICULAR
+             * @enum {string}
+             */
+            uso: "PARTICULAR" | "COMERCIAL";
+            /**
+             * @default DIEZ_POR_CIENTO
+             * @enum {string}
+             */
+            deducible: "DIEZ_POR_CIENTO" | "SIN_DEDUCIBLE";
+        };
+        /** @description v0.42: el vehículo asegurado. La placa va enmascarada. */
+        Vehiculo: {
+            /** @example ABC••• */
+            placaEnmascarada: string;
+            marca: string;
+            linea: string;
+            /** @description Año de fabricación. */
+            modelo: number;
+            /** @enum {string} */
+            clase: "AUTOMOVIL" | "CAMPERO" | "CAMIONETA" | "MOTOCICLETA";
+            /** @enum {string} */
+            uso: "PARTICULAR" | "COMERCIAL";
+            valorComercial: components["schemas"]["Monto"];
+            ciudadCirculacion: string;
+            kilometrajeAnual: number;
+            /** @enum {string} */
+            deducible: "DIEZ_POR_CIENTO" | "SIN_DEDUCIBLE";
+        };
+        CoberturaAuto: {
+            /** @enum {string} */
+            tipo: "RESPONSABILIDAD_CIVIL" | "PERDIDA_TOTAL_DANOS" | "PERDIDA_PARCIAL_DANOS" | "PERDIDA_TOTAL_HURTO" | "PERDIDA_PARCIAL_HURTO" | "ASISTENCIA";
+            valorAsegurado?: components["schemas"]["Monto"] | null;
+            deducible?: string | null;
         };
     };
     responses: {
@@ -898,6 +978,62 @@ export interface operations {
                 };
             };
             /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Presupuesto agotado (`PRESUPUESTO_AGOTADO`). */
+            429: {
+                headers: {
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    cotizarAuto: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCotizacionAuto"];
+            };
+        };
+        responses: {
+            /** @description Oferta COMPLETA o PRELIMINAR. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cotizacion"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            /** @description Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorPublico"];
+                };
+            };
+            /** @description Datos inválidos (`DATOS_INVALIDOS`) o vehículo no asegurable (`VEHICULO_NO_ASEGURABLE`, `VEHICULO_NO_ENCONTRADO`). */
             422: {
                 headers: {
                     [name: string]: unknown;

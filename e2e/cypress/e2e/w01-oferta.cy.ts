@@ -1,3 +1,4 @@
+import { irARuta } from '../support/msw'
 import { ingresar } from '../support/sesion'
 
 // E2E de la historia HU-W01 (Jira KAN-203 pide, ADEMÁS de esto, un E2E por pantalla individual —
@@ -17,40 +18,6 @@ const llenarYConsultar = (documento: string) => {
 
 describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
   beforeEach(() => ingresar('CLIENTE'))
-
-  it('W01-01 → W01-02 → W01-03a → W01-04: oferta completa y su detalle de fuentes', () => {
-    cy.contains('a', 'Nueva cotización').click()
-    cy.location('pathname').should('eq', '/cotizacion')
-
-    cy.get('[data-pantalla="W01-01"]').within(() => {
-      cy.contains('label', 'Documento de identidad').parent().find('input').type('1020304050')
-      cy.contains('label', 'Monto del crédito hipotecario').parent().find('input').type('185000000')
-      cy.contains('label', 'Plazo (meses)').parent().find('input').type('60')
-      cy.contains('label', 'Dirección del inmueble a asegurar').parent().find('input').type('Cra 45 # 22-18, Bogotá D.C.')
-      cy.get('input[type="checkbox"]').check()
-      cy.contains('button', 'Consultar oferta').click()
-    })
-
-    // No se afirma que la ruta pase por /cotizacion/consulta (W01-02): esa pantalla "avanza
-    // automáticamente" y, contra los mocks (sin delay artificial), resuelve casi al instante, así
-    // que Cypress puede llegar a comprobarlo cuando la app ya navegó más allá (carrera perdida
-    // contra el propio mock, confirmado corriendo este spec de verdad). El estado de carga de
-    // W01-02 ya lo cubre, de forma determinista, la prueba de Vitest que retrasa la respuesta a
-    // propósito (pantallas-w01.test.ts); aquí solo se afirma el destino final del viaje completo.
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
-    cy.get('[data-pantalla="W01-03a"]').within(() => {
-      cy.contains('Tu oferta está lista').should('exist')
-      cy.contains('60 meses').should('exist')
-      cy.contains('a', 'Ver detalle de fuentes consultadas').click()
-    })
-
-    cy.location('pathname').should('eq', '/cotizacion/fuentes')
-    cy.get('[data-pantalla="W01-04"]').within(() => {
-      cy.contains('h2', 'Open Finance').should('exist')
-      cy.contains('h2', 'Open Data').should('exist')
-      cy.get('section li').should('have.length', 5)
-    })
-  })
 
   it('W01-01 → W01-02 → W01-03b: oferta preliminar (fuente degradada, documento terminado en 999)', () => {
     cy.contains('a', 'Nueva cotización').click()
@@ -134,5 +101,53 @@ describe('HU-W01 · Cotización de seguro de vida hipotecario', () => {
         cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
       })
     }
+  })
+})
+
+// Q-07 (QA 2026-11-10): solo el asesor ve las fuentes consultadas; el cliente no tiene el enlace.
+describe('HU-W01 · Detalle de fuentes desde la oferta (asesor)', () => {
+  beforeEach(() => ingresar('ASESOR'))
+
+  it('W01-01 → W01-02 → W01-03a → W01-04b: oferta completa y su detalle de fuentes (solo el asesor)', () => {
+    cy.contains('a', 'Nueva cotización').click()
+    cy.location('pathname').should('eq', '/cotizacion')
+
+    cy.get('[data-pantalla="W01-01"]').within(() => {
+      cy.contains('label', 'Documento de identidad').parent().find('input').type('1020304050')
+      // El asesor deja el contacto del cliente desde la cotización (HU-W03).
+      cy.contains('label', 'Nombre completo del cliente').parent().find('input').type('Carlos Restrepo Gómez')
+      cy.contains('label', 'Correo del cliente').parent().find('input').type('carlos@correo.com')
+      cy.contains('label', 'Monto del crédito hipotecario').parent().find('input').type('185000000')
+      cy.contains('label', 'Plazo (meses)').parent().find('input').type('60')
+      cy.contains('label', 'Dirección del inmueble a asegurar').parent().find('input').type('Cra 45 # 22-18, Bogotá D.C.')
+      cy.get('input[type="checkbox"]').check()
+      cy.contains('button', 'Consultar oferta').click()
+    })
+
+    // No se afirma que la ruta pase por /cotizacion/consulta (W01-02): esa pantalla "avanza
+    // automáticamente" y, contra los mocks (sin delay artificial), resuelve casi al instante, así
+    // que Cypress puede llegar a comprobarlo cuando la app ya navegó más allá (carrera perdida
+    // contra el propio mock, confirmado corriendo este spec de verdad). El estado de carga de
+    // W01-02 ya lo cubre, de forma determinista, la prueba de Vitest que retrasa la respuesta a
+    // propósito (pantallas-w01.test.ts); aquí solo se afirma el destino final del viaje completo.
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/cotizacion/oferta')
+    cy.get('[data-pantalla="W01-03a"]').within(() => {
+      cy.contains('Tu oferta está lista').should('exist')
+      cy.contains('60 meses').should('exist')
+      cy.contains('a', 'Ver detalle de fuentes consultadas').click()
+    })
+
+    cy.location('pathname').should('eq', '/cotizacion/fuentes/oferta')
+    cy.get('[data-pantalla="W01-04b"]').within(() => {
+      cy.contains('h2', 'Open Finance').should('exist')
+      cy.contains('h2', 'Open Data').should('exist')
+      cy.get('section li').should('have.length', 5)
+    })
+
+    // La cotización quedó en el historial (Q-08): con una sola consulta, la opción del inicio abre directo su detalle.
+    cy.window().then((win) => irARuta(win, '/asesor'))
+    cy.contains('a', 'Fuentes consultadas').click()
+    cy.location('pathname').should('eq', '/cotizacion/fuentes/consulta-1')
+    cy.get('[data-prueba="consulta-datos"]').should('contain.text', '10••••4050')
   })
 })

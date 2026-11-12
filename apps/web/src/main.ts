@@ -16,6 +16,11 @@ async function arrancar() {
   if (import.meta.env.VITE_USE_MOCKS === 'true') {
     const { worker } = await import('./mocks/browser')
     await worker.start({ onUnhandledFrame: 'bypass' })
+    // Solo con mocks: Cypress cambia lo que responde el BFF (`worker.use`) sin pasar por el flujo completo. Las
+    // peticiones las atiende el service worker de MSW, así que `cy.intercept` no las ve.
+    const { HttpResponse } = await import('msw')
+    const { graphql } = await import('msw/graphql')
+    ;(window as unknown as { __msw?: unknown }).__msw = { worker, graphql, HttpResponse }
   }
   const app = createApp(App)
   const router = crearRouter()

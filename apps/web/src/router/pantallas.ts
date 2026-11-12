@@ -34,6 +34,24 @@ export const pantallas: Pantalla[] = [
     componente: () => import('../views/IngresoConRol.vue'),
   },
   {
+    id: 'G-07',
+    ruta: '/olvide-clave',
+    nombre: 'Olvidé mi contraseña',
+    historia: 'Global',
+    sprint: 1,
+    criterios: [],
+    componente: () => import('../views/OlvideClave.vue'),
+  },
+  {
+    id: 'G-08',
+    ruta: '/restablecer-clave',
+    nombre: 'Nueva contraseña (enlace del correo)',
+    historia: 'Global',
+    sprint: 1,
+    criterios: [],
+    componente: () => import('../views/RestablecerClave.vue'),
+  },
+  {
     id: 'G-02',
     ruta: '/inicio',
     nombre: 'Inicio del cliente',
@@ -73,6 +91,16 @@ export const pantallas: Pantalla[] = [
     criterios: [],
     componente: () => import('../views/MiPerfil.vue'),
   },
+  {
+    id: 'G-09',
+    ruta: '/sin-acceso',
+    nombre: 'Sin acceso',
+    historia: 'Global',
+    sprint: 1,
+    roles: ['CLIENTE', 'ASESOR', 'BACKOFFICE'],
+    criterios: [],
+    componente: () => import('../views/SinAcceso.vue'),
+  },
   // G-06: «Mis pólizas» (cliente) y «Pólizas emitidas» (asesor); mismo componente, según el rol de la sesión.
   {
     id: 'G-06',
@@ -83,6 +111,17 @@ export const pantallas: Pantalla[] = [
     roles: CLIENTE_O_ASESOR,
     criterios: [],
     componente: () => import('../views/PolizasEmitidas.vue'),
+  },
+  // G-06b: detalle de una póliza (QA 2026-11-10, Q-09). La abre la fila de G-06, o G-06 si hay una sola.
+  {
+    id: 'G-06b',
+    ruta: '/polizas/:propuestaId',
+    nombre: 'Detalle de la póliza',
+    historia: 'Global',
+    sprint: 1,
+    roles: CLIENTE_O_ASESOR,
+    criterios: [],
+    componente: () => import('../views/DetallePoliza.vue'),
   },
   {
     id: 'W01-01',
@@ -134,9 +173,21 @@ export const pantallas: Pantalla[] = [
     criterios: ['CA-W01-05'],
     componente: () => import('../views/OfertaError.vue'),
   },
+  // W01-04: el historial de fuentes del asesor (QA 2026-11-10, Q-08); W01-04b, el detalle de una consulta, o de la oferta
+  // que acaba de salir (`/cotizacion/fuentes/oferta`). Solo ASESOR: el cliente no ve las fuentes (Q-07).
   {
     id: 'W01-04',
     ruta: '/cotizacion/fuentes',
+    nombre: 'Fuentes consultadas',
+    historia: 'HU-W01',
+    sprint: 1,
+    roles: ['ASESOR'],
+    criterios: ['CA-W01-06'],
+    componente: () => import('../views/FuentesConsultadas.vue'),
+  },
+  {
+    id: 'W01-04b',
+    ruta: '/cotizacion/fuentes/:consultaId',
     nombre: 'Detalle de fuentes consultadas',
     historia: 'HU-W01',
     sprint: 1,

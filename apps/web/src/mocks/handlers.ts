@@ -6,6 +6,7 @@ import type { Cobro } from '../graphql/tipos'
 import type {
   ConfirmacionContacto,
   Consentimiento,
+  ConsultaFuentes,
   FuenteConsultada,
   MutationContactarAsesorArgs,
   MutationIniciarSesionArgs,
@@ -13,9 +14,13 @@ import type {
   MutationReintentarCobroArgs,
   MutationRevocarConsentimientoArgs,
   MutationSolicitarOfertaArgs,
+  MutationSolicitarOfertaAutoArgs,
   Jurisdiccion as JurisdiccionBff,
   Monto,
   Oferta,
+  PaginaConsultasFuentes,
+  QueryConsultaFuentesArgs,
+  QueryConsultasFuentesArgs,
   QueryCobrosArgs,
   QueryConvertirMontosArgs,
   ResultadoOferta,
@@ -80,7 +85,91 @@ export const ofertaDeDemo = (tipo: Oferta['tipo']): Oferta => ({
     nivelRiesgo: tipo === 'PRELIMINAR' ? 'MEDIO' : 'BAJO',
     fechaVigencia: enTreintaDias(),
   },
+  producto: 'VIDA_DEUDOR',
+  vehiculo: null,
+  coberturas: [],
+  factoresTarifa: [],
 })
+
+/**
+ * KAN-290: la oferta de auto de demo, con la forma que devuelve el BFF (RATING): el Mazda 3 2024 de la placa de demo
+ * ABC123 de stub-vehiculos, sus 6 coberturas y los factores de la tarifa. La PRELIMINAR es la de una guía Fasecolda
+ * caída (valor de referencia y rango).
+ */
+export const ofertaAutoDeDemo = (tipo: Oferta['tipo']): Oferta => {
+  const valor = { valor: tipo === 'COMPLETA' ? '118500000.00' : '64800000.00', moneda: 'COP' }
+  const deducible = '10 % mín. 1 SMMLV'
+  return {
+    id: `oferta-auto-${tipo.toLowerCase()}`,
+    tipo,
+    producto: 'AUTO',
+    prima: tipo === 'COMPLETA' ? { valor: '332198.00', moneda: 'COP' } : null,
+    rangoPrima:
+      tipo === 'PRELIMINAR'
+        ? { minima: { valor: '151171.84', moneda: 'COP' }, maxima: { valor: '226757.76', moneda: 'COP' } }
+        : null,
+    cobertura: valor,
+    desgloseScore: [],
+    fuentes: [
+      { id: 'runt-vehiculo', nombre: 'runt-vehiculo', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+      {
+        id: 'fasecolda-valor',
+        nombre: 'fasecolda-valor',
+        origen: 'OPEN_DATA',
+        estado: tipo === 'COMPLETA' ? 'OK' : 'FALLO',
+        capturadoEn: null,
+      },
+      {
+        id: 'siniestralidad-placa',
+        nombre: 'siniestralidad-placa',
+        origen: 'OPEN_DATA',
+        estado: 'OK',
+        capturadoEn: null,
+      },
+    ],
+    perfilRiesgo: null,
+    vehiculo: {
+      placaEnmascarada: 'ABC•••',
+      marca: 'MAZDA',
+      linea: '3 GRAND TOURING',
+      modelo: 2024,
+      clase: 'AUTOMOVIL',
+      uso: 'PARTICULAR',
+      valorComercial: valor,
+      ciudadCirculacion: 'Bogotá',
+      kilometrajeAnual: 12000,
+      deducible: 'DIEZ_POR_CIENTO',
+    },
+    coberturas: [
+      { tipo: 'RESPONSABILIDAD_CIVIL', valorAsegurado: { valor: '1000000000.00', moneda: 'COP' }, deducible: null },
+      { tipo: 'PERDIDA_TOTAL_DANOS', valorAsegurado: valor, deducible },
+      { tipo: 'PERDIDA_PARCIAL_DANOS', valorAsegurado: valor, deducible },
+      { tipo: 'PERDIDA_TOTAL_HURTO', valorAsegurado: valor, deducible },
+      { tipo: 'PERDIDA_PARCIAL_HURTO', valorAsegurado: valor, deducible },
+      { tipo: 'ASISTENCIA', valorAsegurado: null, deducible: null },
+    ],
+    factoresTarifa: [
+      { nombre: 'USO', factor: 1, detalle: 'particular' },
+      { nombre: 'ANTIGUEDAD', factor: 0.95, detalle: '2 años' },
+      { nombre: 'KILOMETRAJE', factor: 1, detalle: '12.000 km/año' },
+      { nombre: 'INDICE_HURTO', factor: 1, detalle: 'índice MEDIO' },
+      { nombre: 'SINIESTRALIDAD', factor: 0.9, detalle: '0 en 3 años' },
+      { nombre: 'CIUDAD', factor: 1.1, detalle: 'Bogotá' },
+      { nombre: 'DEDUCIBLE', factor: 1, detalle: 'DIEZ_POR_CIENTO' },
+    ],
+  }
+}
+
+/** La oferta de demo por su id (vida o auto): la usan `oferta(id)` y `aceptarOferta` del mock de suscripción. */
+export const ofertaPorId = (id: string): Oferta | null => {
+  const porId: Record<string, () => Oferta> = {
+    'oferta-completa': () => ofertaDeDemo('COMPLETA'),
+    'oferta-preliminar': () => ofertaDeDemo('PRELIMINAR'),
+    'oferta-auto-completa': () => ofertaAutoDeDemo('COMPLETA'),
+    'oferta-auto-preliminar': () => ofertaAutoDeDemo('PRELIMINAR'),
+  }
+  return porId[id]?.() ?? null
+}
 
 const consentimiento = (revocado: boolean): Consentimiento => ({
   id: 'consentimiento-1',
@@ -161,6 +250,40 @@ export function restablecerCobrosDePrueba(): void {
   cobros = cobrosIniciales()
 }
 
+// Historial de fuentes consultadas (v0.45, Q-08): cada cotización de un ASESOR deja su consulta; el BFF real la guarda
+// en RISK y solo devuelve las del asesor del token. Aquí, en memoria; las pruebas la reinician.
+type ConsultaDeDemo = ConsultaFuentes & { actor: string }
+let consultas: ConsultaDeDemo[] = []
+let secuenciaConsultas = 0
+
+/** Solo para pruebas: reinicia el historial de fuentes entre casos. */
+export function restablecerConsultasDePrueba(): void {
+  consultas = []
+  secuenciaConsultas = 0
+}
+
+// Mismo formato que el BFF: 2 iniciales y 4 finales visibles, el resto `•`.
+function documentoEnmascarado(documento: string): string {
+  const limpio = documento.replace(/[\s.-]/g, '').toUpperCase()
+  const n = limpio.length
+  if (n < 7) return n > 4 ? '•'.repeat(n - 4) + limpio.slice(-4) : limpio
+  return limpio.slice(0, 2) + '•'.repeat(n - 6) + limpio.slice(-4)
+}
+
+function actorDeLaPeticion(request: Request): { usuario: string; rol: RolUsuario } | null {
+  const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
+  const claims = token ? leerClaims(token) : null
+  return claims ? { usuario: claims.usuario, rol: claims.rol } : null
+}
+
+type RespuestaConError = HttpResponse<{ errors: { message: string; extensions?: { code: string } }[] }>
+
+const sinPermiso = (): RespuestaConError =>
+  HttpResponse.json({ errors: [{ message: 'No tienes permiso para esta operación.' }] })
+
+const sinSesion = (): RespuestaConError =>
+  HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.', extensions: { code: 'SIN_SESION' } }] })
+
 // Sesión de demo (convención de los mocks, NO del backend real): cualquier clave sirve salvo
 // `clave-erronea`; el rol sale del alias (`asesor…` → ASESOR, `admin…`/`operador…` → BACKOFFICE, otro →
 // CLIENTE). El token es un JWT sin firma con los mismos claims que emite AUTH, más `nombre`, que el
@@ -223,6 +346,10 @@ const bff = graphql.link('*')
 // Tasas de demostración: pesos colombianos por unidad, como la tabla del ACL Worker.
 const COP_POR_UNIDAD: Record<string, number> = { COP: 1, USD: 4100, EUR: 4450, MXN: 225, BRL: 750, CLP: 4.4, PEN: 1100 }
 
+function enlaceDeClaveVigente(token: string | null): boolean {
+  return !!token && !token.startsWith('TokenVencido')
+}
+
 // Quién tiene «la cookie» en los mocks (T22).
 let ultimoUsuarioDemo: string | null = null
 
@@ -246,6 +373,31 @@ export const handlers = [
         },
       },
     })
+  }),
+
+  // «Olvidé mi contraseña» (KAN-26, v0.43): siempre `true`, exista o no la cuenta. Con los mocks el «correo» de /dev/correo
+  // no existe: el enlace de demo es `/restablecer-clave#t=TokenDeDemo-restablecer-123`; uno que empiece por
+  // `TokenVencido` simula un enlace vencido o ya usado.
+  bff.mutation<{ solicitarRestablecimientoClave: boolean }>('solicitarRestablecimientoClave', () =>
+    HttpResponse.json({ data: { solicitarRestablecimientoClave: true } }),
+  ),
+  bff.query<{ enlaceRestablecimientoVigente: boolean }>('enlaceRestablecimientoVigente', ({ request }) =>
+    HttpResponse.json({
+      data: { enlaceRestablecimientoVigente: enlaceDeClaveVigente(request.headers.get('x-enlace-clave')) },
+    }),
+  ),
+  bff.mutation<{ restablecerClave: unknown }, { clave: string }>('restablecerClave', ({ request }) => {
+    if (!enlaceDeClaveVigente(request.headers.get('x-enlace-clave'))) {
+      return HttpResponse.json({
+        data: {
+          restablecerClave: {
+            mensaje: 'El enlace no es válido o ya venció. Pide uno nuevo.',
+            codigo: 'ENLACE_INVALIDO',
+          },
+        },
+      })
+    }
+    return HttpResponse.json({ data: { restablecerClave: { ok: true } } })
   }),
 
   // T22: con los mocks no hay cookie que leer; renueva el último usuario que inició sesión.
@@ -295,6 +447,11 @@ export const handlers = [
           tipoDocumento: j.tipo_documento,
           plazoMin: j.plazo_min,
           plazoMax: j.plazo_max,
+          tiposDocumento: j.tipos_documento.map((x) => ({
+            codigo: x.codigo,
+            etiquetaEs: x.etiqueta_es,
+            etiquetaEn: x.etiqueta_en,
+          })),
         })),
       },
     }),
@@ -307,7 +464,8 @@ export const handlers = [
   bff.query<{ yo: Usuario | null }>('yo', ({ request }) => {
     const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
     const claims = token ? leerClaims(token) : null
-    if (!claims) return HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.' }] })
+    if (!claims)
+      return HttpResponse.json({ errors: [{ message: 'Debes iniciar sesión.', extensions: { code: 'SIN_SESION' } }] })
     return HttpResponse.json({
       data: { yo: usuarioDeDemo(claims.usuario, claims.rol) },
     })
@@ -325,7 +483,7 @@ export const handlers = [
 
   bff.mutation<{ solicitarOferta: ResultadoOferta }, MutationSolicitarOfertaArgs>(
     'solicitarOferta',
-    ({ variables }) => {
+    ({ variables, request }) => {
       const { consentimientoId, documentoIdentidad } = variables.entrada
       const documento = documentoIdentidad ?? ''
       const resultado: ResultadoOferta =
@@ -344,7 +502,77 @@ export const handlers = [
                 motivo: 'DATOS_INSUFICIENTES',
               }
             : ofertaDeDemo(documento.endsWith('999') ? 'PRELIMINAR' : 'COMPLETA')
+      const actor = actorDeLaPeticion(request)
+      if (actor?.rol === 'ASESOR' && 'fuentes' in resultado) {
+        consultas.push({
+          id: `consulta-${++secuenciaConsultas}`,
+          actor: actor.usuario,
+          creadaEn: ahora(),
+          documentoEnmascarado: documentoEnmascarado(documento),
+          tipoOferta: resultado.tipo,
+          producto: 'VIDA_DEUDOR',
+          ofertaId: resultado.id,
+          fuentes: resultado.fuentes,
+        })
+      }
       return HttpResponse.json({ data: { solicitarOferta: resultado } })
+    },
+  ),
+
+  bff.query<{ consultasFuentes: PaginaConsultasFuentes }, QueryConsultasFuentesArgs>(
+    'consultasFuentes',
+    ({ variables, request }) => {
+      const actor = actorDeLaPeticion(request)
+      if (!actor) return sinSesion()
+      if (actor.rol !== 'ASESOR') return sinPermiso()
+      const tamano = Math.min(Math.max(variables.tamano ?? 10, 1), 50)
+      const pagina = Math.max(variables.pagina ?? 1, 1)
+      const suyas = consultas.filter((c) => c.actor === actor.usuario).reverse()
+      return HttpResponse.json({
+        data: {
+          consultasFuentes: {
+            consultas: suyas.slice((pagina - 1) * tamano, pagina * tamano),
+            total: suyas.length,
+            pagina,
+            tamano,
+          },
+        },
+      })
+    },
+  ),
+
+  bff.query<{ consultaFuentes: ConsultaFuentes | null }, QueryConsultaFuentesArgs>(
+    'consultaFuentes',
+    ({ variables, request }) => {
+      const actor = actorDeLaPeticion(request)
+      if (!actor) return sinSesion()
+      if (actor.rol !== 'ASESOR') return sinPermiso()
+      const propia = consultas.find((c) => c.id === variables.id && c.actor === actor.usuario)
+      return HttpResponse.json({ data: { consultaFuentes: propia ?? null } })
+    },
+  ),
+
+  // KAN-290: la oferta de auto. Placas de demo como las de stub-vehiculos: NOX000 no existe, STU901 está hurtado y
+  // YZA456 deja la oferta preliminar.
+  bff.mutation<{ solicitarOfertaAuto: ResultadoOferta }, MutationSolicitarOfertaAutoArgs>(
+    'solicitarOfertaAuto',
+    ({ variables }) => {
+      const placa = variables.entrada.placa.replace(/[\s-]/g, '').toUpperCase()
+      const resultado: ResultadoOferta =
+        placa === 'NOX000'
+          ? {
+              mensaje: 'No encontramos esa placa en el RUNT. Revísala e intenta de nuevo.',
+              puedeReintentar: false,
+              motivo: 'VEHICULO_NO_ENCONTRADO',
+            }
+          : placa === 'STU901'
+            ? {
+                mensaje: 'El vehículo tiene una denuncia de hurto vigente en el RUNT.',
+                puedeReintentar: false,
+                motivo: 'VEHICULO_NO_ASEGURABLE',
+              }
+            : ofertaAutoDeDemo(placa === 'YZA456' ? 'PRELIMINAR' : 'COMPLETA')
+      return HttpResponse.json({ data: { solicitarOfertaAuto: resultado } })
     },
   ),
 

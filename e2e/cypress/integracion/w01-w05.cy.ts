@@ -43,6 +43,23 @@ describe('HU-W01 · formulario contra el backend real', () => {
       cy.contains('label', 'Nombre completo del cliente').should('not.exist')
     })
   })
+
+  // QA 2026-11-10 (Q-01): la prueba de arriba solo miraba los campos y nunca enviaba, por eso no vio que el CLIENTE
+  // con documento en la cuenta se quedaba en «No hay una solicitud en curso». Necesita un CLIENTE con documento.
+  it('el CLIENTE con documento en la cuenta cotiza y pasa a firmar en su sesión', () => {
+    visitarComo('CLIENTE', '/cotizacion')
+    formularioAsesor(() => {
+      campo('Documento de identidad').should('be.disabled')
+      campo('Monto del crédito hipotecario').type('185000000')
+      campo('Plazo (meses)').type('60')
+      campo('Dirección del inmueble a asegurar').type('Cra 45 # 22-18, Bogotá D.C.')
+      cy.get('input[type="checkbox"]').check()
+      cy.contains('button', 'Consultar oferta').click()
+    })
+    cy.get('[data-pantalla="W01-03a"]', { timeout: 20000 }).find('[data-prueba="firmar"]').click()
+    cy.location('pathname', { timeout: 20000 }).should('match', /^\/propuestas\/[^/]+\/firma$/)
+    cy.get('[data-pantalla="W03-02"]').find('[data-prueba="contrato-pdf"]').should('exist')
+  })
 })
 
 describe('HU-W05 · W05-01 por SSE contra el backend real', () => {
