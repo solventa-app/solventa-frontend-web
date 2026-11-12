@@ -33,7 +33,7 @@ function reportarChoqueDeAuto(): Cypress.Chainable<string> {
     gql<{ iniciarSesion: { token: string } }>(
       'app',
       'mutation($e: CredencialesInput!) { iniciarSesion(entrada: $e) { ... on Sesion { token } } }',
-      { e: { usuario: vars.USUARIO_CLIENTE ?? 'cliente.siniestros', clave: vars.CLAVE_CLIENTE ?? 'Cliente-local-1' } },
+      { e: { usuario: vars.USUARIO_CLIENTE ?? 'cliente.siniestros@demo.solventa.co', clave: vars.CLAVE_CLIENTE ?? 'Cliente-local-1' } },
     ).then((d) => {
       token = d.iniciarSesion.token
     })

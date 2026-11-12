@@ -29,6 +29,28 @@ export default defineConfig({
           })
           return r.status
         },
+        // T6: lo que de verdad hay en el bucket de `fake-gcs` para los documentos firmados: el tipo de contenido, los
+        // primeros bytes y si el PDF aparece en claro. Debe ser solo el contenedor cifrado (`SOLVENC1`).
+        async objetosCifrados({ prefijos }: { prefijos: string[] }) {
+          const base = 'http://localhost:4443/storage/v1/b/solventa-archivos-local/o'
+          const resultado: { tipoContenido: string; inicio: string; pdfEnClaro: boolean }[] = []
+          for (const prefijo of prefijos) {
+            const lista = (await (await fetch(`${base}?prefix=${prefijo}&maxResults=3`)).json()) as {
+              items?: { name: string; contentType: string }[]
+            }
+            for (const objeto of lista.items ?? []) {
+              const bytes = Buffer.from(
+                await (await fetch(`${base}/${encodeURIComponent(objeto.name)}?alt=media`)).arrayBuffer(),
+              )
+              resultado.push({
+                tipoContenido: objeto.contentType,
+                inicio: bytes.subarray(0, 8).toString('latin1'),
+                pdfEnClaro: bytes.includes('%PDF'),
+              })
+            }
+          }
+          return resultado
+        },
         psql({ bd, sql }: { bd: string; sql: string }) {
           return execFileSync(
             'docker',
