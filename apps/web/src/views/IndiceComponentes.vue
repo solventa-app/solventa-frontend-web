@@ -12,6 +12,7 @@ import {
   Boton,
   CampoAreaTexto,
   CampoFormulario,
+  CampoMonto,
   CampoSeleccion,
   Chip,
   Divisor,
@@ -27,6 +28,7 @@ import {
 import { idioma, t } from '../i18n'
 
 const documento = ref('')
+const monto = ref('')
 const moneda = ref('COP')
 const filtroActivo = ref('Todos')
 const pestanaActiva = ref('guia')
@@ -97,6 +99,16 @@ const peritos = [
       />
       <div style="height: 0.75rem"></div>
       <CampoFormulario model-value="1.024.578.113" label="Número de documento" disabled />
+    </section>
+
+    <section style="margin-top: 1.5rem; max-width: 26.875rem">
+      <h2>Campo de monto</h2>
+      <CampoMonto
+        v-model="monto"
+        label="Valor del daño (COP)"
+        placeholder="Ej: 8.000.000"
+        hint="Solo dígitos: los separadores salen del idioma."
+      />
     </section>
 
     <section style="margin-top: 1.5rem; max-width: 26.875rem">

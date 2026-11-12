@@ -14,6 +14,8 @@ const props = withDefaults(
     label: string
     type?: string
     placeholder?: string
+    /** Teclado que abre el móvil (p. ej. `numeric` para un monto). */
+    inputmode?: 'numeric' | 'decimal' | 'text' | 'email' | 'tel'
     /** Mensaje de error. Si está presente, el campo se pinta en estado de error. */
     error?: string
     hint?: string
@@ -28,6 +30,7 @@ const props = withDefaults(
   {
     type: 'text',
     placeholder: undefined,
+    inputmode: undefined,
     error: undefined,
     hint: undefined,
     required: false,
@@ -69,6 +72,7 @@ const idHint = useId()
         :type="tipoEfectivo"
         :value="modelValue"
         :placeholder="placeholder"
+        :inputmode="inputmode"
         :required="required"
         :disabled="disabled"
         :aria-invalid="!!error"
