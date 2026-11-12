@@ -6,6 +6,7 @@ import {
   BarraDeCerrarSesion,
   Boton,
   CampoFormulario,
+  CampoMonto,
   Chip,
   Divisor,
   FooterPantalla,
@@ -110,6 +111,80 @@ describe('CampoFormulario', () => {
   it('no renderiza ningún ícono cuando `icono` no se pasa', () => {
     const campo = mount(CampoFormulario, { props: { modelValue: '', label: 'Plazo (meses)' } })
     expect(campo.findComponent(IconoMaterial).exists()).toBe(false)
+  })
+
+  it('pasa `inputmode` al <input> para abrir el teclado correcto en el móvil', () => {
+    const campo = mount(CampoFormulario, { props: { modelValue: '', label: 'Monto', inputmode: 'numeric' } })
+    expect(campo.get('input').attributes('inputmode')).toBe('numeric')
+  })
+})
+
+describe('CampoMonto', () => {
+  /** El campo con su modelo conectado, como lo usa una pantalla (v-model). */
+  function montarMonto(inicial = '') {
+    const alCambiar = (valor: string): void => void campo.setProps({ modelValue: valor })
+    const campo = mount(CampoMonto, {
+      props: { modelValue: inicial, label: 'Valor del daño (COP)', 'onUpdate:modelValue': alCambiar },
+    })
+    return campo
+  }
+  const caja = (campo: ReturnType<typeof montarMonto>) => campo.get('input').element as HTMLInputElement
+
+  it('muestra el valor con los separadores del idioma y lo cambia con el idioma', async () => {
+    const campo = montarMonto('8000000')
+    expect(caja(campo).value).toBe('8.000.000')
+    cambiarIdioma('EN')
+    try {
+      await campo.vm.$nextTick()
+      expect(caja(campo).value).toBe('8,000,000')
+    } finally {
+      cambiarIdioma('ES')
+    }
+  })
+
+  it('el modelo guarda solo dígitos aunque se escriban o se peguen separadores y símbolos', async () => {
+    const campo = montarMonto()
+    await campo.get('input').setValue('$ 8.000.000')
+    expect(campo.props('modelValue')).toBe('8000000')
+    expect(caja(campo).value).toBe('8.000.000')
+    await campo.get('input').setValue('8,000,000 COP')
+    expect(campo.props('modelValue')).toBe('8000000')
+  })
+
+  it('ignora las letras: el texto del campo no se ensucia aunque el modelo no cambie', async () => {
+    const campo = montarMonto('8000')
+    await campo.get('input').setValue('8.000a')
+    await campo.vm.$nextTick()
+    expect(campo.props('modelValue')).toBe('8000')
+    expect(caja(campo).value).toBe('8.000')
+  })
+
+  it('quita ceros a la izquierda y respeta el tope de dígitos', async () => {
+    const campo = montarMonto()
+    await campo.get('input').setValue('0005')
+    expect(campo.props('modelValue')).toBe('5')
+    await campo.get('input').setValue('12345678901234567')
+    expect(campo.props('modelValue')).toBe('1234567890123')
+  })
+
+  it('al corregir un dígito en medio, el cursor se queda junto a él', async () => {
+    const campo = montarMonto('8000000')
+    const input = caja(campo)
+    // «8.000.000» → se teclea un 1 después de «8.0»: «8.01000.000», con el cursor tras el 1.
+    input.value = '8.01000.000'
+    input.setSelectionRange(4, 4)
+    await campo.get('input').trigger('input')
+    await campo.vm.$nextTick()
+    expect(campo.props('modelValue')).toBe('801000000')
+    expect(input.value).toBe('801.000.000')
+    // Tres dígitos (8, 0, 1) antes del cursor → justo después del 1, antes del primer punto.
+    expect(input.selectionStart).toBe(3)
+  })
+
+  it('lleva el ícono de monto y abre el teclado numérico', () => {
+    const campo = montarMonto()
+    expect(campo.findComponent(IconoMaterial).props('nombre')).toBe('payments')
+    expect(campo.get('input').attributes('inputmode')).toBe('numeric')
   })
 })
 

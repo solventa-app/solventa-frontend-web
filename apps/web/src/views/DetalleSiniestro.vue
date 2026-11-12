@@ -15,22 +15,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  Badge,
-  Boton,
-  CampoFormulario,
-  EstadoOperador,
-  FooterPantalla,
-  HeaderPantalla,
-  MigasDePan,
-} from '../components/ui'
+import { Badge, Boton, CampoMonto, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
-import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
+import type { EstadoSiniestro, Evidencia, Monto, MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
 import { montoVisible } from '../composables/useMoneda'
-import { formatearFecha } from '../utils/formato'
+import { formatearFecha, formatearMonto, formatearNumero } from '../utils/formato'
 import { textoRestante } from '../utils/plazo'
 
 const route = useRoute()
@@ -142,21 +134,32 @@ async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: stri
 
 // KAN-290: en un siniestro de auto parcial o de responsabilidad civil el operador digita el valor del daño; CLAIMS
 // lo acota a la cobertura y le resta el deducible. En pérdida total no se pide: es el valor asegurado.
+// El valor se captura en la moneda de la póliza (la del dato, contrato v0.42), no en la que elija el selector: lo que se
+// captura sigue en su moneda original (docs/convenciones.md). Mientras se pide, el selector del header queda fijo en
+// esa moneda y la suma reclamada se ve en ella, para compararlas en la misma unidad.
 const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
 const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
+const pideValorDano = computed(() => necesitaValorDano.value && !resuelto.value)
+const monedaPoliza = computed(() => s.value?.sumaReclamada.moneda)
+const monedaFija = computed(() => (pideValorDano.value ? monedaPoliza.value : undefined))
+const verMonto = (monto: Monto) => (monedaFija.value ? formatearMonto(monto) : montoVisible(monto))
+const ejemploValorDano = computed(() =>
+  t('siniestros.detalle.valorDanoEjemplo', { ejemplo: formatearNumero(8_000_000) }),
+)
+
 const valorDano = ref('')
 const errorValorDano = ref<string | null>(null)
 watch(valorDano, () => (errorValorDano.value = null))
 
 async function aprobarSiniestro() {
   errorValorDano.value = null
-  const valor = valorDano.value.replace(/[.\s$]/g, '').trim()
-  if (necesitaValorDano.value && !/^\d{1,13}$/.test(valor)) {
+  // `valorDano` ya es solo dígitos (CampoMonto); el cero no es un daño.
+  if (necesitaValorDano.value && !/^[1-9]\d{0,12}$/.test(valorDano.value)) {
     errorValorDano.value = t('siniestros.detalle.valorDanoError')
     return
   }
   accion.value = 'aprobar'
-  const resultado = await aprobar(id.value, necesitaValorDano.value ? valor : null)
+  const resultado = await aprobar(id.value, necesitaValorDano.value ? valorDano.value : null)
   accion.value = null
   if (resultado) {
     await router.replace(`/operador/siniestros/${id.value}/aprobado`)
@@ -179,7 +182,7 @@ watch(
 
 <template>
   <div data-pantalla="W04-02" class="flex h-screen flex-col overflow-hidden bg-fondo">
-    <HeaderPantalla :titulo="t('siniestros.detalle.titulo')" />
+    <HeaderPantalla :titulo="t('siniestros.detalle.titulo')" :moneda-fija="monedaFija" />
     <MigasDePan :niveles="niveles" a-inicio="/operador">
       <template #derecha><EstadoOperador /></template>
     </MigasDePan>
@@ -328,7 +331,7 @@ watch(
                   <div class="mt-2 rounded bg-fondo px-6 py-2">
                     <dt class="text-[11px] text-tinta-suave">{{ t('siniestros.detalle.sumaReclamada') }}</dt>
                     <dd data-prueba="suma" class="text-[18px] font-semibold text-primario">
-                      {{ montoVisible(s.sumaReclamada) }}
+                      {{ verMonto(s.sumaReclamada) }}
                     </dd>
                   </div>
                   <div class="py-1.5">
@@ -536,6 +539,19 @@ watch(
                 {{ estado.errorAccion }}
               </div>
 
+              <!-- KAN-290: el valor del daño va en su propio bloque, no entre las acciones. -->
+              <CampoMonto
+                v-if="necesitaValorDano"
+                v-model="valorDano"
+                class="mt-4 sm:max-w-[360px]"
+                :label="t('siniestros.detalle.valorDano', { moneda: monedaPoliza ?? '' })"
+                :placeholder="ejemploValorDano"
+                :hint="errorValorDano ? undefined : t('siniestros.detalle.valorDanoAyuda')"
+                :error="errorValorDano ?? undefined"
+                required
+                data-prueba="valor-dano"
+              />
+
               <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <button
                   v-if="derivacion?.perito"
@@ -582,17 +598,6 @@ watch(
                   {{ t('siniestros.detalle.rechazar') }}
                 </Boton>
 
-                <CampoFormulario
-                  v-if="necesitaValorDano"
-                  v-model="valorDano"
-                  class="w-full sm:w-[220px]"
-                  :label="t('siniestros.detalle.valorDano')"
-                  :placeholder="t('siniestros.detalle.valorDanoEjemplo')"
-                  :hint="errorValorDano ? undefined : t('siniestros.detalle.valorDanoAyuda')"
-                  :error="errorValorDano ?? undefined"
-                  icono="payments"
-                  data-prueba="valor-dano"
-                />
                 <Boton
                   variante="primario"
                   data-prueba="aprobar"
