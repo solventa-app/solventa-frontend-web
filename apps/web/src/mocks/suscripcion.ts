@@ -5,7 +5,7 @@
 // Convenciones de demo (NO son del backend real; ver docs/convenciones.md):
 // - Código de verificación: `000000` es válido, `999999` está vencido y cualquier otro es inválido (5 intentos).
 // - Correo del cliente que termina en `@revision.test` → UNDER manda a revisión; en `@rechazo.test` → no emite.
-// - Tokens fijos del enlace: `demo` (por firmar), `vencido`, `firmado` (falta pagar) y `emitido`.
+// - Tokens fijos del enlace: `demo` (por firmar), `demo-auto` (por firmar, póliza de auto), `vencido`, `firmado` (falta pagar) y `emitido`.
 // - Tarjetas de la pasarela simulada: las del stub del backend (TARJETAS_DE_PRUEBA).
 // - El mock nunca guarda el número de la tarjeta: solo la marca y el tipo, como PAYMENTS.
 import { HttpResponse, http } from 'msw'
@@ -218,6 +218,7 @@ function emitirPoliza(registro: PropuestaMock): Poliza {
 function sembrarToken(token: string): PropuestaMock | null {
   const estados: Record<string, (r: PropuestaMock) => void> = {
     demo: () => {},
+    'demo-auto': () => {},
     vencido: () => {},
     firmado: (r) => {
       r.firma = firmaRegistrada(r)
@@ -230,6 +231,7 @@ function sembrarToken(token: string): PropuestaMock | null {
   }
   if (!(token in estados)) return null
   const registro = crearPropuesta(ofertaDeDemo('COMPLETA'), 'cliente@correo.com')
+  if (token === 'demo-auto') registro.propuesta.producto = 'AUTO'
   cambiarEstado(registro, 'EN_FIRMA')
   registro.token = token
   registro.enlaceVence = token === 'vencido' ? Date.now() - 60_000 : Date.now() + MIN_ENLACE * 60_000
@@ -262,8 +264,11 @@ function documentoFirma(registro: PropuestaMock): DocumentoFirma {
   return {
     propuestaId: registro.propuesta.id,
     version: 'v1',
+    // Como el backend (POLICY): el resumen sigue al producto de la propuesta.
     resumen:
-      'Seguro de Vida Grupo Deudores: ampara el saldo insoluto de tu crédito hipotecario en caso de fallecimiento o incapacidad total y permanente.',
+      registro.propuesta.producto === 'AUTO'
+        ? 'Seguro de automóviles todo riesgo: ampara tu vehículo contra daños, hurto y responsabilidad civil durante la vigencia de la póliza.'
+        : 'Seguro de Vida Grupo Deudores: ampara el saldo insoluto de tu crédito hipotecario en caso de fallecimiento o incapacidad total y permanente.',
     montoMensual: registro.propuesta.prima,
     meses: registro.propuesta.plazoMeses,
     formaCobro: 'con la tarjeta de crédito o débito que elijas al pagar',

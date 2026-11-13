@@ -51,6 +51,7 @@ const enCurso = computed(() => !!propuesta.value && propuesta.value.estado !== '
 const prima = computed(() => oferta.value?.prima ?? propuesta.value?.prima ?? null)
 const cobertura = computed(() => oferta.value?.cobertura ?? propuesta.value?.cobertura ?? null)
 const hayTarjeta = computed(() => !!prima.value && !!cobertura.value)
+const producto = computed(() => oferta.value?.producto ?? propuesta.value?.producto ?? 'VIDA_DEUDOR')
 
 const TIPO_BADGE: Partial<Record<EstadoPropuesta, 'exito' | 'alerta' | 'error' | 'enCurso'>> = {
   EMITIDA: 'exito',
@@ -142,7 +143,7 @@ function recalcular() {
               </span>
               <div class="flex flex-col">
                 <span class="text-[11px] text-tinta-suave">{{ t('revisarOferta.tipoProducto') }}</span>
-                <span class="text-[15px] font-semibold text-tinta">{{ t('revisarOferta.producto') }}</span>
+                <span class="text-[15px] font-semibold text-tinta">{{ t(`revisarOferta.producto.${producto}`) }}</span>
               </div>
             </div>
             <span
