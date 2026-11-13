@@ -427,6 +427,7 @@ export const en: Record<Clave, string> = {
   'polizas.verPdf': 'View PDF',
   'polizas.abriendo': 'Opening…',
   'polizas.retomar': 'Resume',
+  'polizas.continuar': 'Continue',
   'polizas.enProceso': 'In progress',
   'polizas.errorPdf': "We couldn't open the document. Please try again.",
   'polizas.mostrando': 'Showing {visibles} of {total} policies',

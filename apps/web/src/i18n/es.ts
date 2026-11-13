@@ -427,6 +427,7 @@ export const es = {
   'polizas.verPdf': 'Ver PDF',
   'polizas.abriendo': 'Abriendo…',
   'polizas.retomar': 'Retomar',
+  'polizas.continuar': 'Continuar',
   'polizas.enProceso': 'En proceso',
   'polizas.errorPdf': 'No pudimos abrir el documento. Intenta nuevamente.',
   'polizas.mostrando': 'Mostrando {visibles} de {total} pólizas',
