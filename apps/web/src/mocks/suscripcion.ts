@@ -264,8 +264,11 @@ function documentoFirma(registro: PropuestaMock): DocumentoFirma {
   return {
     propuestaId: registro.propuesta.id,
     version: 'v1',
+    // Como el backend (POLICY): el resumen sigue al producto de la propuesta.
     resumen:
-      'Seguro de Vida Grupo Deudores: ampara el saldo insoluto de tu crédito hipotecario en caso de fallecimiento o incapacidad total y permanente.',
+      registro.propuesta.producto === 'AUTO'
+        ? 'Seguro de automóviles todo riesgo: ampara tu vehículo contra daños, hurto y responsabilidad civil durante la vigencia de la póliza.'
+        : 'Seguro de Vida Grupo Deudores: ampara el saldo insoluto de tu crédito hipotecario en caso de fallecimiento o incapacidad total y permanente.',
     montoMensual: registro.propuesta.prima,
     meses: registro.propuesta.plazoMeses,
     formaCobro: 'con la tarjeta de crédito o débito que elijas al pagar',
