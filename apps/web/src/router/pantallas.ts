@@ -173,8 +173,7 @@ export const pantallas: Pantalla[] = [
     criterios: ['CA-W01-05'],
     componente: () => import('../views/OfertaError.vue'),
   },
-  // W01-04: el historial de fuentes del asesor (QA 2026-11-10, Q-08); W01-04b, el detalle de una consulta, o de la oferta
-  // que acaba de salir (`/cotizacion/fuentes/oferta`). Solo ASESOR: el cliente no ve las fuentes (Q-07).
+  // W01-04: el historial de fuentes del asesor (QA 2026-11-10, Q-08); W01-04b, el detalle de una consulta. Solo ASESOR: el cliente no ve las fuentes (Q-07).
   {
     id: 'W01-04',
     ruta: '/cotizacion/fuentes',
