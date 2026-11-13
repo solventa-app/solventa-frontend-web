@@ -227,6 +227,8 @@ export const en: Record<Clave, string> = {
   'solicitud.tipoDocumento': 'Document type',
   'direccion.verificada': 'Address verified with Google',
   'direccion.sinVerificar': 'Unverified address: pick a suggestion to validate it',
+  'ciudad.verificada': 'City verified with Google',
+  'ciudad.sinVerificar': 'Unverified city: pick a suggestion to validate it',
   'perfil.preferencias': 'Preferences',
   'perfil.prefIdioma': 'Language',
   'perfil.prefMoneda': 'Currency',

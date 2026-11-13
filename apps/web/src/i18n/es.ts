@@ -227,6 +227,8 @@ export const es = {
   'solicitud.tipoDocumento': 'Tipo de documento',
   'direccion.verificada': 'Dirección verificada con Google',
   'direccion.sinVerificar': 'Dirección sin verificar: elige una sugerencia para validarla',
+  'ciudad.verificada': 'Ciudad verificada con Google',
+  'ciudad.sinVerificar': 'Ciudad sin verificar: elige una sugerencia para validarla',
   'perfil.preferencias': 'Preferencias',
   'perfil.prefIdioma': 'Idioma',
   'perfil.prefMoneda': 'Moneda',
