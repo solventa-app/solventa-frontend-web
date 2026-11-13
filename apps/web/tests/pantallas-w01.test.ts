@@ -13,7 +13,6 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import ConsultandoFuentes from '../src/views/ConsultandoFuentes.vue'
 import ContactarAsesor from '../src/views/ContactarAsesor.vue'
-import DetalleDeFuentes from '../src/views/DetalleDeFuentes.vue'
 import HomeAsesor from '../src/views/HomeAsesor.vue'
 import HomeCliente from '../src/views/HomeCliente.vue'
 import IngresoConRol from '../src/views/IngresoConRol.vue'
@@ -25,7 +24,6 @@ import { useCotizacion } from '../src/composables/useCotizacion'
 import { useSesion } from '../src/composables/useSesion'
 import { crearRutas } from '../src/router'
 import { servidor } from '../src/mocks/node'
-import { formatearFecha } from '../src/utils/formato'
 
 const fetchPrueba: typeof fetch = (url, init) => fetch(new URL(String(url), 'http://localhost'), init)
 
@@ -418,113 +416,6 @@ describe('Pantallas de resultado de oferta', () => {
     expect(wrapper.findAll('button').some((b) => b.text() === 'Reintentar')).toBe(false)
     const enlace = wrapper.findAll('a').find((a) => a.text().includes('Ir a la solicitud'))
     expect(enlace).toBeDefined()
-  })
-})
-
-describe('DetalleDeFuentes (W01-04)', () => {
-  it('muestra con nombre legible los identificadores de fuente que devuelve el BFF real', () => {
-    const cotizacion = useCotizacion(fetchPrueba)
-    cotizacion.reiniciar()
-    Object.assign(cotizacion.estado, {
-      resultado: {
-        id: 'oferta-completa',
-        tipo: 'COMPLETA',
-        prima: { valor: '94680.00', moneda: 'COP' },
-        rangoPrima: null,
-        cobertura: { valor: '200000000', moneda: 'COP' },
-        desgloseScore: [],
-        fuentes: [
-          {
-            id: 'cuentas-bancarias',
-            nombre: 'cuentas-bancarias',
-            origen: 'OPEN_FINANCE',
-            estado: 'OK',
-            capturadoEn: null,
-          },
-          { id: 'afiliacion-pila', nombre: 'afiliacion-pila', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
-        ],
-      },
-    })
-    const wrapper = montar(DetalleDeFuentes, crearRouterDePrueba())
-
-    expect(wrapper.text()).toContain('Cuentas bancarias')
-    expect(wrapper.text()).toContain('Afiliación a seguridad social (PILA)')
-    expect(wrapper.text()).not.toContain('cuentas-bancarias')
-  })
-
-  it('agrupa las fuentes por origen con el nombre real de cada una', () => {
-    const cotizacion = useCotizacion(fetchPrueba)
-    cotizacion.reiniciar()
-    Object.assign(cotizacion.estado, {
-      resultado: {
-        id: 'oferta-completa',
-        tipo: 'COMPLETA',
-        prima: { valor: '48500.00', moneda: 'COP' },
-        rangoPrima: null,
-        cobertura: { valor: '250000000.00', moneda: 'COP' },
-        desgloseScore: [],
-        fuentes: [
-          { id: 'of-1', nombre: 'Cuentas y saldos', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null },
-          { id: 'od-1', nombre: 'Catastro', origen: 'OPEN_DATA', estado: 'FALLO', capturadoEn: null },
-        ],
-      },
-    })
-    const wrapper = montar(DetalleDeFuentes, crearRouterDePrueba())
-
-    expect(wrapper.text()).toContain('Cuentas y saldos')
-    expect(wrapper.text()).toContain('Catastro')
-    expect(wrapper.text()).toContain('No disponible')
-  })
-
-  // CA-W01-06 pide explícitamente "5 filas (2 Open Finance + 3 Open Data)" (ver comentario de
-  // cabecera del componente): la prueba de arriba solo pasaba 2 fuentes de muestra, así que nunca
-  // verificaba el conteo real ni la insignia/fecha de cada fila. Esta reproduce la forma real de
-  // `fuentes()` en src/mocks/handlers.ts (caso "degradada": una fuente CACHE con fecha y una FALLO).
-  it('CA-W01-06: muestra las 5 filas reales (2 Open Finance + 3 Open Data) con su insignia de estado y fecha', () => {
-    const cotizacion = useCotizacion(fetchPrueba)
-    cotizacion.reiniciar()
-    const capturadoEn = '2026-09-12T10:41:00.000Z'
-    Object.assign(cotizacion.estado, {
-      resultado: {
-        id: 'oferta-completa',
-        tipo: 'COMPLETA',
-        prima: { valor: '48500.00', moneda: 'COP' },
-        rangoPrima: null,
-        cobertura: { valor: '250000000.00', moneda: 'COP' },
-        desgloseScore: [],
-        fuentes: [
-          { id: 'of-1', nombre: 'Cuentas y saldos', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null },
-          { id: 'of-2', nombre: 'Historial crediticio', origen: 'OPEN_FINANCE', estado: 'CACHE', capturadoEn },
-          { id: 'od-1', nombre: 'Catastro', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
-          { id: 'od-2', nombre: 'Registro de propiedad', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
-          { id: 'od-3', nombre: 'Indicadores de la zona', origen: 'OPEN_DATA', estado: 'FALLO', capturadoEn: null },
-        ],
-      },
-    })
-    const wrapper = montar(DetalleDeFuentes, crearRouterDePrueba())
-
-    const secciones = wrapper.findAll('section')
-    expect(secciones).toHaveLength(2)
-    expect(secciones[0].text()).toContain('Open Finance')
-    expect(secciones[1].text()).toContain('Open Data')
-    expect(secciones[0].findAll('li')).toHaveLength(2)
-    expect(secciones[1].findAll('li')).toHaveLength(3)
-    expect(wrapper.findAll('section li')).toHaveLength(5)
-
-    expect(wrapper.text()).toContain('Cuentas y saldos')
-    expect(wrapper.text()).toContain('Historial crediticio')
-    expect(wrapper.text()).toContain('Catastro')
-    expect(wrapper.text()).toContain('Registro de propiedad')
-    expect(wrapper.text()).toContain('Indicadores de la zona')
-
-    // 3 fuentes OK ("Consultado en línea"), 1 CACHE ("Usando último valor cacheado") y 1 FALLO
-    // ("No disponible"): el conteo exacto, no solo la presencia de alguna insignia.
-    expect(wrapper.text().match(/Consultado en línea/g)).toHaveLength(3)
-    expect(wrapper.text()).toContain('Usando último valor cacheado')
-    expect(wrapper.text()).toContain('No disponible')
-
-    // Solo la fuente CACHE trae `capturadoEn`: es la única fila con fecha visible.
-    expect(wrapper.text()).toContain(formatearFecha(capturadoEn))
   })
 })
 

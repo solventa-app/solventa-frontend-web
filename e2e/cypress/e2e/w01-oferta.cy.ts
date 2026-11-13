@@ -137,12 +137,10 @@ describe('HU-W01 · Detalle de fuentes desde la oferta (asesor)', () => {
       cy.contains('a', 'Ver detalle de fuentes consultadas').click()
     })
 
-    cy.location('pathname').should('eq', '/cotizacion/fuentes/oferta')
-    cy.get('[data-pantalla="W01-04b"]').within(() => {
-      cy.contains('h2', 'Open Finance').should('exist')
-      cy.contains('h2', 'Open Data').should('exist')
-      cy.get('section li').should('have.length', 5)
-    })
+    // El enlace abre el historial del asesor (una fila por cotización), no «la última oferta»: ya no hay detalle en memoria.
+    cy.location('pathname').should('eq', '/cotizacion/fuentes')
+    cy.location('search').should('eq', '?lista=1')
+    cy.get('[data-pantalla="W01-04"]').should('exist')
 
     // La cotización quedó en el historial (Q-08): con una sola consulta, la opción del inicio abre directo su detalle.
     cy.window().then((win) => irARuta(win, '/asesor'))

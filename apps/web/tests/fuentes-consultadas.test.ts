@@ -6,6 +6,7 @@ import { useConsultaFuentes, useConsultasFuentes } from '../src/composables/useC
 import { useCotizacion } from '../src/composables/useCotizacion'
 import { useSesion } from '../src/composables/useSesion'
 import type { ConsultaFuentes } from '../src/graphql/tipos'
+import { formatearFecha } from '../src/utils/formato'
 import DetalleDeFuentes from '../src/views/DetalleDeFuentes.vue'
 import FuentesConsultadas from '../src/views/FuentesConsultadas.vue'
 
@@ -227,6 +228,31 @@ describe('W01-04b · DetalleDeFuentes', () => {
     expect(w.text()).toContain('Cuentas bancarias')
     expect(w.text()).toContain('Usando último valor cacheado')
     expect(w.text()).toContain('No disponible')
+    w.unmount()
+  })
+
+  // CA-W01-06 pide «5 filas (2 Open Finance + 3 Open Data)» con su insignia y su fecha: salen de la consulta, no de la
+  // última oferta en memoria.
+  it('CA-W01-06: muestra las 5 filas reales (2 Open Finance + 3 Open Data) con su insignia de estado y fecha', async () => {
+    const capturadoEn = '2026-09-12T10:41:00.000Z'
+    const cinco = consulta(1, {
+      fuentes: [
+        { id: 'of-1', nombre: 'Cuentas y saldos', origen: 'OPEN_FINANCE', estado: 'OK', capturadoEn: null },
+        { id: 'of-2', nombre: 'Historial crediticio', origen: 'OPEN_FINANCE', estado: 'CACHE', capturadoEn },
+        { id: 'od-1', nombre: 'Catastro', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+        { id: 'od-2', nombre: 'Registro de propiedad', origen: 'OPEN_DATA', estado: 'OK', capturadoEn: null },
+        { id: 'od-3', nombre: 'Indicadores de la zona', origen: 'OPEN_DATA', estado: 'FALLO', capturadoEn: null },
+      ],
+    })
+    const { w } = await montar('/cotizacion/fuentes/c-1', [cinco])
+    const secciones = w.findAll('section')
+    expect(secciones).toHaveLength(2)
+    expect(secciones[0].findAll('li')).toHaveLength(2)
+    expect(secciones[1].findAll('li')).toHaveLength(3)
+    expect(w.text().match(/Consultado en línea/g)).toHaveLength(3)
+    expect(w.text()).toContain('Usando último valor cacheado')
+    expect(w.text()).toContain('No disponible')
+    expect(w.text()).toContain(formatearFecha(capturadoEn))
     w.unmount()
   })
 

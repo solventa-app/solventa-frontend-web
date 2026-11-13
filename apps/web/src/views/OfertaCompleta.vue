@@ -130,7 +130,7 @@ async function firmar() {
         </template>
         <RouterLink
           v-if="sesion.rol !== 'CLIENTE'"
-          to="/cotizacion/fuentes/oferta"
+          to="/cotizacion/fuentes?lista=1"
           class="text-[13px] font-semibold leading-[18px] text-enlace hover:underline"
         >
           {{ t('comun.verFuentes') }}
