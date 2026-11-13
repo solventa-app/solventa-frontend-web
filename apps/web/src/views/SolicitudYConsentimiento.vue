@@ -327,14 +327,15 @@ function enviar() {
               :error="intentoEnvio && errores.kilometrajeAnual ? t(errores.kilometrajeAnual) : undefined"
               required
             />
-            <CampoFormulario
+            <!-- Sugiere ciudades con Places (sin clave, o si Google no carga, es un campo de texto). -->
+            <CampoDireccion
               v-model="captura.ciudadCirculacion"
+              tipo="ciudad"
               :label="t('solicitud.ciudad')"
               :placeholder="t('solicitud.ciudadEjemplo')"
-              icono="location_on"
+              :pais="pais"
               data-prueba="ciudad"
               :error="intentoEnvio && errores.ciudadCirculacion ? t(errores.ciudadCirculacion) : undefined"
-              required
             />
             <CampoSeleccion
               v-model="captura.uso"

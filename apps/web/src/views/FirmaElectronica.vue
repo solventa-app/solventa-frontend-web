@@ -28,6 +28,8 @@ const paso = ref<PasoEnlace | null | 'cargando'>('cargando')
 const urlPdf = ref<string | null>(null)
 const firma = ref<FirmaCapturada | null>(null)
 const documento = computed(() => estado.enlace?.documento ?? null)
+// El texto del contrato sigue al producto de la propuesta (HU-W03 con la póliza de auto, v0.42).
+const producto = computed(() => estado.enlace?.propuesta?.producto ?? 'VIDA_DEUDOR')
 const puedeFirmar = computed(() => !!firma.value && estado.aceptaTerminos)
 
 async function abrir() {
@@ -87,7 +89,7 @@ onBeforeUnmount(() => {
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div class="flex flex-col gap-1">
             <h1 class="text-[24px] font-bold text-tinta">{{ t('firma.titulo') }}</h1>
-            <p class="text-[13px] text-tinta-suave">{{ t('firma.subtitulo') }}</p>
+            <p class="text-[13px] text-tinta-suave">{{ t(`firma.subtitulo.${producto}`) }}</p>
           </div>
           <span
             class="inline-flex items-center gap-1.5 rounded-md bg-info-fondo px-3 py-1.5 text-[12px] font-medium text-info"
@@ -102,7 +104,7 @@ onBeforeUnmount(() => {
             <div class="flex items-start gap-3">
               <IconoMaterial nombre="description" class="mt-0.5 h-6 w-6 text-tinta" />
               <div class="flex flex-col">
-                <h2 class="text-[16px] font-semibold text-tinta">{{ t('firma.contrato') }}</h2>
+                <h2 class="text-[16px] font-semibold text-tinta">{{ t(`firma.contrato.${producto}`) }}</h2>
                 <span class="text-[12px] text-tinta-suave">
                   {{ t('firma.version', { version: documento.version }) }}
                 </span>
@@ -117,7 +119,7 @@ onBeforeUnmount(() => {
           <iframe
             v-if="urlPdf"
             :src="urlPdf"
-            :title="t('firma.contrato')"
+            :title="t(`firma.contrato.${producto}`)"
             data-prueba="contrato-pdf"
             class="h-[420px] w-full rounded border border-borde"
           />

@@ -7,7 +7,7 @@
 //    direcciones, en el historial ni en una captura de pantalla. Si el cliente recarga, vuelve a abrir el enlace.
 // 2. `sessionStorage` (`solventa.enlaceFirma`) se usa SOLO como puente del viaje a la pasarela, que sale de la web
 //    y vuelve con `?sesion=`: se escribe justo antes de salir, con su vencimiento, y se lee UNA vez al volver
-//    (`/pago/retorno`) y se borra en el acto. Si venció (30 min del enlace o 15 min desde que se escribió), se descarta.
+//    (`/pago/retorno`, o cualquier página del enlace si se volvió con «Atrás» sin pagar) y se borra en el acto. Si venció (30 min del enlace o 15 min desde que se escribió), se descarta.
 // 3. Se borra también al emitir la póliza, si el enlace venció y con `olvidarEnlace()`; el navegador lo borra al
 //    cerrar la pestaña.
 // 4. Nunca va a `localStorage`, a un log, a la consola ni a la URL de una petición.
@@ -36,7 +36,7 @@ const VIDA_MAXIMA_PUENTE_MS = 15 * 60_000
 const FORMATO_TOKEN = /^[A-Za-z0-9_-]{4,256}$/
 
 const CAMPOS_PROPUESTA = `id ofertaId estado prima { valor moneda } cobertura { valor moneda } plazoMeses polizaId
-  actualizadoEn motivoEstado mensajeEstado accionSugerida`
+  actualizadoEn motivoEstado mensajeEstado accionSugerida producto`
 const CAMPOS_POLIZA = `id numero estado vigenciaDesde vigenciaHasta prima { valor moneda } cobertura { valor moneda } documentoUrl`
 const CAMPOS_FIRMA = `propuestaId firmadaEn referencia estado`
 
@@ -413,7 +413,9 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     // Una página `/propuestas/:propuestaId/firma…` es el recorrido del cliente en su sesión; la de `/firma` usa el enlace.
     const propuestaId = router.currentRoute.value.params.propuestaId
     usarPropuestaDeSesion(typeof propuestaId === 'string' ? propuestaId : null)
-    if (!propuestaSesion) tomarTokenDelFragmento()
+    // Sin token en memoria ni en la URL (se volvió de la pasarela con «Atrás» y la página se cargó de nuevo) se recupera
+    // del puente del viaje a la pasarela, que se lee una vez y se borra, igual que en el retorno.
+    if (!propuestaSesion && !tomarTokenDelFragmento()) tomarTokenDelPuente()
     const paso = await cargar()
     // Vencido: cada página muestra el estado vacío ahí mismo, sin navegar.
     if (paso && paso !== 'vencido' && !pasosPropios.includes(paso)) await router.replace(rutaDelPaso(paso))

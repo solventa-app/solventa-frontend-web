@@ -1,13 +1,12 @@
 <!--
   W01-04b · Detalle de fuentes consultadas (Figma "Solventa-web-Final", nodo 2001:1412). CA-W01-06.
 
-  Dos orígenes, según la ruta `/cotizacion/fuentes/:consultaId`:
-  - `oferta`: la oferta que acaba de salir (en memoria; el enlace de la oferta). Sin ella, vuelve al historial.
-  - un id: una consulta del historial del asesor (`consultaFuentes`, QA 2026-11-10 Q-08), con su fecha y el documento
-    enmascarado. Una ajena o inexistente responde «No encontramos esta consulta».
-  Las 5 fuentes (2 Open Finance + 3 Open Data) salen de las fuentes de la oferta o de la consulta, no de los nombres de
-  ejemplo del prototipo. Se omite la hora de consulta del prototipo (no está en el contrato); la fecha del
-  consentimiento solo se muestra con la oferta en memoria (`Consentimiento.otorgadoEn`).
+  Siempre es una consulta del historial del asesor (`/cotizacion/fuentes/:consultaId`, `consultaFuentes`, QA 2026-11-10
+  Q-08), con su fecha y el documento enmascarado. Una ajena o inexistente responde «No encontramos esta consulta».
+  Ya no hay un detalle de «la última oferta en memoria»: cada cotización tiene su fila y su detalle, y el enlace
+  `/cotizacion/fuentes/oferta` (marcadores viejos) lleva al historial.
+  Las 5 fuentes (2 Open Finance + 3 Open Data) salen de la consulta, no de los nombres de ejemplo del prototipo. Se omite
+  la hora de consulta del prototipo (no está en el contrato).
   Pendiente: los tooltips de ayuda junto a OPEN FINANCE/OPEN DATA (nodos 2001:1447/1483) y el ícono
   propio de cada fila.
 -->
@@ -17,7 +16,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useConsultaFuentes } from '../composables/useConsultasFuentes'
-import { esOferta, useCotizacion } from '../composables/useCotizacion'
 import { useSesion } from '../composables/useSesion'
 import type { FuenteConsultada, OrigenFuente } from '../graphql/tipos'
 import { t } from '../i18n'
@@ -26,20 +24,16 @@ import { nombreFuente } from '../utils/nombres'
 
 const route = useRoute()
 const router = useRouter()
-const { estado } = useCotizacion()
 const { rutaInicio } = useSesion()
 const { estado: consulta, cargar } = useConsultaFuentes()
 
-// `oferta` (o sin parámetro): la oferta en memoria. Cualquier otro valor es el id de una consulta del historial.
+// El id de la consulta del historial. `oferta` (o sin parámetro) es un enlace viejo: se manda al historial.
 const idConsulta = computed(() => {
   const id = route.params.consultaId
   return typeof id === 'string' && id !== 'oferta' ? id : null
 })
-const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : null))
-const fuentes = computed<FuenteConsultada[]>(() =>
-  idConsulta.value ? (consulta.consulta?.fuentes ?? []) : (oferta.value?.fuentes ?? []),
-)
-const hayDatos = computed(() => (idConsulta.value ? consulta.consulta !== null : oferta.value !== null))
+const fuentes = computed<FuenteConsultada[]>(() => consulta.consulta?.fuentes ?? [])
+const hayDatos = computed(() => consulta.consulta !== null)
 
 const GRUPOS: { origen: OrigenFuente; titulo: string; icono: 'verified_user' | 'shield' }[] = [
   { origen: 'OPEN_FINANCE', titulo: 'Open Finance', icono: 'verified_user' },
@@ -53,17 +47,8 @@ const grupos = computed(() =>
 
 onMounted(() => {
   if (idConsulta.value) void cargar(idConsulta.value)
-  // Sin la oferta en memoria (se recargó la página) no hay qué mostrar aquí: el historial la tiene.
-  else if (!oferta.value) void router.replace('/cotizacion/fuentes')
+  else void router.replace('/cotizacion/fuentes')
 })
-
-const rutaVolver = computed(() => {
-  // `?lista=1` evita que el historial vuelva a saltar al detalle cuando solo hay una consulta.
-  if (idConsulta.value) return '/cotizacion/fuentes?lista=1'
-  if (!oferta.value) return '/cotizacion'
-  return oferta.value.tipo === 'PRELIMINAR' ? '/cotizacion/oferta-preliminar' : '/cotizacion/oferta'
-})
-const textoVolver = computed(() => (idConsulta.value ? t('fuentes.volverHistorial') : t('fuentes.volver')))
 </script>
 
 <template>
@@ -125,19 +110,13 @@ const textoVolver = computed(() => (idConsulta.value ? t('fuentes.volverHistoria
           </ul>
         </section>
 
-        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-borde pt-4">
-          <p class="flex items-center gap-1 text-[11px] text-tinta-suave">
-            <IconoMaterial nombre="lock" class="h-3.5 w-3.5" />
-            <template v-if="!idConsulta && estado.consentimiento">
-              {{ t('fuentes.consentimiento', { fecha: formatearFecha(estado.consentimiento.otorgadoEn) }) }}
-            </template>
-          </p>
+        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-borde pt-4">
           <RouterLink
-            :to="rutaVolver"
+            to="/cotizacion/fuentes?lista=1"
             class="flex items-center gap-2 rounded-sm border border-borde bg-white px-5 py-2.5 text-[13px] font-semibold text-primario hover:bg-fondo"
           >
             <IconoMaterial nombre="arrow_back" class="h-5 w-5" />
-            {{ textoVolver }}
+            {{ t('fuentes.volverHistorial') }}
           </RouterLink>
         </div>
       </div>

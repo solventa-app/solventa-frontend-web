@@ -1,16 +1,37 @@
 <!--
   T19 · Campo de dirección con autocompletado de Google Places, opcional y configurable.
   Con VITE_GOOGLE_PLACES_KEY carga la librería de Places y sugiere direcciones del país indicado; al elegir una
-  emite `lugar` con el place_id. Sin clave, o si Google no carga, es el campo de texto de siempre y la dirección
-  escrita queda «sin verificar»: nunca bloquea la cotización.
+  emite `lugar` con el place_id y `coordenadas` con su latitud y longitud (WGS84). Sin clave, o si Google no carga,
+  es el campo de texto de siempre y lo escrito queda «sin verificar»: nunca bloquea la cotización.
+  `tipo="ciudad"` sugiere ciudades (la ciudad de circulación de la póliza de auto) y deja en el campo solo el nombre.
 -->
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import CampoFormulario from './CampoFormulario.vue'
 import { t } from '../../i18n'
 
-const props = defineProps<{ modelValue: string; label: string; placeholder?: string; error?: string; pais?: string }>()
-const emit = defineEmits<{ 'update:modelValue': [valor: string]; lugar: [placeId: string | null] }>()
+export interface Coordenadas {
+  latitud: number
+  longitud: number
+}
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: string
+    label: string
+    placeholder?: string
+    error?: string
+    pais?: string
+    /** `direccion` (por defecto) sugiere direcciones; `ciudad`, ciudades. */
+    tipo?: 'direccion' | 'ciudad'
+  }>(),
+  { placeholder: undefined, error: undefined, pais: undefined, tipo: 'direccion' },
+)
+const emit = defineEmits<{
+  'update:modelValue': [valor: string]
+  lugar: [placeId: string | null]
+  coordenadas: [valor: Coordenadas | null]
+}>()
 
 const clave = import.meta.env.VITE_GOOGLE_PLACES_KEY as string | undefined
 const verificada = ref(false)
@@ -21,7 +42,12 @@ interface PlacesGlobal {
 }
 interface PlacesAutocomplete {
   addListener: (evento: string, fn: () => void) => void
-  getPlace: () => { place_id?: string; formatted_address?: string }
+  getPlace: () => {
+    place_id?: string
+    formatted_address?: string
+    name?: string
+    geometry?: { location?: { lat: () => number; lng: () => number } }
+  }
 }
 
 function cargarLibreria(): Promise<void> {
@@ -43,16 +69,19 @@ onMounted(async () => {
     await cargarLibreria()
     const google = (window as unknown as { google: PlacesGlobal }).google
     const auto = new google.maps!.places!.Autocomplete(entrada, {
-      types: ['address'],
-      fields: ['place_id', 'formatted_address'],
+      types: [props.tipo === 'ciudad' ? '(cities)' : 'address'],
+      fields: ['place_id', 'formatted_address', 'name', 'geometry'],
       ...(props.pais ? { componentRestrictions: { country: props.pais.toLowerCase() } } : {}),
     })
     auto.addListener('place_changed', () => {
       const lugar = auto.getPlace()
       if (!lugar.place_id) return
       verificada.value = true
-      emit('update:modelValue', lugar.formatted_address ?? entrada.value)
+      const texto = props.tipo === 'ciudad' ? (lugar.name ?? entrada.value) : (lugar.formatted_address ?? entrada.value)
+      emit('update:modelValue', texto)
       emit('lugar', lugar.place_id)
+      const punto = lugar.geometry?.location
+      emit('coordenadas', punto ? { latitud: punto.lat(), longitud: punto.lng() } : null)
     })
   } catch {
     // Google no respondió: se queda el campo de texto.
@@ -63,7 +92,10 @@ function alEscribir(valor: string) {
   verificada.value = false
   emit('update:modelValue', valor)
   emit('lugar', null)
+  emit('coordenadas', null)
 }
+
+const esCiudad = props.tipo === 'ciudad'
 </script>
 
 <template>
@@ -72,9 +104,15 @@ function alEscribir(valor: string) {
       :model-value="modelValue"
       :label="label"
       :placeholder="placeholder"
-      icono="home"
+      :icono="esCiudad ? 'location_on' : 'home'"
       :error="error"
-      :hint="clave ? (verificada ? t('direccion.verificada') : t('direccion.sinVerificar')) : undefined"
+      :hint="
+        clave
+          ? verificada
+            ? t(esCiudad ? 'ciudad.verificada' : 'direccion.verificada')
+            : t(esCiudad ? 'ciudad.sinVerificar' : 'direccion.sinVerificar')
+          : undefined
+      "
       required
       @update:model-value="alEscribir"
     />
