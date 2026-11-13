@@ -36,7 +36,7 @@ const VIDA_MAXIMA_PUENTE_MS = 15 * 60_000
 const FORMATO_TOKEN = /^[A-Za-z0-9_-]{4,256}$/
 
 const CAMPOS_PROPUESTA = `id ofertaId estado prima { valor moneda } cobertura { valor moneda } plazoMeses polizaId
-  actualizadoEn motivoEstado mensajeEstado accionSugerida`
+  actualizadoEn motivoEstado mensajeEstado accionSugerida producto`
 const CAMPOS_POLIZA = `id numero estado vigenciaDesde vigenciaHasta prima { valor moneda } cobertura { valor moneda } documentoUrl`
 const CAMPOS_FIRMA = `propuestaId firmadaEn referencia estado`
 
