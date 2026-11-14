@@ -325,6 +325,31 @@ describe('G-06b · DetallePoliza', () => {
     cliente.w.unmount()
   })
 
+  it('el cliente con una propuesta por firmar o por pagar (también tras un pago fallido) puede continuar', async () => {
+    for (const estado of ['EN_FIRMA', 'FIRMADA', 'PAGO_RECHAZADO', 'PENDIENTE_PAGO'] as const) {
+      const { w } = await montar('CLIENTE', propuesta('p1', { estado, mensajeEstado: null }))
+      const continuar = w.find('[data-prueba="detalle-continuar"]')
+      expect(continuar.exists(), estado).toBe(true)
+      expect(w.find('a[href="/propuestas/p1/firma"]').exists(), estado).toBe(true)
+      w.unmount()
+    }
+  })
+
+  it('en revisión o sin emitir el cliente solo espera: no hay «Continuar»', async () => {
+    for (const estado of ['EN_REVISION', 'NO_EMITIDA', 'ACEPTADA'] as const) {
+      const { w } = await montar('CLIENTE', propuesta('p1', { estado, mensajeEstado: null }))
+      expect(w.find('[data-prueba="detalle-continuar"]').exists(), estado).toBe(false)
+      w.unmount()
+    }
+  })
+
+  it('el asesor no ve «Continuar» (él retoma con «Retomar»)', async () => {
+    const { w } = await montar('ASESOR', propuesta('p1', { estado: 'FIRMADA', mensajeEstado: null }))
+    expect(w.find('[data-prueba="detalle-continuar"]').exists()).toBe(false)
+    expect(w.find('[data-prueba="detalle-retomar"]').exists()).toBe(true)
+    w.unmount()
+  })
+
   it('el mensaje del estado que manda el backend tiene prioridad sobre el genérico', async () => {
     const { w } = await montar(
       'CLIENTE',

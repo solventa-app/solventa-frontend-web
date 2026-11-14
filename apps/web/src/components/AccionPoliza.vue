@@ -1,11 +1,12 @@
 <!--
   La acción de una póliza en G-06, en la fila de la tabla y en la tarjeta del teléfono: «Ver PDF» si está emitida,
-  «Retomar» para el asesor si no, y «En proceso» para el cliente. Detiene el clic para no abrir además el detalle.
+  «Retomar» para el asesor si no, y para el cliente «Continuar» si tiene algo que hacer (firmar o pagar, también tras un
+  pago que falló) o «En proceso» si solo espera. Detiene el clic para no abrir además el detalle.
 -->
 <script setup lang="ts">
 import type { Propuesta } from '../graphql/tipos'
 import { t } from '../i18n'
-import { estadoVisibleDe } from '../utils/estadoPoliza'
+import { estadoVisibleDe, rutaParaContinuar } from '../utils/estadoPoliza'
 import { Boton } from './ui'
 
 defineProps<{ propuesta: Propuesta; esAsesor: boolean; abriendo: boolean }>()
@@ -28,6 +29,9 @@ defineEmits<{ verPdf: [] }>()
     @click.stop
   >
     <Boton variante="secundario">{{ t('polizas.retomar') }}</Boton>
+  </RouterLink>
+  <RouterLink v-else-if="!esAsesor && rutaParaContinuar(propuesta)" :to="rutaParaContinuar(propuesta)!" @click.stop>
+    <Boton variante="secundario" data-prueba="continuar">{{ t('polizas.continuar') }}</Boton>
   </RouterLink>
   <span v-else class="text-[11px] text-tinta-suave">{{ t('polizas.enProceso') }}</span>
 </template>

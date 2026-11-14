@@ -2,7 +2,7 @@
   G-06b · Detalle de la póliza (QA 2026-11-10, Q-09). Lo abre la fila de G-06, o G-06 directamente cuando hay una sola.
   - Sirve al CLIENTE titular y al ASESOR que la aceptó: el BFF filtra por rol. El titular solo lo ve el asesor.
   - Prima y cobertura convertidas a la moneda de consulta (D-2); el PDF firmado conserva su moneda.
-  - Si no está emitida explica el estado; el asesor puede retomarla, el cliente continúa con su enlace.
+  - Si no está emitida explica el estado; el asesor puede retomarla y el cliente continuar (firmar o pagar) si le toca.
   - Se mantiene al día con el aviso `propuesta` del SSE mientras la pestaña está visible.
 -->
 <script setup lang="ts">
@@ -16,7 +16,7 @@ import { useDetallePoliza } from '../composables/useDetallePoliza'
 import { montoVisible } from '../composables/useMoneda'
 import { useSesion } from '../composables/useSesion'
 import { t } from '../i18n'
-import { estadoVisibleDe } from '../utils/estadoPoliza'
+import { estadoVisibleDe, rutaParaContinuar } from '../utils/estadoPoliza'
 import { formatearFecha, formatearFechaCorta } from '../utils/formato'
 
 const route = useRoute()
@@ -174,6 +174,9 @@ onUnmounted(() => {
           </Boton>
           <RouterLink v-else-if="esAsesor && visible !== 'EMITIDA'" :to="`/suscripcion/${propuesta.ofertaId}`">
             <Boton variante="secundario" data-prueba="detalle-retomar">{{ t('polizas.retomar') }}</Boton>
+          </RouterLink>
+          <RouterLink v-else-if="!esAsesor && rutaParaContinuar(propuesta)" :to="rutaParaContinuar(propuesta)!">
+            <Boton data-prueba="detalle-continuar">{{ t('polizas.continuar') }}</Boton>
           </RouterLink>
         </div>
       </section>
