@@ -19,6 +19,7 @@ import {
   HeaderPantalla,
   MigasDePan,
   Paginador,
+  TablaEsqueleto,
 } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useSiniestros } from '../composables/useSiniestros'
@@ -147,9 +148,16 @@ onMounted(() => void cargarSiniestros())
           </Chip>
         </div>
 
-        <p v-if="estado.cargando" role="status" class="text-[13px] text-tinta-suave">
-          {{ t('siniestros.bandeja.cargando') }}
-        </p>
+        <TablaEsqueleto
+          v-if="estado.cargando"
+          :etiqueta="t('siniestros.bandeja.cargando')"
+          :encabezados="[
+            t('siniestros.bandeja.cliente'),
+            t('siniestros.bandeja.fecha'),
+            t('siniestros.bandeja.estado'),
+            t('siniestros.bandeja.acciones'),
+          ]"
+        />
 
         <div
           v-else-if="estado.error"

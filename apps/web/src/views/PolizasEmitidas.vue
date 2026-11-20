@@ -15,7 +15,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AccionPoliza from '../components/AccionPoliza.vue'
 import InsigniaEstadoPoliza from '../components/InsigniaEstadoPoliza.vue'
-import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from '../components/ui'
+import { Boton, FooterPantalla, HeaderPantalla, Paginador, TablaEsqueleto, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
 import { montoVisible } from '../composables/useMoneda'
@@ -116,7 +116,19 @@ onUnmounted(() => {
         {{ t('polizas.volver') }}
       </RouterLink>
 
-      <p v-if="estado.cargando" class="text-[13px] text-tinta-suave">{{ t('polizas.cargando') }}</p>
+      <TablaEsqueleto
+        v-if="estado.cargando"
+        :etiqueta="t('polizas.cargando')"
+        :encabezados="[
+          ...(esAsesor ? [t('polizas.titular')] : []),
+          t('polizas.poliza'),
+          t('polizas.prima'),
+          t('polizas.cobertura'),
+          t('polizas.estado'),
+          t('polizas.actualizada'),
+          t('polizas.acciones'),
+        ]"
+      />
       <p v-else-if="estado.error" role="alert" class="text-[13px] text-error">{{ estado.error }}</p>
 
       <template v-else>

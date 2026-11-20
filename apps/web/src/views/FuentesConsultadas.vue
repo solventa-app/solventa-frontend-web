@@ -10,7 +10,15 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Boton, FooterPantalla, HeaderPantalla, MigasDePan, Paginador, TituloPantalla } from '../components/ui'
+import {
+  Boton,
+  FooterPantalla,
+  HeaderPantalla,
+  MigasDePan,
+  Paginador,
+  TablaEsqueleto,
+  TituloPantalla,
+} from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { TAMANO_PAGINA_CONSULTAS, useConsultasFuentes } from '../composables/useConsultasFuentes'
 import { useSesion } from '../composables/useSesion'
@@ -53,7 +61,16 @@ const abrir = (c: ConsultaFuentes) => void router.push(detalle(c))
     <TituloPantalla class="sr-only">{{ t('fuentes.historial.titulo') }}</TituloPantalla>
     <main class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto bg-fondo px-4 py-6 sm:px-10">
       <div class="flex w-full max-w-[960px] flex-col gap-5">
-        <p v-if="estado.cargando" class="text-[13px] text-tinta-suave">{{ t('fuentes.historial.cargando') }}</p>
+        <TablaEsqueleto
+          v-if="estado.cargando"
+          :etiqueta="t('fuentes.historial.cargando')"
+          :encabezados="[
+            t('fuentes.historial.fecha'),
+            t('fuentes.historial.documento'),
+            t('fuentes.historial.oferta'),
+            t('fuentes.historial.fuentes'),
+          ]"
+        />
         <p v-else-if="estado.error" role="alert" class="text-[13px] text-error">{{ estado.error }}</p>
 
         <div
