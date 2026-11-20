@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatearFecha, formatearFechaCorta, formatearMonto } from '../src/utils/formato'
+import { deletrear, formatearFecha, formatearFechaCorta, formatearMonto } from '../src/utils/formato'
 import { cambiarIdioma } from '../src/i18n'
 
 // Hallazgo de QA (MEDIA-ALTA): `formatearFecha`/`formatearMonto` no tenían ninguna prueba unitaria
@@ -107,5 +107,12 @@ describe('formatearFechaCorta', () => {
     } finally {
       cambiarIdioma('ES')
     }
+  })
+})
+
+describe('deletrear (W03-04, KAN-155)', () => {
+  it('separa cada carácter y nombra el guion en el idioma que se le pasa', () => {
+    expect(deletrear('SOL-26', 'guion')).toBe('S O L guion 2 6')
+    expect(deletrear('SOL-26', 'dash')).toBe('S O L dash 2 6')
   })
 })

@@ -6,7 +6,7 @@
 -->
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
-import BotonCopiar from './BotonCopiar.vue'
+import BotonCopiar from '../BotonCopiar.vue'
 import ModalRegenerar from './ModalRegenerar.vue'
 import { Boton } from '../ui'
 import IconoMaterial from '../ui/IconoMaterial.vue'

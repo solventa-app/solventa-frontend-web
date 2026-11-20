@@ -773,6 +773,8 @@ export const en: Record<Clave, string> = {
   'confirmarFirma.paso1': 'Your electronic signature is recorded as non-repudiation evidence (Law 527 of 1999).',
   'confirmarFirma.paso2': "Then you pay the first premium with your card on the payment provider's secure page.",
   'confirmarFirma.paso3': 'Once the payment is confirmed, your policy is issued and we email you the document.',
+  'confirmarFirma.irreversible':
+    'Once you confirm, your signature and the payment authorization are recorded and cannot be undone from the portal.',
   'confirmarFirma.confirmar': 'Yes, sign and authorize the charge',
   'confirmarFirma.firmando': 'Signing…',
   'confirmarFirma.volver': 'Back to the contract',
@@ -805,6 +807,7 @@ export const en: Record<Clave, string> = {
   'polizaEmitida.header': 'Policy issued',
   'polizaEmitida.titulo': 'Your policy was issued',
   'polizaEmitida.numero': 'Policy no.: {numero}',
+  'polizaEmitida.numeroCorto': 'policy number',
   'polizaEmitida.fechas': 'Issued on {emitida} · Coverage from {desde}',
   'polizaEmitida.verMisPolizas': 'View my policies',
   'polizaEmitida.descargar': 'Download document',
@@ -832,10 +835,11 @@ export const en: Record<Clave, string> = {
     'Restricted channel for authorized partners. Every request is logged for technical audit.',
 
   // HU-W07 · Panel del socio (W07-02).
-  'socios.copiar.boton': 'Copy',
-  'socios.copiar.listo': 'Copied',
-  'socios.copiar.fallo': "Couldn't copy",
-  'socios.copiar.etiqueta': 'Copy {dato}',
+  'comun.copiar.boton': 'Copy',
+  'comun.copiar.listo': 'Copied',
+  'comun.copiar.fallo': "Couldn't copy",
+  'comun.copiar.etiqueta': 'Copy {dato}',
+  'comun.guion': 'dash',
   'socios.entorno.PRODUCCION': 'Production',
   'socios.entorno.PRUEBAS': 'Sandbox',
   'socios.panel.titulo': 'Partner dashboard',
