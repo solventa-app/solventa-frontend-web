@@ -16,6 +16,7 @@ import { olvidarEnlace } from '../src/composables/useEnlaceFirma'
 import { useSesion } from '../src/composables/useSesion'
 import { cambiarMoneda, moneda, usarConversor } from '../src/composables/useMoneda'
 import { useSuscripcion } from '../src/composables/useSuscripcion'
+import { cambiarIdioma } from '../src/i18n'
 import { crearRutas } from '../src/router'
 import { servidor } from '../src/mocks/node'
 import { CODIGO_DEMO, restablecerSuscripcionDePrueba } from '../src/mocks/suscripcion'
@@ -294,12 +295,86 @@ describe('Páginas del enlace (sin sesión)', () => {
     expect(w.text()).not.toMatch(/biom[eé]trica|segundo plano/)
   })
 
+  /** Firma en W03-02 con el enlace de demostración y monta W03-02b con la firma en memoria. */
+  async function llegarAConfirmar() {
+    window.location.hash = '#t=demo'
+    const firma = await montar(FirmaElectronica, '/firma')
+    await (await boton(firma.w, 'modo-NOMBRE')).trigger('click')
+    await firma.w.get('[data-componente="firma-tres-modos"] input').setValue('Carlos Restrepo Gómez')
+    await (await boton(firma.w, 'acepta-terminos')).setValue(true)
+    await (await boton(firma.w, 'firmar')).trigger('click')
+    await esperar(() => firma.router.currentRoute.value.path === '/firma/confirmar')
+    return montar(ConfirmarFirma, '/firma/confirmar')
+  }
+
+  it('W03-02b dice que la acción no se puede deshacer, antes de los botones', async () => {
+    const { w } = await llegarAConfirmar()
+    const aviso = await boton(w, 'aviso-irreversible')
+    expect(aviso.text()).toContain('no se pueden deshacer desde el portal')
+    const confirmar = w.get('[data-prueba="confirmar-firma"]').element
+    expect(aviso.element.compareDocumentPosition(confirmar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('W03-02b dice en inglés que la acción no se puede deshacer', async () => {
+    cambiarIdioma('EN')
+    try {
+      const { w } = await llegarAConfirmar()
+      expect((await boton(w, 'aviso-irreversible')).text()).toContain('cannot be undone from the portal')
+    } finally {
+      cambiarIdioma('ES')
+    }
+  })
+
   it('W03-04 muestra el número de la póliza y no tiene «Ir al inicio»', async () => {
     window.location.hash = '#t=emitido'
     const { w } = await montar(PolizaEmitida, '/firma/poliza')
     expect((await boton(w, 'numero-poliza')).text()).toMatch(/SOL-\d{4}-\d{6}/)
     expect(w.text()).not.toContain('Ir al inicio')
     expect(w.text()).not.toContain('Ver detalle de fuentes')
+  })
+
+  describe('W03-04 · número de póliza copiable y deletreado (KAN-155)', () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    function portapapeles(writeText: (texto: string) => Promise<void>) {
+      vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    }
+
+    it('el lector de pantalla lo lee carácter por carácter y lo visible no cambia', async () => {
+      window.location.hash = '#t=emitido'
+      const { w } = await montar(PolizaEmitida, '/firma/poliza')
+      const numero = await boton(w, 'numero-poliza')
+      const visible = numero.get('[aria-hidden="true"]')
+      expect(visible.text()).toMatch(/^N\.º de póliza: SOL-\d{4}-\d{6}$/)
+      const deletreado = numero.get('[data-prueba="numero-poliza-deletreado"]')
+      expect(deletreado.classes()).toContain('sr-only')
+      expect(deletreado.text()).toMatch(/^N\.º de póliza: S O L guion( \d){4} guion( \d){6}$/)
+    })
+
+    it('«Copiar» copia solo el número y avisa «Copiado»', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      portapapeles(writeText)
+      window.location.hash = '#t=emitido'
+      const { w } = await montar(PolizaEmitida, '/firma/poliza')
+      const copiar = await boton(w, 'copiar-numero')
+      expect(copiar.attributes('aria-label')).toBe('Copiar número de póliza')
+
+      await copiar.trigger('click')
+      await flushPromises()
+      expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^SOL-\d{4}-\d{6}$/))
+      expect(copiar.get('[aria-live="polite"]').text()).toBe('Copiado')
+    })
+
+    it('si el navegador no deja copiar, lo dice', async () => {
+      portapapeles(vi.fn().mockRejectedValue(new Error('sin permiso')))
+      window.location.hash = '#t=emitido'
+      const { w } = await montar(PolizaEmitida, '/firma/poliza')
+      const copiar = await boton(w, 'copiar-numero')
+
+      await copiar.trigger('click')
+      await flushPromises()
+      expect(copiar.text()).toContain('No se pudo copiar')
+    })
   })
 
   it('el retorno sin token ni puente pide abrir de nuevo el enlace', async () => {

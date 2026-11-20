@@ -7,6 +7,8 @@
     (p. ej. tras recargar), vuelve a W03-02.
   - Errores de la firma: contrato actualizado → vuelve a W03-02; servicio de firma caído → «Reintentar» (nunca un 5xx,
     CA-W03-05); propuesta en otro paso → la retoma.
+  - Antes de los botones dice que la firma y la autorización del cobro no se pueden deshacer desde el portal (criterio
+    de KAN-172).
 -->
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
@@ -82,6 +84,12 @@ async function confirmar() {
         <li>{{ t('confirmarFirma.paso2') }}</li>
         <li>{{ t('confirmarFirma.paso3') }}</li>
       </ul>
+
+      <!-- KAN-172 («Retroalimentación»): se declara que no se puede deshacer, como texto y antes de los botones. -->
+      <p data-prueba="aviso-irreversible" class="flex items-start gap-2 text-[13px] font-semibold text-tinta">
+        <IconoMaterial nombre="info" class="h-4 w-4 shrink-0 text-alerta" aria-hidden="true" />
+        {{ t('confirmarFirma.irreversible') }}
+      </p>
 
       <div
         v-if="errorFirma || estado.error"
