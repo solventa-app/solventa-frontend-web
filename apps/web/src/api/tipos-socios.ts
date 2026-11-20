@@ -329,7 +329,7 @@ export interface paths {
         };
         /**
          * Consumo por API y presupuesto de cotizaciones
-         * @description Del entorno del token. Sin fechas: los últimos 30 días.
+         * @description Del entorno del token. Sin fechas: los últimos 30 días. Desde v0.55: los días son los de Colombia (`America/Bogota`), el rango va hasta 366 días (si no, 422) y no cuentan las consultas de la cuenta (`/v1/consumo`, `/v1/estado`, `/v1/ventas` y `/v1/credenciales`), que el portal lee al abrirse. Un 422 por un cuerpo inválido sí cuenta (con un token válido).
          */
         get: operations["consumo"];
         put?: never;
@@ -424,7 +424,7 @@ export interface components {
         /** @description Error controlado. Nunca un 5xx crudo (regla 4): ante una falla interna se responde 503 con este cuerpo, `puedeReintentar = true` y `Retry-After`. */
         ErrorPublico: {
             /** @enum {string} */
-            codigo: "CREDENCIALES_INVALIDAS" | "TOKEN_INVALIDO" | "PROHIBIDO" | "NO_ENCONTRADO" | "DATOS_INVALIDOS" | "CONSENTIMIENTO_NO_VIGENTE" | "OFERTA_NO_ENCONTRADA" | "OFERTA_PRELIMINAR" | "OFERTA_VENCIDA" | "CONTACTO_INVALIDO" | "CODIGO_INVALIDO" | "CODIGO_VENCIDO" | "INTENTOS_AGOTADOS" | "PROPUESTA_NO_VALIDA" | "PRESUPUESTO_AGOTADO" | "SERVICIO_NO_DISPONIBLE";
+            codigo: "CREDENCIALES_INVALIDAS" | "TOKEN_INVALIDO" | "PROHIBIDO" | "NO_ENCONTRADO" | "DATOS_INVALIDOS" | "CONSENTIMIENTO_NO_VIGENTE" | "OFERTA_NO_ENCONTRADA" | "OFERTA_PRELIMINAR" | "OFERTA_VENCIDA" | "CONTACTO_INVALIDO" | "CODIGO_INVALIDO" | "CODIGO_VENCIDO" | "INTENTOS_AGOTADOS" | "PROPUESTA_NO_VALIDA" | "PRESUPUESTO_AGOTADO" | "SERVICIO_NO_DISPONIBLE" | "SOLICITUD_EN_CURSO" | "IDEMPOTENCIA_EN_CONFLICTO";
             /** @description En el idioma de `Accept-Language` (es o en). */
             mensaje: string;
             puedeReintentar: boolean;
@@ -622,7 +622,9 @@ export interface components {
                 consumidas: number;
                 restantes: number;
             };
+            /** @description Una fila por API (el primer tramo de la ruta). Desde v0.55, `cotizaciones-auto` suma en la fila `cotizaciones`, la misma bolsa del presupuesto: sus `llamadas - errores` son las cotizaciones que descontaron presupuesto. Una respuesta repetida por `Idempotency-Key` no cuenta. */
             porApi: components["schemas"]["ConsumoApi"][];
+            /** @description Desde v0.55, un elemento por cada día de `desde` a `hasta` (en orden y con 0 si no hubo llamadas), en días de Colombia. */
             diario: {
                 /** Format: date */
                 fecha: string;
@@ -747,9 +749,20 @@ export interface components {
                 "application/json": components["schemas"]["ErrorPublico"];
             };
         };
+        /** @description El token es válido pero no trae el scope de esta operación (`PROHIBIDO`). Sale antes de descontar presupuesto, entrar al modo prueba o llamar a otro servicio, y cuenta en `/v1/consumo` como error. */
+        SinPermiso: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorPublico"];
+            };
+        };
     };
     parameters: {
         AcceptLanguage: "es" | "en";
+        /** @description Opcional (v0.54). Un valor único por cotización (p. ej. un UUID), de 1 a 255 caracteres visibles. Si el socio reintenta con la misma clave (p. ej. tras un 504 del gateway), recibe la misma respuesta con `Idempotent-Replayed: true`, sin descontar presupuesto ni contar otra llamada en el consumo. Vale 24 horas, por socio, entorno y operación. Mientras la primera sigue en curso responde 409 `SOLICITUD_EN_CURSO`; con otro cuerpo, 422 `IDEMPOTENCIA_EN_CONFLICTO`. Si la cotización falla, la clave se libera y se puede reintentar con ella. */
+        IdempotencyKey: string;
     };
     requestBodies: never;
     headers: never;
@@ -896,6 +909,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description Datos inválidos (`DATOS_INVALIDOS`). */
             422: {
                 headers: {
@@ -931,6 +945,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -948,6 +963,8 @@ export interface operations {
             query?: never;
             header?: {
                 "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                /** @description Opcional (v0.54). Un valor único por cotización (p. ej. un UUID), de 1 a 255 caracteres visibles. Si el socio reintenta con la misma clave (p. ej. tras un 504 del gateway), recibe la misma respuesta con `Idempotent-Replayed: true`, sin descontar presupuesto ni contar otra llamada en el consumo. Vale 24 horas, por socio, entorno y operación. Mientras la primera sigue en curso responde 409 `SOLICITUD_EN_CURSO`; con otro cuerpo, 422 `IDEMPOTENCIA_EN_CONFLICTO`. Si la cotización falla, la clave se libera y se puede reintentar con ella. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
             cookie?: never;
@@ -961,6 +978,8 @@ export interface operations {
             /** @description Oferta COMPLETA o PRELIMINAR. */
             200: {
                 headers: {
+                    /** @description `true` cuando es la respuesta guardada de una `Idempotency-Key` ya usada (v0.54). */
+                    "Idempotent-Replayed"?: "true";
                     [name: string]: unknown;
                 };
                 content: {
@@ -968,16 +987,18 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
-            /** @description Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`). */
+            403: components["responses"]["SinPermiso"];
+            /** @description Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`), o la misma `Idempotency-Key` sigue en curso (`SOLICITUD_EN_CURSO`, con `Retry-After`). */
             409: {
                 headers: {
+                    "Retry-After"?: number;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
-            /** @description Datos inválidos (`DATOS_INVALIDOS`). */
+            /** @description Datos inválidos (`DATOS_INVALIDOS`), o la `Idempotency-Key` ya se usó con otro cuerpo (`IDEMPOTENCIA_EN_CONFLICTO`). */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1004,6 +1025,8 @@ export interface operations {
             query?: never;
             header?: {
                 "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                /** @description Opcional (v0.54). Un valor único por cotización (p. ej. un UUID), de 1 a 255 caracteres visibles. Si el socio reintenta con la misma clave (p. ej. tras un 504 del gateway), recibe la misma respuesta con `Idempotent-Replayed: true`, sin descontar presupuesto ni contar otra llamada en el consumo. Vale 24 horas, por socio, entorno y operación. Mientras la primera sigue en curso responde 409 `SOLICITUD_EN_CURSO`; con otro cuerpo, 422 `IDEMPOTENCIA_EN_CONFLICTO`. Si la cotización falla, la clave se libera y se puede reintentar con ella. */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
             };
             path?: never;
             cookie?: never;
@@ -1017,6 +1040,8 @@ export interface operations {
             /** @description Oferta COMPLETA o PRELIMINAR. */
             200: {
                 headers: {
+                    /** @description `true` cuando es la respuesta guardada de una `Idempotency-Key` ya usada (v0.54). */
+                    "Idempotent-Replayed"?: "true";
                     [name: string]: unknown;
                 };
                 content: {
@@ -1024,16 +1049,18 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
-            /** @description Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`). */
+            403: components["responses"]["SinPermiso"];
+            /** @description Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`), o la misma `Idempotency-Key` sigue en curso (`SOLICITUD_EN_CURSO`, con `Retry-After`). */
             409: {
                 headers: {
+                    "Retry-After"?: number;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
-            /** @description Datos inválidos (`DATOS_INVALIDOS`) o vehículo no asegurable (`VEHICULO_NO_ASEGURABLE`, `VEHICULO_NO_ENCONTRADO`). */
+            /** @description Datos inválidos (`DATOS_INVALIDOS`) o vehículo no asegurable (`VEHICULO_NO_ASEGURABLE`, `VEHICULO_NO_ENCONTRADO`), o la `Idempotency-Key` ya se usó con otro cuerpo (`IDEMPOTENCIA_EN_CONFLICTO`). */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1080,6 +1107,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description `OFERTA_NO_ENCONTRADA`. */
             404: {
                 headers: {
@@ -1133,6 +1161,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1172,6 +1201,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1229,6 +1259,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1282,6 +1313,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1326,6 +1358,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1370,6 +1403,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1405,6 +1439,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description No existe o no es de este socio (`NO_ENCONTRADO`). */
             404: {
                 headers: {
@@ -1440,6 +1475,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1467,6 +1503,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1494,6 +1531,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1520,6 +1558,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
             /** @description Datos inválidos (`DATOS_INVALIDOS`). */
             422: {
                 headers: {
@@ -1553,7 +1592,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
-            /** @description Solo con un token de PRODUCCION (`PROHIBIDO`). */
+            /** @description Sin el scope `cuenta` del token, o solo con un token de PRODUCCION (`PROHIBIDO`). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1588,7 +1627,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["NoAutenticado"];
-            /** @description Solo con un token de PRODUCCION (`PROHIBIDO`). */
+            /** @description Sin el scope `cuenta` del token, o solo con un token de PRODUCCION (`PROHIBIDO`). */
             403: {
                 headers: {
                     [name: string]: unknown;

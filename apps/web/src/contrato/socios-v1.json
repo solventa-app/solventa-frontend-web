@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Solventa · API de socios de distribución",
-    "version": "1.0.0",
-    "description": "API exclusiva para socios que revenden la póliza de Vida Hipotecario (HU-W07, KAN-30). Contrato v0.22 (`contracts/CHANGELOG.md`). Reglas: montos como texto decimal; errores con `ErrorPublico` en es o en; nunca un 5xx crudo; un socio solo ve lo que vendió (404 si no es suyo)."
+    "version": "1.1.0",
+    "description": "API exclusiva para socios que revenden la póliza de Vida Hipotecario (HU-W07, KAN-30). Contrato v0.57 (`contracts/CHANGELOG.md`). Reglas: montos como texto decimal; errores con `ErrorPublico` en es o en; nunca un 5xx crudo; un socio solo ve lo que vendió (404 si no es suyo).\n\n## Scopes (HA-SEG-004, EC025)\n\nEl token de `POST /v1/token` trae el claim `scopes`. Cada operación con token exige uno y responde **403 `PROHIBIDO`** si falta (antes de descontar presupuesto o de cualquier otra cosa). Un token sin el claim, o con un valor que no es una lista de textos, es **401 `TOKEN_INVALIDO`**. Hoy todos los socios reciben los cuatro.\n\n| Scope | Operaciones |\n|---|---|\n| `cotizaciones` | `POST /v1/consentimientos`, `POST /v1/consentimientos/{consentimientoId}/revocar`, `POST /v1/cotizaciones`, `POST /v1/cotizaciones-auto`, `POST /v1/conversiones` |\n| `propuestas` | `POST /v1/propuestas`, `GET /v1/propuestas/{propuestaId}`, `POST /v1/propuestas/{propuestaId}/codigo`, `POST /v1/propuestas/{propuestaId}/codigo/verificar`, `POST /v1/propuestas/{propuestaId}/emitir`, `POST /v1/propuestas/{propuestaId}/reenviar-enlace` |\n| `polizas` | `GET /v1/polizas/{polizaId}`, `GET /v1/polizas/{polizaId}/documento` |\n| `cuenta` | `GET /v1/estado`, `GET /v1/consumo`, `GET /v1/ventas`, `GET /v1/credenciales`, `POST /v1/credenciales/{entorno}/rotar` |\n| — (públicas) | `POST /v1/token`, `GET /v1/.well-known/jwks.json`, `GET /v1/openapi.json`, `GET /v1/docs` |"
   },
   "servers": [
     {
@@ -215,6 +215,9 @@
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           },
@@ -244,7 +247,14 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "cotizaciones"
+            ]
+          }
+        ]
       }
     },
     "/v1/consentimientos/{consentimientoId}/revocar": {
@@ -267,6 +277,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -295,6 +308,13 @@
           {
             "$ref": "#/components/parameters/AcceptLanguage"
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "cotizaciones"
+            ]
+          }
         ]
       }
     },
@@ -314,16 +334,30 @@
                   "$ref": "#/components/schemas/Cotizacion"
                 }
               }
+            },
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "`true` cuando es la respuesta guardada de una `Idempotency-Key` ya usada (v0.54).",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
             }
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           },
           "422": {
-            "description": "Datos inválidos (`DATOS_INVALIDOS`).",
+            "description": "Datos inválidos (`DATOS_INVALIDOS`), o la `Idempotency-Key` ya se usó con otro cuerpo (`IDEMPOTENCIA_EN_CONFLICTO`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -333,11 +367,18 @@
             }
           },
           "409": {
-            "description": "Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`).",
+            "description": "Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`), o la misma `Idempotency-Key` sigue en curso (`SOLICITUD_EN_CURSO`, con `Retry-After`).",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorPublico"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
                 }
               }
             }
@@ -364,6 +405,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
           }
         ],
         "requestBody": {
@@ -375,7 +419,14 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "cotizaciones"
+            ]
+          }
+        ]
       }
     },
     "/v1/cotizaciones-auto": {
@@ -394,16 +445,30 @@
                   "$ref": "#/components/schemas/Cotizacion"
                 }
               }
+            },
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "`true` cuando es la respuesta guardada de una `Idempotency-Key` ya usada (v0.54).",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
             }
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           },
           "422": {
-            "description": "Datos inválidos (`DATOS_INVALIDOS`) o vehículo no asegurable (`VEHICULO_NO_ASEGURABLE`, `VEHICULO_NO_ENCONTRADO`).",
+            "description": "Datos inválidos (`DATOS_INVALIDOS`) o vehículo no asegurable (`VEHICULO_NO_ASEGURABLE`, `VEHICULO_NO_ENCONTRADO`), o la `Idempotency-Key` ya se usó con otro cuerpo (`IDEMPOTENCIA_EN_CONFLICTO`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -413,11 +478,18 @@
             }
           },
           "409": {
-            "description": "Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`).",
+            "description": "Sin consentimiento vigente (`CONSENTIMIENTO_NO_VIGENTE`), o la misma `Idempotency-Key` sigue en curso (`SOLICITUD_EN_CURSO`, con `Retry-After`).",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorPublico"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
                 }
               }
             }
@@ -444,6 +516,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
           }
         ],
         "requestBody": {
@@ -455,7 +530,14 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "cotizaciones"
+            ]
+          }
+        ]
       }
     },
     "/v1/propuestas": {
@@ -478,6 +560,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -528,7 +613,14 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "propuestas"
+            ]
+          }
+        ]
       }
     },
     "/v1/propuestas/{propuestaId}": {
@@ -551,6 +643,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -579,6 +674,13 @@
           {
             "$ref": "#/components/parameters/AcceptLanguage"
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "propuestas"
+            ]
+          }
         ]
       }
     },
@@ -602,6 +704,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -660,7 +765,14 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "propuestas"
+            ]
+          }
+        ]
       }
     },
     "/v1/propuestas/{propuestaId}/codigo/verificar": {
@@ -683,6 +795,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -740,7 +855,14 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "propuestas"
+            ]
+          }
+        ]
       }
     },
     "/v1/propuestas/{propuestaId}/emitir": {
@@ -763,6 +885,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -801,6 +926,13 @@
           {
             "$ref": "#/components/parameters/AcceptLanguage"
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "propuestas"
+            ]
+          }
         ]
       }
     },
@@ -824,6 +956,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -861,6 +996,13 @@
           {
             "$ref": "#/components/parameters/AcceptLanguage"
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "propuestas"
+            ]
+          }
         ]
       }
     },
@@ -884,6 +1026,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -910,6 +1055,13 @@
           },
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "polizas"
+            ]
           }
         ]
       }
@@ -936,6 +1088,9 @@
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           },
@@ -962,6 +1117,13 @@
           {
             "$ref": "#/components/parameters/AcceptLanguage"
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "polizas"
+            ]
+          }
         ]
       }
     },
@@ -986,6 +1148,9 @@
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           }
@@ -1002,6 +1167,13 @@
           },
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "cuenta"
+            ]
           }
         ]
       }
@@ -1027,11 +1199,14 @@
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           }
         },
-        "description": "Del entorno del token. Sin fechas: los últimos 30 días.",
+        "description": "Del entorno del token. Sin fechas: los últimos 30 días. Desde v0.55: los días son los de Colombia (`America/Bogota`), el rango va hasta 366 días (si no, 422) y no cuentan las consultas de la cuenta (`/v1/consumo`, `/v1/estado`, `/v1/ventas` y `/v1/credenciales`), que el portal lee al abrirse. Un 422 por un cuerpo inválido sí cuenta (con un token válido).",
         "parameters": [
           {
             "name": "desde",
@@ -1053,6 +1228,13 @@
           },
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "cuenta"
+            ]
           }
         ]
       }
@@ -1077,6 +1259,9 @@
           },
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
+          },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
           },
           "503": {
             "$ref": "#/components/responses/NoDisponible"
@@ -1104,6 +1289,13 @@
           },
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "cuenta"
+            ]
           }
         ]
       }
@@ -1140,6 +1332,9 @@
           "401": {
             "$ref": "#/components/responses/NoAutenticado"
           },
+          "403": {
+            "$ref": "#/components/responses/SinPermiso"
+          },
           "422": {
             "description": "Datos inválidos (`DATOS_INVALIDOS`).",
             "content": {
@@ -1153,7 +1348,14 @@
           "503": {
             "$ref": "#/components/responses/NoDisponible"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": [
+              "cotizaciones"
+            ]
+          }
+        ]
       }
     },
     "/v1/credenciales": {
@@ -1181,7 +1383,7 @@
             "$ref": "#/components/responses/NoDisponible"
           },
           "403": {
-            "description": "Solo con un token de PRODUCCION (`PROHIBIDO`).",
+            "description": "Sin el scope `cuenta` del token, o solo con un token de PRODUCCION (`PROHIBIDO`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1194,6 +1396,13 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/AcceptLanguage"
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "cuenta"
+            ]
           }
         ]
       }
@@ -1223,7 +1432,7 @@
             "$ref": "#/components/responses/NoDisponible"
           },
           "403": {
-            "description": "Solo con un token de PRODUCCION (`PROHIBIDO`).",
+            "description": "Sin el scope `cuenta` del token, o solo con un token de PRODUCCION (`PROHIBIDO`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1246,6 +1455,13 @@
           {
             "$ref": "#/components/parameters/AcceptLanguage"
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "cuenta"
+            ]
+          }
         ]
       }
     }
@@ -1255,7 +1471,8 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "bearerFormat": "JWT",
+        "description": "JWT ES256 de `POST /v1/token`. Los scopes que pide cada operación van en su `security` (OpenAPI 3.1 los admite en un esquema `http bearer`)."
       }
     },
     "parameters": {
@@ -1270,6 +1487,17 @@
             "en"
           ],
           "default": "es"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "Opcional (v0.54). Un valor único por cotización (p. ej. un UUID), de 1 a 255 caracteres visibles. Si el socio reintenta con la misma clave (p. ej. tras un 504 del gateway), recibe la misma respuesta con `Idempotent-Replayed: true`, sin descontar presupuesto ni contar otra llamada en el consumo. Vale 24 horas, por socio, entorno y operación. Mientras la primera sigue en curso responde 409 `SOLICITUD_EN_CURSO`; con otro cuerpo, 422 `IDEMPOTENCIA_EN_CONFLICTO`. Si la cotización falla, la clave se libera y se puede reintentar con ella.",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
         }
       }
     },
@@ -1293,6 +1521,16 @@
             }
           }
         },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorPublico"
+            }
+          }
+        }
+      },
+      "SinPermiso": {
+        "description": "El token es válido pero no trae el scope de esta operación (`PROHIBIDO`). Sale antes de descontar presupuesto, entrar al modo prueba o llamar a otro servicio, y cuenta en `/v1/consumo` como error.",
         "content": {
           "application/json": {
             "schema": {
@@ -1325,7 +1563,9 @@
               "INTENTOS_AGOTADOS",
               "PROPUESTA_NO_VALIDA",
               "PRESUPUESTO_AGOTADO",
-              "SERVICIO_NO_DISPONIBLE"
+              "SERVICIO_NO_DISPONIBLE",
+              "SOLICITUD_EN_CURSO",
+              "IDEMPOTENCIA_EN_CONFLICTO"
             ]
           },
           "mensaje": {
@@ -2178,7 +2418,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ConsumoApi"
-            }
+            },
+            "description": "Una fila por API (el primer tramo de la ruta). Desde v0.55, `cotizaciones-auto` suma en la fila `cotizaciones`, la misma bolsa del presupuesto: sus `llamadas - errores` son las cotizaciones que descontaron presupuesto. Una respuesta repetida por `Idempotency-Key` no cuenta."
           },
           "diario": {
             "type": "array",
@@ -2198,7 +2439,8 @@
                 "fecha",
                 "llamadas"
               ]
-            }
+            },
+            "description": "Desde v0.55, un elemento por cada día de `desde` a `hasta` (en orden y con 0 si no hubo llamadas), en días de Colombia."
           }
         },
         "required": [
