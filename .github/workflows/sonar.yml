@@ -28,11 +28,11 @@ jobs:
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Historial completo: con un clon superficial Sonar no puede atribuir el código nuevo.
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -45,12 +45,12 @@ jobs:
       # Vitest escribe las rutas relativas a apps/web; Sonar las resuelve desde la raíz del repo.
       - name: Rutas del lcov desde la raíz del repo
         run: sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
-      - uses: SonarSource/sonarqube-scan-action@v6
+      - uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
       # Quality gate, métricas y problemas graves en el resumen del run y como artefacto (informativo).
       - name: Reporte de Sonar
         if: always() && env.SONAR_TOKEN != ''
         run: python3 scripts/reporte_sonar.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always() && env.SONAR_TOKEN != ''
         with:
           name: reporte-sonar
