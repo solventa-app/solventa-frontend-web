@@ -94,6 +94,7 @@ const abrir = (c: ConsultaFuentes) => void router.push(detalle(c))
               data-prueba="tarjeta-consulta"
               class="flex cursor-pointer flex-col gap-2 border-b border-borde p-4"
               @click="abrir(c)"
+              @keydown.enter="abrir(c)"
             >
               <RouterLink
                 :to="detalle(c)"
@@ -139,6 +140,7 @@ const abrir = (c: ConsultaFuentes) => void router.push(detalle(c))
                   data-prueba="fila-consulta"
                   class="cursor-pointer border-b border-borde last:border-b-0 hover:bg-fondo"
                   @click="abrir(c)"
+                  @keydown.enter="abrir(c)"
                 >
                   <td class="py-[18px] pl-4 pr-[14px] text-[13px]">
                     <RouterLink

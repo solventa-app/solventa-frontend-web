@@ -41,7 +41,7 @@ async function abrir() {
 function continuar() {
   if (!puedeFirmar.value) return
   estado.firmaCapturada = firma.value
-  router.push(rutaDe('/confirmar'))
+  void router.push(rutaDe('/confirmar'))
 }
 
 onMounted(abrir)

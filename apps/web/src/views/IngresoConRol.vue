@@ -47,7 +47,7 @@ async function ingresar() {
   error.value = await iniciarSesion(usuario.value.trim(), clave.value)
   ingresando.value = false
   if (error.value) return
-  router.push(rutaDeRegreso() ?? rutaInicio())
+  void router.push(rutaDeRegreso() ?? rutaInicio())
 }
 </script>
 

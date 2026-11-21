@@ -33,7 +33,7 @@ async function pagar() {
   const resultado = await iniciarPago()
   if (!resultado) return
   if (esErrorPago(resultado)) {
-    if (resultado.motivo === 'ENLACE_VENCIDO') router.replace(rutaDe(''))
+    if (resultado.motivo === 'ENLACE_VENCIDO') void router.replace(rutaDe(''))
     else errorPago.value = resultado
     return
   }

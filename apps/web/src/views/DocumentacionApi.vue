@@ -58,15 +58,15 @@ watch(urlGuia, comprobarGuia)
 watch(
   () => panel.estado.sesionVencida,
   (vencida) => {
-    if (vencida) router.replace('/socios/ingreso')
+    if (vencida) void router.replace('/socios/ingreso')
   },
 )
 
 onMounted(() => {
   panel.estado.sesionVencida = false
-  comprobarGuia()
+  void comprobarGuia()
   // Las credenciales dan el nombre del socio tras recargar y las claves para pedir el token de cada Swagger.
-  if (!panel.estado.credenciales) panel.cargarCredenciales()
+  if (!panel.estado.credenciales) void panel.cargarCredenciales()
 })
 </script>
 

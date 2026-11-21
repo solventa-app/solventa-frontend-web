@@ -53,7 +53,7 @@ function teclado(evento: KeyboardEvent, indice: number) {
   const accion = acciones[evento.key]
   if (accion === undefined) return
   evento.preventDefault()
-  mover(indice, accion)
+  void mover(indice, accion)
 }
 </script>
 

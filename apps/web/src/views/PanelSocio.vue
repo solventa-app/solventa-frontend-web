@@ -60,7 +60,7 @@ function etiquetaMes(mes: string): string {
 watch(
   () => estado.sesionVencida,
   (vencida) => {
-    if (vencida) router.replace('/socios/ingreso')
+    if (vencida) void router.replace('/socios/ingreso')
   },
 )
 
@@ -71,7 +71,7 @@ onMounted(() => {
     const resultado = await convertirMontos(sesion.estado.token ?? '', montos, moneda)
     return resultado.montos
   })
-  cargarTodo()
+  void cargarTodo()
 })
 onBeforeUnmount(() => usarConversor(null))
 </script>

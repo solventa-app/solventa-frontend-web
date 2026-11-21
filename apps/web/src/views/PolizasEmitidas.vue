@@ -178,6 +178,7 @@ onUnmounted(() => {
               data-prueba="tarjeta-poliza"
               class="flex cursor-pointer flex-col gap-3 border-b border-borde p-4"
               @click="abrirDetalle(p)"
+              @keydown.enter="abrirDetalle(p)"
             >
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <RouterLink
@@ -239,6 +240,7 @@ onUnmounted(() => {
                   data-prueba="fila-poliza"
                   class="cursor-pointer border-b border-borde last:border-b-0 hover:bg-fondo"
                   @click="abrirDetalle(p)"
+                  @keydown.enter="abrirDetalle(p)"
                 >
                   <td v-if="esAsesor" class="py-[20px] pl-4 pr-[14px] text-[13px] text-tinta">
                     {{ p.nombreTitular ?? '—' }}

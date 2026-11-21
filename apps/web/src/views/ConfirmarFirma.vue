@@ -33,7 +33,7 @@ const sinEnlace = !hayAcceso()
 
 onMounted(() => {
   // Sin firma en memoria (p. ej. tras recargar) se vuelve a W03-02; sin token, estado vacío aquí mismo.
-  if (!sinEnlace && (!documento.value || !estado.firmaCapturada)) router.replace(rutaDe(''))
+  if (!sinEnlace && (!documento.value || !estado.firmaCapturada)) void router.replace(rutaDe(''))
 })
 
 async function confirmar() {
@@ -41,11 +41,11 @@ async function confirmar() {
   const resultado = await firmar()
   if (!resultado) return // falla técnica: estado.error se muestra con reintento
   if (!esErrorFirma(resultado)) {
-    router.push(rutaDe('/confirmada'))
+    void router.push(rutaDe('/confirmada'))
     return
   }
   if (resultado.motivo === 'VERSION_DOCUMENTO_DESACTUALIZADA' || resultado.motivo === 'PROPUESTA_NO_FIRMABLE') {
-    router.replace(rutaDe(''))
+    void router.replace(rutaDe(''))
     return
   }
   errorFirma.value = resultado
