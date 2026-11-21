@@ -40,7 +40,8 @@ async function arrancar() {
       tracesSampleRate: 0.1,
       // /graphql es relativo (Vercel lo reescribe al gateway): traceparent solo ahí
       tracePropagationTargets: [/^\/graphql/, /^\/v1\/graphql/],
-      replaysSessionSampleRate: 0, // no grabar sesiones normales
+      // Video de la sesión (pedido de felipe, 2026-11-21): en preview todas las sesiones, en producción el 10 %.
+      replaysSessionSampleRate: import.meta.env.VITE_AMBIENTE === 'production' ? 0.1 : 1.0,
       replaysOnErrorSampleRate: 1.0, // sí grabar cuando hay un error
       beforeSend: limpiar,
       beforeBreadcrumb: (b) => (b.category === 'ui.input' ? null : b),

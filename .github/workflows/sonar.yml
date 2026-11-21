@@ -1,10 +1,14 @@
 name: Sonar
 
 # Análisis de calidad en SonarQube Cloud (organización y proyecto en sonar-project.properties), con la
-# cobertura de Vitest. Automático solo en push a develop (la rama principal del repo y del proyecto en Sonar)
-# cuando cambia la web; a mano desde Actions → Run workflow, sobre la rama que se elija (Sonar la registra
-# como análisis de esa rama). Necesita el secreto SONAR_TOKEN.
+# cobertura de Vitest. Automático en PRs hacia develop/release/main (decora el PR y evalúa el quality gate) y en
+# push a develop cuando cambia la web; a mano desde Actions → Run workflow. Al final deja el reporte (quality
+# gate, métricas y problemas graves) en el resumen del run y como artefacto `reporte-sonar`. Necesita el secreto
+# SONAR_TOKEN; los PRs de forks y de Dependabot no reciben secretos y ahí se salta (igual que el repo móvil).
 on:
+  pull_request:
+    branches: [develop, 'release/**', main]
+    paths: ['apps/web/**', 'e2e/**', 'sonar-project.properties', '.github/workflows/sonar.yml', 'scripts/reporte_sonar.py']
   push:
     branches: [develop]
     paths: ['apps/web/**', 'e2e/**', 'sonar-project.properties', '.github/workflows/sonar.yml']
@@ -19,6 +23,7 @@ permissions:
 
 jobs:
   sonar:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -41,3 +46,13 @@ jobs:
       - name: Rutas del lcov desde la raíz del repo
         run: sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
       - uses: SonarSource/sonarqube-scan-action@v6
+      # Quality gate, métricas y problemas graves en el resumen del run y como artefacto (informativo).
+      - name: Reporte de Sonar
+        if: always() && env.SONAR_TOKEN != ''
+        run: python3 scripts/reporte_sonar.py
+      - uses: actions/upload-artifact@v4
+        if: always() && env.SONAR_TOKEN != ''
+        with:
+          name: reporte-sonar
+          path: reporte-sonar.md
+          if-no-files-found: ignore
