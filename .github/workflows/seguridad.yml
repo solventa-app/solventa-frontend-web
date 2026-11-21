@@ -182,6 +182,9 @@ jobs:
           pattern: seguridad-*
           path: resultados
       - name: Consolidar
+        env:
+          # Lo que debió correr en este evento: si falta su resultado, el reporte lo avisa.
+          ESCANEOS_ESPERADOS: secretos,dependencias,sast-semgrep,workflows,headers${{ github.event_name != 'pull_request' && ',dast' || '' }}
         run: python3 scripts/reporte_seguridad.py consolidar resultados reporte-seguridad
       - name: PDF
         # Chrome viene instalado en ubuntu-latest.

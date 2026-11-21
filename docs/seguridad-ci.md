@@ -54,11 +54,14 @@ resultados crudos de cada herramienta quedan en los artefactos `seguridad-*`.
 
 ## Depurar hallazgos
 
-- **Secreto falso (datos de demo o de pruebas):** se agrega su huella (`Fingerprint` del JSON de gitleaks) a
-  `.gitleaksignore`, o se cambia el valor de ejemplo por uno que no parezca una llave real.
+- **Secreto falso (datos de demo o de pruebas):** se agrega una excepción acotada (ruta y patrón) en `.gitleaks.toml`,
+  con su motivo. Hoy hay una: las claves de socio de demo de W07 (`sk_live_…`/`sk_test_…`) en mocks y pruebas.
 - **Dependencia vulnerable:** se sube la versión (Dependabot ya abre muchos de estos PR).
-- **Header faltante:** se agrega en `headers` de `apps/web/vercel.json`. Prueba la CSP primero con
-  `Content-Security-Policy-Report-Only`, para no romper Sentry, el gateway ni los mapas.
+- **Header faltante:** se agrega en `headers` de `apps/web/vercel.json`. Ya están X-Frame-Options (`SAMEORIGIN`, por
+  los PDF en iframe), X-Content-Type-Options, Referrer-Policy y Permissions-Policy; HSTS lo pone Vercel. La CSP va
+  primero en modo reporte (`Content-Security-Policy-Report-Only`): cuando la consola del navegador no muestre
+  violaciones en los flujos principales (Sentry, Google Places, subidas a Storage, PDF, Swagger), se renombra a
+  `Content-Security-Policy`. Los headers llegan a la web cuando `vercel.json` llega a `main` (solo `main` despliega).
 
 Cuando los hallazgos reales estén resueltos, un escaneo puede volverse bloqueante: basta con hacer fallar su job cuando
 haya hallazgos y exigirlo en el ruleset.

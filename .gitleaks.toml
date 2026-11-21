@@ -1,0 +1,14 @@
+# Configuración de gitleaks (seguridad.yml, job `secretos`): las reglas por defecto más excepciones revisadas.
+# Antes de añadir una, confirma que el valor es de demo; nunca se excluye un secreto real (se rota y se borra).
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+# Credenciales de socio de DEMO con forma de llave de Stripe (sk_live_… / sk_test_…), que la regla
+# stripe-access-token confunde con llaves reales. Solo viven en los mocks de MSW y en las pruebas de W07;
+# el backend real nunca las emite así.
+description = "Claves de socio de demo de W07 en mocks y pruebas"
+condition = "AND"
+paths = ['''^(apps/web/src/mocks/|apps/web/tests/|e2e/cypress/)''']
+regexes = ['''sk_(live|test)_[0-9a-f]{20}''']
