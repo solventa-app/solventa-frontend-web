@@ -8,6 +8,7 @@
   - Selector de ventana (15 min, 1 h, 24 h, 7 d) y «Última verificación».
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../ui/TarjetaEsqueleto.vue'
 import { computed } from 'vue'
 import { Badge, Boton } from '../ui'
 import IconoMaterial from '../ui/IconoMaterial.vue'
@@ -70,7 +71,7 @@ const sinTrafico = computed(
         </button>
       </div>
 
-      <p v-if="cargando && !general" class="text-[13px] text-tinta-suave">{{ t('socios.panel.cargando') }}</p>
+      <TarjetaEsqueleto v-if="cargando && !general" :etiqueta="t('socios.panel.cargando')" plano />
       <div v-else-if="error && !general" role="alert" class="flex flex-col items-start gap-2">
         <p class="text-[13px] text-error">{{ error }}</p>
         <Boton variante="secundario" @click="$emit('reintentar')">{{ t('socios.panel.reintentar') }}</Boton>

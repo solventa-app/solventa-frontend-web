@@ -19,14 +19,6 @@ coverage/
 e2e/cypress/videos/
 e2e/cypress/screenshots/
 
-# Flutter (cuando arranque apps/mobile)
-apps/mobile/.dart_tool/
-apps/mobile/build/
-apps/mobile/.flutter-plugins*
-apps/mobile/.packages
-apps/mobile/android/local.properties
-apps/mobile/android/key.properties
-apps/mobile/**/google-services.json
 
 # Editores y SO
 .idea/

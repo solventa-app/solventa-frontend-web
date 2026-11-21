@@ -99,10 +99,6 @@ async function ingresar() {
               {{ t('ingreso.olvide') }}
             </RouterLink>
 
-            <p class="text-[11px] leading-[14px] text-tinta-suave">
-              {{ t('ingreso.nota') }}
-            </p>
-
             <RouterLink to="/socios/ingreso" class="text-[13px] text-enlace hover:underline">
               {{ t('ingreso.socio') }}
             </RouterLink>

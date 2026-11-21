@@ -23,11 +23,11 @@ jobs:
         env:
           TITULO: ${{ github.event.pull_request.title }}
         run: |
-          patron='^(feat|fix|refactor|test|docs|chore|ci|infra)\((web|mobile|e2e|contrato|docs|ci)\): KAN-[0-9]+ .+'
+          patron='^(feat|fix|refactor|test|docs|chore|ci|infra)\((web|e2e|contrato|docs|ci)\): KAN-[0-9]+ .+'
           if ! printf '%s' "$TITULO" | grep -Eq "$patron"; then
             echo "::error title=Título del PR::Formato esperado: tipo(alcance): KAN-N descripción. Ej.: feat(web): KAN-24 formulario de captura con consentimiento"
             echo "Recibido: $TITULO"
             echo "Tipos: feat fix refactor test docs chore ci infra"
-            echo "Alcances: web mobile e2e contrato docs ci"
+            echo "Alcances: web e2e contrato docs ci"
             exit 1
           fi

@@ -65,8 +65,6 @@ const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierre
           </span>
         </RouterLink>
       </div>
-
-      <p class="text-[11px] text-tinta-suave">{{ t('homeCliente.nota') }}</p>
     </main>
 
     <FooterPantalla />

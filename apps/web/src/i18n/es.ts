@@ -6,6 +6,8 @@ export const es = {
   'idioma.grupo': 'Selector de idioma',
   'moneda.etiqueta': 'Moneda',
   'moneda.cambiar': 'Cambiar moneda. Moneda actual: {moneda}',
+  'moneda.referenciaCorta': 'Valores de referencia',
+  'moneda.original': 'Valores originales',
   'moneda.referencia': 'Valores de referencia. El cobro se hace en la moneda original.',
   'moneda.sinConversion': 'No pudimos convertir los valores: se muestran en su moneda original.',
   'perfil.avatar': 'Mi perfil',
@@ -26,8 +28,8 @@ export const es = {
   'modal.seguridad': 'Por tu seguridad, la sesión vence sola: tendrás que volver a ingresar.',
   'comun.irSolicitud': 'Ir a la solicitud',
   'comun.nuevaCotizacion': 'Nueva cotización',
+  'comun.volver': 'Volver',
   'comun.volverInicio': 'Volver al inicio',
-  'comun.fueraSprint': '(HU-W03, fuera de este sprint)',
   'comun.verFuentes': 'Ver detalle de fuentes consultadas',
   'comun.cobertura': 'Cobertura: {monto}',
   'comun.porMes': '{monto} / mes',
@@ -68,8 +70,6 @@ export const es = {
   'ingreso.usuarioEjemplo': 'tu@correo.com',
   'ingreso.clave': 'Contraseña',
   'ingreso.ingresar': 'Ingresar',
-  'ingreso.nota':
-    'Los 3 roles tienen su propio home — Cliente y Asesor comercial llegan al mismo formulario de cotización, con distinto encabezado según quién entra.',
   'ingreso.socio': '¿Eres un socio de distribución? Ingresa al portal de socios API',
   'ingreso.falla': 'No pudimos iniciar sesión en este momento. Intenta de nuevo.',
   'ingreso.sesionVencida': 'Tu sesión venció. Inicia sesión de nuevo para continuar.',
@@ -118,7 +118,6 @@ export const es = {
   'homeCliente.polizasTexto': 'Consulta tu póliza vigente y descarga el documento',
   'home.fuentes': 'Fuentes consultadas',
   'homeCliente.fuentesTexto': 'Revisa qué datos de Open Finance y Open Data se usaron',
-  'homeCliente.nota': 'Landing post-login para el rol Cliente.',
 
   // G-02a · Home del Asesor
   'homeAsesor.titulo': 'Home del Asesor comercial',
@@ -128,7 +127,6 @@ export const es = {
   'homeAsesor.polizas': 'Pólizas emitidas',
   'homeAsesor.polizasTexto': 'Consulta la póliza vigente del cliente y su documento',
   'homeAsesor.fuentesTexto': 'Revisa qué fuentes se usaron para perfilar al cliente',
-  'homeAsesor.nota': 'El asesor actúa en nombre de un cliente, no cotizando para sí mismo.',
 
   // G-02b · Home del Operador
   'homeOperador.titulo': 'Home del Operador',
@@ -137,8 +135,6 @@ export const es = {
   'homeOperador.siniestrosTexto': 'Bandeja de siniestros pendientes',
   'homeOperador.conciliacion': 'Conciliación de pagos',
   'homeOperador.conciliacionTexto': 'Ver estado de cobro de primas',
-  'homeOperador.nota':
-    "Landing post-login para el rol Operador. No ve 'Nueva cotización' — cotizar pólizas no es su tarea.",
 
   // G-05 · Mi perfil
   'perfil.titulo': 'Mi perfil',
@@ -274,7 +270,6 @@ export const es = {
   // W01-02 · Consultando fuentes
   'consulta.titulo': 'Consultando fuentes',
   'consulta.verificando': 'Verificando tus fuentes de Open Finance / Open Data',
-  'consulta.nota': '(avanza automáticamente según la respuesta del ACL — no tiene botón manual)',
   'consulta.sinSolicitud': 'No hay una solicitud en curso para consultar.',
 
   // W01-03a · Oferta completa

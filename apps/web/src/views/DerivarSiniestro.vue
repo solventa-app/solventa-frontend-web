@@ -8,6 +8,7 @@
   - Estados que el frame no dibuja: ya derivado o ya resuelto (sin formulario), peritos cargando/vacíos/con error.
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../components/ui/TarjetaEsqueleto.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
@@ -122,9 +123,7 @@ const claseBotonBlanco =
 
     <main class="min-h-0 flex-1 overflow-y-auto">
       <div class="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 py-8 sm:px-10">
-        <p v-if="estado.cargandoDetalle" role="status" class="text-[13px] text-tinta-suave">
-          {{ t('siniestros.detalle.cargando') }}
-        </p>
+        <TarjetaEsqueleto v-if="estado.cargandoDetalle" :etiqueta="t('siniestros.detalle.cargando')" :tarjetas="2" />
 
         <div
           v-else-if="estado.errorDetalle"
