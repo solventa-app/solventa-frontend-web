@@ -11,6 +11,10 @@
 
   Rechazar abre ModalRechazo (bloque 5, CA-W04-24 a CA-W04-26); al cancelar, el foco vuelve a `botonRechazar`.
   Aprobar y rechazar navegan con `router.replace` a su confirmación (W04-03a / W04-03b), como derivar.
+
+  Evidencias (ajuste 10 del plan de W04): sus URLs firmadas vencen a los 5 min. Una imagen que falla renueva las URLs
+  una vez (consulta silenciosa) y el enlace renueva antes de abrir si pasaron 4 min; solo si vuelve a fallar se ve
+  «Imagen no disponible».
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -57,8 +61,61 @@ const derivacion = computed(() =>
 
 // Galería: evidencias cuya imagen no cargó (estado degradado).
 const fallidas = ref(new Set<string>())
-function marcarFallida(e: Evidencia) {
-  fallidas.value = new Set(fallidas.value).add(e.id)
+
+// Las URLs firmadas de las evidencias vencen a los 5 min (KAN-250). Si una imagen falla, se pide el caso de nuevo en
+// silencio (trae URLs nuevas) sin tocar la acción en curso, el banner ni el foco. Una sola vez por evidencia: si la URL
+// nueva también falla, o no cambió, queda «Imagen no disponible». Al cargar bien, la evidencia puede renovarse otra vez.
+const VIGENCIA_URL_MS = 4 * 60_000
+const renovadas = ref(new Set<string>())
+let cargadoEn = Date.now()
+watch(s, () => (cargadoEn = Date.now()))
+let renovando: Promise<void> | null = null
+function renovarUrls(): Promise<void> {
+  // Varias imágenes fallan a la vez al vencer: una sola consulta para todas.
+  renovando ??= cargarSiniestro(id.value, { silencioso: true }).finally(() => (renovando = null))
+  return renovando
+}
+const urlDe = (evidenciaId: string) => s.value?.evidencias.find((x) => x.id === evidenciaId)?.url
+function marcarNoDisponible(evidenciaId: string) {
+  fallidas.value = new Set(fallidas.value).add(evidenciaId)
+}
+
+async function marcarFallida(e: Evidencia) {
+  if (renovadas.value.has(e.id)) {
+    marcarNoDisponible(e.id)
+    return
+  }
+  renovadas.value = new Set(renovadas.value).add(e.id)
+  const anterior = e.url
+  await renovarUrls()
+  // Sin URL nueva (la consulta falló o el backend devolvió la misma) la imagen no va a volver a intentar.
+  const nueva = urlDe(e.id)
+  if (!nueva || nueva === anterior) marcarNoDisponible(e.id)
+}
+
+function imagenCargada(e: Evidencia) {
+  if (!renovadas.value.has(e.id)) return
+  const siguiente = new Set(renovadas.value)
+  siguiente.delete(e.id)
+  renovadas.value = siguiente
+}
+
+/** El enlace nunca abre una URL vencida: pasados 4 min desde la carga, renueva antes de abrir. */
+async function abrirEvidencia(evento: MouseEvent, e: Evidencia) {
+  if (Date.now() - cargadoEn < VIGENCIA_URL_MS) return // la URL sigue vigente: el enlace hace lo suyo
+  evento.preventDefault()
+  // La pestaña se abre ya, dentro del clic, para que el navegador no la bloquee; la URL llega después.
+  const pestana = window.open('', '_blank')
+  if (pestana) pestana.opener = null
+  await renovarUrls()
+  const nueva = urlDe(e.id)
+  if (nueva && Date.now() - cargadoEn < VIGENCIA_URL_MS) {
+    if (pestana) pestana.location.href = nueva
+    else window.open(nueva, '_blank', 'noopener')
+    return
+  }
+  pestana?.close()
+  marcarNoDisponible(e.id)
 }
 const textoArchivos = computed(() => {
   const n = s.value?.evidencias.length ?? 0
@@ -178,6 +235,7 @@ watch(
   id,
   (nuevo) => {
     fallidas.value = new Set()
+    renovadas.value = new Set()
     estado.errorAccion = null
     void cargarSiniestro(nuevo)
   },
@@ -250,6 +308,7 @@ watch(
                         rel="noopener"
                         :aria-label="t('siniestros.detalle.abrirEvidencia', { titulo: e.titulo })"
                         class="block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
+                        @click="abrirEvidencia($event, e)"
                       >
                         <img
                           :src="e.url"
@@ -258,6 +317,7 @@ watch(
                           class="h-full w-full"
                           :class="e.tipo === 'DOCUMENTO' ? 'bg-fondo object-contain' : 'object-cover'"
                           @error="marcarFallida(e)"
+                          @load="imagenCargada(e)"
                         />
                       </a>
                       <span
