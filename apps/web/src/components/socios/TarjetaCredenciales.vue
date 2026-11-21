@@ -5,6 +5,7 @@
   El aviso de Figma sobre regenerar vive en la confirmación (ModalRegenerar), no fijo en la tarjeta.
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../ui/TarjetaEsqueleto.vue'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import BotonCopiar from '../BotonCopiar.vue'
 import ModalRegenerar from './ModalRegenerar.vue'
@@ -85,9 +86,7 @@ onUnmounted(() => clearInterval(reloj))
       <IconoMaterial nombre="key" class="h-6 w-6 text-primario" />
     </h2>
 
-    <p v-if="estado.cargando.credenciales && !credencial" class="text-[13px] text-tinta-suave">
-      {{ t('socios.panel.cargando') }}
-    </p>
+    <TarjetaEsqueleto v-if="estado.cargando.credenciales && !credencial" :etiqueta="t('socios.panel.cargando')" plano />
     <div v-else-if="estado.error.credenciales && !credencial" role="alert" class="flex flex-col items-start gap-2">
       <p class="text-[13px] text-error">{{ estado.error.credenciales }}</p>
       <Boton variante="secundario" @click="cargarCredenciales()">{{ t('socios.panel.reintentar') }}</Boton>

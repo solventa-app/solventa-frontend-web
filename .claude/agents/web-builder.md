@@ -1,6 +1,6 @@
 ---
 name: web-builder
-description: Úsalo para construir pantallas y lógica de la web de Solventa (Vue 3 + TypeScript) contra el prototipo de Figma, el contrato del BFF y los mocks. Invócalo con "construye la pantalla W01-01 con el consentimiento", "arma la oferta preliminar", "implementa la conciliación de pagos" o "conecta la captura con solicitarOferta". NO lo uses para el móvil (mobile-builder), para sincronizar el contrato (contract-consumer) ni para diseñar pruebas E2E (frontend-quality).
+description: Úsalo para construir pantallas y lógica de la web de Solventa (Vue 3 + TypeScript) contra el prototipo de Figma, el contrato del BFF y los mocks. Invócalo con "construye la pantalla W01-01 con el consentimiento", "arma la oferta preliminar", "implementa la conciliación de pagos" o "conecta la captura con solicitarOferta". NO lo uses para el móvil (otro repositorio), para sincronizar el contrato (contract-consumer) ni para diseñar pruebas E2E (frontend-quality).
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---

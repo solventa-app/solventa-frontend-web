@@ -13,6 +13,7 @@
     aparece «Continuar con la emisión»; la tarjeta usa la prima y la cobertura de la propuesta si la oferta ya venció.
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../components/ui/TarjetaEsqueleto.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Badge, Boton, FooterPantalla, HeaderPantalla, MigasDePan, TituloPantalla } from '../components/ui'
@@ -122,14 +123,12 @@ function recalcular() {
       <div class="flex w-full max-w-[640px] flex-col gap-5">
         <TituloPantalla>{{ t('revisarOferta.titulo') }}</TituloPantalla>
 
-        <p
+        <TarjetaEsqueleto
           v-if="estado.cargando && !oferta && !propuesta"
-          role="status"
-          class="flex items-center gap-2 text-[13px] text-tinta-suave"
-        >
-          <IconoMaterial nombre="progress_activity" class="h-4 w-4 animate-spin" />
-          {{ t('comun.cargando') }}
-        </p>
+          :etiqueta="t('comun.cargando')"
+          :tarjetas="2"
+          :lineas="4"
+        />
 
         <section
           v-else-if="hayTarjeta"

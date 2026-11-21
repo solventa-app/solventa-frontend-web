@@ -72,7 +72,7 @@ const oferta = computed(() => (esOferta(estado.resultado) ? estado.resultado : n
           </div>
         </div>
         <Boton disabled class="w-full">{{ t('preliminar.continuar') }}</Boton>
-        <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('comun.fueraSprint') }}</p>
+        <p class="-mt-3 text-center text-[11px] text-tinta-suave">{{ t('revisarOferta.preliminar') }}</p>
         <RouterLink
           v-if="sesion.rol !== 'CLIENTE'"
           to="/cotizacion/fuentes?lista=1"

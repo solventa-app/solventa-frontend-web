@@ -339,13 +339,13 @@ describe('FooterPantalla', () => {
 })
 
 describe('HeaderPantalla', () => {
-  it('compone selector de idioma, de moneda y avatar, con título opcional', () => {
+  it('compone selector de idioma y de moneda con título opcional (el avatar solo aparece con sesión)', () => {
     const header = mount(HeaderPantalla, { props: { titulo: 'Home del Cliente' } })
     expect(header.text()).toContain('Solventa')
     expect(header.text()).toContain('Home del Cliente')
     expect(header.findComponent(SelectorIdioma).exists()).toBe(true)
     expect(header.findComponent(SelectorMoneda).exists()).toBe(true)
-    expect(header.findComponent(AvatarPerfil).exists()).toBe(true)
+    expect(header.findComponent(AvatarPerfil).exists()).toBe(false)
   })
 
   it('cambia el idioma global y lo propaga al padre', async () => {

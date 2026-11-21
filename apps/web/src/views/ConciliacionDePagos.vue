@@ -52,10 +52,15 @@ const cobrosPaginados = computed(() => {
 })
 
 // "Total procesado" (nodo 2001:3297): suma de los cobros visibles en la pestaña activa, en cualquier estado.
+// Cada póliza cobra en su moneda: se suma por moneda (nunca pesos con dólares) y cada total se muestra en la moneda
+// elegida en el header, como el resto de valores.
 const totalProcesado = computed(() => {
-  const moneda = cobrosFiltrados.value[0]?.monto.moneda ?? 'COP'
-  const suma = cobrosFiltrados.value.reduce((acc, c) => acc + Number(c.monto.valor), 0)
-  return montoVisible({ valor: String(suma), moneda })
+  const porMoneda = new Map<string, number>()
+  for (const c of cobrosFiltrados.value) {
+    porMoneda.set(c.monto.moneda, (porMoneda.get(c.monto.moneda) ?? 0) + Number(c.monto.valor))
+  }
+  if (porMoneda.size === 0) return montoVisible({ valor: '0', moneda: 'COP' })
+  return [...porMoneda].map(([moneda, suma]) => montoVisible({ valor: String(suma), moneda })).join(' + ')
 })
 
 const INSIGNIA: Record<

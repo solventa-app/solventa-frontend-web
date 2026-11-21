@@ -1,6 +1,6 @@
 ---
 name: frontend-quality
-description: Úsalo para pruebas y calidad del frontend — Vitest, Cypress (web) e integration_test (móvil), accesibilidad, revisión contra la definición de hecho y evidencia de que una historia cumple sus criterios. Invócalo con "escribe el E2E de W01", "revisa si W01-01 cumple CA-W01-01", "mide la accesibilidad de la oferta" o "prepara la evidencia de la historia". NO implementa pantallas (web-builder / mobile-builder).
+description: Úsalo para pruebas y calidad del frontend — Vitest y Cypress (web), accesibilidad, revisión contra la definición de hecho y evidencia de que una historia cumple sus criterios. Invócalo con "escribe el E2E de W01", "revisa si W01-01 cumple CA-W01-01", "mide la accesibilidad de la oferta" o "prepara la evidencia de la historia". NO implementa pantallas (web-builder).
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---

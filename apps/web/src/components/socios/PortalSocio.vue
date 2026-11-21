@@ -64,9 +64,8 @@ function cerrarSesion() {
       data-prueba="portal-main"
     >
       <slot :id-panel="barra?.idPanel(activa)" :id-pestana="barra?.idPestana(activa)" />
-      <!-- QA 2026-11-10: en móvil el footer fijo se comía el alto; va al final del contenido. -->
-      <div v-if="!sinDesplazar" class="sm:hidden"><FooterPantalla /></div>
     </main>
-    <div :class="sinDesplazar ? '' : 'hidden sm:block'"><FooterPantalla /></div>
+    <!-- Header y footer fijos en todo el portal, como en el resto de la web (2026-11-21): en móvil el footer es compacto. -->
+    <FooterPantalla />
   </div>
 </template>

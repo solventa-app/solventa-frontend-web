@@ -17,6 +17,7 @@
   «Imagen no disponible».
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../components/ui/TarjetaEsqueleto.vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Badge, Boton, CampoMonto, EstadoOperador, FooterPantalla, HeaderPantalla, MigasDePan } from '../components/ui'
@@ -258,9 +259,12 @@ watch(
 
     <main class="min-h-0 flex-1 overflow-y-auto">
       <div class="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 py-8 sm:px-10">
-        <p v-if="estado.cargandoDetalle" role="status" class="text-[13px] text-tinta-suave">
-          {{ t('siniestros.detalle.cargando') }}
-        </p>
+        <TarjetaEsqueleto
+          v-if="estado.cargandoDetalle"
+          :etiqueta="t('siniestros.detalle.cargando')"
+          :tarjetas="3"
+          :lineas="3"
+        />
 
         <div
           v-else-if="estado.errorDetalle"

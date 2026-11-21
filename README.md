@@ -1,7 +1,7 @@
 # Solventa — Frontend
 
 Frontend de **Solventa**, aseguradora digital sobre Open Finance y Open Data (MISW4501 · Proyecto Final 2):
-**web** en Vue 3 + Vite y **móvil** en Flutter (desde el Sprint 2).
+**web** en Vue 3 + Vite. La app móvil (Flutter) vive en su propio repositorio, `solventa-frontend-mobile`.
 
 > Remoto: https://github.com/solventa-app/solventa-frontend
 >
@@ -14,7 +14,6 @@ Frontend de **Solventa**, aseguradora digital sobre Open Finance y Open Data (MI
 | Ruta | Contenido |
 |---|---|
 | `apps/web/` | SPA Vue 3 + TypeScript + Vite. Sprint 1: 12 pantallas (HU-W01 y HU-W05) |
-| `apps/mobile/` | App Flutter. **Sin código todavía**: arranca en el Sprint 2 |
 | `contrato/` | Copia versionada del esquema GraphQL del backend (no se edita a mano) |
 | `e2e/` | Cypress (web), con su propio `package.json` |
 | `scripts/` | `contrato.mjs`: verifica y sincroniza el contrato con el backend |

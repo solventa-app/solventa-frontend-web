@@ -3,7 +3,6 @@
 # Mientras tanto no hay propietarios asignados (no se bloquea ningún PR).
 #
 # /apps/web/           @<desarrollador-web>   @<lider-tecnico>
-# /apps/mobile/        @<desarrollador-movil> @<lider-tecnico>
 # /contrato/           @<lider-tecnico>       @<desarrollador-web>   # copia del contrato del backend
 # /e2e/                @<lider-tecnico>
 # /.github/            @<lider-tecnico>
