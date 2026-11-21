@@ -544,6 +544,8 @@ export const es = {
   'siniestros.detalle.aprobadaAutomatica': 'Aprobado automáticamente por vencimiento',
   'siniestros.detalle.vencido': 'Vencido',
   'siniestros.detalle.aprobandoAutomatica': 'Se aprobará automáticamente en el próximo minuto.',
+  'siniestros.detalle.vencidoRequiereValor':
+    'Plazo vencido: este siniestro no se aprueba solo. Digita el valor del daño y apruébalo.',
   'siniestros.detalle.accionesSr': 'Acciones del operador',
   'siniestros.detalle.notaNotificacion': 'La decisión adoptada notificará de inmediato a la entidad financiera.',
   'siniestros.detalle.derivar': 'Derivar a perito',

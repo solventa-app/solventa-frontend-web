@@ -545,6 +545,8 @@ export const en: Record<Clave, string> = {
   'siniestros.detalle.aprobadaAutomatica': 'Automatically approved on expiry',
   'siniestros.detalle.vencido': 'Overdue',
   'siniestros.detalle.aprobandoAutomatica': 'It will be approved automatically within the next minute.',
+  'siniestros.detalle.vencidoRequiereValor':
+    'Deadline passed: this claim is not approved automatically. Enter the damage amount and approve it.',
   'siniestros.detalle.accionesSr': 'Operator actions',
   'siniestros.detalle.notaNotificacion': 'The decision will be notified immediately to the financial institution.',
   'siniestros.detalle.derivar': 'Refer to adjuster',

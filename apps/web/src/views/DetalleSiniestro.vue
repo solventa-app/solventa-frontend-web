@@ -153,11 +153,19 @@ const errorRechazo = ref<string | null>(null)
 /** Qué acción está en curso: "Aprobando…" solo se muestra al aprobar, no mientras el modal rechaza. */
 const accion = ref<'aprobar' | 'rechazar' | null>(null)
 
+// KAN-290: en auto parcial o RC el operador digita el valor del daño (ver abajo); CLAIMS no lo inventa.
+const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
+const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
+
 // Q-03 (D-3): vencido y PENDIENTE, CLAIMS lo aprueba en su siguiente pasada (cada minuto). Mientras tanto se pide el
 // caso en cada tic, sin vaciar la pantalla, hasta verlo resuelto. Un caso derivado no se aprueba solo (D-3b).
-const esperandoAutomatica = computed(
+// KAN-27: un caso que necesita el valor del daño tampoco se aprueba solo (CLAIMS lo salta en cada pasada): no se
+// promete la aprobación ni se consulta en bucle; se le pide al operador que digite el valor y lo apruebe.
+const vencidoPendiente = computed(
   () => vencido.value && s.value?.estado === 'PENDIENTE' && !derivacion.value && accion.value === null,
 )
+const esperandoAutomatica = computed(() => vencidoPendiente.value && !necesitaValorDano.value)
+const vencidoRequiereValor = computed(() => vencidoPendiente.value && necesitaValorDano.value)
 watch(ahora, () => {
   if (esperandoAutomatica.value) void cargarSiniestro(id.value, { silencioso: true })
 })
@@ -194,8 +202,6 @@ async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: stri
 // El valor se captura siempre en la moneda de la póliza (la del dato, contrato v0.42): CLAIMS lo acota a la cobertura y le
 // resta el deducible en esa moneda, y lo capturado sigue en su moneda original (docs/convenciones.md). El selector del
 // header queda libre: convierte lo que se consulta (la suma reclamada) y el campo avisa en qué moneda se digita.
-const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
-const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
 const monedaPoliza = computed(() => s.value?.sumaReclamada.moneda)
 const notaMoneda = computed(() =>
   monedaPoliza.value && monedaPoliza.value !== moneda.value
@@ -480,6 +486,14 @@ watch(
                 class="text-[11px] text-tinta-suave"
               >
                 {{ t('siniestros.detalle.aprobandoAutomatica') }}
+              </p>
+              <p
+                v-if="vencidoRequiereValor"
+                data-prueba="vencido-requiere-valor"
+                role="status"
+                class="text-[11px] font-semibold text-error"
+              >
+                {{ t('siniestros.detalle.vencidoRequiereValor') }}
               </p>
             </aside>
           </div>

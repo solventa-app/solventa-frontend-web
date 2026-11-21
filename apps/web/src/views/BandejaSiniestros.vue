@@ -82,8 +82,16 @@ const reloj = setInterval(() => (ahora.value = Date.now()), 30_000)
 onBeforeUnmount(() => clearInterval(reloj))
 const restanteDe = (s: { venceDictamenEn: string }) => Date.parse(s.venceDictamenEn) - ahora.value
 // Q-03: con un PENDIENTE vencido en pantalla, cada tic vuelve a pedir la bandeja en silencio hasta ver su aprobación.
+// KAN-27: los de auto parcial o RC no se aprueban solos (necesitan el valor del daño): no cuentan para el sondeo.
+const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
 watch(ahora, () => {
-  const hayVencidos = estado.siniestros.some((s) => s.estado === 'PENDIENTE' && s.venceDictamenEn && restanteDe(s) <= 0)
+  const hayVencidos = estado.siniestros.some(
+    (s) =>
+      s.estado === 'PENDIENTE' &&
+      s.venceDictamenEn &&
+      restanteDe(s) <= 0 &&
+      !TIPOS_CON_VALOR.includes(s.tipoSiniestroAuto ?? ''),
+  )
   if (hayVencidos && !estado.cargando) void cargarSiniestros(undefined, { silencioso: true })
 })
 
