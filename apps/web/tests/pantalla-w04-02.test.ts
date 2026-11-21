@@ -318,6 +318,47 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(wrapper.find('[data-prueba="acciones"]').exists()).toBe(false)
   })
 
+  // QA 2026-11-18 (KAN-27): un auto parcial o de RC vencido seguía prometiendo «se aprobará en el próximo minuto»,
+  // pero CLAIMS lo salta en cada pasada porque necesita el valor del daño del operador.
+  it.each(['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL'] as TipoSiniestroAuto[])(
+    'vencido y %s: pide el valor del daño, no promete la aprobación ni vuelve a consultar',
+    async (tipo) => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] })
+      const { wrapper } = await montar()
+      const { estado } = useSiniestros()
+      estado.detalle!.tipoSiniestroAuto = tipo
+      estado.detalle!.venceDictamenEn = new Date(Date.now() - 60_000).toISOString()
+      await flushPromises()
+      let consultas = 0
+      servidor.use(
+        bff.query('siniestro', () => {
+          consultas += 1
+          return HttpResponse.json({ data: { siniestro: estado.detalle } })
+        }),
+      )
+
+      vi.advanceTimersByTime(60_000)
+      await flushPromises()
+      expect(wrapper.find('[data-prueba="aprobando-automatica"]').exists()).toBe(false)
+      expect(wrapper.get('[data-prueba="vencido-requiere-valor"]').text()).toBe(
+        'Plazo vencido: este siniestro no se aprueba solo. Digita el valor del daño y apruébalo.',
+      )
+      expect(wrapper.get('[data-prueba="aprobar"]').attributes('disabled')).toBeUndefined()
+      expect(consultas).toBe(0)
+    },
+  )
+
+  it('vencido y pérdida total: sí espera la aprobación automática', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] })
+    const { wrapper } = await montar()
+    const { estado } = useSiniestros()
+    estado.detalle!.tipoSiniestroAuto = 'PERDIDA_TOTAL_DANOS'
+    estado.detalle!.venceDictamenEn = new Date(Date.now() - 60_000).toISOString()
+    await flushPromises()
+    expect(wrapper.find('[data-prueba="aprobando-automatica"]').exists()).toBe(true)
+    expect(wrapper.find('[data-prueba="vencido-requiere-valor"]').exists()).toBe(false)
+  })
+
   it('con más de 24 h también muestra los minutos"', async () => {
     const { wrapper } = await montar()
     useSiniestros().estado.detalle!.venceDictamenEn = new Date(Date.now() + 50 * 3_600_000 + 90_000).toISOString()
