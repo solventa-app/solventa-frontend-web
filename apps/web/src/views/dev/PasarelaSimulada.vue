@@ -71,7 +71,7 @@ function pagar() {
 }
 
 function regresar() {
-  router.push({ path: '/pago/retorno', query: { sesion: sesionId } })
+  void router.push({ path: '/pago/retorno', query: { sesion: sesionId } })
 }
 </script>
 

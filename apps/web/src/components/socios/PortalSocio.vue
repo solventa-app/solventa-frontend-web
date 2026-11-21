@@ -36,13 +36,13 @@ const secciones = computed<Pestana[]>(() => [
 
 function ir(id: string) {
   if (id === props.activa) return
-  if (id === 'perfil') router.push('/socios/perfil')
-  else router.push(id === 'panel' ? '/socios/panel' : { path: '/socios/documentacion', query: { pestana: id } })
+  if (id === 'perfil') void router.push('/socios/perfil')
+  else void router.push(id === 'panel' ? '/socios/panel' : { path: '/socios/documentacion', query: { pestana: id } })
 }
 
 function cerrarSesion() {
   sesion.cerrarSesion()
-  router.push('/socios/ingreso')
+  void router.push('/socios/ingreso')
 }
 </script>
 

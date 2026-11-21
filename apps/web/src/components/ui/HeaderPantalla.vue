@@ -61,7 +61,7 @@ const avisoMoneda = computed(() => {
 })
 function abrirPerfil() {
   emit('perfil')
-  router?.push('/perfil')
+  void router?.push('/perfil')
 }
 </script>
 
