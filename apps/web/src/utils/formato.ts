@@ -90,3 +90,11 @@ export function formatearFechaCorta(iso: string): string {
 export function sinPuntoFinal(texto: string): string {
   return texto.trim().replace(/\.+$/, '')
 }
+
+/**
+ * Para lectores de pantalla: un código leído carácter por carácter («SOL-2026-01» → «S O L guion 2 0 2 6 guion 0 1»).
+ * `guion` es la palabra del idioma activo (`t('comun.guion')`).
+ */
+export function deletrear(valor: string, guion: string): string {
+  return [...valor].map((c) => (c === '-' ? guion : c)).join(' ')
+}

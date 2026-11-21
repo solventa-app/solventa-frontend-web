@@ -25,7 +25,8 @@ import AvatarPerfil from './AvatarPerfil.vue'
 import SelectorIdioma from './SelectorIdioma.vue'
 import SelectorMoneda from './SelectorMoneda.vue'
 import { cambiarMoneda, conversionFallida, MONEDA_BASE, moneda } from '../../composables/useMoneda'
-import { cambiarIdioma, idioma, t, type Idioma } from '../../i18n'
+import { idioma, t, type Idioma } from '../../i18n'
+import { elegirIdioma as guardarIdioma } from '../../composables/useIdiomaCuenta'
 
 const props = withDefaults(
   defineProps<{
@@ -47,7 +48,7 @@ const emit = defineEmits<{
 // El avatar lleva a "Mi perfil" (G-05). Sin router (p. ej. en el índice de componentes) solo emite.
 const router = useRouter()
 function elegirIdioma(valor: Idioma) {
-  cambiarIdioma(valor)
+  void guardarIdioma(valor)
   emit('update:idioma', valor)
 }
 function elegirMoneda(valor: string) {
@@ -61,7 +62,7 @@ const avisoMoneda = computed(() => {
 })
 function abrirPerfil() {
   emit('perfil')
-  router?.push('/perfil')
+  void router?.push('/perfil')
 }
 </script>
 

@@ -18,7 +18,10 @@ import { t } from '../i18n'
 const SINIESTROS: OpcionesEjecucion = { endpoint: '/v1/graphql/web' }
 
 /** Lo que muestra la bandeja (W04-01). Un Siniestro completo también lo cumple (tras una acción). */
-export type SiniestroBandeja = Pick<Siniestro, 'id' | 'radicado' | 'estado' | 'notificadoEn' | 'venceDictamenEn'> & {
+export type SiniestroBandeja = Pick<
+  Siniestro,
+  'id' | 'radicado' | 'estado' | 'notificadoEn' | 'venceDictamenEn' | 'tipoSiniestroAuto'
+> & {
   asegurado: Pick<Asegurado, 'nombre'>
 }
 
@@ -56,7 +59,9 @@ const CAMPOS_SINIESTRO = `
 // La bandeja pide solo lo que muestra: con el backend real, pedir la póliza y las evidencias resolvería POLICY y
 // firmaría las URL de todas las evidencias en cada carga.
 const CONSULTA_SINIESTROS = `query siniestros($estado: EstadoSiniestro) {
-  siniestros(estado: $estado) { id radicado estado asegurado { nombre } notificadoEn venceDictamenEn }
+  siniestros(estado: $estado) {
+    id radicado estado asegurado { nombre } notificadoEn venceDictamenEn tipoSiniestroAuto
+  }
 }`
 const CONSULTA_SINIESTRO = `query siniestro($id: ID!) {
   siniestro(id: $id) { ${CAMPOS_SINIESTRO} }

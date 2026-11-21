@@ -12,7 +12,7 @@
 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Boton, FooterPantalla, HeaderPantalla, Paginador, TituloPantalla } from '../components/ui'
+import { Boton, FooterPantalla, HeaderPantalla, Paginador, TablaEsqueleto, TituloPantalla } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useAvisos } from '../composables/useAvisos'
 import { useConciliacion } from '../composables/useConciliacion'
@@ -148,7 +148,19 @@ onUnmounted(() => {
         {{ t('conciliacion.toast') }}
       </div>
 
-      <p v-if="estado.cargando" class="text-[13px] text-tinta-suave">{{ t('conciliacion.cargando') }}</p>
+      <TablaEsqueleto
+        v-if="estado.cargando"
+        :etiqueta="t('conciliacion.cargando')"
+        :encabezados="[
+          t('conciliacion.cliente'),
+          t('conciliacion.poliza'),
+          t('conciliacion.prima'),
+          t('conciliacion.medio'),
+          t('conciliacion.estado'),
+          t('conciliacion.fecha'),
+          t('conciliacion.acciones'),
+        ]"
+      />
       <p v-else-if="estado.error" role="alert" class="text-[13px] text-error">{{ estado.error }}</p>
 
       <template v-else>

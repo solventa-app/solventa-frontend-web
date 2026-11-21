@@ -23,7 +23,7 @@ onUnmounted(() => clearInterval(temporizador))
 const vacio = computed(() => correos.value.length === 0)
 
 function abrirEnlace(token: string) {
-  router.push({ path: '/firma', hash: `#t=${token}` })
+  void router.push({ path: '/firma', hash: `#t=${token}` })
 }
 </script>
 

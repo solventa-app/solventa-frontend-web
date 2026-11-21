@@ -65,11 +65,11 @@ async function confirmar() {
     return
   }
   if (!esErrorPago(resultado)) {
-    router.replace(rutaDe('/poliza'))
+    void router.replace(rutaDe('/poliza'))
     return
   }
   if (resultado.motivo === 'ENLACE_VENCIDO') {
-    router.replace(rutaDe(''))
+    void router.replace(rutaDe(''))
     return
   }
   errorPago.value = resultado
@@ -83,7 +83,7 @@ async function pagarDeNuevo() {
     return
   }
   if (esErrorPago(resultado)) {
-    if (resultado.motivo === 'ENLACE_VENCIDO') router.replace(rutaDe(''))
+    if (resultado.motivo === 'ENLACE_VENCIDO') void router.replace(rutaDe(''))
     else errorPago.value = resultado
     return
   }
@@ -106,7 +106,7 @@ onMounted(() => {
       return
     }
   }
-  confirmar()
+  void confirmar()
 })
 </script>
 

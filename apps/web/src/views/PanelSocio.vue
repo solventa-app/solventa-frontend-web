@@ -15,6 +15,7 @@ import TarjetaConsumo from '../components/socios/TarjetaConsumo.vue'
 import TarjetaCredenciales from '../components/socios/TarjetaCredenciales.vue'
 import TarjetaEstado from '../components/socios/TarjetaEstado.vue'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import TablaEsqueleto from '../components/ui/TablaEsqueleto.vue'
 import { convertirMontos, type Entorno } from '../api/socios'
 import { montoVisible, usarConversor } from '../composables/useMoneda'
 import { usePanelSocio } from '../composables/usePanelSocio'
@@ -59,7 +60,7 @@ function etiquetaMes(mes: string): string {
 watch(
   () => estado.sesionVencida,
   (vencida) => {
-    if (vencida) router.replace('/socios/ingreso')
+    if (vencida) void router.replace('/socios/ingreso')
   },
 )
 
@@ -70,7 +71,7 @@ onMounted(() => {
     const resultado = await convertirMontos(sesion.estado.token ?? '', montos, moneda)
     return resultado.montos
   })
-  cargarTodo()
+  void cargarTodo()
 })
 onBeforeUnmount(() => usarConversor(null))
 </script>
@@ -119,9 +120,18 @@ onBeforeUnmount(() => usarConversor(null))
           {{ t('socios.consumoApi.titulo') }}
         </h2>
         <div class="flex flex-col gap-4 rounded-[8px] border border-borde bg-white p-[17px]">
-          <p v-if="estado.cargando.consumo && !estado.consumo" class="text-[13px] text-tinta-suave">
-            {{ t('socios.panel.cargando') }}
-          </p>
+          <TablaEsqueleto
+            v-if="estado.cargando.consumo && !estado.consumo"
+            :etiqueta="t('socios.panel.cargando')"
+            :encabezados="[
+              t('socios.consumoApi.api'),
+              t('socios.consumoApi.llamadas'),
+              t('socios.consumoApi.exitosas'),
+              t('socios.consumoApi.conError'),
+              t('socios.consumoApi.latencia'),
+            ]"
+            :filas="3"
+          />
           <div v-else-if="estado.error.consumo && !estado.consumo" role="alert" class="flex flex-col items-start gap-2">
             <p class="text-[13px] text-error">{{ estado.error.consumo }}</p>
             <Boton variante="secundario" @click="cargarConsumo()">{{ t('socios.panel.reintentar') }}</Boton>
@@ -185,9 +195,18 @@ onBeforeUnmount(() => usarConversor(null))
           </span>
         </h2>
 
-        <p v-if="estado.cargando.ventas && !ventas" class="text-[13px] text-tinta-suave">
-          {{ t('socios.panel.cargando') }}
-        </p>
+        <TablaEsqueleto
+          v-if="estado.cargando.ventas && !ventas"
+          :etiqueta="t('socios.panel.cargando')"
+          :encabezados="[
+            t('socios.ventas.mes'),
+            t('socios.ventas.propuestas'),
+            t('socios.ventas.polizas'),
+            t('socios.ventas.primas'),
+            t('socios.ventas.comision'),
+          ]"
+          :filas="3"
+        />
         <div v-else-if="estado.error.ventas && !ventas" role="alert" class="flex flex-col items-start gap-2">
           <p class="text-[13px] text-error">{{ estado.error.ventas }}</p>
           <Boton variante="secundario" @click="cargarVentas()">{{ t('socios.panel.reintentar') }}</Boton>

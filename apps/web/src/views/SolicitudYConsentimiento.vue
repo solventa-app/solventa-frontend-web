@@ -188,7 +188,7 @@ function validar(): boolean {
 }
 
 function irAConsultar() {
-  router.push('/cotizacion/consulta')
+  void router.push('/cotizacion/consulta')
 }
 
 function enviar() {

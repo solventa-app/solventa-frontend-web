@@ -23,7 +23,7 @@ const codigoSoporte = computed(() => obtenerCodigoSoporte())
 const copiado = ref(false)
 
 function reintentar() {
-  router.push('/cotizacion/consulta')
+  void router.push('/cotizacion/consulta')
 }
 
 async function copiarCodigo() {
