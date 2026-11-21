@@ -104,13 +104,13 @@ async function aceptarYContinuar() {
   }
   if (estado.errorAceptacion?.motivo === 'CONSENTIMIENTO_NO_VIGENTE') {
     exigirNuevoConsentimiento()
-    router.push('/cotizacion')
+    void router.push('/cotizacion')
   }
 }
 
 function recalcular() {
   // D-11: reintentar es volver a cotizar con la misma captura, no repetir `aceptarOferta`.
-  router.push(cotizacion.consentimientoId ? '/cotizacion/consulta' : '/cotizacion')
+  void router.push(cotizacion.consentimientoId ? '/cotizacion/consulta' : '/cotizacion')
 }
 </script>
 

@@ -5,7 +5,7 @@
 -->
 <script setup lang="ts">
 import { nextTick, ref, useId, watch } from 'vue'
-import BotonCopiar from './BotonCopiar.vue'
+import BotonCopiar from '../BotonCopiar.vue'
 import { Boton } from '../ui'
 import IconoMaterial from '../ui/IconoMaterial.vue'
 import type { Credencial, Entorno } from '../../api/socios'

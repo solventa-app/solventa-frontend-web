@@ -11,6 +11,10 @@
 
   Rechazar abre ModalRechazo (bloque 5, CA-W04-24 a CA-W04-26); al cancelar, el foco vuelve a `botonRechazar`.
   Aprobar y rechazar navegan con `router.replace` a su confirmación (W04-03a / W04-03b), como derivar.
+
+  Evidencias (ajuste 10 del plan de W04): sus URLs firmadas vencen a los 5 min. Una imagen que falla renueva las URLs
+  una vez (consulta silenciosa) y el enlace renueva antes de abrir si pasaron 4 min; solo si vuelve a fallar se ve
+  «Imagen no disponible».
 -->
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -57,8 +61,61 @@ const derivacion = computed(() =>
 
 // Galería: evidencias cuya imagen no cargó (estado degradado).
 const fallidas = ref(new Set<string>())
-function marcarFallida(e: Evidencia) {
-  fallidas.value = new Set(fallidas.value).add(e.id)
+
+// Las URLs firmadas de las evidencias vencen a los 5 min (KAN-250). Si una imagen falla, se pide el caso de nuevo en
+// silencio (trae URLs nuevas) sin tocar la acción en curso, el banner ni el foco. Una sola vez por evidencia: si la URL
+// nueva también falla, o no cambió, queda «Imagen no disponible». Al cargar bien, la evidencia puede renovarse otra vez.
+const VIGENCIA_URL_MS = 4 * 60_000
+const renovadas = ref(new Set<string>())
+let cargadoEn = Date.now()
+watch(s, () => (cargadoEn = Date.now()))
+let renovando: Promise<void> | null = null
+function renovarUrls(): Promise<void> {
+  // Varias imágenes fallan a la vez al vencer: una sola consulta para todas.
+  renovando ??= cargarSiniestro(id.value, { silencioso: true }).finally(() => (renovando = null))
+  return renovando
+}
+const urlDe = (evidenciaId: string) => s.value?.evidencias.find((x) => x.id === evidenciaId)?.url
+function marcarNoDisponible(evidenciaId: string) {
+  fallidas.value = new Set(fallidas.value).add(evidenciaId)
+}
+
+async function marcarFallida(e: Evidencia) {
+  if (renovadas.value.has(e.id)) {
+    marcarNoDisponible(e.id)
+    return
+  }
+  renovadas.value = new Set(renovadas.value).add(e.id)
+  const anterior = e.url
+  await renovarUrls()
+  // Sin URL nueva (la consulta falló o el backend devolvió la misma) la imagen no va a volver a intentar.
+  const nueva = urlDe(e.id)
+  if (!nueva || nueva === anterior) marcarNoDisponible(e.id)
+}
+
+function imagenCargada(e: Evidencia) {
+  if (!renovadas.value.has(e.id)) return
+  const siguiente = new Set(renovadas.value)
+  siguiente.delete(e.id)
+  renovadas.value = siguiente
+}
+
+/** El enlace nunca abre una URL vencida: pasados 4 min desde la carga, renueva antes de abrir. */
+async function abrirEvidencia(evento: MouseEvent, e: Evidencia) {
+  if (Date.now() - cargadoEn < VIGENCIA_URL_MS) return // la URL sigue vigente: el enlace hace lo suyo
+  evento.preventDefault()
+  // La pestaña se abre ya, dentro del clic, para que el navegador no la bloquee; la URL llega después.
+  const pestana = window.open('', '_blank')
+  if (pestana) pestana.opener = null
+  await renovarUrls()
+  const nueva = urlDe(e.id)
+  if (nueva && Date.now() - cargadoEn < VIGENCIA_URL_MS) {
+    if (pestana) pestana.location.href = nueva
+    else window.open(nueva, '_blank', 'noopener')
+    return
+  }
+  pestana?.close()
+  marcarNoDisponible(e.id)
 }
 const textoArchivos = computed(() => {
   const n = s.value?.evidencias.length ?? 0
@@ -96,11 +153,19 @@ const errorRechazo = ref<string | null>(null)
 /** Qué acción está en curso: "Aprobando…" solo se muestra al aprobar, no mientras el modal rechaza. */
 const accion = ref<'aprobar' | 'rechazar' | null>(null)
 
+// KAN-290: en auto parcial o RC el operador digita el valor del daño (ver abajo); CLAIMS no lo inventa.
+const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
+const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
+
 // Q-03 (D-3): vencido y PENDIENTE, CLAIMS lo aprueba en su siguiente pasada (cada minuto). Mientras tanto se pide el
 // caso en cada tic, sin vaciar la pantalla, hasta verlo resuelto. Un caso derivado no se aprueba solo (D-3b).
-const esperandoAutomatica = computed(
+// KAN-27: un caso que necesita el valor del daño tampoco se aprueba solo (CLAIMS lo salta en cada pasada): no se
+// promete la aprobación ni se consulta en bucle; se le pide al operador que digite el valor y lo apruebe.
+const vencidoPendiente = computed(
   () => vencido.value && s.value?.estado === 'PENDIENTE' && !derivacion.value && accion.value === null,
 )
+const esperandoAutomatica = computed(() => vencidoPendiente.value && !necesitaValorDano.value)
+const vencidoRequiereValor = computed(() => vencidoPendiente.value && necesitaValorDano.value)
 watch(ahora, () => {
   if (esperandoAutomatica.value) void cargarSiniestro(id.value, { silencioso: true })
 })
@@ -137,8 +202,6 @@ async function confirmarRechazo(datos: { motivo: MotivoRechazo; comentario: stri
 // El valor se captura siempre en la moneda de la póliza (la del dato, contrato v0.42): CLAIMS lo acota a la cobertura y le
 // resta el deducible en esa moneda, y lo capturado sigue en su moneda original (docs/convenciones.md). El selector del
 // header queda libre: convierte lo que se consulta (la suma reclamada) y el campo avisa en qué moneda se digita.
-const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
-const necesitaValorDano = computed(() => TIPOS_CON_VALOR.includes(s.value?.tipoSiniestroAuto ?? ''))
 const monedaPoliza = computed(() => s.value?.sumaReclamada.moneda)
 const notaMoneda = computed(() =>
   monedaPoliza.value && monedaPoliza.value !== moneda.value
@@ -178,6 +241,7 @@ watch(
   id,
   (nuevo) => {
     fallidas.value = new Set()
+    renovadas.value = new Set()
     estado.errorAccion = null
     void cargarSiniestro(nuevo)
   },
@@ -250,6 +314,7 @@ watch(
                         rel="noopener"
                         :aria-label="t('siniestros.detalle.abrirEvidencia', { titulo: e.titulo })"
                         class="block h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace"
+                        @click="abrirEvidencia($event, e)"
                       >
                         <img
                           :src="e.url"
@@ -258,6 +323,7 @@ watch(
                           class="h-full w-full"
                           :class="e.tipo === 'DOCUMENTO' ? 'bg-fondo object-contain' : 'object-cover'"
                           @error="marcarFallida(e)"
+                          @load="imagenCargada(e)"
                         />
                       </a>
                       <span
@@ -420,6 +486,14 @@ watch(
                 class="text-[11px] text-tinta-suave"
               >
                 {{ t('siniestros.detalle.aprobandoAutomatica') }}
+              </p>
+              <p
+                v-if="vencidoRequiereValor"
+                data-prueba="vencido-requiere-valor"
+                role="status"
+                class="text-[11px] font-semibold text-error"
+              >
+                {{ t('siniestros.detalle.vencidoRequiereValor') }}
               </p>
             </aside>
           </div>

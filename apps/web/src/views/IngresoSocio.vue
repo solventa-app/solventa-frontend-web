@@ -35,7 +35,7 @@ async function ingresar() {
     clave.value = ''
     return
   }
-  router.push('/socios/panel')
+  void router.push('/socios/panel')
 }
 </script>
 

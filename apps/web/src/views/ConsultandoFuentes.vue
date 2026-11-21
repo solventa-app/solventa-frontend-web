@@ -29,9 +29,9 @@ onMounted(async () => {
   await solicitarOferta()
   const resultado = estado.resultado
   if (esErrorOferta(resultado)) {
-    router.replace(resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE' ? '/cotizacion' : '/cotizacion/error')
+    void router.replace(resultado.motivo === 'CONSENTIMIENTO_NO_VIGENTE' ? '/cotizacion' : '/cotizacion/error')
   } else if (esOferta(resultado)) {
-    router.replace(resultado.tipo === 'PRELIMINAR' ? '/cotizacion/oferta-preliminar' : '/cotizacion/oferta')
+    void router.replace(resultado.tipo === 'PRELIMINAR' ? '/cotizacion/oferta-preliminar' : '/cotizacion/oferta')
   }
 })
 </script>

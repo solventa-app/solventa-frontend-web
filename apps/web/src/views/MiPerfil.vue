@@ -22,7 +22,8 @@ import { ejecutar } from '../graphql/cliente'
 import type { Usuario } from '../graphql/tipos'
 import { useCierreDeSesion } from '../composables/useCierreDeSesion'
 import { etiquetaRol, useSesion } from '../composables/useSesion'
-import { cambiarIdioma, idioma, t, type Clave } from '../i18n'
+import { idioma, t, type Clave } from '../i18n'
+import { elegirIdioma } from '../composables/useIdiomaCuenta'
 import { cambiarMoneda, moneda } from '../composables/useMoneda'
 import { cambiarPais, pais } from '../composables/usePais'
 import { nombrePais, PAISES } from '../utils/documentos'
@@ -195,7 +196,7 @@ onMounted(async () => {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="flex flex-col gap-1">
               <span class="text-[11px] text-tinta-suave">{{ t('perfil.prefIdioma') }}</span>
-              <SelectorIdioma :model-value="idioma" @update:model-value="cambiarIdioma" />
+              <SelectorIdioma :model-value="idioma" @update:model-value="elegirIdioma" />
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-[11px] text-tinta-suave">{{ t('perfil.prefMoneda') }}</span>

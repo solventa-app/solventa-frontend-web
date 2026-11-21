@@ -62,6 +62,35 @@ body {
   animation: barra-indeterminada 1.4s ease-in-out infinite;
 }
 
+/* Esqueleto (TablaEsqueleto.vue), como el Skeleton de PrimeVue: un bloque gris claro con un brillo blanco que lo
+   recorre de izquierda a derecha mientras llegan los datos. */
+@keyframes esqueleto-brillo {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.esqueleto {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  height: 1rem;
+  border-radius: 6px;
+  background-color: #e8e8e8;
+}
+
+.esqueleto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.6), rgb(255 255 255 / 0));
+  animation: esqueleto-brillo 1.2s ease-in-out infinite;
+}
+
 /* «Reducir movimiento»: sin desplazamiento ni giro, pero el indicador sigue cambiando (parpadeo suave)
    para que nunca parezca colgado. */
 @media (prefers-reduced-motion: reduce) {
@@ -72,5 +101,14 @@ body {
 
   .animate-spin {
     animation: carga-alterna 1.2s ease-in-out infinite !important;
+  }
+
+  .esqueleto {
+    animation: carga-alterna 1.6s ease-in-out infinite;
+  }
+
+  .esqueleto::after {
+    animation: none;
+    display: none;
   }
 }

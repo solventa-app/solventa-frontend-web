@@ -544,6 +544,8 @@ export const es = {
   'siniestros.detalle.aprobadaAutomatica': 'Aprobado automáticamente por vencimiento',
   'siniestros.detalle.vencido': 'Vencido',
   'siniestros.detalle.aprobandoAutomatica': 'Se aprobará automáticamente en el próximo minuto.',
+  'siniestros.detalle.vencidoRequiereValor':
+    'Plazo vencido: este siniestro no se aprueba solo. Digita el valor del daño y apruébalo.',
   'siniestros.detalle.accionesSr': 'Acciones del operador',
   'siniestros.detalle.notaNotificacion': 'La decisión adoptada notificará de inmediato a la entidad financiera.',
   'siniestros.detalle.derivar': 'Derivar a perito',
@@ -774,6 +776,8 @@ export const es = {
   'confirmarFirma.paso1': 'Tu firma electrónica queda registrada como evidencia de no repudio (Ley 527 de 1999).',
   'confirmarFirma.paso2': 'Luego pagas la primera prima con tu tarjeta, en la página segura del proveedor de pagos.',
   'confirmarFirma.paso3': 'Al confirmarse el pago se emite tu póliza y te enviamos el documento a tu correo.',
+  'confirmarFirma.irreversible':
+    'Al confirmar, tu firma y la autorización del cobro quedan registradas y no se pueden deshacer desde el portal.',
   'confirmarFirma.confirmar': 'Sí, firmar y autorizar el cobro',
   'confirmarFirma.firmando': 'Firmando…',
   'confirmarFirma.volver': 'Volver al contrato',
@@ -806,6 +810,7 @@ export const es = {
   'polizaEmitida.header': 'Póliza emitida',
   'polizaEmitida.titulo': 'Tu póliza fue emitida',
   'polizaEmitida.numero': 'N.º de póliza: {numero}',
+  'polizaEmitida.numeroCorto': 'número de póliza',
   'polizaEmitida.fechas': 'Emitida el {emitida} · Vigencia desde {desde}',
   'polizaEmitida.verMisPolizas': 'Ver mis pólizas',
   'polizaEmitida.descargar': 'Descargar documento',
@@ -833,10 +838,11 @@ export const es = {
     'Canal restringido para aliados autorizados. Toda solicitud queda registrada con fines de auditoría técnica.',
 
   // HU-W07 · Panel del socio (W07-02).
-  'socios.copiar.boton': 'Copiar',
-  'socios.copiar.listo': 'Copiado',
-  'socios.copiar.fallo': 'No se pudo copiar',
-  'socios.copiar.etiqueta': 'Copiar {dato}',
+  'comun.copiar.boton': 'Copiar',
+  'comun.copiar.listo': 'Copiado',
+  'comun.copiar.fallo': 'No se pudo copiar',
+  'comun.copiar.etiqueta': 'Copiar {dato}',
+  'comun.guion': 'guion',
   'socios.entorno.PRODUCCION': 'Producción',
   'socios.entorno.PRUEBAS': 'Pruebas',
   'socios.panel.titulo': 'Panel del socio',

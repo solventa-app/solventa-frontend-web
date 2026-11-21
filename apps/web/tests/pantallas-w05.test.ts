@@ -28,6 +28,11 @@ function crearRouterDePrueba(): Router {
 // desmontar de una prueba anterior se vuelve a renderizar cuando otra prueba muta ese estado
 // compartido, lo que puede lanzar excepciones no capturadas.
 const wrappers: VueWrapper[] = []
+// Mientras carga, la tabla es un esqueleto con filas de relleno: hay datos cuando ya no está y quedan filas reales.
+function tablaCargada(w: VueWrapper): boolean {
+  return !w.find('[data-prueba="tabla-esqueleto"]').exists() && w.findAll('tbody tr').length > 0
+}
+
 function montar(...args: Parameters<typeof mount>) {
   const w = mount(...args) as VueWrapper
   wrappers.push(w)
@@ -115,7 +120,7 @@ describe('HU-W05 · pantallas', () => {
       const wrapper = montar(ConciliacionDePagos, { global: { plugins: [router] } })
       await flushPromises()
       // Con MSW 3 la respuesta del mock llega un poco después de un flushPromises(): se espera a los datos.
-      await vi.waitFor(() => expect(wrapper.findAll('tbody tr').length).toBeGreaterThan(0))
+      await vi.waitFor(() => expect(tablaCargada(wrapper)).toBe(true))
       return { wrapper, router }
     }
 
@@ -299,7 +304,7 @@ describe('HU-W05 · pantallas', () => {
       const wrapper2 = montar(ConciliacionDePagos, { global: { plugins: [router] } })
       await router.push('/operador/conciliacion')
       await flushPromises()
-      await vi.waitFor(() => expect(wrapper2.findAll('tbody tr').length).toBeGreaterThan(0))
+      await vi.waitFor(() => expect(tablaCargada(wrapper2)).toBe(true))
 
       await wrapper2
         .findAll('[role="tab"]')

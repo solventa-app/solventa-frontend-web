@@ -19,6 +19,7 @@ import {
   HeaderPantalla,
   MigasDePan,
   Paginador,
+  TablaEsqueleto,
 } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { useSiniestros } from '../composables/useSiniestros'
@@ -81,8 +82,16 @@ const reloj = setInterval(() => (ahora.value = Date.now()), 30_000)
 onBeforeUnmount(() => clearInterval(reloj))
 const restanteDe = (s: { venceDictamenEn: string }) => Date.parse(s.venceDictamenEn) - ahora.value
 // Q-03: con un PENDIENTE vencido en pantalla, cada tic vuelve a pedir la bandeja en silencio hasta ver su aprobación.
+// KAN-27: los de auto parcial o RC no se aprueban solos (necesitan el valor del daño): no cuentan para el sondeo.
+const TIPOS_CON_VALOR = ['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL']
 watch(ahora, () => {
-  const hayVencidos = estado.siniestros.some((s) => s.estado === 'PENDIENTE' && s.venceDictamenEn && restanteDe(s) <= 0)
+  const hayVencidos = estado.siniestros.some(
+    (s) =>
+      s.estado === 'PENDIENTE' &&
+      s.venceDictamenEn &&
+      restanteDe(s) <= 0 &&
+      !TIPOS_CON_VALOR.includes(s.tipoSiniestroAuto ?? ''),
+  )
   if (hayVencidos && !estado.cargando) void cargarSiniestros(undefined, { silencioso: true })
 })
 
@@ -147,9 +156,16 @@ onMounted(() => void cargarSiniestros())
           </Chip>
         </div>
 
-        <p v-if="estado.cargando" role="status" class="text-[13px] text-tinta-suave">
-          {{ t('siniestros.bandeja.cargando') }}
-        </p>
+        <TablaEsqueleto
+          v-if="estado.cargando"
+          :etiqueta="t('siniestros.bandeja.cargando')"
+          :encabezados="[
+            t('siniestros.bandeja.cliente'),
+            t('siniestros.bandeja.fecha'),
+            t('siniestros.bandeja.estado'),
+            t('siniestros.bandeja.acciones'),
+          ]"
+        />
 
         <div
           v-else-if="estado.error"

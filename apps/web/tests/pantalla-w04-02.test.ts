@@ -102,13 +102,151 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
   it('imagen fallida → "Imagen no disponible", conserva título y etiqueta, sin enlace', async () => {
     const { wrapper } = await montar()
     const foto = wrapper.findAll('[data-prueba="evidencia"]')[0]
+    // El mock devuelve la misma URL al renovar: no hay nada nuevo que intentar.
     await foto.get('img').trigger('error')
+    await flushPromises()
     const tras = wrapper.findAll('[data-prueba="evidencia"]')[0]
     expect(tras.text()).toContain('Imagen no disponible')
     expect(tras.find('img').exists()).toBe(false)
     expect(tras.find('a').exists()).toBe(false)
     expect(tras.text()).toContain('Foto: daño frontal del vehículo')
     expect(tras.text()).toContain('sin-01-foto-1.jpg')
+  })
+
+  describe('URL firmada de la evidencia vencida (ajuste 10)', () => {
+    /** El BFF firma una URL nueva en cada consulta del caso, como el almacenamiento real. */
+    function firmarEnCadaConsulta() {
+      let consultas = 0
+      const base = JSON.parse(JSON.stringify(useSiniestros().estado.detalle)) as Siniestro
+      servidor.use(
+        bff.query('siniestro', () => {
+          consultas += 1
+          const dato = JSON.parse(JSON.stringify(base)) as Siniestro
+          dato.evidencias = dato.evidencias.map((e) => ({ ...e, url: `${e.url}?firma=${consultas}` }))
+          return HttpResponse.json({ data: { siniestro: dato } })
+        }),
+      )
+      return () => consultas
+    }
+
+    it('una imagen que falla pide URLs nuevas y se vuelve a mostrar, sin recargar la pantalla', async () => {
+      const { wrapper } = await montar()
+      const consultas = firmarEnCadaConsulta()
+      const foto = () => wrapper.findAll('[data-prueba="evidencia"]')[0]
+      await foto().get('img').trigger('error')
+      await flushPromises()
+      expect(consultas()).toBe(1)
+      expect(foto().get('img').attributes('src')).toMatch(/\?firma=1$/)
+      expect(foto().text()).not.toContain('Imagen no disponible')
+      expect(wrapper.find('[data-pantalla="W04-02"]').exists()).toBe(true)
+    })
+
+    it('si la URL nueva también falla → "Imagen no disponible" (una sola renovación)', async () => {
+      const { wrapper } = await montar()
+      const consultas = firmarEnCadaConsulta()
+      const foto = () => wrapper.findAll('[data-prueba="evidencia"]')[0]
+      await foto().get('img').trigger('error')
+      await flushPromises()
+      await foto().get('img').trigger('error')
+      await flushPromises()
+      expect(consultas()).toBe(1)
+      expect(foto().text()).toContain('Imagen no disponible')
+    })
+
+    it('otra evidencia también se renueva una vez, y al cargar bien puede renovarse de nuevo', async () => {
+      const { wrapper } = await montar()
+      const consultas = firmarEnCadaConsulta()
+      const evidencia = (i: number) => wrapper.findAll('[data-prueba="evidencia"]')[i]
+      await evidencia(0).get('img').trigger('error')
+      await flushPromises()
+      await evidencia(1).get('img').trigger('error')
+      await flushPromises()
+      expect(consultas()).toBe(2)
+      expect(evidencia(1).text()).not.toContain('Imagen no disponible')
+      // Cargó bien con la URL nueva y vuelve a vencer más tarde: se renueva otra vez.
+      await evidencia(0).get('img').trigger('load')
+      await evidencia(0).get('img').trigger('error')
+      await flushPromises()
+      expect(consultas()).toBe(3)
+      expect(evidencia(0).text()).not.toContain('Imagen no disponible')
+    })
+
+    it('varias imágenes que fallan a la vez hacen una sola consulta', async () => {
+      const { wrapper } = await montar()
+      const consultas = firmarEnCadaConsulta()
+      const [a, b] = wrapper.findAll('[data-prueba="evidencia"]')
+      await Promise.all([a.get('img').trigger('error'), b.get('img').trigger('error')])
+      await flushPromises()
+      expect(consultas()).toBe(1)
+    })
+
+    it('el enlace abre la URL tal cual mientras está vigente', async () => {
+      const { wrapper } = await montar()
+      const abrir = vi.spyOn(window, 'open').mockImplementation(() => null)
+      const enlace = wrapper.findAll('[data-prueba="evidencia"]')[0].get('a')
+      const evento = new MouseEvent('click', { cancelable: true })
+      enlace.element.dispatchEvent(evento)
+      await flushPromises()
+      expect(evento.defaultPrevented).toBe(false)
+      expect(abrir).not.toHaveBeenCalled()
+      abrir.mockRestore()
+    })
+
+    it('pasados 4 min, el enlace renueva antes de abrir y nunca lleva a una URL vencida', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      const { wrapper } = await montar()
+      const consultas = firmarEnCadaConsulta()
+      const pestana = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
+      const abrir = vi.spyOn(window, 'open').mockImplementation(() => pestana as unknown as Window)
+      vi.setSystemTime(Date.now() + 4 * 60_000 + 1_000)
+      const enlace = wrapper.findAll('[data-prueba="evidencia"]')[0].get('a')
+      const evento = new MouseEvent('click', { cancelable: true })
+      enlace.element.dispatchEvent(evento)
+      await flushPromises()
+      expect(evento.defaultPrevented).toBe(true)
+      expect(abrir).toHaveBeenCalledWith('', '_blank')
+      expect(pestana.opener).toBeNull()
+      await vi.waitFor(() => expect(pestana.location.href).toMatch(/sin-01-foto-1\.jpg\?firma=1$/))
+      expect(consultas()).toBe(1)
+      abrir.mockRestore()
+    })
+
+    it('si no se pudo renovar al abrir, cierra la pestaña y muestra "Imagen no disponible"', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      const { wrapper } = await montar()
+      servidor.use(bff.query('siniestro', () => HttpResponse.json({ errors: [{ message: 'x' }] })))
+      const pestana = { opener: {} as unknown, location: { href: '' }, close: vi.fn() }
+      const abrir = vi.spyOn(window, 'open').mockImplementation(() => pestana as unknown as Window)
+      vi.setSystemTime(Date.now() + 5 * 60_000)
+      wrapper
+        .findAll('[data-prueba="evidencia"]')[0]
+        .get('a')
+        .element.dispatchEvent(new MouseEvent('click', { cancelable: true }))
+      await vi.waitFor(() => expect(pestana.close).toHaveBeenCalled())
+      expect(pestana.location.href).toBe('')
+      expect(wrapper.findAll('[data-prueba="evidencia"]')[0].text()).toContain('Imagen no disponible')
+      abrir.mockRestore()
+    })
+
+    it('al cambiar de siniestro se olvidan las renovaciones', async () => {
+      const { wrapper, router } = await montar()
+      const consultas = firmarEnCadaConsulta()
+      await wrapper.findAll('[data-prueba="evidencia"]')[0].get('img').trigger('error')
+      await flushPromises()
+      expect(consultas()).toBe(1)
+      const listo = async () => {
+        await vi.waitFor(() => expect(useSiniestros().estado.cargandoDetalle).toBe(false))
+        await flushPromises()
+      }
+      await router.push('/operador/siniestros/sin-02')
+      await listo()
+      await router.push('/operador/siniestros/sin-01')
+      await listo()
+      const antes = consultas()
+      await wrapper.findAll('[data-prueba="evidencia"]')[0].get('img').trigger('error')
+      await flushPromises()
+      expect(consultas()).toBe(antes + 1)
+    })
   })
 
   it('verificación que no cumple: ícono y texto "No cumple" (no solo color)', async () => {
@@ -178,6 +316,47 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     await vi.waitFor(() => expect(wrapper.find('[data-prueba="automatica"]').exists()).toBe(true))
     expect(wrapper.find('[data-prueba="tiempo-restante"]').exists()).toBe(false)
     expect(wrapper.find('[data-prueba="acciones"]').exists()).toBe(false)
+  })
+
+  // QA 2026-11-18 (KAN-27): un auto parcial o de RC vencido seguía prometiendo «se aprobará en el próximo minuto»,
+  // pero CLAIMS lo salta en cada pasada porque necesita el valor del daño del operador.
+  it.each(['CHOQUE_PARCIAL', 'HURTO_PARCIAL', 'RESPONSABILIDAD_CIVIL'] as TipoSiniestroAuto[])(
+    'vencido y %s: pide el valor del daño, no promete la aprobación ni vuelve a consultar',
+    async (tipo) => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] })
+      const { wrapper } = await montar()
+      const { estado } = useSiniestros()
+      estado.detalle!.tipoSiniestroAuto = tipo
+      estado.detalle!.venceDictamenEn = new Date(Date.now() - 60_000).toISOString()
+      await flushPromises()
+      let consultas = 0
+      servidor.use(
+        bff.query('siniestro', () => {
+          consultas += 1
+          return HttpResponse.json({ data: { siniestro: estado.detalle } })
+        }),
+      )
+
+      vi.advanceTimersByTime(60_000)
+      await flushPromises()
+      expect(wrapper.find('[data-prueba="aprobando-automatica"]').exists()).toBe(false)
+      expect(wrapper.get('[data-prueba="vencido-requiere-valor"]').text()).toBe(
+        'Plazo vencido: este siniestro no se aprueba solo. Digita el valor del daño y apruébalo.',
+      )
+      expect(wrapper.get('[data-prueba="aprobar"]').attributes('disabled')).toBeUndefined()
+      expect(consultas).toBe(0)
+    },
+  )
+
+  it('vencido y pérdida total: sí espera la aprobación automática', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] })
+    const { wrapper } = await montar()
+    const { estado } = useSiniestros()
+    estado.detalle!.tipoSiniestroAuto = 'PERDIDA_TOTAL_DANOS'
+    estado.detalle!.venceDictamenEn = new Date(Date.now() - 60_000).toISOString()
+    await flushPromises()
+    expect(wrapper.find('[data-prueba="aprobando-automatica"]').exists()).toBe(true)
+    expect(wrapper.find('[data-prueba="vencido-requiere-valor"]').exists()).toBe(false)
   })
 
   it('con más de 24 h también muestra los minutos"', async () => {

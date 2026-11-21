@@ -5,16 +5,19 @@
     detalle de fuentes» (D-6): exige sesión.
   - «Descargar documento» pide el PDF con el token del enlace y lo abre en una pestaña nueva (`blob:`); si el navegador
     bloquea la ventana, lo descarga. El documento también llega al correo en segundo plano.
+  - KAN-155: el número de póliza es copiable (`BotonCopiar`, copia solo el número) y el lector de pantalla lo lee
+    carácter por carácter (`deletrear`).
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Boton } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
+import BotonCopiar from '../components/BotonCopiar.vue'
 import TarjetaEnlace from '../components/TarjetaEnlace.vue'
 import { enModoSesion, useEnlaceFirma, type PasoEnlace } from '../composables/useEnlaceFirma'
 import { t } from '../i18n'
-import { formatearFecha, formatearFechaCorta } from '../utils/formato'
+import { deletrear, formatearFecha, formatearFechaCorta } from '../utils/formato'
 
 const router = useRouter()
 const { estado, entrar, urlDelPdf } = useEnlaceFirma()
@@ -84,9 +87,17 @@ async function descargar() {
     icono="verified"
     clase-mosaico="bg-info-fondo text-info"
   >
-    <p class="text-[14px] text-enlace" data-prueba="numero-poliza">
-      {{ t('polizaEmitida.numero', { numero: poliza.numero }) }}
-    </p>
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Lo visible no cambia; el lector de pantalla lee la copia `sr-only`, carácter por carácter (KAN-155). No va
+           como `aria-label` en el span: sin rol, varios lectores lo ignoran. -->
+      <p class="text-[14px] text-enlace" data-prueba="numero-poliza">
+        <span aria-hidden="true">{{ t('polizaEmitida.numero', { numero: poliza.numero }) }}</span>
+        <span class="sr-only" data-prueba="numero-poliza-deletreado">{{
+          t('polizaEmitida.numero', { numero: deletrear(poliza.numero, t('comun.guion')) })
+        }}</span>
+      </p>
+      <BotonCopiar :texto="poliza.numero" :etiqueta="t('polizaEmitida.numeroCorto')" data-prueba="copiar-numero" />
+    </div>
     <p class="text-[13px] text-tinta-suave">
       {{
         t('polizaEmitida.fechas', {
