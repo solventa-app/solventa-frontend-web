@@ -14,6 +14,7 @@ export type Credencial = Esquemas['Credencial']
 export type Consumo = Esquemas['Consumo']
 export type Estado = Esquemas['EstadoSistema']
 export type Ventas = Esquemas['Ventas']
+export type TicketAvisos = Esquemas['TicketAvisos']
 
 /** Qué salió mal, sin depender del texto del mensaje. */
 export type CodigoErrorSocios =
@@ -108,9 +109,14 @@ export const obtenerConsumo = (token: string, fetchFn?: typeof fetch) =>
 export const obtenerEstado = (token: string, ventana: Ventana, fetchFn?: typeof fetch) =>
   llamarApiSocios<Estado>('GET', `/estado?ventana=${ventana}`, { token, fetchFn })
 
-/** Del entorno del token, los últimos 12 meses (con un token de PRUEBAS, datos simulados). */
+/** Del entorno del token, los últimos 12 meses: cotizaciones, propuestas y pólizas emitidas por separado (v0.68). Con
+ * un token de PRUEBAS, lo hecho en el sandbox. */
 export const obtenerVentas = (token: string, fetchFn?: typeof fetch) =>
   llamarApiSocios<Ventas>('GET', '/ventas', { token, fetchFn })
+
+/** Ticket de un solo uso (60 s) para el stream SSE del entorno del token (v0.68). No cuenta en el consumo. */
+export const pedirTicketAvisos = (token: string, fetchFn?: typeof fetch) =>
+  llamarApiSocios<TicketAvisos>('POST', '/avisos/ticket', { token, fetchFn })
 
 /** Solo para mostrar: no descuenta presupuesto. */
 export const convertirMontos = (token: string, montos: Esquemas['Monto'][], moneda: string, fetchFn?: typeof fetch) =>

@@ -212,8 +212,16 @@ export const handlersSocios = [
 
   http.get('*/v1/ventas', ({ request }) => {
     if (!claimsDe(request)) return sinSesion()
-    const mes = (m: string, propuestas: number, emitidas: number, primas: string, comision: string) => ({
+    const mes = (
+      m: string,
+      cotizaciones: number,
+      propuestas: number,
+      emitidas: number,
+      primas: string,
+      comision: string,
+    ) => ({
       mes: m,
+      cotizaciones,
       propuestas,
       emitidas,
       primas: monto(primas),
@@ -224,11 +232,28 @@ export const handlersSocios = [
       hasta: '2026-10-29',
       tasaComision: '0.1000',
       meses: [
-        mes('2026-08', 52, 31, '11240000', '1124000'),
-        mes('2026-09', 61, 44, '17030000', '1703000'),
-        mes('2026-10', 51, 51, '20380000', '2038000'),
+        mes('2026-08', 260, 52, 31, '11240000', '1124000'),
+        mes('2026-09', 290, 61, 44, '17030000', '1703000'),
+        mes('2026-10', 292, 51, 51, '20380000', '2038000'),
       ],
-      totales: { propuestas: 164, emitidas: 126, primas: monto('48650000'), comision: monto('4865000') },
+      totales: {
+        cotizaciones: 842,
+        propuestas: 164,
+        emitidas: 126,
+        primas: monto('48650000'),
+        comision: monto('4865000'),
+      },
+    }
+    return HttpResponse.json(respuesta)
+  }),
+
+  // v0.68: el ticket del stream SSE. En los mocks no hay servicio de avisos: sin `url`, el panel no abre el stream.
+  http.post('*/v1/avisos/ticket', ({ request }) => {
+    if (!claimsDe(request)) return sinSesion()
+    const respuesta: Esquemas['TicketAvisos'] = {
+      ticket: 'ticket-de-demo',
+      url: '',
+      venceEn: new Date(Date.now() + 60_000).toISOString(),
     }
     return HttpResponse.json(respuesta)
   }),
