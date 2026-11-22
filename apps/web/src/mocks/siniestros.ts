@@ -113,6 +113,9 @@ function siniestrosIniciales(): Siniestro[] {
   derivado.resolucion = {
     tipo: 'DERIVACION',
     automatica: false,
+    resueltaPor: { sistema: false, nombre: 'Laura Gómez' },
+    derivadaPor: { sistema: false, nombre: 'Laura Gómez' },
+    derivadaEn: '2026-10-12T18:00:00Z',
     resueltaEn: '2026-10-12T18:00:00Z',
     notificacion: 'Correo certificado y expediente digital de siniestros',
     perito: { ...peritosBase[0] },
@@ -123,6 +126,7 @@ function siniestrosIniciales(): Siniestro[] {
   aprobado.resolucion = {
     tipo: 'APROBACION',
     automatica: false,
+    resueltaPor: { sistema: false, nombre: 'Laura Gómez' },
     resueltaEn: '2026-10-14T15:00:00Z',
     notificacion: 'Enviada al asegurado y a la entidad acreedora',
     indemnizacion: { valor: '8650000', moneda: 'COP' },
@@ -138,6 +142,7 @@ function siniestrosIniciales(): Siniestro[] {
   rechazado.resolucion = {
     tipo: 'RECHAZO',
     automatica: false,
+    resueltaPor: { sistema: false, nombre: 'Laura Gómez' },
     resueltaEn: '2026-10-15T15:00:00Z',
     notificacion: 'Enviada vía correo certificado y Open Finance',
     motivo: 'FUERA_DE_COBERTURA',
@@ -227,11 +232,14 @@ export const handlersSiniestros = [
         tipo: 'APROBACION',
         automatica: false,
         resueltaEn: new Date().toISOString(),
+        resueltaPor: { sistema: false, nombre: 'Operador demo' },
         notificacion: 'Enviada al asegurado y a la entidad acreedora',
         indemnizacion: { ...s.sumaReclamada },
         metodoTransferencia: 'ACH Colombia Interbancario',
         plazoDispersion: '1 a 3 días hábiles',
         perito: s.resolucion?.perito ?? null,
+        derivadaPor: s.resolucion?.derivadaPor ?? null,
+        derivadaEn: s.resolucion?.derivadaEn ?? null,
       }
       return s
     }),
@@ -246,11 +254,14 @@ export const handlersSiniestros = [
         tipo: 'RECHAZO',
         automatica: false,
         resueltaEn: new Date().toISOString(),
+        resueltaPor: { sistema: false, nombre: 'Operador demo' },
         notificacion: 'Enviada vía correo certificado y Open Finance',
         motivo: variables.motivo,
         comentario,
         viaRecurso: 'Disponible en los próximos 10 días hábiles.',
         perito: s.resolucion?.perito ?? null,
+        derivadaPor: s.resolucion?.derivadaPor ?? null,
+        derivadaEn: s.resolucion?.derivadaEn ?? null,
       }
       return s
     }),
@@ -269,6 +280,9 @@ export const handlersSiniestros = [
         tipo: 'DERIVACION',
         automatica: false,
         resueltaEn: new Date().toISOString(),
+        resueltaPor: { sistema: false, nombre: 'Operador demo' },
+        derivadaPor: { sistema: false, nombre: 'Operador demo' },
+        derivadaEn: new Date().toISOString(),
         notificacion: 'Correo certificado y expediente digital de siniestros',
         perito: { ...perito, vencimientoInforme: vencimiento },
         instrucciones,

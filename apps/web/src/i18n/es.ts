@@ -538,6 +538,11 @@ export const es = {
   'siniestros.detalle.tiempoHoras': '{h} h {m} min',
   'siniestros.detalle.tiempoDias': '{d} d {h} h {m} min',
   'siniestros.detalle.aprobadaAutomatica': 'Aprobado automáticamente por vencimiento',
+  'siniestros.detalle.aprobadoPor': 'Aprobado por {nombre}',
+  'siniestros.detalle.rechazadoPor': 'Rechazado por {nombre}',
+  'siniestros.detalle.derivadoPor': 'Derivado a perito por {nombre} el {fecha}',
+  'siniestros.detalle.actorSistema': 'el sistema',
+  'siniestros.detalle.actorSinNombre': 'un operador',
   'siniestros.detalle.vencido': 'Vencido',
   'siniestros.detalle.aprobandoAutomatica': 'Se aprobará automáticamente en el próximo minuto.',
   'siniestros.detalle.vencidoRequiereValor':
