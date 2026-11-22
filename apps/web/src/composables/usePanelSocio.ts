@@ -5,6 +5,11 @@
 // sesión (que es de producción, W07-3) y los de pruebas con un token pedido con la clave de pruebas, que se guarda en
 // memoria hasta que vence. La ventana de tiempo solo cambia el estado del servicio.
 //
+// En vivo (v0.67): el panel abre el stream SSE del servicio `avisos` con un ticket de un solo uso del entorno que se ve.
+// Cada cotización, propuesta o póliza del socio (también las del Swagger embebido) llega como aviso y el consumo y las
+// ventas se vuelven a leer sin mostrar el esqueleto. Si el stream se cae, se pide otro ticket con espera creciente; si
+// no se puede, el panel sigue como antes (se pone al día al recargar).
+//
 // Un 401 de la sesión significa que el token venció: se cierra la sesión técnica con el aviso y la vista vuelve al
 // ingreso. Nunca se muestra un error técnico (regla 5): los mensajes salen de ErrorSocios.
 import { reactive } from 'vue'
@@ -14,6 +19,7 @@ import {
   obtenerCredenciales,
   obtenerEstado,
   obtenerVentas,
+  pedirTicketAvisos,
   pedirToken,
   rotarCredencial,
   type Consumo,
@@ -46,6 +52,8 @@ interface EstadoPanel {
   error: Record<Seccion, string | null>
   /** El backend respondió 401 a la sesión: la vista vuelve al ingreso (el aviso ya quedó en la sesión técnica). */
   sesionVencida: boolean
+  /** El stream de avisos está abierto: lo que haga el socio aparece sin recargar. */
+  enVivo: boolean
 }
 
 function estadoInicial(): EstadoPanel {
@@ -65,6 +73,7 @@ function estadoInicial(): EstadoPanel {
     cargando: porSeccion(false),
     error: porSeccion<string | null>(null),
     sesionVencida: false,
+    enVivo: false,
   }
 }
 
@@ -72,8 +81,42 @@ const estado = reactive<EstadoPanel>(estadoInicial())
 /** Token de pruebas pedido con la clave de pruebas (para el consumo, las ventas y el Swagger de pruebas). */
 let tokenPruebas: TokenGenerado | null = null
 
+/** Tras un aviso, se espera un momento por si llegan más (una cotización trae varios pasos) y se lee una sola vez. */
+export const ESPERA_RECARGA_MS = 800
+const REINTENTO_BASE_MS = 5_000
+const REINTENTO_MAXIMO_MS = 60_000
+const MAXIMO_FALLOS = 8
+
+type CrearFuente = (url: string) => EventSource | null
+const fuentePorDefecto: CrearFuente = (url) => (typeof EventSource === 'undefined' ? null : new EventSource(url))
+let crearFuente: CrearFuente = fuentePorDefecto
+let fuente: EventSource | null = null
+/** Cada apertura invalida a la anterior: un cambio de entorno mientras se pide el ticket no deja dos streams. */
+let apertura = 0
+let fallos = 0
+let siguiendo = false
+let recarga: ReturnType<typeof setTimeout> | undefined
+let reintento: ReturnType<typeof setTimeout> | undefined
+
+/** Solo para pruebas: cómo se abre el stream (en jsdom no hay `EventSource`). */
+export function fijarFuenteEnVivo(crear: CrearFuente | null): void {
+  crearFuente = crear ?? fuentePorDefecto
+}
+
+function cerrarFuente() {
+  apertura++
+  clearTimeout(recarga)
+  clearTimeout(reintento)
+  fuente?.close()
+  fuente = null
+  estado.enVivo = false
+}
+
 /** Solo para pruebas: deja el estado como al cargar el módulo. */
 export function reiniciarPanelSocio(): void {
+  siguiendo = false
+  fallos = 0
+  cerrarFuente()
   Object.assign(estado, estadoInicial())
   tokenPruebas = null
 }
@@ -185,7 +228,69 @@ export function usePanelSocio(fetchFn: typeof fetch = fetch) {
     estado.entorno = entorno
     estado.consumo = null
     estado.ventas = null
+    // El stream es del entorno del token: se cambia por el del entorno nuevo.
+    if (siguiendo) void abrirFuente()
     await Promise.all([cargarConsumo(), cargarVentas()])
+  }
+
+  function programarRecarga() {
+    clearTimeout(recarga)
+    recarga = setTimeout(() => void Promise.all([cargarConsumo(), cargarVentas()]), ESPERA_RECARGA_MS)
+  }
+
+  function programarReintento() {
+    estado.enVivo = false
+    if (!siguiendo || fallos >= MAXIMO_FALLOS) return
+    const espera = Math.min(REINTENTO_MAXIMO_MS, REINTENTO_BASE_MS * 2 ** fallos)
+    fallos++
+    clearTimeout(reintento)
+    reintento = setTimeout(() => void abrirFuente(), espera)
+  }
+
+  async function abrirFuente() {
+    cerrarFuente()
+    const estaApertura = apertura
+    const entorno = estado.entorno
+    let url: string
+    try {
+      const ticket = await pedirTicketAvisos(await tokenDe(entorno), fetchFn)
+      if (!ticket.url) return
+      url = `${ticket.url}?ticket=${encodeURIComponent(ticket.ticket)}`
+    } catch {
+      if (estaApertura === apertura) programarReintento()
+      return
+    }
+    if (estaApertura !== apertura || !siguiendo) return
+    const nueva = crearFuente(url)
+    if (!nueva) return
+    fuente = nueva
+    nueva.onopen = () => {
+      fallos = 0
+      estado.enVivo = true
+    }
+    // `socio`: una llamada del socio que cuenta en el consumo; `propuesta`: POLICY emitió una póliza que vendió.
+    nueva.addEventListener('socio', programarRecarga)
+    nueva.addEventListener('propuesta', programarRecarga)
+    // El ticket no sirve dos veces, así que la reconexión automática del navegador fallaría: se pide otro.
+    nueva.onerror = () => {
+      if (fuente !== nueva) return
+      nueva.close()
+      fuente = null
+      programarReintento()
+    }
+  }
+
+  /** Abre el stream del entorno que se ve (el panel lo llama al montarse). */
+  async function seguirEnVivo() {
+    siguiendo = true
+    fallos = 0
+    await abrirFuente()
+  }
+
+  /** Cierra el stream (al salir del panel). */
+  function dejarDeSeguir() {
+    siguiendo = false
+    cerrarFuente()
   }
 
   async function cambiarVentana(ventana: Ventana) {
@@ -225,5 +330,7 @@ export function usePanelSocio(fetchFn: typeof fetch = fetch) {
     credencialDe,
     rotar,
     generarToken,
+    seguirEnVivo,
+    dejarDeSeguir,
   }
 }

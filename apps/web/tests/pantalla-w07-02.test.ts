@@ -4,7 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cambiarMoneda } from '../src/composables/useMoneda'
-import { reiniciarPanelSocio } from '../src/composables/usePanelSocio'
+import { ESPERA_RECARGA_MS, fijarFuenteEnVivo, reiniciarPanelSocio } from '../src/composables/usePanelSocio'
 import { useSesionSocio } from '../src/composables/useSesionSocio'
 import { servidor } from '../src/mocks/node'
 import { restablecerSociosDePrueba } from '../src/mocks/socios'
@@ -162,7 +162,11 @@ describe('W07-02 · Panel del socio', () => {
     expect(wrapper.get('[data-prueba="tabla-consumo"]').text()).toMatch(/cotizaciones\s*842\s*833\s*9\s*412 ms/)
     const indicadores = wrapper.get('[data-prueba="indicadores"]').text()
     expect(indicadores).toMatch(/\$\s?48\.650\.000/)
-    expect(indicadores).toMatch(/77\s?%/) // 126 emitidas / 164 propuestas
+    // v0.67: cotizaciones y ventas por separado; la conversión es de cotización a venta (126 / 842).
+    expect(wrapper.get('[data-prueba="total-cotizaciones"]').text()).toMatch(/Cotizaciones\s*842/)
+    expect(wrapper.get('[data-prueba="total-ventas"]').text()).toMatch(/Ventas\s*126\s*Pólizas emitidas/)
+    expect(indicadores).toMatch(/15\s?%/)
+    expect(indicadores).not.toContain('Propuestas')
     expect(indicadores).toMatch(/Tasa de comisión: 10\s?%/)
     expect(wrapper.text()).toContain('Octubre de 2026')
     expect(wrapper.text()).not.toContain('Entorno de pruebas')
@@ -173,6 +177,54 @@ describe('W07-02 · Panel del socio', () => {
       .trigger('click')
     await esperar(() => wrapper.text().includes('Entorno de pruebas'))
     expect(wrapper.text()).toContain('Entorno de pruebas')
+  })
+
+  it('v0.67: la tabla por mes muestra cotizaciones, propuestas aceptadas y ventas en columnas aparte', async () => {
+    const wrapper = await montarPanel()
+    const tabla = wrapper.get('[data-prueba="tabla-ventas"]').text()
+    expect(tabla).toMatch(/Cotizaciones\s*Propuestas aceptadas\s*Pólizas emitidas/)
+    expect(tabla).toMatch(/Octubre de 2026\s*292\s*51\s*51/)
+  })
+
+  it('v0.67: en vivo por SSE, cada aviso vuelve a leer el consumo y las ventas sin recargar', async () => {
+    const fuentes: FuenteFalsa[] = []
+    fijarFuenteEnVivo((url) => {
+      const fuente = new FuenteFalsa(url)
+      fuentes.push(fuente)
+      return fuente as unknown as EventSource
+    })
+    servidor.use(
+      http.post('*/v1/avisos/ticket', () =>
+        HttpResponse.json({ ticket: 't-1', url: 'https://avisos.test/avisos/stream', venceEn: '2099-01-01T00:00:00Z' }),
+      ),
+    )
+    let lecturas = 0
+    servidor.use(
+      http.get('*/v1/ventas', () => {
+        lecturas++
+        return lecturas === 1 ? undefined : HttpResponse.json(ventasCon(843, 127))
+      }),
+    )
+    try {
+      const wrapper = await montarPanel()
+      await esperar(() => fuentes.length === 1)
+      expect(fuentes[0].url).toBe('https://avisos.test/avisos/stream?ticket=t-1')
+      fuentes[0].abrir()
+      await esperar(() => wrapper.find('[data-prueba="en-vivo"]').exists())
+      expect(wrapper.get('[data-prueba="en-vivo"]').text()).toBe('En vivo')
+
+      fuentes[0].emitir('socio', { tipo: 'socio', api: 'cotizaciones' })
+      await new Promise((r) => setTimeout(r, ESPERA_RECARGA_MS + 50))
+      await esperar(() => wrapper.get('[data-prueba="total-cotizaciones"]').text().includes('843'))
+      expect(wrapper.get('[data-prueba="total-ventas"]').text()).toContain('127')
+      expect(wrapper.find('[aria-busy="true"]').exists()).toBe(false)
+
+      wrapper.unmount()
+      montados.splice(montados.indexOf(wrapper), 1)
+      expect(fuentes[0].cerrada).toBe(true)
+    } finally {
+      fijarFuenteEnVivo(null)
+    }
   })
 
   it('una sección que falla muestra su error con reintento sin tumbar las demás, nunca un 5xx', async () => {
@@ -211,3 +263,36 @@ describe('W07-02 · Panel del socio', () => {
     await cambiarMoneda('COP')
   })
 })
+
+class FuenteFalsa {
+  cerrada = false
+  onopen: (() => void) | null = null
+  onerror: (() => void) | null = null
+  private oyentes: Record<string, ((evento: MessageEvent<string>) => void)[]> = {}
+  constructor(readonly url: string) {}
+  addEventListener(tipo: string, oyente: (evento: MessageEvent<string>) => void) {
+    ;(this.oyentes[tipo] ??= []).push(oyente)
+  }
+  close() {
+    this.cerrada = true
+  }
+  abrir() {
+    this.onopen?.()
+  }
+  emitir(tipo: string, datos: unknown) {
+    this.oyentes[tipo]?.forEach((o) => o(new MessageEvent(tipo, { data: JSON.stringify(datos) })))
+  }
+}
+
+function ventasCon(cotizaciones: number, emitidas: number) {
+  const monto = (valor: string) => ({ valor, moneda: 'COP' })
+  return {
+    desde: '2025-11-01',
+    hasta: '2026-10-29',
+    tasaComision: '0.1000',
+    meses: [
+      { mes: '2026-10', cotizaciones, propuestas: 52, emitidas, primas: monto('20441200'), comision: monto('2044120') },
+    ],
+    totales: { cotizaciones, propuestas: 52, emitidas, primas: monto('20441200'), comision: monto('2044120') },
+  }
+}
