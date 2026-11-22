@@ -538,6 +538,11 @@ export const en: Record<Clave, string> = {
   'siniestros.detalle.tiempoHoras': '{h} h {m} min',
   'siniestros.detalle.tiempoDias': '{d} d {h} h {m} min',
   'siniestros.detalle.aprobadaAutomatica': 'Automatically approved on expiry',
+  'siniestros.detalle.aprobadoPor': 'Approved by {nombre}',
+  'siniestros.detalle.rechazadoPor': 'Rejected by {nombre}',
+  'siniestros.detalle.derivadoPor': 'Referred to an adjuster by {nombre} on {fecha}',
+  'siniestros.detalle.actorSistema': 'the system',
+  'siniestros.detalle.actorSinNombre': 'an operator',
   'siniestros.detalle.vencido': 'Overdue',
   'siniestros.detalle.aprobandoAutomatica': 'It will be approved automatically within the next minute.',
   'siniestros.detalle.vencidoRequiereValor':

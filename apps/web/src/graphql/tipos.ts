@@ -22,6 +22,11 @@ export type AccionSugerida =
   | 'CONTACTAR_ASESOR'
   | 'ESPERAR';
 
+export type ActorSiniestro = {
+  nombre?: Maybe<Scalars['String']['output']>;
+  sistema: Scalars['Boolean']['output'];
+};
+
 export type Archivo = {
   creadoEn: Scalars['DateTime']['output'];
   estado: EstadoArchivo;
@@ -1148,6 +1153,8 @@ export type ReporteSiniestroInput = {
 export type Resolucion = {
   automatica: Scalars['Boolean']['output'];
   comentario?: Maybe<Scalars['String']['output']>;
+  derivadaEn?: Maybe<Scalars['DateTime']['output']>;
+  derivadaPor?: Maybe<ActorSiniestro>;
   indemnizacion?: Maybe<Monto>;
   instrucciones?: Maybe<Scalars['String']['output']>;
   metodoTransferencia?: Maybe<Scalars['String']['output']>;
@@ -1156,6 +1163,7 @@ export type Resolucion = {
   perito?: Maybe<Perito>;
   plazoDispersion?: Maybe<Scalars['String']['output']>;
   resueltaEn: Scalars['DateTime']['output'];
+  resueltaPor?: Maybe<ActorSiniestro>;
   tipo: TipoResolucion;
   vencimientoInforme?: Maybe<Scalars['DateTime']['output']>;
   viaRecurso?: Maybe<Scalars['String']['output']>;

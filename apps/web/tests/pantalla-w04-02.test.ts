@@ -414,6 +414,34 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(wrapper.get('[data-prueba="automatica"]').text()).toBe('Aprobado automáticamente por vencimiento')
   })
 
+  it('v0.67: la resolución dice qué operador la tomó, o el sistema si fue automática', async () => {
+    const { wrapper } = await montar('sin-03')
+    expect(wrapper.get('[data-prueba="resuelta-por"]').text()).toBe('Aprobado por Laura Gómez')
+    expect(wrapper.find('[data-prueba="derivada-por"]').exists()).toBe(false)
+    const resolucion = useSiniestros().estado.detalle!.resolucion!
+    resolucion.resueltaPor = { sistema: true, nombre: null }
+    await flushPromises()
+    expect(wrapper.get('[data-prueba="resuelta-por"]').text()).toBe('Aprobado por el sistema')
+    resolucion.resueltaPor = { sistema: false, nombre: null }
+    await flushPromises()
+    expect(wrapper.get('[data-prueba="resuelta-por"]').text()).toBe('Aprobado por un operador')
+  })
+
+  it('v0.67: rechazado tras pasar por perito muestra quién rechazó y quién derivó', async () => {
+    const { wrapper } = await montar('sin-04')
+    const resolucion = useSiniestros().estado.detalle!.resolucion!
+    resolucion.derivadaPor = { sistema: false, nombre: 'Andrés Ruiz' }
+    resolucion.derivadaEn = '2026-10-13T15:00:00Z'
+    await flushPromises()
+    expect(wrapper.get('[data-prueba="resuelta-por"]').text()).toBe('Rechazado por Laura Gómez')
+    expect(wrapper.get('[data-prueba="derivada-por"]').text()).toContain('Derivado a perito por Andrés Ruiz el')
+  })
+
+  it('v0.67: en revisión, el recuadro del perito dice quién lo derivó', async () => {
+    const { wrapper } = await montar('sin-02')
+    expect(wrapper.get('[data-prueba="derivada-por"]').text()).toContain('Derivado a perito por Laura Gómez el')
+  })
+
   it('APROBADO: solo lectura con la resolución y sin tiempo restante', async () => {
     const { wrapper } = await montar('sin-03')
     expect(wrapper.find('[data-prueba="acciones"]').exists()).toBe(false)

@@ -24,7 +24,7 @@ import { Badge, Boton, CampoMonto, EstadoOperador, FooterPantalla, HeaderPantall
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import ModalRechazo from '../components/ModalRechazo.vue'
 import { esErrorSiniestro, useSiniestros } from '../composables/useSiniestros'
-import type { EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
+import type { ActorSiniestro, EstadoSiniestro, Evidencia, MotivoRechazo } from '../graphql/tipos'
 import { t } from '../i18n'
 import { moneda, montoVisible } from '../composables/useMoneda'
 import { formatearFecha, formatearNumero } from '../utils/formato'
@@ -59,6 +59,12 @@ const resuelto = computed(() => s.value?.estado === 'APROBADO' || s.value?.estad
 const derivacion = computed(() =>
   s.value?.estado === 'EN_REVISION' && s.value.resolucion?.tipo === 'DERIVACION' ? s.value.resolucion : null,
 )
+
+// v0.67: quién tomó la decisión. El sistema aprueba solo al vencer el plazo; sin nombre (AUTH no respondió), «un operador».
+function nombreActor(actor: ActorSiniestro): string {
+  if (actor.sistema) return t('siniestros.detalle.actorSistema')
+  return actor.nombre ?? t('siniestros.detalle.actorSinNombre')
+}
 
 // Galería: evidencias cuya imagen no cargó (estado degradado).
 const fallidas = ref(new Set<string>())
@@ -527,6 +533,28 @@ watch(
                 {{ t('siniestros.detalle.aprobadaAutomatica') }}
               </span>
             </div>
+            <p v-if="s.resolucion.resueltaPor" data-prueba="resuelta-por" class="mt-1 text-[13px] text-tinta">
+              {{
+                t(
+                  s.resolucion.tipo === 'APROBACION'
+                    ? 'siniestros.detalle.aprobadoPor'
+                    : 'siniestros.detalle.rechazadoPor',
+                  { nombre: nombreActor(s.resolucion.resueltaPor) },
+                )
+              }}
+            </p>
+            <p
+              v-if="s.resolucion.derivadaPor && s.resolucion.derivadaEn"
+              data-prueba="derivada-por"
+              class="text-[11px] text-tinta-suave"
+            >
+              {{
+                t('siniestros.detalle.derivadoPor', {
+                  nombre: nombreActor(s.resolucion.derivadaPor),
+                  fecha: formatearFecha(s.resolucion.derivadaEn),
+                })
+              }}
+            </p>
             <dl class="mt-2">
               <template v-if="s.resolucion.tipo === 'APROBACION'">
                 <div v-if="s.resolucion.indemnizacion" class="py-1.5">
@@ -600,6 +628,18 @@ watch(
                         nombre: derivacion.perito.nombre,
                         ciudad: derivacion.perito.ciudad,
                         red: derivacion.perito.red,
+                      })
+                    }}
+                  </p>
+                  <p
+                    v-if="derivacion.derivadaPor && derivacion.derivadaEn"
+                    data-prueba="derivada-por"
+                    class="text-[11px] text-tinta-suave"
+                  >
+                    {{
+                      t('siniestros.detalle.derivadoPor', {
+                        nombre: nombreActor(derivacion.derivadaPor),
+                        fecha: formatearFecha(derivacion.derivadaEn),
                       })
                     }}
                   </p>
