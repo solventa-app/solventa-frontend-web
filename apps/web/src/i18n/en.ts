@@ -726,7 +726,8 @@ export const en: Record<Clave, string> = {
   'firma.errorTecnico': "The service didn't respond. Please try again in a few seconds.",
   'firma.reintentar': 'Try again',
   'firma.vencido.titulo': 'This link has expired or is no longer valid',
-  'firma.vencido.texto': "Ask your advisor to send you a new one. When you open it, you'll pick up where you left off.",
+  'firma.vencido.texto':
+    "Open the link from your email again. If it has expired, ask your advisor to send you a new one: when you open it, you'll pick up where you left off.",
   'firma.titulo': 'Sign your policy',
   'firma.subtitulo.VIDA_DEUDOR': 'Review the terms of the Borrower Life Insurance before signing electronically.',
   'firma.subtitulo.AUTO': 'Review the terms of the Auto Insurance before signing electronically.',

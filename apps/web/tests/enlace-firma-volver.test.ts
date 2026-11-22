@@ -1,6 +1,6 @@
 // Volver a la página del enlace de firma sin el token en la URL ni en memoria (HU-W03).
-// Al recargar o al volver con «Atrás» desde la pasarela de pago, la página se carga de nuevo: el token solo puede
-// venir del puente del viaje a la pasarela (sessionStorage), que se lee una vez y se borra.
+// Al recargar o al volver con «Atrás» desde la pasarela de pago, la página se carga de nuevo: el token viene de la
+// copia de la pestaña (sessionStorage), que dura lo que el enlace.
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -50,16 +50,16 @@ describe('Volver a /firma sin token en la URL ni en memoria', () => {
     sessionStorage.clear()
   })
 
-  it('con el puente de la pasarela vigente reabre la firma y gasta el puente', async () => {
+  it('con la copia vigente (recarga o vuelta de la pasarela) reabre la firma y la conserva', async () => {
     puente(Date.now() + 10 * 60_000)
     const w = await abrirSinToken()
     expect(w.find('[data-prueba="acepta-terminos"]').exists()).toBe(true)
     expect(w.text()).not.toContain('Este enlace venció')
-    expect(sessionStorage.getItem(CLAVE_PUENTE)).toBeNull()
+    expect(JSON.parse(sessionStorage.getItem(CLAVE_PUENTE)!)).toMatchObject({ t: 'demo' })
     w.unmount()
   })
 
-  it('sin puente (recarga normal) sigue diciendo que el enlace venció', async () => {
+  it('sin copia (pestaña nueva sin el enlace) dice que abra de nuevo el enlace o pida uno nuevo', async () => {
     const w = await abrirSinToken()
     expect(w.text()).toContain('Este enlace venció o ya no es válido')
     w.unmount()

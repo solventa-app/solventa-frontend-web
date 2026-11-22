@@ -102,8 +102,9 @@ describeConMocks('HU-W03 · Suscripción, firma y pago con el asesor', () => {
       cy.get('[data-prueba="numero-poliza"]').invoke('text').should('match', /SOL-\d{4}-\d{6}/)
       cy.contains('Ir al inicio').should('not.exist')
     })
-    // Con la póliza emitida no queda el puente del token en sessionStorage.
-    cy.window().then((win) => expect(win.sessionStorage.getItem('solventa.enlaceFirma')).to.equal(null))
+    // Recargar no pierde el enlace: sigue mostrando la póliza, no el estado de enlace vencido.
+    cy.reload()
+    cy.get('[data-pantalla="W03-04"] [data-prueba="numero-poliza"]').should('exist')
   })
 
   it('un rechazo (fondos insuficientes) pide otra tarjeta sin perder la firma, y con otra se emite', () => {
