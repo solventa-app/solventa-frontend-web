@@ -1,6 +1,7 @@
 # Estado del proyecto: Solventa Frontend
 
-Corte: **2026-10-31**, `develop` en `450adbc`. Resumen para arrancar sesiones con poco contexto; el detalle vive en los
+Corte: **2026-11-22**, `main` en `aa759a6` (release `sprint-12`) y `develop` en `4385c97`; el cierre del proyecto es
+`release/sprint-3` (versión `0.6.0`). Resumen para arrancar sesiones con poco contexto; el detalle vive en los
 documentos enlazados y las reglas en [`CLAUDE.md`](CLAUDE.md). Si esto y el código difieren, gana el código. El estado
 del backend está en `../solventa-backend/PROJECT_STATUS.md`.
 
@@ -11,13 +12,20 @@ Web de Solventa (Vue 3, Vite, TypeScript), en `apps/web`. El móvil vive en `sol
 
 ## Estado
 
-- Construidas: W01, W03 (enlace de firma y pago), W04 (mesa de siniestros, contra el BFF real), W05-01 y portal de socios W07.
-- Contrato usado: **v0.23**.
-- W07 sigue con integración pendiente contra el backend.
+- Construidas (pantallas en `apps/web/src/views/`): W01, W03 (enlace de firma, pago y retorno de la pasarela), W04 (mesa
+  de siniestros contra el BFF real, con el plazo del dictamen, el valor del daño y quién resolvió el caso), W05 (avisos
+  por SSE, `useAvisos.ts`), portal de socios W07 (`PanelSocio` en vivo, con cotizaciones y ventas aparte), póliza de auto
+  (KAN-290) y el idioma y la moneda guardados en la cuenta (KAN-32).
+- Contrato usado: **hasta la v0.69**. `contrato/` es una copia parcial del esquema del backend: le faltan los tipos que
+  solo usa la app móvil, así que no es idéntica a `contracts/graphql/schema.graphql`.
+- Release `sprint-12` en `main` desde el 2026-11-22 (PR #234); `CI web` y `Deploy web` terminaron en verde.
+- Sin verificar en esta revisión: Cypress contra el backend real y la integración de W07 con el portal de Daniel.
 
-## Ajustes en curso (acordados el 2026-10-31)
+## Ajustes acordados el 2026-10-31 (histórico)
 
 Plan aprobado con Felipe: validar W01 y W05 contra sus objetivos y lo ya construido en W03, W04, W07 y M01.
+Al 2026-11-22 el SSE de W05 (`useAvisos.ts`) y Sentry (`@sentry/vue`) están en el código; el resto de esta sección no
+se volvió a verificar.
 
 - **W01:** los cambios de RISK no tocan contrato ni pantallas. Queda correr Cypress contra el backend real.
 - **W05:** `useAvisos.ts` (F-F5) no existía. W05-01 pasa de refrescar cada 30 s a SSE, sin botón «Actualizar», con
