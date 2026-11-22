@@ -109,12 +109,12 @@ export const obtenerConsumo = (token: string, fetchFn?: typeof fetch) =>
 export const obtenerEstado = (token: string, ventana: Ventana, fetchFn?: typeof fetch) =>
   llamarApiSocios<Estado>('GET', `/estado?ventana=${ventana}`, { token, fetchFn })
 
-/** Del entorno del token, los últimos 12 meses: cotizaciones, propuestas y pólizas emitidas por separado (v0.67). Con
+/** Del entorno del token, los últimos 12 meses: cotizaciones, propuestas y pólizas emitidas por separado (v0.68). Con
  * un token de PRUEBAS, lo hecho en el sandbox. */
 export const obtenerVentas = (token: string, fetchFn?: typeof fetch) =>
   llamarApiSocios<Ventas>('GET', '/ventas', { token, fetchFn })
 
-/** Ticket de un solo uso (60 s) para el stream SSE del entorno del token (v0.67). No cuenta en el consumo. */
+/** Ticket de un solo uso (60 s) para el stream SSE del entorno del token (v0.68). No cuenta en el consumo. */
 export const pedirTicketAvisos = (token: string, fetchFn?: typeof fetch) =>
   llamarApiSocios<TicketAvisos>('POST', '/avisos/ticket', { token, fetchFn })
 

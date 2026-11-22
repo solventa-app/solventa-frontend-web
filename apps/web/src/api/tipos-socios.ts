@@ -653,7 +653,7 @@ export interface components {
         };
         VentasMes: {
             mes: string;
-            /** @description Cotizaciones hechas (las que descontaron presupuesto; una repetición con `Idempotency-Key` no cuenta). v0.67. */
+            /** @description Cotizaciones hechas (las que descontaron presupuesto; una repetición con `Idempotency-Key` no cuenta). v0.68. */
             cotizaciones: number;
             /** @description Ofertas aceptadas (propuestas creadas). No es una venta. */
             propuestas: number;
@@ -662,7 +662,7 @@ export interface components {
             primas: components["schemas"]["Monto"];
             comision: components["schemas"]["Monto"];
         };
-        /** @description Cotizaciones, propuestas aceptadas y pólizas emitidas (las ventas) por mes, contadas aparte (v0.67). La comisión se causa al emitir: prima × tasa congelada al aceptar (W07-7). */
+        /** @description Cotizaciones, propuestas aceptadas y pólizas emitidas (las ventas) por mes, contadas aparte (v0.68). La comisión se causa al emitir: prima × tasa congelada al aceptar (W07-7). */
         Ventas: {
             /** Format: date */
             desde: string;
@@ -672,7 +672,7 @@ export interface components {
             tasaComision: string;
             meses: components["schemas"]["VentasMes"][];
             totales: {
-                /** @description Cotizaciones hechas (las que descontaron presupuesto; una repetición con `Idempotency-Key` no cuenta). v0.67. */
+                /** @description Cotizaciones hechas (las que descontaron presupuesto; una repetición con `Idempotency-Key` no cuenta). v0.68. */
                 cotizaciones: number;
                 /** @description Ofertas aceptadas (propuestas creadas). No es una venta. */
                 propuestas: number;
@@ -756,7 +756,7 @@ export interface components {
             valorAsegurado?: components["schemas"]["Monto"] | null;
             deducible?: string | null;
         };
-        /** @description Para que el panel se ponga al día solo (v0.67). El stream manda un evento `socio` por cada llamada del socio que cuenta en el consumo (cotizaciones, propuestas, pólizas…) y `propuesta` cuando POLICY emite una póliza que el socio vendió en PRODUCCION. Sin datos personales. */
+        /** @description Para que el panel se ponga al día solo (v0.68). El stream manda un evento `socio` por cada llamada del socio que cuenta en el consumo (cotizaciones, propuestas, pólizas…) y `propuesta` cuando POLICY emite una póliza que el socio vendió en PRODUCCION. Sin datos personales. */
         TicketAvisos: {
             /** @description De un solo uso; vence a los 60 s. */
             ticket: string;

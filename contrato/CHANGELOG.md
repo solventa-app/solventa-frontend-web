@@ -165,7 +165,7 @@ Formato: fecha · historia · cambio · ¿afecta al frontend?
 - Lo que cambia para la web: `useSesion` renueva antes del vencimiento (temporizador) y ante «sin sesión», con la cabecera
   `X-Solventa-Csrf: 1`; al fallar vuelve a G-01 con el aviso de sesión vencida.
 
-## socios-v1 1.4.0 (v0.67) — sincronizado el 2026-11-22
+## socios-v1 1.4.0 (v0.68) — sincronizado el 2026-11-22
 
 - KAN-30 (HU-W07): `contrato/socios-v1.json` copiado del backend en la 1.4.0 (trae también la 1.1.0 a 1.3.0: scopes, límite
   de tasa y antifraude). `Ventas` y `VentasMes` suman `cotizaciones` (las que descontaron presupuesto) y el modo prueba

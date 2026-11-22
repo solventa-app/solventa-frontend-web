@@ -162,7 +162,7 @@ describe('W07-02 · Panel del socio', () => {
     expect(wrapper.get('[data-prueba="tabla-consumo"]').text()).toMatch(/cotizaciones\s*842\s*833\s*9\s*412 ms/)
     const indicadores = wrapper.get('[data-prueba="indicadores"]').text()
     expect(indicadores).toMatch(/\$\s?48\.650\.000/)
-    // v0.67: cotizaciones y ventas por separado; la conversión es de cotización a venta (126 / 842).
+    // v0.68: cotizaciones y ventas por separado; la conversión es de cotización a venta (126 / 842).
     expect(wrapper.get('[data-prueba="total-cotizaciones"]').text()).toMatch(/Cotizaciones\s*842/)
     expect(wrapper.get('[data-prueba="total-ventas"]').text()).toMatch(/Ventas\s*126\s*Pólizas emitidas/)
     expect(indicadores).toMatch(/15\s?%/)
@@ -179,14 +179,14 @@ describe('W07-02 · Panel del socio', () => {
     expect(wrapper.text()).toContain('Entorno de pruebas')
   })
 
-  it('v0.67: la tabla por mes muestra cotizaciones, propuestas aceptadas y ventas en columnas aparte', async () => {
+  it('v0.68: la tabla por mes muestra cotizaciones, propuestas aceptadas y ventas en columnas aparte', async () => {
     const wrapper = await montarPanel()
     const tabla = wrapper.get('[data-prueba="tabla-ventas"]').text()
     expect(tabla).toMatch(/Cotizaciones\s*Propuestas aceptadas\s*Pólizas emitidas/)
     expect(tabla).toMatch(/Octubre de 2026\s*292\s*51\s*51/)
   })
 
-  it('v0.67: en vivo por SSE, cada aviso vuelve a leer el consumo y las ventas sin recargar', async () => {
+  it('v0.68: en vivo por SSE, cada aviso vuelve a leer el consumo y las ventas sin recargar', async () => {
     const fuentes: FuenteFalsa[] = []
     fijarFuenteEnVivo((url) => {
       const fuente = new FuenteFalsa(url)

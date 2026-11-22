@@ -5,7 +5,7 @@
 // sesión (que es de producción, W07-3) y los de pruebas con un token pedido con la clave de pruebas, que se guarda en
 // memoria hasta que vence. La ventana de tiempo solo cambia el estado del servicio.
 //
-// En vivo (v0.67): el panel abre el stream SSE del servicio `avisos` con un ticket de un solo uso del entorno que se ve.
+// En vivo (v0.68): el panel abre el stream SSE del servicio `avisos` con un ticket de un solo uso del entorno que se ve.
 // Cada cotización, propuesta o póliza del socio (también las del Swagger embebido) llega como aviso y el consumo y las
 // ventas se vuelven a leer sin mostrar el esqueleto. Si el stream se cae, se pide otro ticket con espera creciente; si
 // no se puede, el panel sigue como antes (se pone al día al recargar).

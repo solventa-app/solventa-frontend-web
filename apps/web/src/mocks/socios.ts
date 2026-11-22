@@ -247,7 +247,7 @@ export const handlersSocios = [
     return HttpResponse.json(respuesta)
   }),
 
-  // v0.67: el ticket del stream SSE. En los mocks no hay servicio de avisos: sin `url`, el panel no abre el stream.
+  // v0.68: el ticket del stream SSE. En los mocks no hay servicio de avisos: sin `url`, el panel no abre el stream.
   http.post('*/v1/avisos/ticket', ({ request }) => {
     if (!claimsDe(request)) return sinSesion()
     const respuesta: Esquemas['TicketAvisos'] = {

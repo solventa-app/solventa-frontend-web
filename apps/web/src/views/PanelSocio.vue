@@ -6,7 +6,7 @@
   consumo y estado) y dos secciones sin Figma aprobadas: consumo por API (gráfico y tabla) y ventas y comisiones.
   Cada sección carga por separado y tiene sus estados de carga, error con reintento y vacío (regla 5).
 
-  Ventas (v0.67): arriba, por separado, Cotizaciones, Ventas (pólizas emitidas) y la conversión entre las dos. Antes
+  Ventas (v0.68): arriba, por separado, Cotizaciones, Ventas (pólizas emitidas) y la conversión entre las dos. Antes
   solo se veían «Propuestas» y «Pólizas emitidas», así que una cotización que terminaba en póliza parecía dos ventas y
   las cotizaciones solo salían como presupuesto consumido. La propuesta (la oferta aceptada) queda en la tabla por mes.
   El panel se pone al día solo por SSE (usePanelSocio, `enVivo`).
