@@ -357,6 +357,37 @@ async function cargarNombre(fetchFn: typeof fetch = fetch): Promise<void> {
   }
 }
 
+/**
+ * KAN-209: idioma, moneda y país son una sola preferencia de la cuenta, compartida con la app móvil. Si se cambiaron en
+ * otro equipo o en la app mientras esta pestaña estaba en segundo plano, al volver se lee `yo` otra vez y se aplican
+ * (al recargar ya lo hace `renovar` → `cargarNombre`). Sin sesión no hace nada.
+ */
+export async function refrescarPreferenciasDeCuenta(fetchFn: typeof fetch = fetch): Promise<void> {
+  if (!estado.token) return
+  await cargarNombre(fetchFn)
+}
+
+/** Espera mínima entre dos lecturas: volver a la pestaña dispara `visibilitychange` y `focus` casi a la vez. */
+export const ESPERA_REFRESCO_PREFERENCIAS_MS = 2000
+
+/** Escucha la vuelta a la pestaña o a la ventana (`main.ts`). Devuelve con qué dejar de escuchar. */
+export function refrescarPreferenciasAlVolver(fetchFn: typeof fetch = fetch): () => void {
+  let ultima = 0
+  const alVolver = () => {
+    if (document.visibilityState !== 'visible') return
+    const ahora = Date.now()
+    if (ahora - ultima < ESPERA_REFRESCO_PREFERENCIAS_MS) return
+    ultima = ahora
+    void refrescarPreferenciasDeCuenta(fetchFn)
+  }
+  document.addEventListener('visibilitychange', alVolver)
+  window.addEventListener('focus', alVolver)
+  return () => {
+    document.removeEventListener('visibilitychange', alVolver)
+    window.removeEventListener('focus', alVolver)
+  }
+}
+
 /** Al recargar no hay token en memoria: si el refresh sigue valiendo se renueva en silencio. */
 export function restaurarSesion(): void {
   const refreshVigente = leerRefreshHasta() > Date.now()
