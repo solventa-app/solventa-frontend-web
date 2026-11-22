@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { adoptarIdiomaDeCuenta, elegirIdioma } from '../src/composables/useIdiomaCuenta'
 import { moneda } from '../src/composables/useMoneda'
 import { pais } from '../src/composables/usePais'
-import { useSesion } from '../src/composables/useSesion'
+import { refrescarPreferenciasAlVolver, refrescarPreferenciasDeCuenta, useSesion } from '../src/composables/useSesion'
 import { usarToken } from '../src/graphql/cliente'
 import { idioma } from '../src/i18n'
 
@@ -98,5 +98,43 @@ describe('el idioma de la cuenta prevalece', () => {
     await useSesion(fetchFn as unknown as typeof fetch).cargarNombre()
     expect(cuerpoDe(fetchFn).query).toMatch(/yo \{[^}]*idioma/)
     expect(idioma.value).toBe('EN')
+  })
+})
+
+describe('al volver a la pestaña (KAN-209)', () => {
+  const respuestaYo = (idiomaCuenta: string, monedaCuenta: string) =>
+    vi.fn(async () =>
+      Response.json({
+        data: { yo: { nombre: 'Cliente Demo', idioma: idiomaCuenta, moneda: monedaCuenta, pais: 'CO' } },
+      }),
+    )
+
+  it('toma el idioma y la moneda que se guardaron desde la app u otro equipo', async () => {
+    usarToken(tokenCliente())
+    useSesion().estado.token = tokenCliente()
+    const fetchFn = respuestaYo('EN', 'USD')
+    await refrescarPreferenciasDeCuenta(fetchFn as unknown as typeof fetch)
+    expect(idioma.value).toBe('EN')
+    expect(moneda.value).toBe('USD')
+  })
+
+  it('sin sesión no llama al BFF', async () => {
+    const fetchFn = respuestaYo('EN', 'USD')
+    await refrescarPreferenciasDeCuenta(fetchFn as unknown as typeof fetch)
+    expect(fetchFn).not.toHaveBeenCalled()
+    expect(idioma.value).toBe('ES')
+  })
+
+  it('escucha la vuelta a la pestaña y no repite la lectura por focus y visibilitychange juntos', async () => {
+    usarToken(tokenCliente())
+    useSesion().estado.token = tokenCliente()
+    const fetchFn = respuestaYo('EN', 'EUR')
+    const dejar = refrescarPreferenciasAlVolver(fetchFn as unknown as typeof fetch)
+    document.dispatchEvent(new Event('visibilitychange'))
+    window.dispatchEvent(new Event('focus'))
+    await vi.waitFor(() => expect(moneda.value).toBe('EUR'))
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(idioma.value).toBe('EN')
+    dejar()
   })
 })
