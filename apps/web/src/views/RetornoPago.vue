@@ -23,7 +23,7 @@ import {
   usarPropuestaDeSesion,
   useEnlaceFirma,
 } from '../composables/useEnlaceFirma'
-import { useSesion } from '../composables/useSesion'
+import { esperarRestauracion, useSesion } from '../composables/useSesion'
 import type { ErrorPago } from '../graphql/tipos'
 import { t } from '../i18n'
 
@@ -90,7 +90,11 @@ async function pagarDeNuevo() {
   irAPasarela(router, resultado.urlPago)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Ir a la pasarela recarga la web y el token de acceso (solo en memoria) se pierde: se renueva en silencio con el
+  // refresh. Esta ruta es pública y el router no espera esa renovación, así que se espera aquí; si no, un CLIENTE con
+  // sesión se vería «sin enlace» y nunca se confirmaría el pago.
+  await esperarRestauracion()
   // Sin token del enlace ni puente, un CLIENTE con sesión vuelve a su propia propuesta (la pasarela regresa a
   // `/pago/retorno/{propuestaId}`).
   const propuestaId = route.params.propuestaId
