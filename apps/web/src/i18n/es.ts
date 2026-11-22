@@ -727,7 +727,8 @@ export const es = {
   'firma.errorTecnico': 'El servicio no respondió. Intenta nuevamente en unos segundos.',
   'firma.reintentar': 'Reintentar',
   'firma.vencido.titulo': 'Este enlace venció o ya no es válido',
-  'firma.vencido.texto': 'Pídele a tu asesor que te envíe uno nuevo. Al abrirlo, retomarás donde ibas.',
+  'firma.vencido.texto':
+    'Abre de nuevo el enlace desde tu correo. Si ya venció, pídele a tu asesor que te envíe uno nuevo: al abrirlo, retomarás donde ibas.',
   'firma.titulo': 'Firma tu póliza',
   'firma.subtitulo.VIDA_DEUDOR':
     'Revisa las condiciones del Seguro de Vida Hipotecario antes de firmar electrónicamente.',
