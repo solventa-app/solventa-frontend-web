@@ -60,7 +60,7 @@ const derivacion = computed(() =>
   s.value?.estado === 'EN_REVISION' && s.value.resolucion?.tipo === 'DERIVACION' ? s.value.resolucion : null,
 )
 
-// v0.67: quién tomó la decisión. El sistema aprueba solo al vencer el plazo; sin nombre (AUTH no respondió), «un operador».
+// v0.69: quién tomó la decisión. El sistema aprueba solo al vencer el plazo; sin nombre (AUTH no respondió), «un operador».
 function nombreActor(actor: ActorSiniestro): string {
   if (actor.sistema) return t('siniestros.detalle.actorSistema')
   return actor.nombre ?? t('siniestros.detalle.actorSinNombre')

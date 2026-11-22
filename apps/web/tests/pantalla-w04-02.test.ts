@@ -414,7 +414,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(wrapper.get('[data-prueba="automatica"]').text()).toBe('Aprobado automáticamente por vencimiento')
   })
 
-  it('v0.67: la resolución dice qué operador la tomó, o el sistema si fue automática', async () => {
+  it('v0.69: la resolución dice qué operador la tomó, o el sistema si fue automática', async () => {
     const { wrapper } = await montar('sin-03')
     expect(wrapper.get('[data-prueba="resuelta-por"]').text()).toBe('Aprobado por Laura Gómez')
     expect(wrapper.find('[data-prueba="derivada-por"]').exists()).toBe(false)
@@ -427,7 +427,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(wrapper.get('[data-prueba="resuelta-por"]').text()).toBe('Aprobado por un operador')
   })
 
-  it('v0.67: rechazado tras pasar por perito muestra quién rechazó y quién derivó', async () => {
+  it('v0.69: rechazado tras pasar por perito muestra quién rechazó y quién derivó', async () => {
     const { wrapper } = await montar('sin-04')
     const resolucion = useSiniestros().estado.detalle!.resolucion!
     resolucion.derivadaPor = { sistema: false, nombre: 'Andrés Ruiz' }
@@ -437,7 +437,7 @@ describe('HU-W04 · W04-02 Detalle del siniestro', () => {
     expect(wrapper.get('[data-prueba="derivada-por"]').text()).toContain('Derivado a perito por Andrés Ruiz el')
   })
 
-  it('v0.67: en revisión, el recuadro del perito dice quién lo derivó', async () => {
+  it('v0.69: en revisión, el recuadro del perito dice quién lo derivó', async () => {
     const { wrapper } = await montar('sin-02')
     expect(wrapper.get('[data-prueba="derivada-por"]').text()).toContain('Derivado a perito por Laura Gómez el')
   })
