@@ -133,3 +133,33 @@ describe('ejecutar · sesión vencida (v0.34: extensions.code)', () => {
     expect(renovador).not.toHaveBeenCalled()
   })
 })
+
+describe('KAN-26 · idioma y moneda de los documentos', () => {
+  afterEach(() => usarToken(null))
+
+  it('cada operación lleva el idioma y la moneda elegidos en el header', async () => {
+    const { moneda } = await import('../src/composables/useMoneda')
+    const { cambiarIdioma } = await import('../src/i18n')
+    moneda.value = 'USD'
+    cambiarIdioma('EN')
+    const f = fetchFalso()
+    await ejecutar('{ ok }', {}, f as unknown as typeof fetch)
+    expect(cabeceras(f)['X-Moneda']).toBe('USD')
+    expect(cabeceras(f)['Accept-Language']).toBe('en')
+    moneda.value = 'COP'
+    cambiarIdioma('ES')
+  })
+
+  it('el PDF de la sesión también los lleva', async () => {
+    const { moneda } = await import('../src/composables/useMoneda')
+    const { pdfDeSesion } = await import('../src/graphql/cliente')
+    moneda.value = 'EUR'
+    usarToken('jwt')
+    const f = vi.fn(async () => new Response('x', { status: 200, headers: { 'Content-Type': 'text/html' } }))
+    await pdfDeSesion('/polizas/1/documento', f as unknown as typeof fetch)
+    const enviadas = (f.mock.calls[0] as unknown as [string, RequestInit])[1].headers as Record<string, string>
+    expect(enviadas['X-Moneda']).toBe('EUR')
+    expect(enviadas.Authorization).toBe('Bearer jwt')
+    moneda.value = 'COP'
+  })
+})

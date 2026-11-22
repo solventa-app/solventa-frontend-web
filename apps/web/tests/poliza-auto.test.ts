@@ -41,7 +41,7 @@ describe('W01-01 · cotizar la póliza de auto', () => {
     await wrapper.find('[data-prueba="producto-auto"]').trigger('click')
 
     expect(wrapper.find('[data-prueba="producto-auto"]').attributes('aria-checked')).toBe('true')
-    expect(wrapper.text()).toContain('Solicitud de seguro de auto todo riesgo')
+    expect(wrapper.text()).toContain('Solicitud de Seguro Vehicular')
     expect(wrapper.text()).not.toContain('Monto del crédito hipotecario')
     for (const prueba of ['placa', 'kilometraje', 'ciudad', 'uso', 'deducible']) {
       expect(wrapper.find(`[data-prueba="${prueba}"]`).exists()).toBe(true)
