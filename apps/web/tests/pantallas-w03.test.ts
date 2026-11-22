@@ -13,7 +13,7 @@ import ConfirmarFirma from '../src/views/ConfirmarFirma.vue'
 import { ofertaDeDemo } from '../src/mocks/handlers'
 import { useCotizacion } from '../src/composables/useCotizacion'
 import { olvidarEnlace } from '../src/composables/useEnlaceFirma'
-import { useSesion } from '../src/composables/useSesion'
+import { CLAVE_REFRESH_HASTA, restaurarSesion, useSesion } from '../src/composables/useSesion'
 import { cambiarMoneda, moneda, usarConversor } from '../src/composables/useMoneda'
 import { useSuscripcion } from '../src/composables/useSuscripcion'
 import { cambiarIdioma } from '../src/i18n'
@@ -382,6 +382,20 @@ describe('Páginas del enlace (sin sesión)', () => {
     const { w } = await montar(RetornoPago, '/pago/retorno?sesion=ses-1')
     await esperar(() => w.text().includes('Abre de nuevo'))
     expect(w.text()).toContain('Abre de nuevo el enlace de tu correo')
+  })
+
+  it('al volver de la pasarela, el CLIENTE no pierde la sesión: la página espera a que se restaure', async () => {
+    sessionStorage.clear()
+    // La ida a la pasarela recarga la web: el token en memoria se pierde y solo queda el refresh (cookie).
+    await useSesion(fetchPrueba).iniciarSesion('cliente.demo', 'secreta123')
+    useSesion(fetchPrueba).cerrarSesion()
+    localStorage.setItem(CLAVE_REFRESH_HASTA, String(Date.now() + 86_400_000))
+    restaurarSesion() // al abrir la web empieza a renovar, y la ruta pública no la espera
+    const { w } = await montar(RetornoPago, '/pago/retorno/prop-1?sesion=ses-1')
+    // Con la sesión restaurada llega a confirmar con el BFF: el mock no conoce `ses-1` y responde «sesión vencida».
+    await esperar(() => !w.text().includes('Abre de nuevo el enlace de tu correo') && !w.text().includes('Confirmando'))
+    expect(w.text()).not.toContain('Abre de nuevo el enlace de tu correo')
+    expect(w.text()).toContain('La sesión de pago venció')
   })
 })
 
