@@ -5,6 +5,11 @@
   que se muestra (no es navegación: va como radios), las tres tarjetas de Figma (credenciales,
   consumo y estado) y dos secciones sin Figma aprobadas: consumo por API (gráfico y tabla) y ventas y comisiones.
   Cada sección carga por separado y tiene sus estados de carga, error con reintento y vacío (regla 5).
+
+  Ventas (v0.68): arriba, por separado, Cotizaciones, Ventas (pólizas emitidas) y la conversión entre las dos. Antes
+  solo se veían «Propuestas» y «Pólizas emitidas», así que una cotización que terminaba en póliza parecía dos ventas y
+  las cotizaciones solo salían como presupuesto consumido. La propuesta (la oferta aceptada) queda en la tabla por mes.
+  El panel se pone al día solo por SSE (usePanelSocio, `enVivo`).
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
@@ -25,20 +30,29 @@ import { formatearFechaCorta, formatearNumero, formatearPorcentaje } from '../ut
 
 const router = useRouter()
 const sesion = useSesionSocio()
-const { estado, cargarTodo, cambiarEntorno, cambiarVentana, cargarEstado, cargarConsumo, cargarVentas } =
-  usePanelSocio()
+const {
+  estado,
+  cargarTodo,
+  cambiarEntorno,
+  cambiarVentana,
+  cargarEstado,
+  cargarConsumo,
+  cargarVentas,
+  seguirEnVivo,
+  dejarDeSeguir,
+} = usePanelSocio()
 
 // QA 2026-11-10 (D-5): el mismo orden que la barra del portal (API Pruebas, API Producción). El panel sigue abriendo
 // en Producción.
 const ENTORNOS: Entorno[] = ['PRUEBAS', 'PRODUCCION']
 const ventas = computed(() => estado.ventas)
-/** Conversión de propuesta a póliza emitida (el contrato da los dos totales, no la tasa). */
+/** Conversión de cotización a venta (póliza emitida). El contrato da los dos totales, no la tasa. */
 const conversion = computed(() =>
-  ventas.value && ventas.value.totales.propuestas > 0
-    ? ventas.value.totales.emitidas / ventas.value.totales.propuestas
+  ventas.value && ventas.value.totales.cotizaciones > 0
+    ? Math.min(1, ventas.value.totales.emitidas / ventas.value.totales.cotizaciones)
     : 0,
 )
-// En pruebas, las ventas del contrato son simuladas (W07-10).
+// En pruebas, las operaciones son del sandbox (W07-10): se cuentan de verdad, pero nada se cobra ni se emite.
 const simuladas = computed(() => estado.entorno === 'PRUEBAS')
 
 /** «Del 30 sep 2026 al 29 oct 2026»: el rango que devuelve el contrato (`desde` y `hasta`, fechas sin hora). */
@@ -71,9 +85,12 @@ onMounted(() => {
     const resultado = await convertirMontos(sesion.estado.token ?? '', montos, moneda)
     return resultado.montos
   })
-  void cargarTodo()
+  void cargarTodo().then(() => seguirEnVivo())
 })
-onBeforeUnmount(() => usarConversor(null))
+onBeforeUnmount(() => {
+  dejarDeSeguir()
+  usarConversor(null)
+})
 </script>
 
 <template>
@@ -100,6 +117,15 @@ onBeforeUnmount(() => usarConversor(null))
           <IconoMaterial :nombre="opcion === 'PRODUCCION' ? 'rocket_launch' : 'science'" class="h-4 w-4" />
           {{ t(`socios.panel.entornoOpcion.${opcion}`) }}
         </button>
+        <span
+          v-if="estado.enVivo"
+          role="status"
+          data-prueba="en-vivo"
+          class="ml-auto flex items-center gap-1.5 text-[12px] font-medium text-exito"
+        >
+          <span class="h-2 w-2 rounded-full bg-exito" aria-hidden="true" />
+          {{ t('socios.panel.enVivo') }}
+        </span>
       </div>
 
       <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -200,6 +226,7 @@ onBeforeUnmount(() => usarConversor(null))
           :etiqueta="t('socios.panel.cargando')"
           :encabezados="[
             t('socios.ventas.mes'),
+            t('socios.ventas.cotizaciones'),
             t('socios.ventas.propuestas'),
             t('socios.ventas.polizas'),
             t('socios.ventas.primas'),
@@ -217,13 +244,19 @@ onBeforeUnmount(() => usarConversor(null))
             {{ rango(ventas.desde, ventas.hasta) }}
           </p>
           <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5" data-prueba="indicadores">
-            <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
-              <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.propuestas') }}</span>
-              <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(ventas.totales.propuestas) }}</strong>
+            <li
+              class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4"
+              data-prueba="total-cotizaciones"
+            >
+              <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.cotizaciones') }}</span>
+              <strong class="text-[22px] font-bold text-tinta">{{
+                formatearNumero(ventas.totales.cotizaciones)
+              }}</strong>
             </li>
-            <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
-              <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.polizas') }}</span>
+            <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4" data-prueba="total-ventas">
+              <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.ventas') }}</span>
               <strong class="text-[22px] font-bold text-tinta">{{ formatearNumero(ventas.totales.emitidas) }}</strong>
+              <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.ventasAyuda') }}</span>
             </li>
             <li class="flex flex-col gap-1 rounded-[8px] border border-borde bg-white p-4">
               <span class="text-[11px] leading-[14px] text-tinta-suave">{{ t('socios.ventas.conversion') }}</span>
@@ -243,7 +276,7 @@ onBeforeUnmount(() => usarConversor(null))
           </ul>
 
           <div class="w-full overflow-x-auto rounded-[8px] border border-borde bg-white">
-            <table class="w-full min-w-[640px] border-collapse text-left" data-prueba="tabla-ventas">
+            <table class="w-full min-w-[720px] border-collapse text-left" data-prueba="tabla-ventas">
               <caption class="sr-only">
                 {{
                   t('socios.ventas.porMes')
@@ -252,6 +285,7 @@ onBeforeUnmount(() => usarConversor(null))
               <thead>
                 <tr class="border-b border-borde bg-[#f6f3f2] text-[13px] font-semibold text-tinta">
                   <th scope="col" class="py-4 pl-4 pr-3">{{ t('socios.ventas.mes') }}</th>
+                  <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.cotizaciones') }}</th>
                   <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.propuestas') }}</th>
                   <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.polizas') }}</th>
                   <th scope="col" class="py-4 pr-3 text-right">{{ t('socios.ventas.primas') }}</th>
@@ -260,7 +294,7 @@ onBeforeUnmount(() => usarConversor(null))
               </thead>
               <tbody>
                 <tr v-if="!ventas.meses.length">
-                  <td colspan="5" class="py-6 text-center text-[13px] text-tinta-suave">
+                  <td colspan="6" class="py-6 text-center text-[13px] text-tinta-suave">
                     {{ t('socios.ventas.vacio') }}
                   </td>
                 </tr>
@@ -270,6 +304,7 @@ onBeforeUnmount(() => usarConversor(null))
                   class="border-b border-borde text-[13px] text-tinta last:border-b-0"
                 >
                   <td class="py-4 pl-4 pr-3">{{ etiquetaMes(fila.mes) }}</td>
+                  <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.cotizaciones) }}</td>
                   <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.propuestas) }}</td>
                   <td class="py-4 pr-3 text-right">{{ formatearNumero(fila.emitidas) }}</td>
                   <td class="py-4 pr-3 text-right">{{ montoVisible(fila.primas) }}</td>

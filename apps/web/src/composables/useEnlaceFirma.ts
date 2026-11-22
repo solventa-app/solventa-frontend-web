@@ -4,16 +4,24 @@
 //
 // Cuidado con el token (decisión D-3, aprobada con la condición de minimizar su almacenamiento):
 // 1. Vive en MEMORIA. Al leerlo se quita del fragmento con `history.replaceState`, para que no quede en la barra de
-//    direcciones, en el historial ni en una captura de pantalla. Si el cliente recarga, vuelve a abrir el enlace.
-// 2. `sessionStorage` (`solventa.enlaceFirma`) se usa SOLO como puente del viaje a la pasarela, que sale de la web
-//    y vuelve con `?sesion=`: se escribe justo antes de salir, con su vencimiento, y se lee UNA vez al volver
-//    (`/pago/retorno`, o cualquier página del enlace si se volvió con «Atrás» sin pagar) y se borra en el acto. Si venció (30 min del enlace o 15 min desde que se escribió), se descarta.
-// 3. Se borra también al emitir la póliza, si el enlace venció y con `olvidarEnlace()`; el navegador lo borra al
-//    cerrar la pestaña.
+//    direcciones, en el historial ni en una captura de pantalla.
+// 2. `sessionStorage` (`solventa.enlaceFirma`, solo de esta pestaña) guarda una copia con el vencimiento del enlace
+//    para que recargar la página o volver de la pasarela (que sale de la web y vuelve con `?sesion=`) no deje al
+//    cliente sin acceso. Se escribe cada vez que el BFF confirma que el enlace sigue vigente y antes de salir a la
+//    pasarela; se lee cuando no hay token en memoria ni en la URL. Vencida la copia (el vencimiento del enlace), se
+//    descarta.
+// 3. Se borra si el enlace venció o no existe y con `olvidarEnlace()` (cerrar sesión, otro enlace); el navegador la
+//    borra al cerrar la pestaña.
 // 4. Nunca va a `localStorage`, a un log, a la consola ni a la URL de una petición.
 import { reactive } from 'vue'
 import type { Router } from 'vue-router'
-import { ErrorGraphQL, ejecutarSuscripcion, pdfDeSesion, type OpcionesEjecucion } from '../graphql/cliente'
+import {
+  ErrorGraphQL,
+  cabecerasPresentacion,
+  ejecutarSuscripcion,
+  pdfDeSesion,
+  type OpcionesEjecucion,
+} from '../graphql/cliente'
 import type {
   EnlaceFirma,
   ErrorFirma,
@@ -141,10 +149,9 @@ export function tomarTokenDelFragmento(): boolean {
 
 function guardarPuente(venceEnlace: string | null): void {
   if (!token) return
-  const vence = Math.min(
-    Date.now() + VIDA_MAXIMA_PUENTE_MS,
-    venceEnlace ? Date.parse(venceEnlace) : Number.POSITIVE_INFINITY,
-  )
+  // Dura lo que el enlace; si no se conoce su vencimiento, 15 minutos.
+  const vence = venceEnlace ? Date.parse(venceEnlace) : Date.now() + VIDA_MAXIMA_PUENTE_MS
+  if (!Number.isFinite(vence) || vence <= Date.now()) return
   try {
     sessionStorage.setItem(CLAVE_PUENTE, JSON.stringify({ t: token, vence }))
   } catch {
@@ -152,11 +159,12 @@ function guardarPuente(venceEnlace: string | null): void {
   }
 }
 
-/** Al volver de la pasarela: toma el token del puente UNA vez y lo borra. Descarta uno vencido o mal formado. */
+/** Sin token en memoria (recarga o vuelta de la pasarela): lo toma de la copia de la pestaña. Descarta (y borra) una
+ * vencida o mal formada. */
 export function tomarTokenDelPuente(): boolean {
   try {
     const crudo = sessionStorage.getItem(CLAVE_PUENTE)
-    sessionStorage.removeItem(CLAVE_PUENTE)
+    let valido = false
     if (crudo) {
       const { t: guardado, vence } = JSON.parse(crudo) as { t?: unknown; vence?: unknown }
       if (
@@ -166,8 +174,10 @@ export function tomarTokenDelPuente(): boolean {
         vence > Date.now()
       ) {
         token = guardado
+        valido = true
       }
     }
+    if (!valido) sessionStorage.removeItem(CLAVE_PUENTE)
   } catch {
     /* sin almacenamiento o contenido inválido: se ignora */
   }
@@ -295,9 +305,14 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     if (!datos) return null // falla técnica: la pantalla muestra el error con reintento
     estado.enlace = datos.firmaPorEnlace
     const paso = pasoDelEnlace(estado.enlace)
-    if (paso === 'vencido' && !propuestaSesion) {
-      token = null
-      borrarPuente()
+    if (!propuestaSesion) {
+      if (paso === 'vencido') {
+        token = null
+        borrarPuente()
+      } else {
+        // El enlace sigue vigente: se deja la copia de la pestaña para que una recarga no lo pierda.
+        guardarPuente(estado.enlace?.venceEn ?? null)
+      }
     }
     return paso
   }
@@ -374,13 +389,13 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     return datos.iniciarPago
   }
 
-  /** Al volver de la pasarela: confirma con el proveedor (servidor a servidor). Con la póliza, borra el puente. */
+  /** Al volver de la pasarela: confirma con el proveedor (servidor a servidor). La copia del token se queda hasta que
+   * venza el enlace, para que recargar W03-04 siga mostrando la póliza. */
   async function confirmarPago(sesionId: string): Promise<Poliza | ErrorPago | null> {
     const datos = await operar<{ confirmarPago: ResultadoPago }>(MUTACION_CONFIRMAR_PAGO, { sesionId })
     if (!datos) return null
     const resultado = datos.confirmarPago
     if (!esErrorPago(resultado)) {
-      borrarPuente()
       if (estado.enlace) {
         estado.enlace.poliza = resultado
         estado.enlace.propuesta.estado = 'EMITIDA'
@@ -394,7 +409,8 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     if (propuestaSesion) return pdfDeSesion(ruta, fetchFn)
     if (!token) return null
     try {
-      const respuesta = await fetchFn(ruta, { headers: { 'X-Enlace-Firma': token } })
+      // KAN-26: el contrato sale en el idioma y la moneda que tiene activos quien lo abre.
+      const respuesta = await fetchFn(ruta, { headers: { ...cabecerasPresentacion(), 'X-Enlace-Firma': token } })
       if (!respuesta.ok) return null
       // Si la ruta no llega al BFF, el hosting responde 200 con el index.html de la SPA: sin este control el
       // visor mostraría la propia aplicación en vez del contrato.
@@ -413,8 +429,7 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     // Una página `/propuestas/:propuestaId/firma…` es el recorrido del cliente en su sesión; la de `/firma` usa el enlace.
     const propuestaId = router.currentRoute.value.params.propuestaId
     usarPropuestaDeSesion(typeof propuestaId === 'string' ? propuestaId : null)
-    // Sin token en memoria ni en la URL (se volvió de la pasarela con «Atrás» y la página se cargó de nuevo) se recupera
-    // del puente del viaje a la pasarela, que se lee una vez y se borra, igual que en el retorno.
+    // Sin token en memoria ni en la URL (el cliente recargó, o volvió de la pasarela) se recupera de la copia de la pestaña.
     if (!propuestaSesion && !tomarTokenDelFragmento()) tomarTokenDelPuente()
     const paso = await cargar()
     // Vencido: cada página muestra el estado vacío ahí mismo, sin navegar.

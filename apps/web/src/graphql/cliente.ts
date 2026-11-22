@@ -49,11 +49,26 @@ export function haySesion(): boolean {
   return token !== null
 }
 
+// KAN-26: la moneda del selector del header viaja como `X-Moneda` para que los documentos que se firman (el contrato y
+// la póliza en PDF) salgan en esa moneda. La fija useMoneda.ts, que importa este módulo (por eso no se importa aquí).
+let lectorMoneda: () => string = () => 'COP'
+
+export function fijarLectorMoneda(lector: () => string): void {
+  lectorMoneda = lector
+}
+
+/** El idioma y la moneda activos, en las cabeceras que lee el BFF (`Accept-Language` y `X-Moneda`). */
+export function cabecerasPresentacion(): Record<string, string> {
+  return { 'Accept-Language': cabeceraIdioma(), 'X-Moneda': lectorMoneda() }
+}
+
 /** Descarga un PDF protegido por la sesión (póliza del cliente o del asesor) como `blob:`; null si no llega un PDF. */
 export async function pdfDeSesion(ruta: string, fetchFn: typeof fetch = fetch): Promise<string | null> {
   if (!token) return null
   try {
-    const respuesta = await fetchFn(ruta, { headers: { Authorization: `Bearer ${token}` } })
+    const respuesta = await fetchFn(ruta, {
+      headers: { ...cabecerasPresentacion(), Authorization: `Bearer ${token}` },
+    })
     if (!respuesta.ok) return null
     // Si la ruta no llega al BFF, el hosting responde 200 con el index.html de la SPA.
     if (!(respuesta.headers.get('Content-Type') ?? '').includes('application/pdf')) return null
@@ -118,11 +133,12 @@ async function ejecutarUnaVez<T>(
   endpoint: string,
   conToken: boolean,
 ): Promise<T> {
-  // Accept-Language: el BFF devuelve sus mensajes (errores, avisos) en el idioma del selector del header.
+  // Accept-Language: el BFF devuelve sus mensajes (errores, avisos) en el idioma del selector del header, y con él y
+  // `X-Moneda` salen los correos y los PDF que dispara la operación (KAN-26).
   const cabeceras: Record<string, string> = {
     ...opciones.cabeceras,
     'Content-Type': 'application/json',
-    'Accept-Language': cabeceraIdioma(),
+    ...cabecerasPresentacion(),
   }
   if (conToken && token) cabeceras.Authorization = `Bearer ${token}`
 

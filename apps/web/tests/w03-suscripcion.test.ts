@@ -256,12 +256,12 @@ describe('cuidado del token del enlace (D-3)', () => {
     expect(llamada.cuerpo).not.toContain('demo')
   })
 
-  it('el puente se escribe solo al salir a la pasarela, se lee una vez y se borra', async () => {
+  it('la copia de la pestaña se escribe con el enlace vigente y sobrevive a una recarga o al viaje a la pasarela', async () => {
     window.history.replaceState(null, '', '/firma#t=firmado')
     tomarTokenDelFragmento()
     const enlace = useEnlaceFirma(fetchPrueba)
     await enlace.cargar()
-    expect(sessionStorage.getItem(CLAVE_PUENTE)).toBeNull()
+    expect(JSON.parse(sessionStorage.getItem(CLAVE_PUENTE)!)).toMatchObject({ t: 'firmado' })
 
     const sesion = await enlace.iniciarPago()
     expect(esSesionPago(sesion)).toBe(true)
@@ -271,7 +271,8 @@ describe('cuidado del token del enlace (D-3)', () => {
     olvidarEnlace()
     sessionStorage.setItem(CLAVE_PUENTE, JSON.stringify({ t: 'firmado', vence: Date.now() + 60_000 }))
     expect(tomarTokenDelPuente()).toBe(true)
-    expect(sessionStorage.getItem(CLAVE_PUENTE)).toBeNull()
+    // Sigue ahí: otra recarga tampoco pierde el enlace.
+    expect(JSON.parse(sessionStorage.getItem(CLAVE_PUENTE)!)).toMatchObject({ t: 'firmado' })
   })
 
   it('descarta un puente vencido o manipulado', () => {
@@ -283,7 +284,7 @@ describe('cuidado del token del enlace (D-3)', () => {
     expect(tomarTokenDelPuente()).toBe(false)
   })
 
-  it('el puente nunca vive más que el enlace ni más de 15 min', async () => {
+  it('la copia nunca vive más que el enlace', async () => {
     window.history.replaceState(null, '', '/firma#t=firmado')
     tomarTokenDelFragmento()
     const enlace = useEnlaceFirma(fetchPrueba)
@@ -292,7 +293,6 @@ describe('cuidado del token del enlace (D-3)', () => {
 
     const { vence } = JSON.parse(sessionStorage.getItem(CLAVE_PUENTE)!) as { vence: number }
     expect(vence).toBeLessThanOrEqual(Date.parse(enlace.estado.enlace!.venceEn!))
-    expect(vence - Date.now()).toBeLessThanOrEqual(15 * 60_000)
   })
 
   it('con el enlace vencido se olvida el token', async () => {
@@ -353,7 +353,7 @@ describe('página del enlace: firmar, pagar y emitir', () => {
     return enlace
   }
 
-  it('flujo completo: el asesor emite, el cliente firma, paga con 4242 y queda la póliza; el puente se borra', async () => {
+  it('flujo completo: el asesor emite, el cliente firma, paga con 4242 y queda la póliza; la copia sigue para recargar W03-04', async () => {
     const token = await enlaceEnviado()
     const enlace = await abrirYFirmar(token)
 
@@ -363,7 +363,7 @@ describe('página del enlace: firmar, pagar y emitir', () => {
 
     const poliza = await enlace.confirmarPago(sesion.sesionId)
     expect(poliza).toMatchObject({ estado: 'EMITIDA' })
-    expect(sessionStorage.getItem(CLAVE_PUENTE)).toBeNull()
+    expect(JSON.parse(sessionStorage.getItem(CLAVE_PUENTE)!)).toMatchObject({ t: token })
     expect(pasoDelEnlace(enlace.estado.enlace)).toBe('emitida')
 
     // Regresar dos veces de la pasarela no emite (ni cobra) dos veces.

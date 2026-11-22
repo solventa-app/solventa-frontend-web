@@ -348,8 +348,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Propuestas, pólizas emitidas, primas y comisión por mes
-         * @description Sin fechas: los últimos 12 meses. Con un token de PRUEBAS responde el modo prueba: datos simulados, sin consultar fuentes ni cobrar.
+         * Cotizaciones, propuestas aceptadas, pólizas emitidas, primas y comisión por mes
+         * @description Sin fechas: los últimos 12 meses. Con un token de PRUEBAS responde lo hecho en el modo prueba (propuestas y pólizas simuladas, contadas de verdad; el sandbox empieza de cero tras 24 h sin uso). Las cotizaciones son las del entorno del token en los dos casos.
          */
         get: operations["ventas"];
         put?: never;
@@ -417,6 +417,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/avisos/ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ticket para seguir en vivo (SSE) el consumo y las ventas del entorno del token
+         * @description `EventSource` no manda cabeceras, así que el token nunca va en la URL: se pide este ticket y se abre el stream con él. No cuenta en `/v1/consumo`. Si el stream se cae, se pide otro ticket.
+         */
+        post: operations["ticketAvisos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -424,7 +444,7 @@ export interface components {
         /** @description Error controlado. Nunca un 5xx crudo (regla 4): ante una falla interna se responde 503 con este cuerpo, `puedeReintentar = true` y `Retry-After`. */
         ErrorPublico: {
             /** @enum {string} */
-            codigo: "CREDENCIALES_INVALIDAS" | "TOKEN_INVALIDO" | "PROHIBIDO" | "NO_ENCONTRADO" | "DATOS_INVALIDOS" | "CONSENTIMIENTO_NO_VIGENTE" | "OFERTA_NO_ENCONTRADA" | "OFERTA_PRELIMINAR" | "OFERTA_VENCIDA" | "CONTACTO_INVALIDO" | "CODIGO_INVALIDO" | "CODIGO_VENCIDO" | "INTENTOS_AGOTADOS" | "PROPUESTA_NO_VALIDA" | "PRESUPUESTO_AGOTADO" | "SERVICIO_NO_DISPONIBLE" | "SOLICITUD_EN_CURSO" | "IDEMPOTENCIA_EN_CONFLICTO";
+            codigo: "CREDENCIALES_INVALIDAS" | "TOKEN_INVALIDO" | "PROHIBIDO" | "NO_ENCONTRADO" | "DATOS_INVALIDOS" | "CONSENTIMIENTO_NO_VIGENTE" | "OFERTA_NO_ENCONTRADA" | "OFERTA_PRELIMINAR" | "OFERTA_VENCIDA" | "CONTACTO_INVALIDO" | "CODIGO_INVALIDO" | "CODIGO_VENCIDO" | "INTENTOS_AGOTADOS" | "PROPUESTA_NO_VALIDA" | "PRESUPUESTO_AGOTADO" | "SERVICIO_NO_DISPONIBLE" | "SOLICITUD_EN_CURSO" | "IDEMPOTENCIA_EN_CONFLICTO" | "LIMITE_DE_TASA" | "CREDENCIAL_SUSPENDIDA";
             /** @description En el idioma de `Accept-Language` (es o en). */
             mensaje: string;
             puedeReintentar: boolean;
@@ -633,12 +653,16 @@ export interface components {
         };
         VentasMes: {
             mes: string;
+            /** @description Cotizaciones hechas (las que descontaron presupuesto; una repetición con `Idempotency-Key` no cuenta). v0.68. */
+            cotizaciones: number;
+            /** @description Ofertas aceptadas (propuestas creadas). No es una venta. */
             propuestas: number;
+            /** @description Pólizas emitidas: las ventas. */
             emitidas: number;
             primas: components["schemas"]["Monto"];
             comision: components["schemas"]["Monto"];
         };
-        /** @description La comisión se causa al emitir: prima × tasa congelada al aceptar (W07-7). */
+        /** @description Cotizaciones, propuestas aceptadas y pólizas emitidas (las ventas) por mes, contadas aparte (v0.68). La comisión se causa al emitir: prima × tasa congelada al aceptar (W07-7). */
         Ventas: {
             /** Format: date */
             desde: string;
@@ -648,7 +672,11 @@ export interface components {
             tasaComision: string;
             meses: components["schemas"]["VentasMes"][];
             totales: {
+                /** @description Cotizaciones hechas (las que descontaron presupuesto; una repetición con `Idempotency-Key` no cuenta). v0.68. */
+                cotizaciones: number;
+                /** @description Ofertas aceptadas (propuestas creadas). No es una venta. */
                 propuestas: number;
+                /** @description Pólizas emitidas: las ventas. */
                 emitidas: number;
                 primas: components["schemas"]["Monto"];
                 comision: components["schemas"]["Monto"];
@@ -728,6 +756,15 @@ export interface components {
             valorAsegurado?: components["schemas"]["Monto"] | null;
             deducible?: string | null;
         };
+        /** @description Para que el panel se ponga al día solo (v0.68). El stream manda un evento `socio` por cada llamada del socio que cuenta en el consumo (cotizaciones, propuestas, pólizas…) y `propuesta` cuando POLICY emite una póliza que el socio vendió en PRODUCCION. Sin datos personales. */
+        TicketAvisos: {
+            /** @description De un solo uso; vence a los 60 s. */
+            ticket: string;
+            /** @description URL del stream SSE del servicio de avisos, sin el ticket: se abre `<url>?ticket=<ticket>`. */
+            url: string;
+            /** Format: date-time */
+            venceEn: string;
+        };
     };
     responses: {
         /** @description Sin token o token inválido (`TOKEN_INVALIDO`). */
@@ -749,9 +786,22 @@ export interface components {
                 "application/json": components["schemas"]["ErrorPublico"];
             };
         };
-        /** @description El token es válido pero no trae el scope de esta operación (`PROHIBIDO`). Sale antes de descontar presupuesto, entrar al modo prueba o llamar a otro servicio, y cuenta en `/v1/consumo` como error. */
+        /** @description El token es válido pero no trae el scope de esta operación (`PROHIBIDO`), o la credencial está suspendida por el antifraude (`CREDENCIAL_SUSPENDIDA`, con `Retry-After`). Sale antes de descontar presupuesto, entrar al modo prueba o llamar a otro servicio, y cuenta en `/v1/consumo` como error. */
         SinPermiso: {
             headers: {
+                /** @description Solo con `CREDENCIAL_SUSPENDIDA`: segundos que faltan. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorPublico"];
+            };
+        };
+        /** @description Pasó el límite de llamadas por segundo de la credencial (`LIMITE_DE_TASA`, v0.61). Reintentar después de `Retry-After`. */
+        LimiteDeTasa: {
+            headers: {
+                /** @description Segundos (siempre 1). */
+                "Retry-After"?: number;
                 [name: string]: unknown;
             };
             content: {
@@ -919,6 +969,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -955,6 +1006,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1007,7 +1059,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
-            /** @description Presupuesto agotado (`PRESUPUESTO_AGOTADO`). */
+            /** @description Presupuesto agotado (`PRESUPUESTO_AGOTADO`), o pasó el límite de llamadas por segundo (`LIMITE_DE_TASA`, `Retry-After: 1`). */
             429: {
                 headers: {
                     "Retry-After"?: number;
@@ -1069,7 +1121,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
-            /** @description Presupuesto agotado (`PRESUPUESTO_AGOTADO`). */
+            /** @description Presupuesto agotado (`PRESUPUESTO_AGOTADO`), o pasó el límite de llamadas por segundo (`LIMITE_DE_TASA`, `Retry-After: 1`). */
             429: {
                 headers: {
                     "Retry-After"?: number;
@@ -1135,6 +1187,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1171,6 +1224,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1229,6 +1283,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1287,6 +1342,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1332,6 +1388,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1377,6 +1434,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1413,6 +1471,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1449,6 +1508,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1476,6 +1536,7 @@ export interface operations {
             };
             401: components["responses"]["NoAutenticado"];
             403: components["responses"]["SinPermiso"];
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1504,6 +1565,7 @@ export interface operations {
             };
             401: components["responses"]["NoAutenticado"];
             403: components["responses"]["SinPermiso"];
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1532,6 +1594,7 @@ export interface operations {
             };
             401: components["responses"]["NoAutenticado"];
             403: components["responses"]["SinPermiso"];
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1568,6 +1631,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1601,6 +1665,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };
@@ -1636,6 +1701,33 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorPublico"];
                 };
             };
+            429: components["responses"]["LimiteDeTasa"];
+            503: components["responses"]["NoDisponible"];
+        };
+    };
+    ticketAvisos: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ticket. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketAvisos"];
+                };
+            };
+            401: components["responses"]["NoAutenticado"];
+            403: components["responses"]["SinPermiso"];
+            429: components["responses"]["LimiteDeTasa"];
             503: components["responses"]["NoDisponible"];
         };
     };

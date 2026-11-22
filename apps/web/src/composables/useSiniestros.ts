@@ -54,6 +54,7 @@ const CAMPOS_SINIESTRO = `
     metodoTransferencia plazoDispersion
     perito { ${CAMPOS_PERITO} }
     instrucciones vencimientoInforme automatica
+    resueltaPor { sistema nombre } derivadaPor { sistema nombre } derivadaEn
   }`
 
 // La bandeja pide solo lo que muestra: con el backend real, pedir la póliza y las evidencias resolvería POLICY y

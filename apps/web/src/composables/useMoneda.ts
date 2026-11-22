@@ -6,7 +6,7 @@
 // o captura sigue en su moneda original con `formatearMonto` y el selector deshabilitado (`monedaFija` en el header).
 // Las tasas son de referencia: la prima se calcula y se cobra en la moneda original.
 import { reactive, ref } from 'vue'
-import { ejecutar, haySesion } from '../graphql/cliente'
+import { ejecutar, fijarLectorMoneda, haySesion } from '../graphql/cliente'
 import type { Monto } from '../graphql/tipos'
 import { idioma } from '../i18n'
 import { log } from '../log'
@@ -53,6 +53,8 @@ const conversorGraphQL: Conversor = async (montos, destino) => {
 }
 
 export const moneda = ref(monedaGuardada())
+// KAN-26: el BFF recibe la moneda elegida en `X-Moneda` (graphql/cliente.ts) para los documentos que se firman.
+fijarLectorMoneda(() => moneda.value)
 /** La última conversión falló: la web muestra los valores originales y lo avisa en el header. */
 export const conversionFallida = ref(false)
 

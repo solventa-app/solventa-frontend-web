@@ -60,6 +60,11 @@ Regla única de la web (KAN-209), definida en `solventa-backend/docs/plan-revisi
 - **Lo que se firma, cobra o captura sigue en su moneda original:** contrato, autorización de cobro, pago, póliza emitida
   y monto del crédito. Usa `formatearMonto` y `monedaFija` en `HeaderPantalla`, que deshabilita el selector.
 - Las tasas son de referencia: si la conversión falla, se muestra el valor original y el header lo avisa.
+- **Los PDF del contrato y de la póliza (KAN-26)** salen en el idioma y la moneda del header de quien los genera: la web
+  manda `Accept-Language` y `X-Moneda` en cada operación (`cabecerasPresentacion()` de `graphql/cliente.ts`) y al pedir
+  el PDF. En otra moneda, cada monto del PDF lleva debajo su equivalente en COP y la tasa del día; la prima se sigue
+  cobrando en COP. El contrato firmado y la póliza quedan en el idioma y la moneda del momento de la firma. Los correos
+  salen en el idioma activo de quien hace la acción (asesor o cliente).
 - **Un monto que se captura usa `CampoMonto`** (`components/ui`): el modelo guarda solo dígitos, el campo los muestra con
   los separadores del idioma activo y la moneda sale del dato (`Monto.moneda`), nunca escrita en el catálogo. Ejemplo:
   el valor del daño de W04-02 (KAN-290), que se digita en la moneda de la póliza con el selector del header libre y un aviso en el campo.
