@@ -2,7 +2,7 @@ name: CI web
 
 # En PR corre siempre: el check `web` es obligatorio en `main` y `develop`, y un check filtrado por ruta nunca
 # reportaría en los PRs que no tocan esas rutas. En push a main/develop corre solo si cambia la web, el
-# contrato o este workflow (el móvil tiene su propio pipeline).
+# contrato o este workflow.
 on:
   pull_request:
   push:
@@ -23,8 +23,8 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -55,13 +55,13 @@ jobs:
     if: vars.BACKEND_REPO != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: ${{ vars.BACKEND_REPO }}
           token: ${{ secrets.BACKEND_READ_TOKEN || github.token }}
           path: backend
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
       - name: La copia del contrato coincide con el main del backend

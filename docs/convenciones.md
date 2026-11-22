@@ -14,7 +14,7 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
 - **Squash** para ramas de trabajo hacia `develop` (1 PR = 1 historia = 1 commit); **merge commit** para
   `release`, `hotfix` y la reintegración, porque squashear ramas de larga vida rompe el vínculo con `develop`.
 - Ambas ramas están protegidas por ruleset (`.github/rulesets/main.json`, `develop.json`): PR obligatorio, 1
-  aprobación (se descarta si hay push nuevo), hilos de revisión resueltos, checks `web`, `mobile`, `Título del
+  aprobación (se descarta si hay push nuevo), hilos de revisión resueltos, checks `web`, `Título del
   PR` y `Nombre de rama` en verde, historial lineal (solo `main`) y sin force-push ni borrado. Sin excepciones
   de bypass. `main` solo acepta merge commit (`allowed_merge_methods: ["merge"]`); `develop`, squash o merge.
 - **Ramas con el patrón `tipo/KAN-N-descripcion`** (tipo `feat`, `fix` o `chore`) hacia `develop`; `fix|chore`
@@ -27,8 +27,8 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
   (`dependabot-auto-merge.yml`); los major los revisa una persona.
 - **El repo es público**, que es lo que hace gratuitos los rulesets: no se versionan secretos ni datos
   personales. *Secret scanning* y *push protection* están activos.
-- `CI web` y `CI mobile` corren en **todo** PR (sin filtro de rutas) para que `web` y `mobile` se puedan exigir
-  como checks en `main` y `develop` — un check filtrado por ruta nunca reportaría en los PR que no la tocan; en
+- `CI web` corre en **todo** PR (sin filtro de rutas) para que `web` se pueda exigir
+  como check en `main` y `develop` — un check filtrado por ruta nunca reportaría en los PR que no la tocan; en
   `push` a `main`/`develop` siguen filtrados por ruta.
 - Los rulesets son código. Si hay que recrearlos: `gh api -X POST repos/solventa-app/solventa-frontend-web/rulesets --input .github/rulesets/<archivo>.json`
   (`main.json`, `develop.json`, `tags.json`). **Cuidado con el orden:** un check solo puede exigirse una vez
@@ -44,8 +44,6 @@ tenía su propio esquema; divergían porque este se escribió el 2026-10-03/04, 
 - **`package.json` (raíz, `apps/web`, `e2e`) con SemVer**, hoy `0.1.0` en los tres. Se sube la versión menor al
   cerrar cada sprint, en el mismo commit de `release/sprint-N` que crea el tag — no hay automatización todavía
   (`npm version` manual antes de abrir el PR del release).
-- **Móvil:** cuando exista `apps/mobile/pubspec.yaml` (Sprint 2), su `version:` sigue la misma cadencia por
-  sprint que la web.
 - **Contrato:** `contrato/schema.graphql` es una copia de solo lectura de `contracts/graphql/schema.graphql`
   del backend, sincronizada con `npm run contrato:sincronizar`. Hoy se lee del `main` del backend (ADR-06, pt.
   2) — con ADR-08 eso significa **lo liberado**, no lo que está en curso en `develop` del backend. Si una
@@ -69,15 +67,15 @@ Regla única de la web (KAN-209), definida en `solventa-backend/docs/plan-revisi
 ## Commits y PR
 
 - **Conventional Commits** con alcance y clave de Jira: `feat(web): KAN-24 formulario de captura con consentimiento`.
-  Alcances: `web`, `mobile`, `e2e`, `contrato`, `docs`, `ci`.
+  Alcances: `web`, `e2e`, `contrato`, `docs`, `ci`.
 - Un PR cuenta una sola historia. Si cambia el contrato, enlaza el PR gemelo de `solventa-backend`.
 
 ## Definición de hecho (propuesta del equipo)
 
 - Código integrado a `develop` por PR con revisión de al menos otro integrante.
-- Pruebas unitarias del código nuevo en verde en el pipeline (Vitest en web, `flutter_test` en móvil).
+- Pruebas unitarias del código nuevo en verde en el pipeline (Vitest).
 - Quality gate de SonarCloud aprobado y Dependabot sin vulnerabilidades críticas abiertas. En `ci-web.yml` corre además `npm audit --audit-level=high` en modo **informativo** (`continue-on-error: true`): no bloquea el check `web` mientras queden avisos en dependencias transitivas de desarrollo, y pasa a ser obligatorio (quitando `continue-on-error`) una vez resueltos esos hallazgos.
-- Flujo E2E de la historia en verde en staging (Cypress en web, `integration_test` en móvil).
+- Flujo E2E de la historia en verde en staging (Cypress).
 - Sin datos personales en logs ni en la consola.
 - Pantalla fiel al prototipo de Figma y accesible por teclado; estados de carga, vacío y error cubiertos.
 - Documentación y tablero de Jira actualizados; historia demostrada en la revisión del sprint.

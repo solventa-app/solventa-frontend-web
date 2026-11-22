@@ -8,7 +8,7 @@
 import IconoMaterial from './IconoMaterial.vue'
 import { t } from '../../i18n'
 
-defineProps<{ etiqueta?: string }>()
+defineProps<{ etiqueta?: string; iniciales?: string }>()
 defineEmits<{ click: [] }>()
 </script>
 
@@ -16,9 +16,11 @@ defineEmits<{ click: [] }>()
   <button
     type="button"
     :aria-label="etiqueta ?? t('perfil.avatar')"
-    class="flex h-8 w-8 items-center justify-center rounded-full bg-primario text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+    class="flex h-8 w-8 items-center justify-center rounded-full bg-primario text-[12px] font-bold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-enlace focus-visible:ring-offset-2"
+    :title="etiqueta ?? t('perfil.avatar')"
     @click="$emit('click')"
   >
-    <IconoMaterial nombre="person" class="h-[13.333px] w-[13.333px]" />
+    <span v-if="iniciales" aria-hidden="true">{{ iniciales }}</span>
+    <IconoMaterial v-else nombre="person" class="h-4 w-4" />
   </button>
 </template>

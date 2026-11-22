@@ -1,0 +1,203 @@
+name: Seguridad
+
+# Reporte consolidado de seguridad de la web, con el mismo estilo que el `seguridad.yml` del móvil y el del backend.
+# Corre en todo PR, en cada push a develop, cada lunes (una vulnerabilidad nueva puede aparecer sin que cambie el código)
+# y a mano (Actions → Seguridad → Run workflow).
+#
+# Es INFORMATIVO: ningún escaneo hace fallar el run. Cada job sube su resultado crudo como artefacto `seguridad-*` y el
+# job `reporte` los junta (scripts/reporte_seguridad.py) en el resumen del run y en el artefacto `reporte-seguridad`
+# (PDF, Markdown y JSON). Ver docs/seguridad-ci.md.
+on:
+  pull_request:
+  push:
+    branches: [develop]
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: seguridad-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # La web desplegada en Vercel (deploy-web.yml publica desde main). Se puede cambiar con la variable del repo WEB_URL.
+  WEB: ${{ vars.WEB_URL || 'https://solventa-frontend-pink.vercel.app' }}
+
+jobs:
+  secretos:
+    name: Secretos (gitleaks)
+    # Todo el historial, no solo el último commit.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Buscar secretos
+        run: |
+          mkdir -p resultados
+          docker run --rm -v "$PWD:/repo" --entrypoint sh ghcr.io/gitleaks/gitleaks:v8.30.1 -c \
+            'git config --global --add safe.directory /repo && gitleaks git /repo --no-banner --redact --exit-code 0 --report-format json --report-path /repo/resultados/gitleaks.json'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: seguridad-secretos
+          path: resultados/
+          if-no-files-found: ignore
+
+  dependencias:
+    name: Dependencias (osv-scanner)
+    # package-lock.json de apps/web y de e2e contra la base OSV (incluye los avisos de npm/GitHub).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Vulnerabilidades conocidas
+        run: |
+          mkdir -p resultados
+          # 0 = sin hallazgos, 1 = con hallazgos; cualquier otro código es un error y no se reporta como "0".
+          codigo=0
+          docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/google/osv-scanner:v2.7.0 \
+            scan source -r --format json --output-file resultados/osv.json . || codigo=$?
+          if [ "$codigo" -gt 1 ]; then
+            echo "::warning::osv-scanner terminó con código $codigo; el reporte lo marcará sin resultado"
+            rm -f resultados/osv.json
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: seguridad-dependencias
+          path: resultados/
+          if-no-files-found: ignore
+
+  sast:
+    name: Código (Semgrep)
+    # Reglas de JavaScript y TypeScript (XSS, eval, secretos en el código, criptografía débil, etc.) sobre apps/web/src.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Semgrep
+        run: |
+          mkdir -p resultados
+          codigo=0
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:1.186.0 \
+            semgrep scan --config p/javascript --config p/typescript --metrics off --json \
+            --output resultados/semgrep.json apps/web/src || codigo=$?
+          if [ "$codigo" -gt 1 ]; then
+            echo "::warning::Semgrep terminó con código $codigo; el reporte lo marcará sin resultado"
+            rm -f resultados/semgrep.json
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: seguridad-sast
+          path: resultados/
+          if-no-files-found: ignore
+
+  flujos:
+    name: Workflows (actionlint)
+    # Errores de sintaxis y expresiones en los workflows, y acciones sin fijar por SHA (como en el móvil y el backend:
+    # `uses: dueño/accion@<sha de 40> # vX`, para que nadie cambie una acción por debajo).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Lint de workflows
+        run: |
+          mkdir -p resultados
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 \
+            -format '{{range $err := .}}{{$err.Filepath}}:{{$err.Line}}:{{$err.Column}}: {{$err.Message}} [{{$err.Kind}}]{{println}}{{end}}' \
+            > resultados/actionlint.txt || true
+      - name: Acciones sin fijar por SHA
+        run: |
+          grep -rhE '^[[:space:]]*(- )?uses: *[^ .]' .github/workflows \
+            | sed -E 's/^[[:space:]]*(- )?uses: *//; s/ *#.*$//' \
+            | grep -vE '@[0-9a-f]{40}$' | sort -u > resultados/acciones-sin-sha.txt || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: seguridad-flujos
+          path: resultados/
+          if-no-files-found: ignore
+
+  headers:
+    name: Headers de seguridad (web desplegada)
+    # CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy y Permissions-Policy de la web en Vercel.
+    # Revisa lo desplegado, no el cambio del PR (los headers se definen en apps/web/vercel.json).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts/reporte_seguridad.py
+          sparse-checkout-cone-mode: false
+      - name: Revisar headers
+        run: |
+          mkdir -p resultados
+          python3 scripts/reporte_seguridad.py headers "$WEB" resultados/headers.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: seguridad-headers
+          path: resultados/
+          if-no-files-found: ignore
+
+  dast:
+    name: Web desplegada (OWASP ZAP baseline)
+    # Escaneo pasivo (no ataca): cookies, headers, librerías JavaScript con vulnerabilidades conocidas, fugas de
+    # información. No corre en los PRs porque la web desplegada no refleja el cambio.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: ZAP baseline
+        run: |
+          mkdir -p resultados && chmod 777 resultados
+          # 0 = sin alertas, 1 = alertas FAIL, 2 = alertas WARN; 3 o más es un error de ZAP.
+          codigo=0
+          docker run --rm -v "$PWD/resultados:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.16.1 \
+            zap-baseline.py -t "$WEB" -I -m 3 -J zap.json || codigo=$?
+          if [ "$codigo" -gt 2 ]; then
+            echo "::warning::ZAP terminó con código $codigo; el reporte lo marcará sin resultado"
+            rm -f resultados/zap.json
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: seguridad-dast
+          path: resultados/*.json
+          if-no-files-found: ignore
+
+  reporte:
+    name: Reporte consolidado
+    needs: [secretos, dependencias, sast, flujos, headers, dast]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts/reporte_seguridad.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: seguridad-*
+          path: resultados
+      - name: Consolidar
+        env:
+          # Lo que debió correr en este evento: si falta su resultado, el reporte lo avisa.
+          ESCANEOS_ESPERADOS: secretos,dependencias,sast-semgrep,workflows,headers${{ github.event_name != 'pull_request' && ',dast' || '' }}
+        run: python3 scripts/reporte_seguridad.py consolidar resultados reporte-seguridad
+      - name: PDF
+        # Chrome viene instalado en ubuntu-latest.
+        run: |
+          google-chrome --headless=new --no-sandbox --disable-gpu --no-pdf-header-footer \
+            --print-to-pdf=reporte-seguridad/reporte-seguridad.pdf "file://$PWD/reporte-seguridad/reporte-seguridad.html" \
+            || echo "::warning::No se pudo generar el PDF; el reporte queda en Markdown y JSON"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reporte-seguridad
+          path: |
+            reporte-seguridad/reporte-seguridad.pdf
+            reporte-seguridad/reporte-seguridad.md
+            reporte-seguridad/reporte-seguridad.json
+          if-no-files-found: ignore
+          retention-days: 30

@@ -16,8 +16,8 @@ jobs:
   cypress:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: cypress-io/github-action@v7
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: cypress-io/github-action@0ed14f5d30c4ad6e5e8ffb6f57dbb69150137a3f # v7.4.10
         with:
           working-directory: e2e
           browser: chrome
@@ -29,7 +29,7 @@ jobs:
           CYPRESS_CLAVE_ASESOR: ${{ secrets.CYPRESS_CLAVE_ASESOR }}
           CYPRESS_USUARIO_BACKOFFICE: ${{ secrets.CYPRESS_USUARIO_BACKOFFICE }}
           CYPRESS_CLAVE_BACKOFFICE: ${{ secrets.CYPRESS_CLAVE_BACKOFFICE }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: cypress-evidencia

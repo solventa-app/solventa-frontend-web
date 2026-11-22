@@ -22,6 +22,9 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AvatarPerfil from './AvatarPerfil.vue'
+import IconoMaterial from './IconoMaterial.vue'
+import { recordarRutaAntesDePerfil } from '../../composables/useRegresoPerfil'
+import { useSesion } from '../../composables/useSesion'
 import SelectorIdioma from './SelectorIdioma.vue'
 import SelectorMoneda from './SelectorMoneda.vue'
 import { cambiarMoneda, conversionFallida, MONEDA_BASE, moneda } from '../../composables/useMoneda'
@@ -47,6 +50,18 @@ const emit = defineEmits<{
 
 // El avatar lleva a "Mi perfil" (G-05). Sin router (p. ej. en el índice de componentes) solo emite.
 const router = useRouter()
+const { estado } = useSesion()
+// El avatar solo tiene sentido con sesión y fuera del propio perfil (pedido de felipe, 2026-11-21): en G-05 ya se
+// está en el perfil y en las páginas públicas (enlace de firma, pago) no hay una cuenta abierta.
+const conAvatar = computed(() => !props.sinPerfil && !!estado.rol && router?.currentRoute.value.path !== '/perfil')
+const iniciales = computed(() =>
+  estado.nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join(''),
+)
 function elegirIdioma(valor: Idioma) {
   void guardarIdioma(valor)
   emit('update:idioma', valor)
@@ -62,7 +77,9 @@ const avisoMoneda = computed(() => {
 })
 function abrirPerfil() {
   emit('perfil')
-  void router?.push('/perfil')
+  if (!router) return
+  recordarRutaAntesDePerfil(router.currentRoute.value.fullPath)
+  void router.push('/perfil')
 }
 </script>
 
@@ -77,16 +94,20 @@ function abrirPerfil() {
     </div>
     <div class="flex shrink-0 items-center gap-3">
       <SelectorIdioma :model-value="idioma" @update:model-value="elegirIdioma" />
+      <!-- Aviso de moneda: una insignia junto al selector, sin agrandar el header (antes era una línea más debajo). -->
+      <span
+        v-if="avisoMoneda"
+        role="status"
+        data-prueba="aviso-moneda"
+        :title="avisoMoneda"
+        class="hidden items-center gap-1 rounded-full bg-info-fondo px-2 py-1 text-[11px] font-medium text-info sm:inline-flex"
+      >
+        <IconoMaterial nombre="info" class="h-3.5 w-3.5" />
+        {{ conversionFallida ? t('moneda.original') : t('moneda.referenciaCorta') }}
+        <span class="sr-only">{{ avisoMoneda }}</span>
+      </span>
       <SelectorMoneda :model-value="monedaFija ?? moneda" :disabled="!!monedaFija" @update:model-value="elegirMoneda" />
-      <AvatarPerfil v-if="!sinPerfil" @click="abrirPerfil" />
+      <AvatarPerfil v-if="conAvatar" :iniciales="iniciales" @click="abrirPerfil" />
     </div>
-    <p
-      v-if="avisoMoneda"
-      role="status"
-      data-prueba="aviso-moneda"
-      class="w-full text-right text-[11px] text-tinta-suave"
-    >
-      {{ avisoMoneda }}
-    </p>
   </header>
 </template>

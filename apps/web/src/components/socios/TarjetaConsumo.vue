@@ -5,6 +5,7 @@
   tarjeta pasa a alerta (texto e ícono, nunca solo color).
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../ui/TarjetaEsqueleto.vue'
 import { computed } from 'vue'
 import { Boton } from '../ui'
 import IconoMaterial from '../ui/IconoMaterial.vue'
@@ -36,9 +37,7 @@ const agotado = computed(() => !!presupuesto.value && presupuesto.value.restante
         <IconoMaterial nombre="speed" class="h-6 w-6 text-primario" />
       </h2>
 
-      <p v-if="estado.cargando.consumo && !presupuesto" class="text-[13px] text-tinta-suave">
-        {{ t('socios.panel.cargando') }}
-      </p>
+      <TarjetaEsqueleto v-if="estado.cargando.consumo && !presupuesto" :etiqueta="t('socios.panel.cargando')" plano />
       <div v-else-if="estado.error.consumo && !presupuesto" role="alert" class="flex flex-col items-start gap-2">
         <p class="text-[13px] text-error">{{ estado.error.consumo }}</p>
         <Boton variante="secundario" @click="cargarConsumo()">{{ t('socios.panel.reintentar') }}</Boton>

@@ -1,10 +1,14 @@
 name: Sonar
 
 # Análisis de calidad en SonarQube Cloud (organización y proyecto en sonar-project.properties), con la
-# cobertura de Vitest. Automático solo en push a develop (la rama principal del repo y del proyecto en Sonar)
-# cuando cambia la web; a mano desde Actions → Run workflow, sobre la rama que se elija (Sonar la registra
-# como análisis de esa rama). Necesita el secreto SONAR_TOKEN.
+# cobertura de Vitest. Automático en PRs hacia develop/release/main (decora el PR y evalúa el quality gate) y en
+# push a develop cuando cambia la web; a mano desde Actions → Run workflow. Al final deja el reporte (quality
+# gate, métricas y problemas graves) en el resumen del run y como artefacto `reporte-sonar`. Necesita el secreto
+# SONAR_TOKEN; los PRs de forks y de Dependabot no reciben secretos y ahí se salta (igual que el repo móvil).
 on:
+  pull_request:
+    branches: [develop, 'release/**', main]
+    paths: ['apps/web/**', 'e2e/**', 'sonar-project.properties', '.github/workflows/sonar.yml', 'scripts/reporte_sonar.py']
   push:
     branches: [develop]
     paths: ['apps/web/**', 'e2e/**', 'sonar-project.properties', '.github/workflows/sonar.yml']
@@ -19,15 +23,16 @@ permissions:
 
 jobs:
   sonar:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Historial completo: con un clon superficial Sonar no puede atribuir el código nuevo.
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -40,4 +45,14 @@ jobs:
       # Vitest escribe las rutas relativas a apps/web; Sonar las resuelve desde la raíz del repo.
       - name: Rutas del lcov desde la raíz del repo
         run: sed -i 's#^SF:#SF:apps/web/#' apps/web/coverage/lcov.info
-      - uses: SonarSource/sonarqube-scan-action@v6
+      - uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
+      # Quality gate, métricas y problemas graves en el resumen del run y como artefacto (informativo).
+      - name: Reporte de Sonar
+        if: always() && env.SONAR_TOKEN != ''
+        run: python3 scripts/reporte_sonar.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always() && env.SONAR_TOKEN != ''
+        with:
+          name: reporte-sonar
+          path: reporte-sonar.md
+          if-no-files-found: ignore

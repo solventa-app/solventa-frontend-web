@@ -87,7 +87,7 @@ bloque". Lo esencial:
 ## Stack
 
 - **Web:** Vue 3 (`<script setup lang="ts">`), TypeScript estricto, Vite 8 (Node ≥ 22.12), Vue Router, Twind. Pruebas: Vitest + `@vue/test-utils` (jsdom). Mocks: MSW. Tipos del contrato: `graphql-codegen`. E2E: Cypress. Lint: ESLint + Prettier.
-- **CI:** GitHub Actions con filtro por ruta (la web no dispara el móvil, ni al revés), SonarQube Cloud y Dependabot.
+- **CI:** GitHub Actions, SonarQube Cloud y Dependabot.
 
 ## Reglas (no las reinterpretes)
 
@@ -103,9 +103,8 @@ bloque". Lo esencial:
 ## Agentes de este repo (`.claude/agents/`)
 
 - **`web-builder`** — construir pantallas y lógica de la web contra Figma, contrato y mocks.
-- **`mobile-builder`** — la app Flutter (desde el Sprint 2).
 - **`contract-consumer`** — sincronizar el contrato, regenerar tipos y actualizar mocks; detectar rupturas.
-- **`frontend-quality`** — Vitest, Cypress/`integration_test`, accesibilidad y evidencia de la definición de hecho.
+- **`frontend-quality`** — Vitest, Cypress, accesibilidad y evidencia de la definición de hecho.
 
 ## Reglas de trabajo
 

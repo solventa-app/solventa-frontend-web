@@ -7,6 +7,8 @@ export const en: Record<Clave, string> = {
   'idioma.grupo': 'Language selector',
   'moneda.etiqueta': 'Currency',
   'moneda.cambiar': 'Change currency. Current currency: {moneda}',
+  'moneda.referenciaCorta': 'Reference values',
+  'moneda.original': 'Original values',
   'moneda.referencia': 'Reference values. Charges are made in the original currency.',
   'moneda.sinConversion': 'We could not convert the amounts: they are shown in their original currency.',
   'perfil.avatar': 'My profile',
@@ -27,8 +29,8 @@ export const en: Record<Clave, string> = {
   'modal.seguridad': 'For your security, the session expires on its own: you will have to sign in again.',
   'comun.irSolicitud': 'Go to the application',
   'comun.nuevaCotizacion': 'New quote',
+  'comun.volver': 'Back',
   'comun.volverInicio': 'Back to home',
-  'comun.fueraSprint': '(HU-W03, outside this sprint)',
   'comun.verFuentes': 'See details of the sources consulted',
   'comun.cobertura': 'Coverage: {monto}',
   'comun.porMes': '{monto} / month',
@@ -69,8 +71,6 @@ export const en: Record<Clave, string> = {
   'ingreso.usuarioEjemplo': 'you@email.com',
   'ingreso.clave': 'Password',
   'ingreso.ingresar': 'Sign in',
-  'ingreso.nota':
-    'Each of the 3 roles has its own home — Customer and Sales advisor reach the same quote form, with a different header depending on who signs in.',
   'ingreso.socio': 'Are you a distribution partner? Go to the API partner portal',
   'ingreso.falla': "We couldn't sign you in right now. Please try again.",
   'ingreso.sesionVencida': 'Your session has expired. Please sign in again to continue.',
@@ -118,7 +118,6 @@ export const en: Record<Clave, string> = {
   'homeCliente.polizasTexto': 'Check your active policy and download the document',
   'home.fuentes': 'Sources consulted',
   'homeCliente.fuentesTexto': 'See which Open Finance and Open Data records were used',
-  'homeCliente.nota': 'Post-login landing for the Customer role.',
 
   // G-02a · Advisor home
   'homeAsesor.titulo': 'Sales Advisor Home',
@@ -128,7 +127,6 @@ export const en: Record<Clave, string> = {
   'homeAsesor.polizas': 'Issued policies',
   'homeAsesor.polizasTexto': "Check the customer's active policy and its document",
   'homeAsesor.fuentesTexto': 'See which sources were used to profile the customer',
-  'homeAsesor.nota': 'The advisor acts on behalf of a customer, not quoting for themselves.',
 
   // G-02b · Operator home
   'homeOperador.titulo': 'Operator Home',
@@ -137,8 +135,6 @@ export const en: Record<Clave, string> = {
   'homeOperador.siniestrosTexto': 'Pending claims inbox',
   'homeOperador.conciliacion': 'Payment reconciliation',
   'homeOperador.conciliacionTexto': 'See the collection status of premiums',
-  'homeOperador.nota':
-    "Post-login landing for the Operator role. They don't see 'New quote' — quoting policies is not their job.",
 
   // G-05 · My profile
   'perfil.titulo': 'My profile',
@@ -274,7 +270,6 @@ export const en: Record<Clave, string> = {
   // W01-02 · Checking sources
   'consulta.titulo': 'Checking sources',
   'consulta.verificando': 'Checking your Open Finance / Open Data sources',
-  'consulta.nota': '(moves on automatically based on the ACL response — there is no manual button)',
   'consulta.sinSolicitud': 'There is no application in progress to check.',
 
   // W01-03a · Complete offer

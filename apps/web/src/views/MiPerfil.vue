@@ -15,12 +15,14 @@ import {
   ModalCerrarSesion,
   SelectorIdioma,
   SelectorMoneda,
+  TarjetaEsqueleto,
   TituloPantalla,
 } from '../components/ui'
 import IconoMaterial from '../components/ui/IconoMaterial.vue'
 import { ejecutar } from '../graphql/cliente'
 import type { Usuario } from '../graphql/tipos'
 import { useCierreDeSesion } from '../composables/useCierreDeSesion'
+import { rutaAntesDePerfil } from '../composables/useRegresoPerfil'
 import { etiquetaRol, useSesion } from '../composables/useSesion'
 import { idioma, t, type Clave } from '../i18n'
 import { elegirIdioma } from '../composables/useIdiomaCuenta'
@@ -32,6 +34,8 @@ import { formatearFecha } from '../utils/formato'
 const props = withDefaults(defineProps<{ fetchFn?: typeof fetch }>(), { fetchFn: undefined })
 
 const { estado, rutaInicio } = useSesion()
+// «Volver» lleva a la pantalla desde la que se abrió el perfil; si no se conoce (recarga), al inicio del rol.
+const rutaVolver = computed(() => rutaAntesDePerfil() ?? rutaInicio())
 const { modalAbierto, pedirCierre, cancelarCierre, confirmarCierre } = useCierreDeSesion()
 
 const CONSULTA_YO = `
@@ -83,6 +87,13 @@ onMounted(async () => {
     <HeaderPantalla :titulo="t('perfil.titulo')" />
 
     <main class="mx-auto flex min-h-0 w-full max-w-[880px] flex-1 flex-col gap-5 overflow-y-auto px-4 py-6 sm:px-10">
+      <RouterLink
+        :to="rutaVolver"
+        data-prueba="volver-perfil"
+        class="-mb-2 self-start text-[13px] font-normal text-primario hover:underline"
+      >
+        ‹ {{ t('comun.volver') }}
+      </RouterLink>
       <div class="flex flex-wrap items-center justify-between gap-2 border-b border-borde pb-2 text-[11px]">
         <span class="flex items-center gap-1 text-tinta-suave">
           <IconoMaterial nombre="badge" class="h-5 w-5" />
@@ -109,7 +120,7 @@ onMounted(async () => {
       </div>
       <Divisor />
 
-      <p v-if="cargando" class="text-[13px] text-tinta-suave">{{ t('perfil.cargando') }}</p>
+      <TarjetaEsqueleto v-if="cargando" :etiqueta="t('perfil.cargando')" :tarjetas="2" con-avatar />
       <p v-else-if="error" role="alert" class="text-[13px] text-error">{{ t(error) }}</p>
 
       <template v-else-if="perfil">

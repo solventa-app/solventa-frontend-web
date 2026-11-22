@@ -66,9 +66,6 @@ onMounted(async () => {
       >
         <div class="barra-indeterminada h-full w-1/3 rounded-full bg-enlace" />
       </div>
-      <p class="text-center text-[11px] leading-[14px] text-tinta-suave">
-        {{ t('consulta.nota') }}
-      </p>
     </main>
     <main
       v-else

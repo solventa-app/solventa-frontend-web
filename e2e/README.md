@@ -10,7 +10,7 @@ npm run correr         # sin interfaz (CI)
 
 - **Local:** levanta la web con `npm run web:dev:mock` y corre contra `http://localhost:5173`.
 - **Staging:** `CYPRESS_BASE_URL=https://<staging> CYPRESS_USUARIO_CLIENTE=... CYPRESS_CLAVE_CLIENTE=... npm run correr` (o desde GitHub Actions: *Actions → E2E staging → Run workflow*, que inyecta los secretos `CYPRESS_USUARIO_*` y `CYPRESS_CLAVE_*` de los roles `CLIENTE`, `ASESOR` y `BACKOFFICE` y publica siempre el artefacto `cypress-evidencia` con capturas, videos y reportes). Staging se despliega desde el `main` de `solventa-backend` detrás del API Gateway.
-- El móvil (Flutter) no usa Cypress: sus pruebas viven en `apps/mobile` (`flutter_test`, `integration_test`, Firebase Test Lab).
+- El móvil (Flutter) no usa Cypress: sus pruebas viven en el repositorio `solventa-frontend-mobile`.
 
 ## Dos niveles de E2E (Jira KAN-203) y cobertura FC-01
 

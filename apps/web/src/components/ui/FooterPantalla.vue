@@ -14,7 +14,7 @@ const anio = new Date().getFullYear()
 
 <template>
   <footer
-    class="flex w-full flex-wrap items-center justify-between gap-2 border-t border-borde bg-white px-4 pb-5 pt-[21px] text-[11px] leading-[18px] text-tinta-suave sm:px-10"
+    class="flex w-full flex-wrap items-center justify-between gap-2 shrink-0 border-t border-borde bg-white px-4 py-2 text-[11px] sm:pb-5 sm:pt-[21px] leading-[18px] text-tinta-suave sm:px-10"
   >
     <p>{{ t('pie.derechos', { anio }) }}</p>
     <p class="flex flex-wrap items-center gap-2">

@@ -6,6 +6,7 @@
   - Se mantiene al día con el aviso `propuesta` del SSE mientras la pestaña está visible.
 -->
 <script setup lang="ts">
+import TarjetaEsqueleto from '../components/ui/TarjetaEsqueleto.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import InsigniaEstadoPoliza from '../components/InsigniaEstadoPoliza.vue'
@@ -91,7 +92,13 @@ onUnmounted(() => {
         {{ t('detallePoliza.volver') }}
       </RouterLink>
 
-      <p v-if="estado.cargando" class="text-[13px] text-tinta-suave">{{ t('detallePoliza.cargando') }}</p>
+      <TarjetaEsqueleto
+        v-if="estado.cargando"
+        :etiqueta="t('detallePoliza.cargando')"
+        :tarjetas="2"
+        :lineas="4"
+        con-avatar
+      />
       <p v-else-if="estado.problema === 'error'" role="alert" class="text-[13px] text-error">
         {{ estado.mensajeError }}
       </p>
