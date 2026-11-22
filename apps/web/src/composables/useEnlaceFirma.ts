@@ -13,7 +13,13 @@
 // 4. Nunca va a `localStorage`, a un log, a la consola ni a la URL de una petición.
 import { reactive } from 'vue'
 import type { Router } from 'vue-router'
-import { ErrorGraphQL, ejecutarSuscripcion, pdfDeSesion, type OpcionesEjecucion } from '../graphql/cliente'
+import {
+  ErrorGraphQL,
+  cabecerasPresentacion,
+  ejecutarSuscripcion,
+  pdfDeSesion,
+  type OpcionesEjecucion,
+} from '../graphql/cliente'
 import type {
   EnlaceFirma,
   ErrorFirma,
@@ -394,7 +400,8 @@ export function useEnlaceFirma(fetchFn: typeof fetch = fetch) {
     if (propuestaSesion) return pdfDeSesion(ruta, fetchFn)
     if (!token) return null
     try {
-      const respuesta = await fetchFn(ruta, { headers: { 'X-Enlace-Firma': token } })
+      // KAN-26: el contrato sale en el idioma y la moneda que tiene activos quien lo abre.
+      const respuesta = await fetchFn(ruta, { headers: { ...cabecerasPresentacion(), 'X-Enlace-Firma': token } })
       if (!respuesta.ok) return null
       // Si la ruta no llega al BFF, el hosting responde 200 con el index.html de la SPA: sin este control el
       // visor mostraría la propia aplicación en vez del contrato.

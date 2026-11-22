@@ -243,19 +243,19 @@ describe('Páginas del enlace (sin sesión)', () => {
     expect(w.findAll('main button')).toHaveLength(0)
   })
 
-  it('W03-02 el título del contrato sigue al producto: vida deudores o auto', async () => {
+  it('W03-02 el título del contrato sigue al producto: vida hipotecario o vehicular', async () => {
     window.location.hash = '#t=demo'
     const vida = await montar(FirmaElectronica, '/firma')
     await boton(vida.w, 'acepta-terminos')
-    expect(vida.w.text()).toContain('Contrato de Seguro de Vida Grupo Deudores')
-    expect(vida.w.text()).toContain('condiciones del Seguro de Vida Deudores')
+    expect(vida.w.text()).toContain('Contrato de Seguro de Vida Hipotecario')
+    expect(vida.w.text()).toContain('condiciones del Seguro de Vida Hipotecario')
     vida.w.unmount()
 
     window.location.hash = '#t=demo-auto'
     const auto = await montar(FirmaElectronica, '/firma')
     await boton(auto.w, 'acepta-terminos')
-    expect(auto.w.text()).toContain('Contrato de Seguro de Auto')
-    expect(auto.w.text()).toContain('condiciones del Seguro de Auto')
+    expect(auto.w.text()).toContain('Contrato de Seguro Vehicular')
+    expect(auto.w.text()).toContain('condiciones del Seguro Vehicular')
     expect(auto.w.text()).not.toContain('Vida')
     auto.w.unmount()
   })
